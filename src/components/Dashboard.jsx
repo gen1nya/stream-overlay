@@ -1,5 +1,6 @@
 import React, {useEffect, useRef} from 'react';
 import { logout, onAccountReady, openOverlay } from '../services/api';
+import { useNavigate } from 'react-router-dom';
 
 
 export default function Dashboard({ onLogout }) {
@@ -12,6 +13,11 @@ export default function Dashboard({ onLogout }) {
         openOverlay();
     };
 
+    const handlerOpenSettings = () => {
+        navigate('/settings',{ replace: true })
+    }
+
+    const navigate = useNavigate();
 
     const called = useRef(false);
 
@@ -32,6 +38,9 @@ export default function Dashboard({ onLogout }) {
             <div style={{ marginTop: '50px' }}>
                 <button onClick={handleOpenOverlay} style={{ marginRight: '20px' }}>Открыть чат в отдельном окне</button>
                 <button>Скопировать ссылку на чат</button>
+            </div>
+            <div style={{ marginTop: '50px' }}>
+                <button onClick={handlerOpenSettings} style={{ marginRight: '20px' }}>Настройки</button>
             </div>
         </div>
     );

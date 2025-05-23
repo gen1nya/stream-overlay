@@ -1,0 +1,29 @@
+{
+  "chatMessage": {
+    "backgroundColor": "#00ffe3",
+    "borderColor": "#00ffe3",
+    "shadowColor": "#000",
+    "shadowOpacity": "0.5",
+    "shadowRadius": "5",
+    "direction": "row",
+    "borderRadius": "6",
+    "marginH": 10,
+    "marginV": 10
+  },
+  "followMessage": {
+    "backgroundColor": "#00ffe3",
+    "borderColor": "#00ffe3",
+    "shadowColor": "#000",
+    "shadowOpacity": "0.5",
+    "shadowRadius": "5",
+    "direction": "row"
+  },
+  "redeemMessage": {
+    "backgroundColor": "#00ffe3",
+    "borderColor": "#00ffe3",
+    "shadowColor": "#000",
+    "shadowOpacity": "0.5",
+    "shadowRadius": "5",
+    "direction": "row"
+  }
+}

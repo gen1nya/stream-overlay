@@ -30,3 +30,7 @@ export const onAccountReady = () => {
 export const openOverlay = () => {
     return ipcRenderer?.invoke('chat:open-overlay');
 };
+
+export const setRemoteTheme = (theme) => {
+    ipcRenderer.send('theme:update', theme)
+}

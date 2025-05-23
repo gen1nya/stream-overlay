@@ -3,7 +3,18 @@ const authService = require('./services/authService');
 const eventSubService = require('./services/eventSubService');
 const chatService = require('./services/chatService');
 const messageParser = require('./services/messageParser');
+const Store     = require('electron-store');
+const defaultTheme = require('./default-theme.json')
+
+const store = new Store({
+    defaults: {
+        theme: defaultTheme
+    }
+});
+
 const WebSocket = require('ws');
+
+let currentTheme = store.get('theme') || require('./default-theme.json');
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -116,3 +127,9 @@ function broadcast(channel, payload) {
         }
     });
 }
+
+ipcMain.on('theme:update', (_e, theme) => {
+    currentTheme = theme;
+    store.set('theme', theme);        // поживёт между рестартами
+    broadcast('theme:update', theme);            // пуш в WebSocket-мир
+});

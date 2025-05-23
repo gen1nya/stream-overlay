@@ -2,15 +2,39 @@ import React from 'react';
 import styled from 'styled-components';
 
 const MessageContainer = styled.div`
-    margin-bottom: 10px;
     padding: 2px 6px;
     display: flex;
-    align-items: center;
-    border-radius: 6px;
-    border: #8553f2 solid 1px;
-    background: #311e64;
-    box-shadow: rgba(133, 83, 242, 0.2) 0 0 15px;
+    width: auto;
+    margin: ${({ theme }) => {
+        return `${theme.chatMessage.marginV}px ${theme.chatMessage.marginH}px`;
+    }};
+    border-radius: ${({ theme }) => theme.chatMessage.borderRadius}px;
+    align-items: flex-start;
+    flex-direction: ${({ theme}) => theme.chatMessage.direction};
+    border: ${({ theme }) => theme.chatMessage.borderColor } solid 1px;
+    background: ${({ theme }) => theme.chatMessage.backgroundColor};
+    box-shadow: ${({ theme }) => {
+        const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
+
+        // Преобразуем HEX в RGB:
+        const hexToRgb = (hex) => {
+            const cleanHex = hex.replace('#', '');
+            const bigint = parseInt(cleanHex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `${r}, ${g}, ${b}`;
+        };
+
+        const rgb = hexToRgb(shadowColor);
+        return `rgba(${rgb}, ${shadowOpacity}) 0 0 ${shadowRadius}px`;
+    }};
 `;
+
+const TitleContainer = styled.div`
+    display: flex;
+    flex-direction: row;
+`
 
 const Username = styled.span`
     font-weight: bold;
@@ -25,9 +49,11 @@ const MessageText = styled.span`
 export default function ChatMessage({ message }) {
     return (
         <MessageContainer>
-            <span dangerouslySetInnerHTML={{ __html: message.htmlBadges }} />
-            <Username color={message.color}>{message.username}:</Username>
-            <MessageText dangerouslySetInnerHTML={{ __html: message.htmlMessage }} />
+            <TitleContainer>
+                <span dangerouslySetInnerHTML={{__html: message.htmlBadges}}/>
+                <Username color={message.color}>{message.username}:</Username>
+            </TitleContainer>
+            <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>
         </MessageContainer>
     );
 }
