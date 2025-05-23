@@ -7,7 +7,7 @@ const {
     EVENT_CHANEL
 } = require('./../channels.js');
 
-const CLIENT_ID = 'wlh9bzkshqq4dohkd3c6coyy0od7te';
+const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
 
 let ws = null;
 let eventHandler = null;
