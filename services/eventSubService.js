@@ -100,6 +100,7 @@ async function subscribeToEvents(sessionId, accessToken) {
     const broadcasterId = tokens ? tokens.user_id : null;
 
     if (!broadcasterId) {
+        console.log(tokens);
         console.error('❌ Broadcaster ID not found.');
         return;
     }

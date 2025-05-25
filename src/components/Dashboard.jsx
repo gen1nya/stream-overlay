@@ -1,5 +1,5 @@
 import React, {useEffect, useRef} from 'react';
-import { logout, onAccountReady, openOverlay } from '../services/api';
+import { logout, openOverlay } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 
@@ -14,7 +14,7 @@ export default function Dashboard({ onLogout }) {
     };
 
     const handlerOpenSettings = () => {
-        navigate('/settings',{ replace: true })
+        navigate('/settings',{ replace: false })
     }
 
     const navigate = useNavigate();
@@ -25,7 +25,7 @@ export default function Dashboard({ onLogout }) {
         if (!called.current) {
             called.current = true;
             console.log("Called only once, even in Strict Mode");
-            onAccountReady();
+            //onAccountReady();
         }
     }, []);
 

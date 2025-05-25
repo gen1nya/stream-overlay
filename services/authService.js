@@ -24,21 +24,67 @@ const ACCOUNT = 'tokens';
 const DEVICE_INFO_SERVICE = 'TwitchWatcherDevice';
 const DEVICE_INFO_ACCOUNT = 'device_code';
 
+// Retrieve stored tokens and auto-refresh if expired
 async function getTokens() {
-    const data = await keytar.getPassword(SERVICE, ACCOUNT);
-    return data ? JSON.parse(data) : null;
+    const raw = await keytar.getPassword(SERVICE, ACCOUNT);
+    if (!raw) return null;
+    let tokens = JSON.parse(raw);
+    const now = Date.now();
+    // Check expiry (expires_in is in seconds)
+    if (tokens.obtained_at && tokens.expires_in && now >= tokens.obtained_at + tokens.expires_in * 1000) {
+        try {
+            tokens = await refreshToken(tokens.refresh_token);
+        } catch (err) {
+            console.error('❌ Token refresh failed, clearing tokens:', err.message);
+            await clearTokens();
+            return null;
+        }
+    }
+    return tokens;
 }
 
+// Save tokens along with timestamp
 async function saveTokens(tokens) {
     tokens.obtained_at = Date.now();
     return keytar.setPassword(SERVICE, ACCOUNT, JSON.stringify(tokens));
 }
 
+// Remove all stored credentials
 async function clearTokens() {
     await keytar.deletePassword(SERVICE, ACCOUNT);
     await keytar.deletePassword(DEVICE_INFO_SERVICE, DEVICE_INFO_ACCOUNT);
 }
 
+// Refresh access token using the refresh token and update user info
+async function refreshToken(refresh_token) {
+    const params = new URLSearchParams({
+        client_id: CLIENT_ID,
+        grant_type: 'refresh_token',
+        refresh_token,
+    });
+    const resp = await axios.post('https://id.twitch.tv/oauth2/token', params.toString(), {
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+    const newTokens = resp.data;
+    // Fetch user info after refresh to update user_id and login
+    try {
+        const userResp = await axios.get('https://api.twitch.tv/helix/users', {
+            headers: {
+                'Client-ID': CLIENT_ID,
+                'Authorization': `Bearer ${newTokens.access_token}`
+            }
+        });
+        const userInfo = userResp.data.data[0];
+        newTokens.user_id = userInfo.id;
+        newTokens.login = userInfo.login;
+    } catch (err) {
+        console.warn('⚠️ Failed to fetch user info after token refresh:', err.response?.data || err.message);
+    }
+    await saveTokens(newTokens);
+    return newTokens;
+}
+
+// Fetch user info, retry once on 401 after refreshing token
 async function fetchUserInfo(accessToken) {
     try {
         const response = await axios.get('https://api.twitch.tv/helix/users', {
@@ -49,13 +95,21 @@ async function fetchUserInfo(accessToken) {
         });
         return response.data.data[0];
     } catch (err) {
+        const status = err.response?.status;
+        if (status === 401) {
+            // Token invalid, attempt refresh
+            console.log('🔄 Access token expired, attempting refresh...');
+            const tokens = await getTokens();
+            if (tokens) {
+                return fetchUserInfo(tokens.access_token);
+            }
+        }
         console.error('❌ Failed to fetch user info:', err.response?.data || err.message);
         return null;
     }
 }
 
 async function requestDeviceCode() {
-    // Correct Twitch Device Code Flow endpoint and parameter 'scopes'
     const params = new URLSearchParams({
         client_id: CLIENT_ID,
         scopes: SCOPES
@@ -64,7 +118,6 @@ async function requestDeviceCode() {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
     const { device_code, user_code, verification_uri, expires_in, interval } = resp.data;
-    // Store device_code for polling
     await keytar.setPassword(DEVICE_INFO_SERVICE, DEVICE_INFO_ACCOUNT, device_code);
     return { user_code, verification_uri, expires_in, interval };
 }
@@ -89,7 +142,6 @@ async function pollForToken() {
         } catch (err) {
             const error = err.response?.data;
             if (error?.message === 'authorization_pending') {
-                // user hasn't authorized yet
                 await new Promise(r => setTimeout(r, (error.interval || 5) * 1000));
                 continue;
             }
@@ -105,13 +157,11 @@ async function pollForToken() {
 async function authorizeIfNeeded() {
     const tokens = await getTokens();
     if (tokens) {
-        // Tokens exist, assume valid
         return true;
     }
 
     try {
         const { user_code, verification_uri } = await requestDeviceCode();
-        // Inform user to authorize
         const message = `To authorize, go to ${verification_uri} and enter code ${user_code}`;
         shell.openExternal(verification_uri);
         dialog.showMessageBox({ type: 'info', message, buttons: ['OK'] });

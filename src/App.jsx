@@ -3,16 +3,17 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import AuthScreen from './components/AuthScreen';
 import Dashboard from './components/Dashboard';
 import ChatOverlay from "./components/ChatOverlay";
-import { getTokens } from './services/api';
 import Settings from "./components/SettingsComponent";
 import { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { defaultTheme } from './theme';
+import LoadingComponent from "./components/LoadingComponent";
+import WrongPageComponent  from "./components/WrongPageComponent";
 
 const Global = createGlobalStyle`
   body {
     margin: 0;
     font-family: system-ui;
-    background: ${({ theme }) => theme.primary}22;   /* «припудрим» фон */
+    background: ${({ theme }) => theme.primary}22;
   }
 `;
 
@@ -22,36 +23,21 @@ export default function App() {
         return saved ? JSON.parse(saved) : defaultTheme;
     });
 
-    const [authorized, setAuthorized] = useState(false);
 
     useEffect(() => {
         localStorage.setItem('theme', JSON.stringify(theme));
-        try {
-            getTokens().then(tokens => {
-                setAuthorized(!!tokens);
-            });
-        } catch (e) {
-            console.log(e);
-        }
-
     }, [theme]);
 
     return (
         <ThemeProvider theme={theme}>
             <Router>
                 <Routes>
+                    <Route path="/loading" element={<LoadingComponent/>} />
                     <Route path="/settings" element={<Settings current={theme} onChange={setTheme} />} />
                     <Route path="/chat-overlay" element={<ChatOverlay />} />
-                    <Route
-                        path="*"
-                        element={
-                            authorized ? (
-                                <Dashboard onLogout={() => setAuthorized(false)} />
-                            ) : (
-                                <AuthScreen onAuthorized={() => setAuthorized(true)} />
-                            )
-                        }
-                    />
+                    <Route path="/dashboard" element={<Dashboard onLogout={ () => {} } />} />
+                    <Route path="/auth" element={<AuthScreen  onAuthorized={ () => {} } />} />
+                    <Route path="*" element={ <WrongPageComponent/> }/>
                 </Routes>
             </Router>
         </ThemeProvider>

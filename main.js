@@ -31,7 +31,7 @@ function createWindow() {
         },
     });
 
-    mainWindow.loadURL('http://localhost:5173');
+    mainWindow.loadURL('http://localhost:5173/loading');
 }
 
 function createChatWindow() {

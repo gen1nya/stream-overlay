@@ -64,7 +64,7 @@ export default function Settings({ current, onChange }) {
         setRemoteTheme(nextTheme);
     };
 
-    const handleBackButton = () => navigate('/', { replace: true });
+    const handleBackButton = () => navigate(-1);
 
     return (
         <Panel>
