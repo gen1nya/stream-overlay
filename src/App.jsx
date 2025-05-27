@@ -8,6 +8,7 @@ import { ThemeProvider, createGlobalStyle } from 'styled-components';
 import { defaultTheme } from './theme';
 import LoadingComponent from "./components/LoadingComponent";
 import WrongPageComponent  from "./components/WrongPageComponent";
+import PreviewComponent from "./components/PreviewComponent";
 
 const Global = createGlobalStyle`
   body {
@@ -23,7 +24,6 @@ export default function App() {
         return saved ? JSON.parse(saved) : defaultTheme;
     });
 
-
     useEffect(() => {
         localStorage.setItem('theme', JSON.stringify(theme));
     }, [theme]);
@@ -32,6 +32,7 @@ export default function App() {
         <ThemeProvider theme={theme}>
             <Router>
                 <Routes>
+                    <Route path="/preview" element={<PreviewComponent/>}/>
                     <Route path="/loading" element={<LoadingComponent/>} />
                     <Route path="/settings" element={<Settings current={theme} onChange={setTheme} />} />
                     <Route path="/chat-overlay" element={<ChatOverlay />} />

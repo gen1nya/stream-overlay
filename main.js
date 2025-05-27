@@ -18,8 +18,22 @@ let currentTheme = store.get('theme') || require('./default-theme.json');
 
 const wss = new WebSocket.Server({ port: 42001 });
 
-let mainWindow;
+let mainWindow = null;
 let chatWindow = null;
+let previewWindow = null;
+
+function createPreviewWindow() {
+    previewWindow = new BrowserWindow({
+        width: 450,
+        height: 600,
+        webPreferences: {
+            nodeIntegration: true,
+            contextIsolation: false
+        },
+    });
+
+    previewWindow.loadURL('http://localhost:5173/preview');
+}
 
 function createWindow() {
     mainWindow = new BrowserWindow({
@@ -58,6 +72,21 @@ app.whenReady().then(() => {
     console.log('🚀 Electron App is ready.');
     createWindow();
 
+    wss.on('connection', (ws) => {
+        ws.on('message', (message) => {
+            console.log('Получено сообщение от клиента:', message.toString());
+            const { channel, payload } = JSON.parse(message.toString());
+            switch (channel) {
+                case 'theme:get':
+                    console.log('Запрошена тема, отправляем текущую:', currentTheme);
+                    broadcast('theme:update', currentTheme);
+                    break;
+                default:
+                    console.log('unknown channel', channel, payload);
+            }
+        });
+    });
+
     // Если нужны IPC хендлеры, регистрируем их прямо тут
     ipcMain.handle('auth:authorize', async () => {
         const result = await authService.authorizeIfNeeded();
@@ -92,6 +121,10 @@ app.whenReady().then(() => {
 
     ipcMain.handle('chat:open-overlay', () => {
         createChatWindow();
+    });
+
+    ipcMain.handle('setting:open-preview', () => {
+       createPreviewWindow();
     });
 
     eventSubService.registerEventHandlers( (destination, parsedEvent) => {

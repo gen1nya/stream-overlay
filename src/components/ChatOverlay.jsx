@@ -15,6 +15,7 @@ const GlobalStyle = createGlobalStyle`
         height: 100%;
         background: transparent !important;
         overflow: hidden;
+        scroll-behavior: smooth;
     }
 `;
 
@@ -23,12 +24,14 @@ const ChatContainer = styled.div`
     height: 100%;
     background-color: transparent;
     color: #fff;
-    overflow-y: scroll;
+    overflow: hidden;
     font-family: Arial, sans-serif;
+    scroll-behavior: smooth;
 `;
 
 
 export default function ChatOverlay() {
+    const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
     const [theme, setTheme] = useState(defaultTheme);   // ← новое состояние темы
 
@@ -37,6 +40,13 @@ export default function ChatOverlay() {
         if (payload.type === 'system' && !showSystemEvents) return;
         setMessages(prev => [...prev, { ...payload, type: 'chat' }]);
     };
+
+    useEffect(() => {
+        const chat = chatRef.current;
+        if (chat) {
+            chat.scrollTop = chat.scrollHeight;
+        }
+    }, [ messages]);
 
     /** Один WebSocket для всего */
     useEffect(() => {
@@ -80,7 +90,7 @@ export default function ChatOverlay() {
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
-            <ChatContainer>
+            <ChatContainer ref={chatRef}>
                 {messages.map((msg, i) => {
                     switch (msg.type) {
                         case 'chat':

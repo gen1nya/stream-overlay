@@ -2,7 +2,12 @@
 import React from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import { setRemoteTheme } from '../services/api';
+import {openPreview, setRemoteTheme} from '../services/api';
+import SeekbarComponent from "./SeekbarComponent";
+import ColorSelectorComponent from "./ColorSelectorComponent";
+import RadioGroupComponent from "./RadioGroupComponent";
+import NumericEditorComponent from "./NumericEditorComponent";
+import {Accordion} from "./AccordionComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -19,19 +24,9 @@ const Panel = styled.div`
     gap: 12px;
 `;
 
-const Seekbar = styled.input`
-    width: 100px;
-    height: 24px
-`
-
-const RadioGroup = styled.div`
-  display: flex;
-  flex-direction: row;
-  gap: 0.5rem; /* расстояние между кнопками */
-`;
-
 const SettingsBlock = styled.div`
-    width: 33%;
+    padding: 0px 12px;
+    width: 100%;
     flex-direction: column;
     display: flex;
     gap: 12px;
@@ -65,12 +60,15 @@ export default function Settings({ current, onChange }) {
     };
 
     const handleBackButton = () => navigate(-1);
+    const handlePreviewButton = async () => {
+        await openPreview()
+    };
 
     return (
         <Panel>
-
             <Toolbar>
                 <button onClick={handleBackButton}>Назад</button>
+                <button onClick={handlePreviewButton}>Превью</button>
             </Toolbar>
 
 
@@ -78,197 +76,166 @@ export default function Settings({ current, onChange }) {
                 <SettingsBlock>
 
 
-                {/* цвет фона обычного сообщения */}
-                    <label>
-                        Цвет фона&nbsp;«обычных»&nbsp;сообщений:
-                        <input
-                            type="color"
-                            value={current.chatMessage.backgroundColor}
-                            onChange={e =>
+                    <Accordion title = "Шрифт сообщений">
+                        <NumericEditorComponent
+                            title={"Шрифт сообщений:"}
+                            value={14} max={82} min={9} onChange={ value => {
+                            apply(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    fontSize: value,
+                                },
+                            }));
+                        } } />
+
+                        <NumericEditorComponent
+                            title={"Шрифт заголовка:"}
+                            value={14} max={82} min={9} onChange={ value => {
+                            apply(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    titleFontSize: value,
+                                },
+                            }));
+                        } } />
+                    </Accordion>
+
+                    <Accordion title={"Цвета сообщений"}>
+                        {/* цвет фона обычного сообщения */}
+                        <ColorSelectorComponent
+                            title="Цвет фона обычного сообщения:"
+                            valueOpacity={current.chatMessage.backgroundOpacity}
+                            valueColor={current.chatMessage.backgroundColor}
+                            onChange={ values =>
                                 apply(prev => ({
                                     ...prev,
                                     chatMessage: {
                                         ...prev.chatMessage,
-                                        backgroundColor: e.target.value,
+                                        backgroundOpacity: values.o,
+                                        backgroundColor: values.color,
                                     },
                                 }))
                             }
                         />
-                    </label>
 
-                    <label>
-                        Цвет обводки&nbsp;«обычных»&nbsp;сообщений:
-                        <input
-                            type="color"
-                            value={current.chatMessage.borderColor}
-                            onChange={e =>
-                                apply(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        borderColor: e.target.value,
-                                    },
-                                }))
-                            }
+                        {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
+                        <ColorSelectorComponent
+                            title="Цвет обводки обычного сообщения:"
+                            valueOpacity={current.chatMessage.borderOpacity}
+                            valueColor={current.chatMessage.borderColor}
+                            onChange={value => apply(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    borderOpacity: value.o,
+                                    borderColor: value.color,
+                                },
+                            }))}
                         />
-                    </label>
 
-                    <label>
-                        Цвет тени &nbsp;«обычных»&nbsp;сообщений:
-                        <input
-                            type="color"
-                            value={current.chatMessage.shadowColor}
-                            onChange={e =>
-                                apply(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        shadowColor: e.target.value,
-                                    },
-                                }))
-                            }
+                        <ColorSelectorComponent
+                            title="Цвет тени &nbsp;«обычных»&nbsp;сообщений:"
+                            valueOpacity={current.chatMessage.shadowOpacity}
+                            valueColor={current.chatMessage.shadowColor}
+                            onChange={value => apply(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    shadowOpacity: value.o,
+                                    shadowColor: value.color,
+                                },
+                            }))}
                         />
-                    </label>
+                    </Accordion>
 
-                    <label>
-                        Прозрачность тени &nbsp;«обычных»&nbsp;сообщений:
-                        <Seekbar
-                            type="range"
-                            min="0"
-                            max="1"
-                            step="0.01"
-                            value={current.chatMessage.shadowOpacity ?? 0}
-                            onChange={e =>
-                                apply(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        shadowOpacity: e.target.value,
-                                    },
-                                }))
-                            }
-                        />
-                    </label>
-
-                    <label>
-                        Радиус тени &nbsp;«обычных»&nbsp;сообщений:
-                        <Seekbar
-                            type="range"
+                    <Accordion title={"Параметры сообщений"}>
+                        <SeekbarComponent
+                            title="Радиус тени &nbsp;«обычных»&nbsp;сообщений:"
                             min="0"
                             max="20"
-                            step="1"
                             value={current.chatMessage.shadowRadius ?? 0}
-                            onChange={e =>
+                            step="1"
+                            onChange={ e =>
                                 apply(prev => ({
                                     ...prev,
                                     chatMessage: {
                                         ...prev.chatMessage,
-                                        shadowRadius: e.target.value,
+                                        shadowRadius: e,
                                     },
                                 }))
                             }
                         />
-                    </label>
 
+                        <RadioGroupComponent
+                            title="Направление&nbsp;«обычных»&nbsp;сообщений:"
+                            options={[
+                                { value: "row", label: "По горизонтали" },
+                                { value: "column", label: "По вертикали" },
+                            ]}
+                            selected={current.chatMessage.direction}
+                            onChange={value =>
+                                apply(prev => ({
+                                    ...prev,
+                                    chatMessage: {
+                                        ...prev.chatMessage,
+                                        direction: value,
+                                    },
+                                }))
+                            }
+                        />
 
-                    <RadioGroup>
-                        <label key="row">
-                            <input
-                                type="radio"
-                                name="myRadio"
-                                value="row"
-                                checked={current.chatMessage.direction === "row"}
-                                onChange={e =>
-                                    apply(prev => ({
-                                        ...prev,
-                                        chatMessage: {
-                                            ...prev.chatMessage,
-                                            direction: "row",
-                                        },
-                                    }))
-                                }
-                            />
-                            row
-                        </label>
-                        <label key="column">
-                            <input
-                                type="radio"
-                                name="myRadio"
-                                value="column"
-                                checked={current.chatMessage.direction === "column"}
-                                onChange={e =>
-                                    apply(prev => ({
-                                        ...prev,
-                                        chatMessage: {
-                                            ...prev.chatMessage,
-                                            direction: "column",
-                                        },
-                                    }))
-                                }
-                            />
-                            column
-                        </label>
-                    </RadioGroup>
-
-                    <label>
-                        Радиус скругления &nbsp;«обычных»&nbsp;сообщений:
-                        <Seekbar
-                            type="range"
+                        <SeekbarComponent
+                            title="Радиус скругления &nbsp;«обычных»&nbsp;сообщений:"
                             min="0"
                             max="20"
-                            step="1"
                             value={current.chatMessage.borderRadius ?? 0}
-                            onChange={e =>
-                                apply(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        borderRadius: e.target.value,
-                                    },
-                                }))
-                            }
-                        />
-                    </label>
-
-                    <label>
-                        Отступ по горизонтали:
-                        <Seekbar
-                            type="range"
-                            min="0"
-                            max="100"
                             step="1"
-                            value={current.chatMessage.marginH ?? 0}
-                            onChange={e =>
+                            onChange={ e =>
                                 apply(prev => ({
                                     ...prev,
                                     chatMessage: {
                                         ...prev.chatMessage,
-                                        marginH: e.target.value,
+                                        borderRadius: e,
                                     },
                                 }))
                             }
                         />
-                    </label>
 
-                    <label>
-                        Отступ по вертикали:
-                        <Seekbar
-                            type="range"
+                        <SeekbarComponent title={"Отступ по горизонтали:"}
+                                          min="0"
+                                          max="100"
+                                          value={current.chatMessage.marginH ?? 0}
+                                          step="1"
+                                          onChange={ e =>
+                                              apply(prev => ({
+                                                  ...prev,
+                                                  chatMessage: {
+                                                      ...prev.chatMessage,
+                                                      marginH: e,
+                                                  },
+                                              }))
+                                          }
+                        />
+
+                        <SeekbarComponent
+                            title={"Отступ по вертикали:"}
                             min="0"
                             max="50"
-                            step="1"
                             value={current.chatMessage.marginV ?? 0}
-                            onChange={e =>
+                            step="1"
+                            onChange={ e =>
                                 apply(prev => ({
                                     ...prev,
                                     chatMessage: {
                                         ...prev.chatMessage,
-                                        marginV: e.target.value,
+                                        marginV: e,
                                     },
                                 }))
                             }
                         />
-                    </label>
+                    </Accordion>
 
                 </SettingsBlock>
             </Content>

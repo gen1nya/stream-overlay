@@ -5,29 +5,23 @@ const MessageContainer = styled.div`
     padding: 2px 6px;
     display: flex;
     width: auto;
-    margin: ${({ theme }) => {
+    margin: ${({theme}) => {
         return `${theme.chatMessage.marginV}px ${theme.chatMessage.marginH}px`;
     }};
-    border-radius: ${({ theme }) => theme.chatMessage.borderRadius}px;
+    border-radius: ${({theme}) => theme.chatMessage.borderRadius}px;
     align-items: flex-start;
-    flex-direction: ${({ theme}) => theme.chatMessage.direction};
-    border: ${({ theme }) => theme.chatMessage.borderColor } solid 1px;
-    background: ${({ theme }) => theme.chatMessage.backgroundColor};
-    box-shadow: ${({ theme }) => {
-        const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
+    flex-direction: ${({theme}) => theme.chatMessage.direction};
 
-        // Преобразуем HEX в RGB:
-        const hexToRgb = (hex) => {
-            const cleanHex = hex.replace('#', '');
-            const bigint = parseInt(cleanHex, 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-            return `${r}, ${g}, ${b}`;
-        };
-
-        const rgb = hexToRgb(shadowColor);
-        return `rgba(${rgb}, ${shadowOpacity}) 0 0 ${shadowRadius}px`;
+    border: 1px solid ${({theme}) => {
+        return hexToRgba(theme.chatMessage.borderColor, theme.chatMessage.borderOpacity);
+    }};
+    
+    background: ${({theme}) => {
+        return hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity);
+    }};
+    box-shadow: ${({theme}) => {
+        const {shadowColor, shadowOpacity, shadowRadius} = theme.chatMessage;
+        return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
 `;
 
@@ -39,12 +33,23 @@ const TitleContainer = styled.div`
 const Username = styled.span`
     font-weight: bold;
     margin-right: 6px;
+    font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
     color: ${props => props.color || '#fff'};
 `;
 
 const MessageText = styled.span`
     display: inline-block;
+    font-size: ${({theme}) => theme.chatMessage.fontSize}px;
 `;
+
+function hexToRgba(hex, opacity) {
+    const cleanHex = hex.replace('#', '');
+    const bigint = parseInt(cleanHex, 16);
+    const r = (bigint >> 16) & 255;
+    const g = (bigint >> 8) & 255;
+    const b = bigint & 255;
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+}
 
 export default function ChatMessage({ message }) {
     return (

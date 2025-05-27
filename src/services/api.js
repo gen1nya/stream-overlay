@@ -11,6 +11,10 @@ if (typeof window !== 'undefined' && window.require) {
     console.warn('📢 window.require не определён. Работает обычный браузер.');
 }
 
+export const openPreview = () => {
+    return ipcRenderer?.invoke('setting:open-preview');
+};
+
 export const authorize = () => {
     return ipcRenderer?.invoke('auth:authorize');
 };
