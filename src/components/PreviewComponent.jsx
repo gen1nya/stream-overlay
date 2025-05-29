@@ -1,6 +1,7 @@
 import React, {useEffect, useState} from "react";
 import styled, {createGlobalStyle, ThemeProvider} from "styled-components";
 import ChatMessage from "./ChatMessage";
+import ChatFollow from './ChatFollow';
 import {defaultTheme} from "../theme";
 
 const MessagePreviewContainer = styled.div`
@@ -53,10 +54,15 @@ export default function PreviewComponent() {
         htmlMessage: "Открой волшебный мир Teyvat в Genshin Impact! Собирай команду героев, исследуй потрясающие локации, сражайся с могущественными врагами и раскрывай тайны семи стихий. Бесплатно играй на ПК, PlayStation и мобильных устройствах. Присоединяйся к миллионам игроков по всему миру — начни своё великое приключение уже сегодня! #GenshinImpact #ИграйБесплатно"
     };
 
+    const followMessage = {
+        userName: "Пользователь"
+    };
+
     return <ThemeProvider theme={theme}>
         <MessagePreviewContainer>
             <ChatMessage message={message}/>
             <ChatMessage message={longMessage}/>
+            <ChatFollow message={followMessage}/>
         </MessagePreviewContainer>
 
     </ThemeProvider>;

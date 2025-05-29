@@ -1,8 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
+import {hexToRgba} from "../utils.js";
 
 const MessageContainer = styled.div`
-    padding: 2px 6px;
+    padding: ${({theme}) => { 
+        return `${theme.chatMessage.paddingV}px ${theme.chatMessage.paddingH}px`;
+    }};
     display: flex;
     width: auto;
     margin: ${({theme}) => {
@@ -15,7 +18,6 @@ const MessageContainer = styled.div`
     border: 1px solid ${({theme}) => {
         return hexToRgba(theme.chatMessage.borderColor, theme.chatMessage.borderOpacity);
     }};
-    
     background: ${({theme}) => {
         return hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity);
     }};
@@ -41,15 +43,6 @@ const MessageText = styled.span`
     display: inline-block;
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
 `;
-
-function hexToRgba(hex, opacity) {
-    const cleanHex = hex.replace('#', '');
-    const bigint = parseInt(cleanHex, 16);
-    const r = (bigint >> 16) & 255;
-    const g = (bigint >> 8) & 255;
-    const b = bigint & 255;
-    return `rgba(${r}, ${g}, ${b}, ${opacity})`;
-}
 
 export default function ChatMessage({ message }) {
     return (
