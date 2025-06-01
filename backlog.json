@@ -1,0 +1,36 @@
+{
+  "tasks": [
+    {
+      "type": "bug",
+      "status": "todo",
+      "title": "сделать ебаный реконнект при потере соединения с сервером twitch"
+    },
+    {
+      "type": "task",
+      "status": "todo",
+      "title": "сделать еюаную подгрузку информации о канале"
+    },
+    {
+      "type": "task",
+      "status": "todo",
+      "title": "Стили для сообщений follow и subscribe"
+    },
+    {
+      "priority": "high",
+      "type": "epic",
+      "status": "todo",
+      "title": "Сделать стили для растровых бекграундов для Тети Эли"
+    },
+    {
+      "type": "epic",
+      "status": "todo",
+      "title": "Сделать анимации для сообщений в чате (появление, исчезновение)"
+    },
+    {
+      "priority": "high",
+      "type": "task",
+      "status": "todo",
+      "title": "менеджер кеша для сообщений в чате"
+    }
+  ]
+}

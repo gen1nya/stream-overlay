@@ -9,6 +9,7 @@ import { defaultTheme } from './theme';
 import LoadingComponent from "./components/LoadingComponent";
 import WrongPageComponent  from "./components/WrongPageComponent";
 import PreviewComponent from "./components/PreviewComponent";
+import AudioPlayerComponent from "./components/AudioPlayerComponent";
 
 const Global = createGlobalStyle`
   body {
@@ -32,6 +33,7 @@ export default function App() {
         <ThemeProvider theme={theme}>
             <Router>
                 <Routes>
+                    <Route path="/audio" element={<AudioPlayerComponent />} />
                     <Route path="/preview" element={<PreviewComponent/>}/>
                     <Route path="/loading" element={<LoadingComponent/>} />
                     <Route path="/settings" element={<Settings current={theme} onChange={setTheme} />} />

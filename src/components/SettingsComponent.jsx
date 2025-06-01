@@ -88,27 +88,35 @@ export default function Settings({ current, onChange }) {
                     <Accordion title = "Шрифт сообщений">
                         <NumericEditorComponent
                             title={"Шрифт сообщений:"}
-                            value={14} max={82} min={9} onChange={ value => {
-                            apply(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    fontSize: value,
-                                },
-                            }));
-                        } } />
+                            value={current.chatMessage.fontSize}
+                            max={82}
+                            min={9}
+                            onChange={ value => {
+                                apply(prev => ({
+                                    ...prev,
+                                    chatMessage: {
+                                        ...prev.chatMessage,
+                                        fontSize: value,
+                                    },
+                                }));
+                            } }
+                        />
 
                         <NumericEditorComponent
                             title={"Шрифт заголовка:"}
-                            value={14} max={82} min={9} onChange={ value => {
-                            apply(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    titleFontSize: value,
-                                },
-                            }));
-                        } } />
+                            value={current.chatMessage.titleFontSize}
+                            max={82}
+                            min={9}
+                            onChange={ value => {
+                                apply(prev => ({
+                                    ...prev,
+                                    chatMessage: {
+                                        ...prev.chatMessage,
+                                        titleFontSize: value,
+                                    },
+                                }));
+                            }}
+                        />
                     </Accordion>
 
                     <Accordion title={"Цвета сообщений"}>

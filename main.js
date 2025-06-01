@@ -65,7 +65,7 @@ function createChatWindow() {
             contextIsolation: false,
         }
     });
-    chatWindow.loadURL('http://localhost:5173/chat-overlay'); // Используем роутинг для overlay
+    chatWindow.loadURL('http://localhost:5173/chat-overlay');
 }
 
 app.whenReady().then(() => {
@@ -87,7 +87,6 @@ app.whenReady().then(() => {
         });
     });
 
-    // Если нужны IPC хендлеры, регистрируем их прямо тут
     ipcMain.handle('auth:authorize', async () => {
         const result = await authService.authorizeIfNeeded();
         console.log("authorize result", result);
@@ -129,28 +128,13 @@ app.whenReady().then(() => {
 
     eventSubService.registerEventHandlers( (destination, parsedEvent) => {
         broadcast(destination, parsedEvent);
-        //withChatWindow(chatWindow, (window) => {
-        //    window.webContents.send('event:follow', parsedEvent);
-        //});
     });
 
     chatService.registerMessageHandler((parsedMessage) => {
         broadcast('chat:message', parsedMessage);
-        //withChatWindow(chatWindow, (window) => {
-        //    window.webContents.send('chat:message', parsedMessage);
-        //});
     });
 
 });
-
-function withChatWindow(chatWindow, action) {
-    if (chatWindow && !chatWindow.isDestroyed()) {
-        action(chatWindow);
-    } else {
-        console.warn('⚠️ Overlay window is not available.');
-    }
-}
-
 
 function broadcast(channel, payload) {
     const message = JSON.stringify({ channel, payload });
@@ -163,6 +147,6 @@ function broadcast(channel, payload) {
 
 ipcMain.on('theme:update', (_e, theme) => {
     currentTheme = theme;
-    store.set('theme', theme);        // поживёт между рестартами
-    broadcast('theme:update', theme);            // пуш в WebSocket-мир
+    store.set('theme', theme);
+    broadcast('theme:update', theme);
 });
