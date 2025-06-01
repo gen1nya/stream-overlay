@@ -4,6 +4,7 @@ import SeekbarComponent from "./SeekbarComponent";
 
 const Container = styled.label`
     display: flex;
+    width: 100%;
     flex-direction: column;
     padding: 2px 4px;
     border-radius: 4px;
@@ -32,7 +33,7 @@ export default function ColorSelectorComponent(
             color: valueColor,
             o: valueOpacity
         });
-    }, [{valueColor, valueOpacity}, onChange]);
+    }, [/*{valueColor, valueOpacity},*/ onChange]);
 
     const handleChange = (newValues) => {
         setValues(newValues);

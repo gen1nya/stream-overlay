@@ -40,11 +40,21 @@ export const defaultTheme = {
         backgroundOpacity: 1.0,
 
         borderColor: '#00ffe3',
-        borderRadius: 6,
+        borderOpacity: 1.0,
+        borderRadius: {
+            topLeft: 0,
+            topRight: 0,
+            bottomLeft: 0,
+            bottomRight: 0,
+        },
 
         shadowColor: '#000',
         shadowOpacity: 0.5,
-        shadowRadius: 5,
+
+        diskShadowColor: '#000',
+        diskShadowOpacity: 0.5,
+
+        shadowRadius: 20,
 
         text: {
             textAlign: 'left',

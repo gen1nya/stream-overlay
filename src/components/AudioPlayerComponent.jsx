@@ -2,6 +2,7 @@ import React, {useEffect, useRef, useState} from "react";
 import styled, {createGlobalStyle, ThemeProvider} from "styled-components";
 import diskImg from "../assets/disk.png";
 import { defaultTheme } from '../theme';
+import {hexToRgba} from "../utils.js";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -24,10 +25,28 @@ const AudioPlayerContainer = styled.div`
     left: 20px;
     width: 270px;
     height: 330px;
-    background-color: rgba(93, 93, 93, 0.86);
-    border-radius: 10px;
+    background-color: ${({theme}) => {
+        const bgColor = theme.player?.backgroundColor || "#3e837c";
+        const bgOpacity = theme.player?.backgroundOpacity || 1.0;
+        return hexToRgba(bgColor, bgOpacity);
+    }};
+    border-radius: ${({theme}) => {
+        const borderRadius = theme.player?.borderRadius
+        console.log("borderRadius", borderRadius);
+        return borderRadius === "none" ? "0" : borderRadius.topLeft + "px " + borderRadius.topRight + "px " + borderRadius.bottomRight + "px " + borderRadius.bottomLeft + "px";
+    }};
+    border: 1px solid ${({theme}) => {
+        const borderColor = theme.player?.borderColor || "#3e837c";
+        const borderOpacity = theme.player?.borderOpacity || 1.0;
+        return hexToRgba(borderColor, borderOpacity);
+    }};
     padding: 10px;
-    box-shadow: 0 5px 20px rgba(136, 82, 243, 0.5);
+    box-shadow: ${({theme}) => {
+        const shadowColor = theme.player?.shadowColor || "#000";
+        const shadowOpacity = theme.player?.shadowOpacity || 0.5;
+        const shadowRadius = theme.player?.shadowRadius || 20;
+        return hexToRgba(shadowColor, shadowOpacity) + ` 0 0 ${shadowRadius}px`;
+    }};
 `;
 
 const DiskContainer = styled.div`
@@ -43,7 +62,13 @@ const Disk = styled.div`
     margin: 10px;
     background: url(${diskImg}) no-repeat center center / cover;
     transform-origin: 50% 50%;
-    filter: drop-shadow(0 0 10px rgba(136, 82, 243, 0.5));
+    filter: 
+        ${({theme}) => {
+            const shadowColor = theme.player?.diskShadowColor || "#000";
+            const shadowOpacity = theme.player?.diskShadowOpacity || 0.5;
+            const color = hexToRgba(shadowColor, shadowOpacity);
+            return `drop-shadow(${color} 0 0 7px)`;
+        }};
 `;
 
 const AlbumArt = styled.img`
@@ -58,13 +83,32 @@ const AlbumArt = styled.img`
 `;
 
 const Title = styled.div`
+    text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
     font-size: 16px;
     font-weight: bold;
+    width: 100%;
 `;
 
 const Artist = styled.div`
+    box-sizing: border-box;
+    text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
     font-size: 14px;
     color: #b8b8b8;
+    overflow: hidden;
+    min-width: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-left: ${({theme}) => {
+        const bottomLeftRadius = theme.player?.borderRadius?.bottomLeft || 0;
+        if (bottomLeftRadius <= 40) return '0px';
+        return Math.pow(bottomLeftRadius, 0.85) + 1;
+    }}px;
+    padding-right: ${({theme}) => {
+        const bottomRightRadius = theme.player?.borderRadius?.bottomRight || 0;
+        if (bottomRightRadius <= 40) return '0px';
+        return Math.pow(bottomRightRadius, 0.85) + 1;
+    }}px;
+    width: 100%;
 `;
 
 const Deck = styled.div`

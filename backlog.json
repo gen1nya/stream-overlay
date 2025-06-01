@@ -31,6 +31,11 @@
       "type": "task",
       "status": "todo",
       "title": "менеджер кеша для сообщений в чате"
+    },
+    {
+      "type": "task",
+      "status": "todo",
+      "title": "FFT для плеера"
     }
   ]
 }
