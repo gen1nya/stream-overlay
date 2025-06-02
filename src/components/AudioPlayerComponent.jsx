@@ -1,8 +1,9 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
 import styled, {createGlobalStyle, ThemeProvider} from "styled-components";
 import diskImg from "../assets/disk.png";
 import { defaultTheme } from '../theme';
 import {hexToRgba} from "../utils.js";
+import Marquee from "react-fast-marquee";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -32,7 +33,6 @@ const AudioPlayerContainer = styled.div`
     }};
     border-radius: ${({theme}) => {
         const borderRadius = theme.player?.borderRadius
-        console.log("borderRadius", borderRadius);
         return borderRadius === "none" ? "0" : borderRadius.topLeft + "px " + borderRadius.topRight + "px " + borderRadius.bottomRight + "px " + borderRadius.bottomLeft + "px";
     }};
     border: 1px solid ${({theme}) => {
@@ -129,11 +129,36 @@ const ProgressPointer = styled.div`
     transition: left 0.25s linear;
 `;
 
+const FixedMarquee = styled(Marquee)`
+  .rfm-marquee {
+    ${({ $paused }) => {
+        $paused &&
+        `
+            transform: none !important;
+        `}    
+    }
+    justify-content: ${({ theme }) => {
+        const align = theme.player?.text?.textAlign || 'left';
+        switch (align) {
+            case 'center': return 'center !important;';
+            case 'right': return 'flex-end !important;';
+            case 'left': return 'flex-start !important;';
+            default: return 'flex-end !important;';
+        }
+    }};
+    
+  }
+`;
+
+const ArtistContainer = styled.span`
+`;
+
 export default function AudioPlayerComponent() {
     const [theme, setTheme] = useState(defaultTheme);
     const [metadata, setMetadata] = useState(null);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(1);
+    const [shouldArtistScroll, setShouldArtistScroll] = useState(false);
 
     const timerRef = useRef(null);
     const diskRef = useRef(null);
@@ -142,6 +167,25 @@ export default function AudioPlayerComponent() {
     const artAnim = useRef(null);
     const rampInterval = useRef(null);
     const lastStatus = useRef(null);
+
+    const marqueeWrapperRef = useRef(null);
+
+    useLayoutEffect(() => {
+        const container = marqueeWrapperRef.current;
+        if (!container) return;
+
+        const realContent = container.querySelector(".rfm-initial-child-container");
+        if (!realContent) return;
+
+        const rawClientWidth = container.clientWidth;
+        const styles = getComputedStyle(container);
+        const paddingLeft = parseFloat(styles.paddingLeft || "0");
+        const paddingRight = parseFloat(styles.paddingRight || "0");
+        const contentWidth = rawClientWidth - paddingLeft - paddingRight;
+        const textWidth = realContent.scrollWidth;
+        console .log(`Container width: ${contentWidth}, Text width: ${textWidth}`);
+        setShouldArtistScroll(textWidth > contentWidth);
+    }, [metadata]);
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:5001/ws');
@@ -273,7 +317,15 @@ export default function AudioPlayerComponent() {
 
                 <div>
                     <Title>{metadata ? metadata.title : ""}</Title>
-                    <Artist>{metadata ? metadata.artist : ""}</Artist>
+                    <Artist ref={marqueeWrapperRef}>
+                        <FixedMarquee
+                            pauseOnHover={true}
+                            play={shouldArtistScroll}
+                            key={metadata?.artist}
+                        >
+                            <ArtistContainer>{metadata ? metadata.artist : ""}</ArtistContainer>
+                        </FixedMarquee>
+                    </Artist>
                 </div>
 
                 <Deck>
