@@ -3,6 +3,7 @@ const authService = require('./services/authService');
 const eventSubService = require('./services/eventSubService');
 const chatService = require('./services/chatService');
 const messageParser = require('./services/messageParser');
+const messageCache = require('./services/MessageCacheManager');
 const Store     = require('electron-store');
 const defaultTheme = require('./default-theme.json')
 
@@ -31,7 +32,7 @@ function createPreviewWindow() {
             contextIsolation: false
         },
     });
-
+// https://www.ietf.org/rfc/rfc2898.txt
     previewWindow.loadURL('http://localhost:5173/preview');
 }
 
@@ -126,12 +127,18 @@ app.whenReady().then(() => {
        createPreviewWindow();
     });
 
-    eventSubService.registerEventHandlers( (destination, parsedEvent) => {
+    eventSubService.registerEventHandlers((destination, parsedEvent) => {
         broadcast(destination, parsedEvent);
     });
 
     chatService.registerMessageHandler((parsedMessage) => {
         broadcast('chat:message', parsedMessage);
+        messageCache.addMessage(parsedMessage);
+    });
+
+    messageCache.registerMessageHandler((messages) => {
+        console.log('📨 Отправка кэша сообщений в WebSocket:', JSON.stringify(messages));
+        broadcast('chat:messages', Array.from(messages.values()));
     });
 
 });

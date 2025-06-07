@@ -133,6 +133,7 @@ function parseIrcMessage(rawLine) {
         }
     }
 
+    const id = tags['id'] || null;
     const username = tags['display-name'] || extractUsername(rawLine) || 'unknown';
     const color = tags['color'] || '#FFFFFF';
     const emotes = tags['emotes'] || '';
@@ -144,7 +145,8 @@ function parseIrcMessage(rawLine) {
         color,
         rawMessage: messageContent,
         htmlBadges: parseBadges(badgesTag),
-        htmlMessage: parseEmotes(messageContent, emotes)
+        htmlMessage: parseEmotes(messageContent, emotes),
+        id: id
     };
 }
 

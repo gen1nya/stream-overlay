@@ -87,13 +87,14 @@ const Title = styled.div`
     font-size: 16px;
     font-weight: bold;
     width: 100%;
+    color: #ffffff;
 `;
 
 const Artist = styled.div`
     box-sizing: border-box;
     text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
     font-size: 14px;
-    color: #b8b8b8;
+    color: #dcdcdc;
     overflow: hidden;
     min-width: 0;
     white-space: nowrap;
