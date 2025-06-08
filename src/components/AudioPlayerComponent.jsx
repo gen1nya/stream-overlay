@@ -83,18 +83,19 @@ const AlbumArt = styled.img`
 `;
 
 const Title = styled.div`
-    text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
-    font-size: 16px;
-    font-weight: bold;
     width: 100%;
-    color: #ffffff;
+    text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
+    font-weight: ${({theme}) => theme.player?.text?.title?.fontWeight || 'bold'};
+    font-size: ${({theme}) => theme.player?.text?.title?.fontSize || '14'}px;
+    color: ${({theme}) => theme.player?.text?.title?.color || '#ffffff'};;
 `;
 
 const Artist = styled.div`
     box-sizing: border-box;
+    font-weight: ${({theme}) => theme.player?.text?.artist?.fontWeight || 'bold'};
     text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
-    font-size: 14px;
-    color: #dcdcdc;
+    font-size: ${({theme}) => theme.player?.text?.artist?.fontSize || '14'}px;
+    color: ${({theme}) => theme.player?.text?.artist?.color || '#ffffff'};
     overflow: hidden;
     min-width: 0;
     white-space: nowrap;

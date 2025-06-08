@@ -9,13 +9,13 @@ const defaultTheme = require('./default-theme.json')
 
 const store = new Store({
     defaults: {
-        theme: defaultTheme
+        themes: { default: defaultTheme }
     }
 });
 
 const WebSocket = require('ws');
 
-let currentTheme = store.get('theme') || require('./default-theme.json');
+let currentTheme = store.get('themes')["default"] || require('./default-theme.json');
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -32,7 +32,7 @@ function createPreviewWindow() {
             contextIsolation: false
         },
     });
-// https://www.ietf.org/rfc/rfc2898.txt
+
     previewWindow.loadURL('http://localhost:5173/preview');
 }
 
@@ -78,6 +78,11 @@ app.whenReady().then(() => {
             console.log('Получено сообщение от клиента:', message.toString());
             const { channel, payload } = JSON.parse(message.toString());
             switch (channel) {
+                case 'theme:get-all':
+                    const themes = store.get('themes');
+                    console.log('Запрошены все темы, отправляем:', themes);
+                    broadcast('themes:get', themes);
+                    break;
                 case 'theme:get':
                     console.log('Запрошена тема, отправляем текущую:', currentTheme);
                     broadcast('theme:update', currentTheme);
@@ -154,6 +159,8 @@ function broadcast(channel, payload) {
 
 ipcMain.on('theme:update', (_e, theme) => {
     currentTheme = theme;
-    store.set('theme', theme);
+    const themes = store.get('themes');
+    themes['default'] = theme;
+    store.set('themes', themes);
     broadcast('theme:update', theme);
 });

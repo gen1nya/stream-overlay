@@ -5,6 +5,7 @@ import ColorSelectorComponent from "../ColorSelectorComponent";
 import {Row} from "../SettingsComponent";
 import SeekbarComponent from "../SeekbarComponent";
 import RadioGroupComponent from "../RadioGroupComponent";
+import NumericEditorComponent from "../NumericEditorComponent";
 
 
 const SettingsBlock = styled.div`
@@ -203,7 +204,93 @@ export default function PlayerSettingsComponent({ current, onChange }) {
                             },
                         }))
                     }
-                ></RadioGroupComponent>
+                />
+                <Row align="center" gap="0.5rem">
+                    <ColorSelectorComponent
+                        title="Цвет текста (Исп):"
+                        valueOpacity={1.0}
+                        valueColor={current.player?.text?.artist?.color ?? "#ffffff"}
+                        onChange={ values =>
+                            handleChange(prev => ({
+                                ...prev,
+                                player: {
+                                    ...prev.player,
+                                    text: {
+                                        ...prev.player.text,
+                                        artist: {
+                                            ...prev.player.text.artist,
+                                            color: values.color,
+                                        },
+                                    },
+                                },
+                            }))
+                        }
+                    />
+                    <NumericEditorComponent
+                        title={"Размер текста (Исп):"}
+                        value={current.player?.text?.artist?.fontSize ?? 16}
+                        max={24}
+                        min={9}
+                        onChange={ value => {
+                            handleChange(prev => ({
+                                ...prev,
+                                player: {
+                                    ...prev.player,
+                                    text: {
+                                        ...prev.player.text,
+                                        artist: {
+                                            ...prev.player.text.artist,
+                                            fontSize: value,
+                                        },
+                                    },
+                                },
+                            }));
+                        } }
+                    />
+                </Row>
+                <Row align="center" gap="0.5rem">
+                    <ColorSelectorComponent
+                        title="Цвет текста (Трек):"
+                        valueOpacity={1.0}
+                        valueColor={current.player?.text?.title?.color ?? "#ffffff"}
+                        onChange={ values =>
+                            handleChange(prev => ({
+                                ...prev,
+                                player: {
+                                    ...prev.player,
+                                    text: {
+                                        ...prev.player.text,
+                                        title: {
+                                            ...prev.player.text.title,
+                                            color: values.color,
+                                        },
+                                    },
+                                },
+                            }))
+                        }
+                    />
+                    <NumericEditorComponent
+                        title={"Размер текста (Исп):"}
+                        value={current.player?.text?.title?.fontSize ?? 16}
+                        max={24}
+                        min={9}
+                        onChange={ value => {
+                            handleChange(prev => ({
+                                ...prev,
+                                player: {
+                                    ...prev.player,
+                                    text: {
+                                        ...prev.player.text,
+                                        title: {
+                                            ...prev.player.text.title,
+                                            fontSize: value,
+                                        },
+                                    },
+                                },
+                            }));
+                        } }
+                    />
+                </Row>
             </Accordion>
         </SettingsBlock>
     );

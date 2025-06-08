@@ -2,8 +2,8 @@ const messageCache = new Map();
 const timers = new Map();
 
 let messageHandler = null;
-const TTL = 10 * 1000;
-const MAX_CACHE_SIZE = 4;
+const TTL = 60 * 1000;
+const MAX_CACHE_SIZE = 6;
 
 export function registerMessageHandler(handler) {
     messageHandler = handler;

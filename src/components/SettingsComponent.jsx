@@ -1,11 +1,12 @@
 // Settings.js
-import React from 'react';
+import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import {openPreview, setRemoteTheme} from '../services/api';
 import MessageSettingsBlock from "./app/MessageSettingsBlock";
 import FollowSettingsBlock from "./app/FollowSettingsBlock";
 import PlayerSettingsComponent from "./app/PlayerSettingsComponent";
+import Popup from "./utils/PopupComponent";
 
 
 const Panel = styled.div`
@@ -55,6 +56,27 @@ export const Row = styled.div`
 export default function Settings({ current, onChange }) {
     const navigate = useNavigate();
 
+    const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
+    const [themeList, setThemeList] = React.useState({});
+
+    useEffect(() => {
+        const ws = new WebSocket('ws://localhost:42001');
+        ws.onopen = () => {
+            console.log('🟢 WebSocket подключен');
+            ws.send(JSON.stringify({ channel: 'theme:get-all' }));
+        };
+        ws.onmessage = (event) => {
+            const { channel, payload } = JSON.parse(event.data);
+            switch (channel) {
+                case "themes:get":
+                    console.log('Получены темы', payload);
+                    break;
+                default:
+                    console.log('unknown channel', channel, payload);
+            }
+        };
+    }, [])
+
     /** Единая «точка входа» для всех изменений темы */
     const apply = updaterOrTheme => {
         // 1) локально меняем тему (главное окно)
@@ -74,12 +96,23 @@ export default function Settings({ current, onChange }) {
     const handlePreviewButton = async () => {
         await openPreview()
     };
+    const handleThemesButton = () => {
+        setIsThemeSelectorOpen(true)
+
+    };
 
     return (
         <Panel>
+            {isThemeSelectorOpen && (
+                <Popup>
+                    <h2>Попап</h2>
+                    <button onClick={() => setIsThemeSelectorOpen(false)}>Закрыть</button>
+                </Popup>
+            )}
             <Toolbar>
                 <button onClick={handleBackButton}>Назад</button>
                 <button onClick={handlePreviewButton}>Превью</button>
+                <button onClick={handleThemesButton}>Темы</button>
             </Toolbar>
 
 
