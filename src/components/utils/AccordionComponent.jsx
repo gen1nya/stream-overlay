@@ -2,8 +2,8 @@ import React, { useState, useRef } from "react";
 import styled from "styled-components";
 
 const AccordionWrapper = styled.div`
-  border: 1px solid #ccc;
-  border-radius: 8px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
 `;
 
 const AccordionHeader = styled.button`

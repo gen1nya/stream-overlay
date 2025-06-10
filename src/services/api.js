@@ -11,6 +11,14 @@ if (typeof window !== 'undefined' && window.require) {
     console.warn('📢 window.require не определён. Работает обычный браузер.');
 }
 
+export const createNewTheme = (newThemeName) => {
+    return ipcRenderer?.invoke('theme:create', newThemeName);
+}
+
+export const setTheme = (themeName) => {
+    return ipcRenderer?.invoke('theme:set', themeName);
+}
+
 export const openPreview = () => {
     return ipcRenderer?.invoke('setting:open-preview');
 };

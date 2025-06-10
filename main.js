@@ -9,13 +9,19 @@ const defaultTheme = require('./default-theme.json')
 
 const store = new Store({
     defaults: {
-        themes: { default: defaultTheme }
+        themes: {
+            default: defaultTheme,
+            theme1: defaultTheme,
+
+        },
+        currentTheme: "default"
     }
 });
 
 const WebSocket = require('ws');
 
-let currentTheme = store.get('themes')["default"] || require('./default-theme.json');
+let currentThemeName = store.get('currentTheme') || "default";
+let currentTheme = store.get('themes')[currentThemeName] || require('./default-theme.json');
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -131,6 +137,25 @@ app.whenReady().then(() => {
     ipcMain.handle('setting:open-preview', () => {
        createPreviewWindow();
     });
+
+    ipcMain.handle('theme:create', async (event, newThemeName) => {
+        const themes = store.get('themes');
+        themes[newThemeName] = defaultTheme;
+        store.set('themes', themes);
+        broadcast('themes:get', themes);
+    })
+
+    ipcMain.handle('theme:set', async (event, themeName) => {
+        const themes = store.get('themes');
+        if (themes[themeName]) {
+            currentThemeName = themeName;
+            currentTheme = themes[themeName];
+            store.set('currentTheme', themeName);
+            broadcast('theme:update', currentTheme);
+        } else {
+            console.error(`Тема "${themeName}" не найдена.`);
+        }
+    })
 
     eventSubService.registerEventHandlers((destination, parsedEvent) => {
         broadcast(destination, parsedEvent);

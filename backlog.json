@@ -16,6 +16,11 @@
       "title": "Стили для сообщений follow и subscribe"
     },
     {
+      "type": "task",
+      "status": "todo",
+      "title": "Добавить eventSub в менеджер кеша"
+    },
+    {
       "priority": "high",
       "type": "epic",
       "status": "todo",
