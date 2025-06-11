@@ -6,6 +6,10 @@ const messageParser = require('./services/messageParser');
 const messageCache = require('./services/MessageCacheManager');
 const Store     = require('electron-store');
 const defaultTheme = require('./default-theme.json')
+const path = require('path');
+const express = require('express');
+
+let PORT = 5173;
 
 const store = new Store({
     defaults: {
@@ -29,6 +33,26 @@ let mainWindow = null;
 let chatWindow = null;
 let previewWindow = null;
 
+
+function startHttpServer() {
+    const appServer = express();
+    const distPath = path.join(__dirname, 'dist');
+
+    appServer.use(express.static(distPath));
+    appServer.get("/", (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+    appServer.use((req, res, next) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+
+    //PORT = 3333;
+    // TODO add custom port for prod builds
+    appServer.listen(PORT, () => {
+        console.log(`🌐 HTTP сервер запущен на http://localhost:${PORT}`);
+    });
+}
+
 function createPreviewWindow() {
     previewWindow = new BrowserWindow({
         width: 450,
@@ -42,7 +66,7 @@ function createPreviewWindow() {
     previewWindow.loadURL('http://localhost:5173/preview');
 }
 
-function createWindow() {
+function createWindow(port) {
     mainWindow = new BrowserWindow({
         width: 1200,
         height: 800,
@@ -77,7 +101,13 @@ function createChatWindow() {
 
 app.whenReady().then(() => {
     console.log('🚀 Electron App is ready.');
-    createWindow();
+    const isDev = !app.isPackaged;
+
+    if (!isDev) {
+        startHttpServer();
+    }
+
+    createWindow(isDev ? 5173 : PORT);
 
     wss.on('connection', (ws) => {
         ws.on('message', (message) => {
@@ -189,4 +219,18 @@ ipcMain.on('theme:update', (_e, theme, name) => {
     themes[name] = theme;
     store.set('themes', themes);
     broadcast('theme:update', theme);
+});
+
+process.on('uncaughtException', (error) => {
+    console.error('Uncaught Exception:', error);
+    app.exit(1);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection:', reason);
+    app.exit(1);
+});
+
+app.on('window-all-closed', () => {
+    app.quit();
 });

@@ -1,5 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import {Routes, Route, BrowserRouter} from 'react-router-dom';
 import AuthScreen from './components/AuthScreen';
 import Dashboard from './components/Dashboard';
 import ChatOverlay from "./components/ChatOverlay";
@@ -12,17 +12,17 @@ import AudioPlayerComponent from "./components/AudioPlayerComponent";
 
 export default function App() {
     return (
-        <Router>
+        <BrowserRouter>
             <Routes>
-                <Route path="/audio" element={<AudioPlayerComponent />} />
+                <Route path="/audio" element={<AudioPlayerComponent/>} />
                 <Route path="/preview" element={<PreviewComponent/>}/>
                 <Route path="/loading" element={<LoadingComponent/>} />
                 <Route path="/settings" element={<Settings/>} />
-                <Route path="/chat-overlay" element={<ChatOverlay />} />
-                <Route path="/dashboard" element={<Dashboard onLogout={ () => {} } />} />
-                <Route path="/auth" element={<AuthScreen  onAuthorized={ () => {} } />} />
+                <Route path="/chat-overlay" element={<ChatOverlay/>} />
+                <Route path="/dashboard" element={<Dashboard/>} />
+                <Route path="/auth" element={<AuthScreen/>} />
                 <Route path="*" element={ <WrongPageComponent/> }/>
             </Routes>
-        </Router>
+        </BrowserRouter>
     );
 }

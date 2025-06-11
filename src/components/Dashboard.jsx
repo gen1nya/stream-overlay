@@ -3,10 +3,13 @@ import { logout, openOverlay } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 
 
-export default function Dashboard({ onLogout }) {
+export default function Dashboard() {
+    const navigate = useNavigate();
+    const called = useRef(false);
+
     const handleLogout = async () => {
         await logout();
-        onLogout();
+        navigate('/auth', { replace: true });
     };
 
     const handleOpenOverlay = () => {
@@ -17,15 +20,10 @@ export default function Dashboard({ onLogout }) {
         navigate('/settings',{ replace: false })
     }
 
-    const navigate = useNavigate();
-
-    const called = useRef(false);
-
     useEffect(() => {
         if (!called.current) {
             called.current = true;
             console.log("Called only once, even in Strict Mode");
-            //onAccountReady();
         }
     }, []);
 

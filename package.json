@@ -1,7 +1,7 @@
 {
   "name": "twitch-watcher",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "main": "main.js",
   "scripts": {
     "lint": "eslint .",
@@ -15,15 +15,23 @@
   "build": {
     "appId": "com.twitch.watcher",
     "files": [
-      "dist",
-      "main.js"
+      "main.js",
+      "channels.js",
+      "default-theme.json",
+      "services/**/*",
+      "dist/**/*",
+      "node_modules/**/*"
     ],
+    "asar": true,
+    "npmRebuild": false,
     "directories": {
       "buildResources": "assets"
     }
   },
   "dependencies": {
+    "axios": "^1.9.0",
     "electron-store": "^8.2.0",
+    "express": "^5.1.0",
     "framer-motion": "^12.15.0",
     "keytar": "^7.9.0",
     "react": "^19.1.0",

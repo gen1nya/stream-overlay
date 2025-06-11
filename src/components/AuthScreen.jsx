@@ -1,10 +1,15 @@
 import React from 'react';
-import { authorize } from '../services/api';
+import {authorize, onAccountReady} from '../services/api';
+import {useNavigate} from "react-router-dom";
 
-export default function AuthScreen({ onAuthorized }) {
+export default function AuthScreen() {
+    const navigate = useNavigate();
     const handleAuth = async () => {
         const success = await authorize();
-        if (success) onAuthorized();
+        if (success) {
+            navigate('/dashboard', { replace: true });
+            onAccountReady()
+        }
     };
 
     return (
