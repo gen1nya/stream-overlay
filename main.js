@@ -183,10 +183,10 @@ function broadcast(channel, payload) {
     });
 }
 
-ipcMain.on('theme:update', (_e, theme) => {
+ipcMain.on('theme:update', (_e, theme, name) => {
     currentTheme = theme;
     const themes = store.get('themes');
-    themes['default'] = theme;
+    themes[name] = theme;
     store.set('themes', themes);
     broadcast('theme:update', theme);
 });

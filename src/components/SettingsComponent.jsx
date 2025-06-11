@@ -159,7 +159,8 @@ export default function Settings() {
                 ? updaterOrTheme(selectedTheme) // превращаем updater-функцию в объект
                 : updaterOrTheme;
         console.log("Применение темы:", nextTheme);
-        setRemoteTheme(nextTheme);
+        setSelectedTheme(nextTheme);
+        setRemoteTheme(nextTheme, selectedThemeName);
     };
 
     const handleBackButton = () => navigate(-1);
