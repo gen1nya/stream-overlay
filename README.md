@@ -1,12 +1,12 @@
-# React + Vite
+# Stream Overlay
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This project is an Electron application that displays a Twitch overlay built with React. The UI is served through Vite and communicates with the Electron main process to show chat messages, follows and other events during a stream.
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- `npm run dev` – start the Vite development server and automatically launch Electron.
+- `npm run build` – build the React frontend for production. The output is placed in `dist/`.
+- `npm run start-electron` – run the Electron process if the development server is already running.
+- `npm run build-electron` – package the application with `electron-builder`.
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Running `npm run dev` spins up the dev server on port 5173 and opens the Electron windows pointed at that server. Use `npm run build` followed by `npm run build-electron` to create distributable builds.
