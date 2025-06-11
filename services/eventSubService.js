@@ -11,19 +11,19 @@ const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
 
 let ws = null;
 let eventHandler = null;
+let isStopping = false;
 
 function registerEventHandlers(handler) {
     eventHandler = handler;
 }
 
 async function start() {
+    isStopping = false;
     const tokens = await authService.getTokens();
     if (!tokens) {
         console.error('❌ No tokens found. Cannot start EventSub.');
         return;
     }
-
-    const accessToken = tokens.access_token;
 
     ws = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
 
@@ -74,7 +74,7 @@ async function start() {
         if (metadata.message_type === 'session_welcome') {
             const sessionId = payload.session.id;
             console.log('📡 Session started, ID:', sessionId);
-            await subscribeToEvents(sessionId, accessToken);
+            await subscribeToEvents(sessionId);
         }
 
         if (metadata.message_type === 'notification') {
@@ -95,9 +95,16 @@ async function start() {
     ws.on('error', (err) => console.error('❌ WebSocket Error:', err));
 }
 
-async function subscribeToEvents(sessionId, accessToken) {
+async function subscribeToEvents(sessionId) {
     const tokens = await authService.getTokens();
     const broadcasterId = tokens ? tokens.user_id : null;
+    const accessToken = tokens ? tokens.access_token : null;
+
+    if (!accessToken || !broadcasterId) {
+        console.error('❌ Tokens unavailable. Stopping EventSub.');
+        stop();
+        return;
+    }
 
     if (!broadcasterId) {
         console.log(tokens);
@@ -158,6 +165,18 @@ async function subscribeToEvents(sessionId, accessToken) {
 
             console.log(`✅ Subscribed to ${type}`);
         } catch (error) {
+            const status = error.response?.status;
+            if (status === 401 && !isStopping) {
+                console.warn('⚠️ EventSub unauthorized, attempting token refresh...');
+                const refreshed = await authService.getTokens();
+                if (!refreshed) {
+                    console.error('❌ Token refresh failed. Stopping EventSub.');
+                    stop();
+                    return;
+                }
+                await subscribeToEvents(sessionId); // retry with new token
+                return;
+            }
             console.error(`❌ Failed to subscribe to ${type}:`, error.response?.data || error.message);
         }
     }
@@ -170,43 +189,7 @@ function stop() {
         ws = null;
         console.log('🛑 EventSub WebSocket closed.');
     }
+    isStopping = true;
 }
 
 module.exports = { start, stop, registerEventHandlers };
-
-/*
-[start-electron] message received:  {
-    [start-electron]   metadata: {
-        [start-electron]     message_id: 'Jq2pRDA2h3dyNfVuHlxDxQf26ebyirQ2FYKXu2gdAgA=',
-            [start-electron]     message_type: 'notification',
-            [start-electron]     message_timestamp: '2025-05-18T21:58:39.060118274Z',
-            [start-electron]     subscription_type: 'channel.channel_points_custom_reward_redemption.add',
-            [start-electron]     subscription_version: '1'
-            [start-electron]   },
-    [start-electron]   payload: {
-        [start-electron]     subscription: {
-            [start-electron]       id: '4fa0e2cb-82e5-4c32-95ad-45a83eba228c',
-            [start-electron]       status: 'enabled',
-            [start-electron]       type: 'channel.channel_points_custom_reward_redemption.add',
-            [start-electron]       version: '1',
-            [start-electron]       condition: [Object],
-            [start-electron]       transport: [Object],
-            [start-electron]       created_at: '2025-05-18T21:58:26.929784363Z',
-            [start-electron]       cost: 0
-            [start-electron]     },
-        [start-electron]     event: {
-            [start-electron]       broadcaster_user_id: '1015100674',
-            [start-electron]       broadcaster_user_login: 'ellis_leaf',
-            [start-electron]       broadcaster_user_name: 'Ellis_Leaf',
-            [start-electron]       id: '285bc4ea-d598-42ef-971b-b03eb78ff2be',
-            [start-electron]       user_id: '523886485',
-            [start-electron]       user_login: 'evgeniy13555',
-            [start-electron]       user_name: 'evgeniy13555',
-            [start-electron]       user_input: '',
-            [start-electron]       status: 'unfulfilled',
-            [start-electron]       redeemed_at: '2025-05-18T21:58:38.989974068Z',
-            [start-electron]       reward: [Object]
-            [start-electron]     }
-        [start-electron]   }
-    [start-electron] }
-*/

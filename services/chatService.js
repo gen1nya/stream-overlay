@@ -9,12 +9,36 @@ const PORT = 6667;
 
 let client = null;
 let messageHandler = null;
+let isStopping = false;
 
 function registerMessageHandler(handler) {
     messageHandler = handler;
 }
 
 async function startChat() {
+    isStopping = false;
+    await connect();
+}
+
+async function handleAuthFailure() {
+    const tokens = await authService.getTokens();
+    if (!tokens) {
+        console.error('❌ Token refresh failed or user logged out. Stopping IRC.');
+        stopChat();
+        return;
+    }
+    console.log('🔄 Reconnecting to IRC with refreshed token...');
+    if (client) {
+        client.removeAllListeners();
+        client.destroy();
+        client = null;
+    }
+    if (!isStopping) {
+        await connect();
+    }
+}
+
+async function connect() {
     const tokens = await authService.getTokens();
     if (!tokens) {
         console.error('❌ No tokens found. Cannot connect to IRC.');
@@ -48,6 +72,12 @@ async function startChat() {
                 return;
             }
 
+            if (/authentication failed/i.test(message)) {
+                console.warn('⚠️ IRC authentication failed.');
+                handleAuthFailure();
+                return;
+            }
+
             const parsed = messageParser.parseIrcMessage(message);
 
             if (parsed) {
@@ -77,6 +107,7 @@ function stopChat() {
         client = null;
         console.log('🛑 IRC Connection terminated.');
     }
+    isStopping = true;
 }
 
 module.exports = {
