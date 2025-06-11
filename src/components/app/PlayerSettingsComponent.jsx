@@ -11,10 +11,11 @@ import NumericEditorComponent from "../NumericEditorComponent";
 const SettingsBlock = styled.div`
     margin-top: 20px;
     padding: 0 12px;
-    width: 48%;
+    width: 50%;
     flex-direction: column;
     display: flex;
     gap: 12px;
+    box-sizing: border-box;
 `
 
 export default function PlayerSettingsComponent({ current, onChange }) {

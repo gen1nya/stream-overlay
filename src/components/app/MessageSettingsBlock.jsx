@@ -9,10 +9,11 @@ import {Row} from "../SettingsComponent";
 
 const SettingsBlock = styled.div`
     padding: 0 12px;
-    width: 48%;
+    width: 50%;
     flex-direction: column;
     display: flex;
     gap: 12px;
+    box-sizing: border-box;
 `
 
 export default function MessageSettingsBlock({ current, onChange }) {

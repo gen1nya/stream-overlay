@@ -14,7 +14,6 @@ const Overlay = styled.div`
 
 const PopupContainer = styled.div`
     background: #2e2e2e;
-    padding: 2rem;
     border-radius: 12px;
     min-width: 300px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);

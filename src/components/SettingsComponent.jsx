@@ -7,6 +7,7 @@ import MessageSettingsBlock from "./app/MessageSettingsBlock";
 import FollowSettingsBlock from "./app/FollowSettingsBlock";
 import PlayerSettingsComponent from "./app/PlayerSettingsComponent";
 import Popup from "./utils/PopupComponent";
+import { defaultTheme } from '../theme';
 
 
 const Panel = styled.div`
@@ -31,9 +32,12 @@ const Toolbar = styled.div`
 
 const Content = styled.div`
     display: flex;
+    height: 100%;
+    align-content: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: space-between;
+    overflow-y: scroll;
 `;
 
 const ThemeName = styled.div`
@@ -43,6 +47,7 @@ const ThemeName = styled.div`
     background: #252525;
     color: #d6d6d6;
     padding: 8px;
+    border: ${({ selected }) => (selected ? '1px solid #00ff00' : '1px solid transparent')};
 `;
 
 const ThemeCreate = styled.div`
@@ -70,6 +75,14 @@ const NewThemeInput = styled.input`
     }
 `;
 
+const ThemesTitle = styled.h2`
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #d6d6d6;
+    margin: 0;
+    padding: 8px 0;
+`;
+
 const CreateThemeButton = styled.button`
     border: 1px solid transparent;
     height: auto;
@@ -93,23 +106,26 @@ const CreateThemeButton = styled.button`
 
 const PopupContent = styled.div`
     display: flex;
+    padding: 8px 16px 16px 16px;
     flex-direction: column;
-    gap: 12px;
+    gap: 8px;
 `;
 
 export const Row = styled.div`
-  display: flex;
-  flex-direction: row;
-  align-items: ${({ align = "center" }) => align};
-  justify-content: ${({ justify = "flex-start" }) => justify};
-  gap: ${({ gap = "0.5rem" }) => gap};
+    display: flex;
+    flex-direction: row;
+    align-items: ${({ align = "center" }) => align};
+    justify-content: ${({ justify = "flex-start" }) => justify};
+    gap: ${({ gap = "0.5rem" }) => gap};
 `;
 
-export default function Settings({ current, onChange }) {
+export default function Settings() {
     const navigate = useNavigate();
 
     const themeNameRef = React.useRef(null);
     const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
+    const [selectedTheme, setSelectedTheme] = React.useState( defaultTheme);
+    const [selectedThemeName, setSelectedThemeName] = React.useState("default");
     const [themeList, setThemeList] = React.useState({});
 
     useEffect(() => {
@@ -122,27 +138,27 @@ export default function Settings({ current, onChange }) {
             const { channel, payload } = JSON.parse(event.data);
             switch (channel) {
                 case "themes:get":
-                    setThemeList(payload);
-                    console.log('Получены темы', payload);
+                    const { themes, currentThemeName } = payload;
+                    console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
+                    setThemeList(themes);
+                    setSelectedThemeName(currentThemeName);
+                    setSelectedTheme(themes[currentThemeName] || defaultTheme);
                     break;
                 default:
                     console.log('unknown channel', channel, payload);
             }
         };
+        ws.onclose = () => console.log('🔴 WebSocket отключен');
+        return () => ws.close();
     }, []);
 
     /** Единая «точка входа» для всех изменений темы */
     const apply = updaterOrTheme => {
-        // 1) локально меняем тему (главное окно)
-        onChange(updaterOrTheme);
-
-        // 2) вычисляем «чистый» объект темы
         const nextTheme =
             typeof updaterOrTheme === 'function'
-                ? updaterOrTheme(current) // превращаем updater-функцию в объект
+                ? updaterOrTheme(selectedTheme) // превращаем updater-функцию в объект
                 : updaterOrTheme;
-
-        // 3) отправляем наружу (IPC / WS скрыт в setRemoteTheme)
+        console.log("Применение темы:", nextTheme);
         setRemoteTheme(nextTheme);
     };
 
@@ -173,9 +189,13 @@ export default function Settings({ current, onChange }) {
             {isThemeSelectorOpen && (
                 <Popup>
                     <PopupContent>
-                        <h2>Попап</h2>
+                        <ThemesTitle>Темы</ThemesTitle>
                         { Object.keys(themeList).map((key, i) => (
-                            <ThemeName key={key} onClick={ () => { handleThemeChange(key) } }>
+                            <ThemeName
+                                key={key}
+                                onClick={ () => { handleThemeChange(key) } }
+                                selected={key === selectedThemeName}
+                            >
                                 {key}
                             </ThemeName>
                         )) }
@@ -203,17 +223,17 @@ export default function Settings({ current, onChange }) {
             <Content>
 
                 <MessageSettingsBlock
-                    current={current}
+                    current={selectedTheme}
                     onChange={ updaterOrTheme => apply(updaterOrTheme) }
                 />
 
                 <FollowSettingsBlock
-                    current={current}
+                    current={selectedTheme}
                     onChange={ updaterOrTheme => apply(updaterOrTheme) }
                 />
 
                 <PlayerSettingsComponent
-                    current={current}
+                    current={selectedTheme}
                     onChange={ updaterOrTheme => apply(updaterOrTheme) }
                 />
 

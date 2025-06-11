@@ -87,7 +87,7 @@ app.whenReady().then(() => {
                 case 'theme:get-all':
                     const themes = store.get('themes');
                     console.log('Запрошены все темы, отправляем:', themes);
-                    broadcast('themes:get', themes);
+                    broadcast('themes:get', { themes, currentThemeName });
                     break;
                 case 'theme:get':
                     console.log('Запрошена тема, отправляем текущую:', currentTheme);
@@ -142,7 +142,7 @@ app.whenReady().then(() => {
         const themes = store.get('themes');
         themes[newThemeName] = defaultTheme;
         store.set('themes', themes);
-        broadcast('themes:get', themes);
+        broadcast('themes:get', { themes, currentThemeName });
     })
 
     ipcMain.handle('theme:set', async (event, themeName) => {
@@ -152,6 +152,7 @@ app.whenReady().then(() => {
             currentTheme = themes[themeName];
             store.set('currentTheme', themeName);
             broadcast('theme:update', currentTheme);
+            broadcast('themes:get', { themes, currentThemeName });
         } else {
             console.error(`Тема "${themeName}" не найдена.`);
         }
