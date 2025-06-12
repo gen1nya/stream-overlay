@@ -13,6 +13,15 @@ let ws = null;
 let eventHandler = null;
 let isStopping = false;
 
+// restart EventSub websocket when tokens are refreshed
+authService.onTokenRefreshed(() => {
+    if (!isStopping) {
+        console.log('🔄 Tokens refreshed, restarting EventSub connection...');
+        stop();
+        start();
+    }
+});
+
 function registerEventHandlers(handler) {
     eventHandler = handler;
 }

@@ -11,6 +11,14 @@ let client = null;
 let messageHandler = null;
 let isStopping = false;
 
+// reconnect when auth tokens are refreshed
+authService.onTokenRefreshed(() => {
+    if (client && !isStopping) {
+        console.log('🔄 Tokens refreshed, reconnecting IRC...');
+        handleAuthFailure();
+    }
+});
+
 function registerMessageHandler(handler) {
     messageHandler = handler;
 }
