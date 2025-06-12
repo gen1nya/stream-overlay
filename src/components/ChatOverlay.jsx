@@ -62,26 +62,13 @@ export default function ChatOverlay() {
             const { channel, payload } = JSON.parse(event.data);
             switch (channel) {
                 case 'chat:messages':
-                    // Берём последние 4 и помечаем их type: 'chat'
-                    const initial = payload.slice(-4).map(m => ({ ...m, type: 'chat' }));
+                    const initial = payload
+                        .slice(-4)
+                        .map(m => ({ ...m, type: m.type || 'chat' }));
                     setMessages(initial);
                     break;
                 case 'theme:update':
                     setTheme(payload);
-                    break;
-                case 'event:follow':
-                    setMessages(prev => {
-                        const next = [...prev, { ...payload, type: 'follow' }];
-                        if (next.length > 4) next.shift();
-                        return next;
-                    });
-                    break;
-                case 'event:redemption':
-                    setMessages(prev => {
-                        const next = [...prev, { ...payload, type: 'redemption' }];
-                        if (next.length > 4) next.shift();
-                        return next;
-                    });
                     break;
                 default:
                     console.log('unknown channel', channel, payload);

@@ -4,6 +4,7 @@ const eventSubService = require('./services/eventSubService');
 const chatService = require('./services/chatService');
 const messageParser = require('./services/messageParser');
 const messageCache = require('./services/MessageCacheManager');
+const { EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_CHANEL } = require('./channels.js');
 const Store     = require('electron-store');
 const defaultTheme = require('./default-theme.json')
 const path = require('path');
@@ -189,7 +190,22 @@ app.whenReady().then(() => {
     })
 
     eventSubService.registerEventHandlers((destination, parsedEvent) => {
-        broadcast(destination, parsedEvent);
+        if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
+            messageCache.addMessage({
+                id: `follow_${Date.now()}_${parsedEvent.userId}`,
+                type: 'follow',
+                ...parsedEvent
+            });
+        } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
+            const rewardId = parsedEvent.reward?.id || Date.now();
+            messageCache.addMessage({
+                id: `redemption_${Date.now()}_${parsedEvent.userId}_${rewardId}`,
+                type: 'redemption',
+                ...parsedEvent
+            });
+        } else {
+            broadcast(destination, parsedEvent);
+        }
     });
 
     chatService.registerMessageHandler((parsedMessage) => {

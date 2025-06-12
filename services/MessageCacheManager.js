@@ -1,5 +1,6 @@
 const messageCache = new Map();
 const timers = new Map();
+const { randomUUID } = require('crypto');
 
 let messageHandler = null;
 const TTL = 60 * 1000;
@@ -10,23 +11,26 @@ export function registerMessageHandler(handler) {
 }
 
 export function addMessage(message) {
-    if (!message || !message.id) {
+    if (!message || typeof message !== 'object') {
         console.error('❌ Invalid message format:', message);
         return;
     }
-    if (timers.has(message.id)) {
-        clearTimeout(timers.get(message.id));
+
+    const id = message.id || randomUUID();
+
+    if (timers.has(id)) {
+        clearTimeout(timers.get(id));
     }
 
-    messageCache.set(message.id, { ...message, timestamp: Date.now() });
+    messageCache.set(id, { ...message, id, timestamp: Date.now() });
 
     const timer = setTimeout(() => {
-        messageCache.delete(message.id);
-        timers.delete(message.id);
+        messageCache.delete(id);
+        timers.delete(id);
         sendCached();
     }, TTL);
 
-    timers.set(message.id, timer);
+    timers.set(id, timer);
 
     cleanupMessages();
     sendCached();
