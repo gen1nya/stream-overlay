@@ -3,6 +3,10 @@ const keytar = require('keytar');
 const axios = require('axios');
 const { shell, dialog } = require('electron');
 const { URLSearchParams } = require('url');
+const { EventEmitter } = require('events');
+
+// simple emitter to notify services when tokens are refreshed
+const authEmitter = new EventEmitter();
 
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
 const SCOPES = [
@@ -81,6 +85,7 @@ async function refreshToken(refresh_token) {
         console.warn('⚠️ Failed to fetch user info after token refresh:', err.response?.data || err.message);
     }
     await saveTokens(newTokens);
+    authEmitter.emit('tokenRefreshed', newTokens);
     return newTokens;
 }
 
@@ -137,6 +142,7 @@ async function pollForToken() {
             });
             const tokens = resp.data;
             await saveTokens(tokens);
+            authEmitter.emit('tokenRefreshed', tokens);
             await keytar.deletePassword(DEVICE_INFO_SERVICE, DEVICE_INFO_ACCOUNT);
             return tokens;
         } catch (err) {
@@ -185,5 +191,6 @@ module.exports = {
     getTokens,
     clearTokens,
     fetchUserInfo,
-    CLIENT_ID
+    CLIENT_ID,
+    onTokenRefreshed: (listener) => authEmitter.on('tokenRefreshed', listener)
 };
