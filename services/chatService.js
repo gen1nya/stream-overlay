@@ -10,6 +10,7 @@ const PORT = 6667;
 let client = null;
 let messageHandler = null;
 let isStopping = false;
+let isConnecting = false;
 
 // reconnect when auth tokens are refreshed
 authService.onTokenRefreshed(() => {
@@ -25,6 +26,14 @@ function registerMessageHandler(handler) {
 
 async function startChat() {
     isStopping = false;
+    if (client && !client.destroyed) {
+        console.log('ℹ️ IRC already connected.');
+        return;
+    }
+    if (isConnecting) {
+        console.log('⏳ IRC connection already in progress.');
+        return;
+    }
     await connect();
 }
 
@@ -47,9 +56,19 @@ async function handleAuthFailure() {
 }
 
 async function connect() {
+    if (client && !client.destroyed) {
+        console.log('ℹ️ IRC already connected.');
+        return;
+    }
+    if (isConnecting) {
+        console.log('⏳ IRC connection already in progress.');
+        return;
+    }
+    isConnecting = true;
     const tokens = await authService.getTokens();
     if (!tokens) {
         console.error('❌ No tokens found. Cannot connect to IRC.');
+        isConnecting = false;
         return;
     }
 
@@ -60,6 +79,7 @@ async function connect() {
     client = new net.Socket();
 
     client.connect(PORT, HOST, () => {
+        isConnecting = false;
         console.log('🟢 Connected to Twitch IRC');
         client.write(`CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n`);
         client.write(`PASS oauth:${accessToken}\r\n`);
@@ -101,10 +121,12 @@ async function connect() {
     });
 
     client.on('close', () => {
+        isConnecting = false;
         console.log('🔴 IRC Connection closed.');
     });
 
     client.on('error', (err) => {
+        isConnecting = false;
         console.error('❌ IRC Error:', err.message);
     });
 }
@@ -116,6 +138,7 @@ function stopChat() {
         console.log('🛑 IRC Connection terminated.');
     }
     isStopping = true;
+    isConnecting = false;
 }
 
 module.exports = {
