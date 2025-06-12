@@ -3,6 +3,7 @@ import styled, {createGlobalStyle, ThemeProvider} from "styled-components";
 import ChatMessage from "./ChatMessage";
 import ChatFollow from './ChatFollow';
 import {defaultTheme} from "../theme";
+import ChatRedemption from "./ChatRedemption";
 
 const MessagePreviewContainer = styled.div`
     padding: 4px;
@@ -58,10 +59,19 @@ export default function PreviewComponent() {
         userName: "Пользователь"
     };
 
+    const redemptionMessage = {
+        userName: "Пользователь",
+        reward: {
+            title: "Подарок",
+            cost: 100
+        }
+    }
+
     return <ThemeProvider theme={theme}>
         <MessagePreviewContainer>
             <ChatMessage message={message}/>
             <ChatMessage message={longMessage}/>
+            <ChatRedemption message={redemptionMessage}/>
             <ChatFollow message={followMessage}/>
         </MessagePreviewContainer>
 

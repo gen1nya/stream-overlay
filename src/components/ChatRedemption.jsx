@@ -1,23 +1,37 @@
 import React from 'react';
 import styled from 'styled-components';
+import {hexToRgba} from "../utils";
 
 const MessageContainer = styled.div`
-    margin-bottom: 10px;
-    padding: 2px 6px;
+    padding: ${({theme}) => {
+        return `${theme.redeemMessage.paddingV}px ${theme.redeemMessage.paddingH}px`;
+    }};
     display: flex;
-    align-items: center;
-    border-radius: 6px;
-    color: #feb7b7;
-    border: #ff2e2e solid 1px;
-    background: #822b2b;
-    box-shadow: rgba(114, 38, 38, 0.5) 0 0 15px;
+    width: auto;
+    margin: ${({theme}) => {
+        return `${theme.redeemMessage.marginV}px ${theme.redeemMessage.marginH}px`;
+    }};
+    border-radius: ${({theme}) => theme.redeemMessage.borderRadius}px;
+    align-items: flex-start;
+    flex-direction: ${({theme}) => theme.redeemMessage.direction};
+
+    border: 1px solid ${({theme}) => {
+        return hexToRgba(theme.redeemMessage.borderColor, theme.redeemMessage.borderOpacity);
+    }};
+    background: ${({theme}) => {
+        return hexToRgba(theme.redeemMessage.backgroundColor, theme.redeemMessage.backgroundOpacity);
+    }};
+    box-shadow: ${({theme}) => {
+        const {shadowColor, shadowOpacity, shadowRadius} = theme.redeemMessage;
+        return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
+    }};
     font-style: italic;
 `;
 
 export default function ChatRedemption({ message }) {
     return (
         <MessageContainer>
-            🎉 {message.userName} spend {message.reward.cost} to {message.reward.title}
+            🎉 {message.userName} потратил {message.reward.cost} опыта на {message.reward.title}
         </MessageContainer>
     );
 }

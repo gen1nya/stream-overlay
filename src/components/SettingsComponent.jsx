@@ -8,6 +8,7 @@ import FollowSettingsBlock from "./app/FollowSettingsBlock";
 import PlayerSettingsComponent from "./app/PlayerSettingsComponent";
 import Popup from "./utils/PopupComponent";
 import { defaultTheme } from '../theme';
+import RedeemPointsBlock from "./app/RedeemPointsBlock";
 
 
 const Panel = styled.div`
@@ -234,6 +235,11 @@ export default function Settings() {
                 />
 
                 <PlayerSettingsComponent
+                    current={selectedTheme}
+                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                />
+
+                <RedeemPointsBlock
                     current={selectedTheme}
                     onChange={ updaterOrTheme => apply(updaterOrTheme) }
                 />
