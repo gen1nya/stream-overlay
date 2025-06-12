@@ -6,11 +6,11 @@ let messageHandler = null;
 const TTL = 60 * 1000;
 const MAX_CACHE_SIZE = 6;
 
-export function registerMessageHandler(handler) {
+function registerMessageHandler(handler) {
     messageHandler = handler;
 }
 
-export function addMessage(message) {
+function addMessage(message) {
     if (!message || typeof message !== 'object') {
         console.error('❌ Invalid message format:', message);
         return;
@@ -63,4 +63,9 @@ function cleanupMessages() {
             timers.delete(oldestKey);
         }
     }
+}
+
+module.exports = {
+    addMessage,
+    registerMessageHandler
 }

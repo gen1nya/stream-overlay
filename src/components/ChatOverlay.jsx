@@ -5,8 +5,6 @@ import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
 import { defaultTheme } from '../theme';
 
-const showSystemEvents = false;
-
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
         margin: 0;
@@ -63,7 +61,6 @@ export default function ChatOverlay() {
             switch (channel) {
                 case 'chat:messages':
                     const initial = payload
-                        .slice(-4)
                         .map(m => ({ ...m, type: m.type || 'chat' }));
                     setMessages(initial);
                     break;
