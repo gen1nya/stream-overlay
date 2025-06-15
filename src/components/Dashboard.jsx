@@ -23,6 +23,7 @@ const Container = styled.div`
     display: flex;
     width: 100%;
     box-sizing: border-box;
+    padding-top: 36px;
     padding-left: 24px ;
     padding-right: 24px;
     flex-direction: column;
@@ -135,7 +136,6 @@ export default function Dashboard() {
             <GlobalStyle />
             <Wrapper>
                 <Container>
-                    <h2>👋 Вы авторизованы!</h2>
                     <Section>
                         <SectionTitle>Аккаунт</SectionTitle>
                         {account ? (
