@@ -4,8 +4,8 @@ import {Accordion} from "../utils/AccordionComponent";
 import NumericEditorComponent from "../NumericEditorComponent";
 import ColorSelectorComponent from "../ColorSelectorComponent";
 import SeekbarComponent from "../SeekbarComponent";
-import RadioGroupComponent from "../RadioGroupComponent";
 import {Row} from "../SettingsComponent";
+import Separator from "../Separator";
 
 const SettingsBlock = styled.div`
     width: calc(50% - 12px);
@@ -41,7 +41,7 @@ export default function RedeemPointsBlock({ current, onChange }) {
             <Accordion title = "Шрифт сообщений">
                 <NumericEditorComponent
                     title={"Шрифт сообщений:"}
-                    value={14} max={82} min={9} onChange={ value => {
+                    value={current.redeemMessage.fontSize} max={82} min={9} onChange={ value => {
                     handleChange(prev => ({
                         ...prev,
                         redeemMessage: {
@@ -51,119 +51,98 @@ export default function RedeemPointsBlock({ current, onChange }) {
                     }));
                 } } />
 
-                <NumericEditorComponent
-                    title={"Шрифт заголовка:"}
-                    value={14} max={82} min={9} onChange={ value => {
-                    handleChange(prev => ({
-                        ...prev,
-                        redeemMessage: {
-                            ...prev.redeemMessage,
-                            titleFontSize: value,
-                        },
-                    }));
-                } } />
             </Accordion>
 
             <Accordion title={"Цвета сообщений"}>
-                {/* цвет фона обычного сообщения */}
-                <ColorSelectorComponent
-                    title="Цвет фона обычного сообщения:"
-                    valueOpacity={current.redeemMessage?.backgroundOpacity ?? 1.0}
-                    valueColor={current.redeemMessage?.backgroundColor ?? "#3e837c"}
-                    onChange={ values =>
-                        handleChange(prev => ({
+                <Row>
+                    <ColorSelectorComponent
+                        title="Цвет фона:"
+                        valueOpacity={ current.redeemMessage?.backgroundOpacity ?? 1.0 }
+                        valueColor={ current.redeemMessage?.backgroundColor ?? "#3e837c" }
+                        onChange={ values =>
+                            handleChange(prev => ({
+                                ...prev,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
+                                    backgroundOpacity: values.o,
+                                    backgroundColor: values.color,
+                                },
+                            }))
+                        }
+                    />
+
+                    <ColorSelectorComponent
+                        title="Цвет обводки"
+                        valueOpacity={current.redeemMessage?.borderOpacity ?? 1.0}
+                        valueColor={current.redeemMessage?.borderColor ?? "#00ffe3"}
+                        onChange={value => handleChange(prev => ({
                             ...prev,
                             redeemMessage: {
                                 ...prev.redeemMessage,
-                                backgroundOpacity: values.o,
-                                backgroundColor: values.color,
+                                borderOpacity: value.o,
+                                borderColor: value.color,
                             },
-                        }))
-                    }
-                />
+                        }))}
+                    />
+                </Row>
 
-                {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
-                <ColorSelectorComponent
-                    title="Цвет обводки обычного сообщения:"
-                    valueOpacity={current.redeemMessage?.borderOpacity ?? 1.0}
-                    valueColor={current.redeemMessage?.borderColor ?? "#00ffe3"}
-                    onChange={value => handleChange(prev => ({
-                        ...prev,
-                        redeemMessage: {
-                            ...prev.redeemMessage,
-                            borderOpacity: value.o,
-                            borderColor: value.color,
-                        },
-                    }))}
-                />
+                <Row>
+                    <ColorSelectorComponent
+                        title="Цвет тени"
+                        valueOpacity={current.redeemMessage?.shadowOpacity ?? 0.5}
+                        valueColor={current.redeemMessage?.shadowColor ?? "#000"}
+                        onChange={value => handleChange(prev => ({
+                            ...prev,
+                            redeemMessage: {
+                                ...prev.redeemMessage,
+                                shadowOpacity: value.o,
+                                shadowColor: value.color,
+                            },
+                        }))}
+                    />
+                    <Separator/>
 
-                <ColorSelectorComponent
-                    title="Цвет тени &nbsp;«обычных»&nbsp;сообщений:"
-                    valueOpacity={current.redeemMessage?.shadowOpacity ?? 0.5}
-                    valueColor={current.redeemMessage?.shadowColor ?? "#000"}
-                    onChange={value => handleChange(prev => ({
-                        ...prev,
-                        redeemMessage: {
-                            ...prev.redeemMessage,
-                            shadowOpacity: value.o,
-                            shadowColor: value.color,
-                        },
-                    }))}
-                />
+                </Row>
+
+
             </Accordion>
 
             <Accordion title={"Параметры сообщений"}>
-                <SeekbarComponent
-                    title="Радиус тени &nbsp;«обычных»&nbsp;сообщений:"
-                    min="0"
-                    max="20"
-                    value={current.redeemMessage?.shadowRadius ?? 0}
-                    step="1"
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            redeemMessage: {
-                                ...prev.redeemMessage,
-                                shadowRadius: e,
-                            },
-                        }))
-                    }
-                />
+                <Row>
+                    <SeekbarComponent
+                        title="Радиус тени"
+                        min="0"
+                        max="20"
+                        value={current.redeemMessage?.shadowRadius ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
+                                    shadowRadius: e,
+                                },
+                            }))
+                        }
+                    />
 
-                <RadioGroupComponent
-                    title="Направление&nbsp;«обычных»&nbsp;сообщений:"
-                    options={[
-                        {value: "row", label: "По горизонтали"},
-                        {value: "column", label: "По вертикали"},
-                    ]}
-                    selected={current.redeemMessage?.direction ?? "column"}
-                    onChange={value =>
-                        handleChange(prev => ({
-                            ...prev,
-                            redeemMessage: {
-                                ...prev.redeemMessage,
-                                direction: value,
-                            },
-                        }))
-                    }
-                />
-
-                <SeekbarComponent
-                    title="Радиус скругления &nbsp;«обычных»&nbsp;сообщений:"
-                    min="0"
-                    max="20"
-                    value={current.redeemMessage?.borderRadius ?? 0}
-                    step="1"
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            redeemMessage: {
-                                ...prev.redeemMessage,
-                                borderRadius: e,
-                            },
-                        }))
-                    }
-                />
+                    <SeekbarComponent
+                        title="Радиус скругления:"
+                        min="0"
+                        max="20"
+                        value={current.redeemMessage?.borderRadius ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
+                                    borderRadius: e,
+                                },
+                            }))
+                        }
+                    />
+                </Row>
 
                 <span>Отступы снаружи:</span>
                 <Row align="center" gap="0.5rem">

@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 const Container = styled.label`
     display: flex;
+    width: 100%;
     flex-direction: column;
     padding: 2px 4px;
     border-radius: 4px;
@@ -10,7 +11,7 @@ const Container = styled.label`
 `
 
 const Seekbar = styled.input`
-    width: 100px;
+    width: calc(100% - 8px);
     height: 24px
 `
 
@@ -30,7 +31,9 @@ export default function SeekbarComponent(
             max= {max}
             step= {step}
             value= {value}
-            onChange={e => {onChange(e.target.value);}}
+            onChange={e => {
+                onChange(e.target.value);
+            }}
         />
 
     </Container>;

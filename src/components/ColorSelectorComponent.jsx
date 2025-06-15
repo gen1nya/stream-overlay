@@ -1,6 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
-import SeekbarComponent from "./SeekbarComponent";
+import ColorPicker from 'react-pick-color';
 
 const Container = styled.label`
     display: flex;
@@ -11,9 +11,15 @@ const Container = styled.label`
     background: #1e1e1e;
 `;
 
+const Seekbar = styled.input`
+    width: calc(100% - 8px);
+    height: 24px
+`
+
 const ColorBox = styled.input`
 
 `
+
 
 const Title = styled.div`
     font-size: 14px;
@@ -42,17 +48,31 @@ export default function ColorSelectorComponent(
 
     return <Container>
         <Title> {title} </Title>
+
+        {/*<ColorPicker
+            color={values.color}
+            onChange={ e => {
+                console.log(e.alpha)
+                handleChange({ ...values, color: e.hex, o: e.alpha });
+            } }
+        />*/}
         <ColorBox
             type="color"
             value={valueColor}
-            onChange={e => handleChange({ ...values, color: e.target.value })}
+            onChange={ e => {
+                console.log(e.target.value)
+                handleChange({ ...values, color: e.target.value })
+            } }
         />
-        <SeekbarComponent
+        <Seekbar
+            type="range"
             min={0}
             max={1}
             step={.01}
             value={valueOpacity}
-            onChange={o => handleChange({ ...values, o }) }
+            onChange={ event => {
+                handleChange({ ...values, o: event.target.value })
+            } }
         />
     </Container>;
 }

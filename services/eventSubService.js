@@ -104,7 +104,7 @@ async function start() {
         }
 
         if (metadata.message_type === 'session_keepalive') {
-            console.log('💓 Keep-alive received');
+            console.log(`💓 Keep-alive received ${Date.now()}`);
         }
 
         if (metadata.message_type === 'revocation') {
