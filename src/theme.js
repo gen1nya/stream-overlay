@@ -1,4 +1,29 @@
 export const defaultTheme = {
+    allMessages: {
+        lifetime: 60, // seconds
+        maxCount: 30,
+        textColor: '#ffffff',
+        textOpacity: 0,
+        blurRadius: 0,
+        textShadowColor: '#000000',
+        textShadowOpacity: 0.5,
+        textShadowRadius: 5,
+        textShadowXPosition: 0,
+        textShadowYPosition: 0,
+    },
+    overlay: {
+        paddingTop: 0,
+        paddingLeft: 0,
+        backgroundColor: null,
+        backgroundOpacity: 0.0,
+        backgroundImage: null,
+        backgroundImageAspectRatio: 1,
+        backgroundImageWidth: 1,
+        backgroundImageHeight: 1,
+        backgroundType: "none",
+        containerWidth: 500,
+        borderRadius: 0,
+    },
     chatMessage: {
         backgroundColor: '#3e837c', // #311e64
         borderColor: '#00ffe3',

@@ -37,7 +37,7 @@ export default function RedeemPointsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Настройки трат баллов канала</Title>
+            <Title>Сообщения наград за балы</Title>
             <Accordion title = "Шрифт сообщений">
                 <NumericEditorComponent
                     title={"Шрифт сообщений:"}

@@ -26,6 +26,25 @@ const MessageContainer = styled.div`
         return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
     font-style: italic;
+    color: ${props => props.color || '#fff'};
+    text-shadow: ${({theme}) => {
+        const {
+            textShadowColor,
+            textShadowOpacity,
+            textShadowRadius,
+            textShadowXPosition,
+            textShadowYPosition
+        } = theme.allMessages;
+        console.log(theme.allMessages);
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+    }};
+    backdrop-filter: ${({theme}) => {
+        if (theme.allMessages.blurRadius && theme.allMessages.blurRadius > 0) {
+            return `blur(${theme.allMessages.blurRadius}px)`;
+        } else {
+            return 'none';
+        }
+    }};
 `;
 
 export default function ChatRedemption({ message }) {

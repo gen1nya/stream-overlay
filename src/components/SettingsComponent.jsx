@@ -9,6 +9,8 @@ import PlayerSettingsComponent from "./app/PlayerSettingsComponent";
 import Popup from "./utils/PopupComponent";
 import { defaultTheme } from '../theme';
 import RedeemPointsBlock from "./app/RedeemPointsBlock";
+import OverlaySettingsComponent from "./app/OverlaySettingsComponent";
+import AllMessagesSettings from "./app/AllMessagesSettings";
 
 
 const Panel = styled.div`
@@ -223,6 +225,16 @@ export default function Settings() {
 
 
             <Content>
+
+                <OverlaySettingsComponent
+                    current={selectedTheme}
+                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                />
+
+                <AllMessagesSettings
+                    current={selectedTheme}
+                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                />
 
                 <MessageSettingsBlock
                     current={selectedTheme}

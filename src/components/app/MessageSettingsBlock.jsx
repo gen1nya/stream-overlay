@@ -37,7 +37,7 @@ export default function MessageSettingsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Настройки сообщений</Title>
+            <Title>Сообщения чатерсов</Title>
             <Accordion title = {"Шрифт сообщений"}>
                 <Row align="center" gap="0.5rem">
                     <NumericEditorComponent

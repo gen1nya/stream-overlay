@@ -25,6 +25,13 @@ const MessageContainer = styled.div`
         const {shadowColor, shadowOpacity, shadowRadius} = theme.chatMessage;
         return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
+    backdrop-filter: ${({theme}) => {
+        if (theme.allMessages.blurRadius && theme.allMessages.blurRadius > 0) {
+            return `blur(${theme.allMessages.blurRadius}px)`;
+        } else {
+            return 'none';
+        }
+    }};
 `;
 
 const TitleContainer = styled.div`
@@ -37,10 +44,33 @@ const Username = styled.span`
     margin-right: 6px;
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
     color: ${props => props.color || '#fff'};
+    text-shadow: ${({theme}) => {
+        const {
+            textShadowColor,
+            textShadowOpacity,
+            textShadowRadius,
+            textShadowXPosition,
+            textShadowYPosition
+        } = theme.allMessages;
+        console.log(theme.allMessages);
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+    }};
 `;
 
 const MessageText = styled.span`
     display: inline-block;
+    text-shadow: ${({theme}) => {
+        const {
+            textShadowColor, 
+            textShadowOpacity, 
+            textShadowRadius, 
+            textShadowXPosition, 
+            textShadowYPosition
+        } = theme.allMessages;
+        console.log(theme.allMessages);
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+    }};
+    color: ${({theme}) => theme.allMessages.textColor};
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
 `;
 

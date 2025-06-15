@@ -37,7 +37,7 @@ export default function FollowSettingsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Настройки follow</Title>
+            <Title>Сообщения "follow"</Title>
             <Accordion title = "Шрифт сообщений">
                 <NumericEditorComponent
                     title={"Размер:"}
