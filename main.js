@@ -140,6 +140,10 @@ app.whenReady().then(() => {
         return await authService.getTokens();
     });
 
+    ipcMain.handle('auth:getAccountInfo', async () => {
+        return await authService.getAccountInfo();
+    });
+
     ipcMain.handle('auth:logout', async () => {
         await authService.clearTokens();
         eventSubService.stop();
