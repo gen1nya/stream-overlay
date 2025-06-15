@@ -114,6 +114,43 @@ async function fetchUserInfo(accessToken) {
     }
 }
 
+async function fetchFollowerCount(accessToken, userId) {
+    try {
+        const resp = await axios.get('https://api.twitch.tv/helix/channels/followers', {
+            params: { broadcaster_id: userId },
+            headers: {
+                'Client-ID': CLIENT_ID,
+                'Authorization': `Bearer ${accessToken}`
+            }
+        });
+        return resp.data.total ?? 0;
+    } catch (err) {
+        const status = err.response?.status;
+        if (status === 401) {
+            const tokens = await getTokens();
+            if (tokens) {
+                return fetchFollowerCount(tokens.access_token, tokens.user_id);
+            }
+        }
+        console.error('❌ Failed to fetch follower count:', err.response?.data || err.message);
+        return null;
+    }
+}
+
+async function getAccountInfo() {
+    const tokens = await getTokens();
+    if (!tokens) return null;
+    const user = await fetchUserInfo(tokens.access_token);
+    if (!user) return null;
+    const followers = await fetchFollowerCount(tokens.access_token, user.id);
+    return {
+        displayName: user.display_name,
+        login: user.login,
+        avatar: user.profile_image_url,
+        followerCount: followers
+    };
+}
+
 async function requestDeviceCode() {
     const params = new URLSearchParams({
         client_id: CLIENT_ID,
@@ -191,6 +228,7 @@ module.exports = {
     getTokens,
     clearTokens,
     fetchUserInfo,
+    getAccountInfo,
     CLIENT_ID,
     onTokenRefreshed: (listener) => authEmitter.on('tokenRefreshed', listener)
 };

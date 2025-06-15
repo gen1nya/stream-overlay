@@ -1,6 +1,6 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
-import { logout, openOverlay } from '../services/api';
+import { logout, openOverlay, getAccountInfo } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from "react-fast-marquee";
 
@@ -80,9 +80,22 @@ const ButtonsRow = styled.div`
     gap: 8px;
 `;
 
+const AccountRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+
+const Avatar = styled.img`
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+`;
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
+    const [account, setAccount] = useState(null);
 
     const handleLogout = async () => {
         await logout();
@@ -113,6 +126,7 @@ export default function Dashboard() {
         if (!called.current) {
             called.current = true;
             console.log('Called only once, even in Strict Mode');
+            getAccountInfo().then(info => setAccount(info));
         }
     }, []);
 
@@ -124,7 +138,17 @@ export default function Dashboard() {
                     <h2>👋 Вы авторизованы!</h2>
                     <Section>
                         <SectionTitle>Аккаунт</SectionTitle>
-                        <p>Здесь будет отображаться информация об аккаунте.</p>
+                        {account ? (
+                            <AccountRow>
+                                <Avatar src={account.avatar} alt="avatar" />
+                                <div>
+                                    <div>{account.displayName || account.login}</div>
+                                    <div>Фолловеров: {account.followerCount}</div>
+                                </div>
+                            </AccountRow>
+                        ) : (
+                            <p>Загрузка информации об аккаунте...</p>
+                        )}
                         <ButtonsRow>
                             <button onClick={handleLogout}>Выйти из аккаунта</button>
                         </ButtonsRow>
