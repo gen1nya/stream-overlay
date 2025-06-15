@@ -39,37 +39,39 @@ export default function MessageSettingsBlock({ current, onChange }) {
         <SettingsBlock>
             <Title>Настройки сообщений</Title>
             <Accordion title = {"Шрифт сообщений"}>
-                <NumericEditorComponent
-                    title={"Шрифт сообщений:"}
-                    value={current.chatMessage.fontSize}
-                    max={82}
-                    min={9}
-                    onChange={ value => {
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                fontSize: value,
-                            },
-                        }));
-                    } }
-                />
+                <Row align="center" gap="0.5rem">
+                    <NumericEditorComponent
+                        title={"Шрифт сообщений:"}
+                        value={current.chatMessage.fontSize}
+                        max={82}
+                        min={9}
+                        onChange={ value => {
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    fontSize: value,
+                                },
+                            }));
+                        } }
+                    />
 
-                <NumericEditorComponent
-                    title={"Шрифт заголовка:"}
-                    value={current.chatMessage.titleFontSize}
-                    max={82}
-                    min={9}
-                    onChange={ value => {
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                titleFontSize: value,
-                            },
-                        }));
-                    }}
-                />
+                    <NumericEditorComponent
+                        title={"Шрифт заголовка:"}
+                        value={current.chatMessage.titleFontSize}
+                        max={82}
+                        min={9}
+                        onChange={ value => {
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    titleFontSize: value,
+                                },
+                            }));
+                        }}
+                    />
+                </Row>
             </Accordion>
 
             <Accordion title={"Цвета сообщений"}>

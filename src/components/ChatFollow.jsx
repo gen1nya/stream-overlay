@@ -2,18 +2,12 @@ import React from 'react';
 import styled from 'styled-components';
 import {hexToRgba} from "../utils.js";
 
-/*const MessageContainer = styled.div`
-    margin-bottom: 10px;
-    padding: 2px 6px;
-    display: flex;
-    align-items: center;
-    border-radius: 6px;
-    color: #96f8bb;
-    border: #5bf253 solid 1px;
-    background: #2f802c;
-    box-shadow: rgba(91, 242, 83, 0.5) 0 0 15px;
-    font-style: italic;
-`;*/
+const Text = styled.span`
+    font-size: ${({theme}) => theme.followMessage.fontSize}px;
+    //color: ${({theme}) => theme.followMessage.textColor};
+    //font-family: ${({theme}) => theme.followMessage.fontFamily};
+    //font-weight: ${({theme}) => theme.followMessage.fontWeight};
+`;
 
 
 const MessageContainer = styled.div`
@@ -44,7 +38,10 @@ const MessageContainer = styled.div`
 export default function ChatMessage({ message }) {
     return (
         <MessageContainer>
-            🎉 {message.userName} just followed!
+            <Text>
+                🎉 {message.userName} just followed!
+            </Text>
+
         </MessageContainer>
     );
 }

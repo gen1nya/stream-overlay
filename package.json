@@ -37,6 +37,7 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-fast-marquee": "^1.6.5",
+    "react-pick-color": "^2.0.0",
     "react-router-dom": "^7.6.0",
     "react-transition-group": "^4.4.5",
     "styled-components": "^6.1.18",

@@ -40,34 +40,26 @@ export default function FollowSettingsBlock({ current, onChange }) {
             <Title>Настройки follow</Title>
             <Accordion title = "Шрифт сообщений">
                 <NumericEditorComponent
-                    title={"Шрифт сообщений:"}
-                    value={14} max={82} min={9} onChange={ value => {
-                    handleChange(prev => ({
-                        ...prev,
-                        followMessage: {
-                            ...prev.followMessage,
-                            fontSize: value,
-                        },
-                    }));
-                } } />
-
-                <NumericEditorComponent
-                    title={"Шрифт заголовка:"}
-                    value={14} max={82} min={9} onChange={ value => {
-                    handleChange(prev => ({
-                        ...prev,
-                        followMessage: {
-                            ...prev.followMessage,
-                            titleFontSize: value,
-                        },
-                    }));
-                } } />
+                    title={"Размер:"}
+                    value={current.followMessage.fontSize}
+                    max={82}
+                    min={9}
+                    onChange={ value => {
+                        handleChange(prev => ({
+                            ...prev,
+                            followMessage: {
+                                ...prev.followMessage,
+                                fontSize: value,
+                            },
+                        }));
+                    } }
+                />
             </Accordion>
 
             <Accordion title={"Цвета сообщений"}>
                 {/* цвет фона обычного сообщения */}
                 <ColorSelectorComponent
-                    title="Цвет фона обычного сообщения:"
+                    title="Цвет фона:"
                     valueOpacity={current.followMessage?.backgroundOpacity ?? 1.0}
                     valueColor={current.followMessage?.backgroundColor ?? "#3e837c"}
                     onChange={ values =>
@@ -84,7 +76,7 @@ export default function FollowSettingsBlock({ current, onChange }) {
 
                 {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
                 <ColorSelectorComponent
-                    title="Цвет обводки обычного сообщения:"
+                    title="Цвет обводки:"
                     valueOpacity={current.followMessage?.borderOpacity ?? 1.0}
                     valueColor={current.followMessage?.borderColor ?? "#00ffe3"}
                     onChange={value => handleChange(prev => ({
@@ -98,7 +90,7 @@ export default function FollowSettingsBlock({ current, onChange }) {
                 />
 
                 <ColorSelectorComponent
-                    title="Цвет тени &nbsp;«обычных»&nbsp;сообщений:"
+                    title="Цвет тени:"
                     valueOpacity={current.followMessage?.shadowOpacity ?? 0.5}
                     valueColor={current.followMessage?.shadowColor ?? "#000"}
                     onChange={value => handleChange(prev => ({
@@ -113,57 +105,42 @@ export default function FollowSettingsBlock({ current, onChange }) {
             </Accordion>
 
             <Accordion title={"Параметры сообщений"}>
-                <SeekbarComponent
-                    title="Радиус тени &nbsp;«обычных»&nbsp;сообщений:"
-                    min="0"
-                    max="20"
-                    value={current.followMessage?.shadowRadius ?? 0}
-                    step="1"
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            followMessage: {
-                                ...prev.followMessage,
-                                shadowRadius: e,
-                            },
-                        }))
-                    }
-                />
+                <Row>
+                    <SeekbarComponent
+                        title="Радиус тени:"
+                        min="0"
+                        max="20"
+                        value={current.followMessage?.shadowRadius ?? 0}
+                        step="1"
+                        onChange={ e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                followMessage: {
+                                    ...prev.followMessage,
+                                    shadowRadius: e,
+                                },
+                            }))
+                        }
+                    />
 
-                <RadioGroupComponent
-                    title="Направление&nbsp;«обычных»&nbsp;сообщений:"
-                    options={[
-                        {value: "row", label: "По горизонтали"},
-                        {value: "column", label: "По вертикали"},
-                    ]}
-                    selected={current.followMessage?.direction ?? "column"}
-                    onChange={value =>
-                        handleChange(prev => ({
-                            ...prev,
-                            followMessage: {
-                                ...prev.followMessage,
-                                direction: value,
-                            },
-                        }))
-                    }
-                />
+                    <SeekbarComponent
+                        title="Радиус скругления:"
+                        min="0"
+                        max="20"
+                        value={current.followMessage?.borderRadius ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                followMessage: {
+                                    ...prev.followMessage,
+                                    borderRadius: e,
+                                },
+                            }))
+                        }
+                    />
+                </Row>
 
-                <SeekbarComponent
-                    title="Радиус скругления &nbsp;«обычных»&nbsp;сообщений:"
-                    min="0"
-                    max="20"
-                    value={current.followMessage?.borderRadius ?? 0}
-                    step="1"
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            followMessage: {
-                                ...prev.followMessage,
-                                borderRadius: e,
-                            },
-                        }))
-                    }
-                />
 
                 <span>Отступы снаружи:</span>
                 <Row align="center" gap="0.5rem">

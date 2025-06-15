@@ -3,8 +3,10 @@ import styled from 'styled-components';
 
 const Container = styled.label`
     display: flex;
+    width: 100%;
+    height: 76px;
     flex-direction: column;
-    padding: 2px 4px;
+    padding: 4px 4px;
     border-radius: 4px;
     background: #1e1e1e;
 `;

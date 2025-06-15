@@ -12,6 +12,16 @@ const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
 let ws = null;
 let eventHandler = null;
 let isStopping = false;
+let isConnecting = false;
+
+// restart EventSub websocket when tokens are refreshed
+authService.onTokenRefreshed(() => {
+    if (!isStopping) {
+        console.log('🔄 Tokens refreshed, restarting EventSub connection...');
+        stop();
+        start();
+    }
+});
 
 function registerEventHandlers(handler) {
     eventHandler = handler;
@@ -19,15 +29,26 @@ function registerEventHandlers(handler) {
 
 async function start() {
     isStopping = false;
+    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
+        console.log('ℹ️ EventSub WebSocket already connected.');
+        return;
+    }
+    if (isConnecting) {
+        console.log('⏳ EventSub connection already in progress.');
+        return;
+    }
+    isConnecting = true;
     const tokens = await authService.getTokens();
     if (!tokens) {
         console.error('❌ No tokens found. Cannot start EventSub.');
+        isConnecting = false;
         return;
     }
 
     ws = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
 
     ws.on('open', () => {
+        isConnecting = false;
         console.log('🟢 Connected to Twitch EventSub WebSocket');
     });
 
@@ -83,7 +104,7 @@ async function start() {
         }
 
         if (metadata.message_type === 'session_keepalive') {
-            console.log('💓 Keep-alive received');
+            console.log(`💓 Keep-alive received ${Date.now()}`);
         }
 
         if (metadata.message_type === 'revocation') {
@@ -91,8 +112,14 @@ async function start() {
         }
     });
 
-    ws.on('close', () => console.log('🔴 Connection closed'));
-    ws.on('error', (err) => console.error('❌ WebSocket Error:', err));
+    ws.on('close', () => {
+        isConnecting = false;
+        console.log('🔴 Connection closed');
+    });
+    ws.on('error', (err) => {
+        isConnecting = false;
+        console.error('❌ WebSocket Error:', err);
+    });
 }
 
 async function subscribeToEvents(sessionId) {
@@ -190,6 +217,7 @@ function stop() {
         console.log('🛑 EventSub WebSocket closed.');
     }
     isStopping = true;
+    isConnecting = false;
 }
 
 module.exports = { start, stop, registerEventHandlers };
