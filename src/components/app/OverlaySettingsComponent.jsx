@@ -108,7 +108,7 @@ export default function OverlaySettingsComponent({ current, onChange }) {
                         }
                     />
                     <SeekbarComponent
-                        title={"скругление краев:"}
+                        title={"скругление:"}
                         min="0"
                         max="64"
                         value={current.overlay?.borderRadius ?? 0}

@@ -27,6 +27,7 @@ const MessageContainer = styled.div`
         return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
     font-style: italic;
+    font-size: ${({theme}) => theme.redeemMessage.fontSize}px;
     color: ${props => props.color || '#fff'};
     text-shadow: ${({theme}) => {
         if (!theme.allMessages) {

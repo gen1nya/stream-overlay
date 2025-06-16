@@ -178,8 +178,8 @@ export default function Dashboard() {
                     </Section>
                 </Container>
                 <Footer>
-                    <Marquee>Альфа-тест: ellis_leaf</Marquee>
-                    <Version>v0.0.2-alpha</Version>
+                    <Marquee>Бета-тест: ellis_leaf, kururun_chan</Marquee>
+                    <Version>v0.1.0-beta</Version>
                 </Footer>
             </Wrapper>
             </>
