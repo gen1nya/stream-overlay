@@ -29,6 +29,9 @@ const MessageContainer = styled.div`
     font-style: italic;
     color: ${props => props.color || '#fff'};
     text-shadow: ${({theme}) => {
+        if (!theme.allMessages) {
+            return 'none';
+        }
         const {
             textShadowColor,
             textShadowOpacity,
@@ -40,7 +43,7 @@ const MessageContainer = styled.div`
         return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
     }};
     backdrop-filter: ${({theme}) => {
-        if (theme.allMessages.blurRadius && theme.allMessages.blurRadius > 0) {
+        if (theme.allMessages?.blurRadius && theme.allMessages?.blurRadius > 0) {
             return `blur(${theme.allMessages.blurRadius}px)`;
         } else {
             return 'none';
@@ -51,9 +54,14 @@ const MessageContainer = styled.div`
 export default function ChatRedemption({ message, template }) {
 
     function applyTemplate(template, data) {
-        return template.replace(/\{(\w+)}/g, (_, key) => {
-            return key in data ? data[key] : `{${key}}`;
-        });
+        try {
+            return template.replace(/\{(\w+)}/g, (_, key) => {
+                return key in data ? data[key] : `{${key}}`;
+            });
+        } catch (error) {
+            console.error("Error applying template:", error);
+            return 'format error';
+        }
     }
 
     const rendered = applyTemplate(template, {
