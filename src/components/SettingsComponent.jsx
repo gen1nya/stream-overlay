@@ -44,6 +44,7 @@ const Content = styled.div`
 `;
 
 const ThemeName = styled.div`
+    flex-grow: 1;
     font-size: 1.2rem;
     font-weight: bold;
     border-radius: 4px;
@@ -51,6 +52,8 @@ const ThemeName = styled.div`
     color: #d6d6d6;
     padding: 8px;
     border: ${({ selected }) => (selected ? '1px solid #00ff00' : '1px solid transparent')};
+    width: ${({ selected }) => (selected ? 'calc(100% - 72px)' : '100%')};
+    transition: width 0.3s ease;
 `;
 
 const ThemeCreate = styled.div`
@@ -118,6 +121,8 @@ const ThemeItem = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
+    width: 100%;
+    gap: 4px;
 `;
 
 const ThemeActions = styled.div`
