@@ -1,9 +1,10 @@
-import React, {useEffect, useLayoutEffect, useRef, useState} from "react";
-import styled, {createGlobalStyle, ThemeProvider} from "styled-components";
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
 import diskImg from "../assets/disk.png";
 import { defaultTheme } from '../theme';
 import {hexToRgba} from "../utils.js";
 import Marquee from "react-fast-marquee";
+import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -131,6 +132,27 @@ const ProgressPointer = styled.div`
     transition: left 0.25s linear;
 `;
 
+const Wrapper = styled.div`
+    position: relative;
+    width: 100%;
+    height: 100%;
+`;
+
+const ConnectionLost = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: red;
+    background: rgba(0,0,0,0.5);
+    z-index: 10;
+`;
+
 const FixedMarquee = styled(Marquee)`
   .rfm-marquee {
     ${({ $paused }) => {
@@ -189,38 +211,31 @@ export default function AudioPlayerComponent() {
         setShouldArtistScroll(textWidth > contentWidth);
     }, [metadata]);
 
-    useEffect(() => {
-        const ws = new WebSocket('ws://localhost:5001/ws');
-        ws.onopen = () => console.log('🟢 WebSocket metadata подключен');
-        ws.onmessage = (event) => {
-            const {type, data} = JSON.parse(event.data);
+    const { isConnected: metaConnected } = useReconnectingWebSocket('ws://localhost:5001/ws', {
+        onOpen: () => console.log('🟢 WebSocket metadata подключен'),
+        onMessage: (event) => {
+            const { type, data } = JSON.parse(event.data);
             if (type !== 'metadata') return;
             setMetadata(data);
             setProgress(data.position);
             setDuration(data.duration || 1);
-        };
-        ws.onclose = () => console.log('🔴 WebSocket metadata отключен');
-        return () => ws.close();
-    }, []);
+        },
+        onClose: () => console.log('🔴 WebSocket metadata отключен'),
+    });
 
-    useEffect(() => {
-        const ws = new WebSocket('ws://localhost:42001');
-
-        ws.onopen = () => {
+    const { isConnected: themeConnected } = useReconnectingWebSocket('ws://localhost:42001', {
+        onOpen: (_, socket) => {
             console.log('🟢 WebSocket theme подключен');
-            ws.send(JSON.stringify({ channel: 'theme:get' }));
-        };
-
-        ws.onmessage = (event) => {
+            socket.send(JSON.stringify({ channel: 'theme:get' }));
+        },
+        onMessage: (event) => {
             const { channel, payload } = JSON.parse(event.data);
             if (channel === 'theme:update') {
                 setTheme(payload);
             }
-        };
-
-        ws.onclose = () => console.log('🔴 WebSocket theme отключен');
-        return () => ws.close();
-    }, []);
+        },
+        onClose: () => console.log('🔴 WebSocket theme отключен'),
+    });
 
     // Инициализация Web Animations API для Disk и AlbumArt
     useEffect(() => {
@@ -307,6 +322,7 @@ export default function AudioPlayerComponent() {
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
+            <Wrapper>
             <AudioPlayerContainer>
                 <DiskContainer>
                     <Disk ref={diskRef} />
@@ -344,6 +360,8 @@ export default function AudioPlayerComponent() {
                 </ProgressPointer>
 
             </AudioPlayerContainer>
+            {!(metaConnected && themeConnected) && <ConnectionLost>нет связи с источником</ConnectionLost>}
+            </Wrapper>
         </ThemeProvider>
     );
 }

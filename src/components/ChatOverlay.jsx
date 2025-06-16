@@ -1,5 +1,6 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
 import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
+import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
 import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
@@ -84,6 +85,27 @@ const ChatContainer = styled.div`
     }
 `;
 
+const Wrapper = styled.div`
+    position: relative;
+    width: 100%;
+    height: 100%;
+`;
+
+const ConnectionLost = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: red;
+    background: rgba(0,0,0,0.5);
+    z-index: 10;
+`;
+
 export default function ChatOverlay() {
     const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
@@ -94,30 +116,30 @@ export default function ChatOverlay() {
     // Храним ID «последнего» сообщения после прошлого рендера
     const prevLastIdRef = useRef(null);
 
-    useEffect(() => {
-        const ws = new WebSocket('ws://localhost:42001');
-        ws.onopen = () => {
+    const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
+        onOpen: (_, socket) => {
             console.log('🟢 WebSocket подключен');
-            ws.send(JSON.stringify({ channel: 'theme:get' }));
-        };
-        ws.onmessage = event => {
+            socket.send(JSON.stringify({ channel: 'theme:get' }));
+        },
+        onMessage: (event) => {
             const { channel, payload } = JSON.parse(event.data);
             switch (channel) {
-                case 'chat:messages':
-                    const initial = payload
-                        .map(m => ({ ...m, type: m.type || 'chat' }));
+                case 'chat:messages': {
+                    const initial = payload.map(m => ({ ...m, type: m.type || 'chat' }));
                     setMessages(initial);
                     break;
+                }
                 case 'theme:update':
                     setTheme(payload);
                     break;
                 default:
                     console.log('unknown channel', channel, payload);
             }
-        };
-        ws.onclose = () => console.log('🔴 WebSocket отключен');
-        return () => ws.close();
-    }, []);
+        },
+        onClose: () => {
+            console.log('🔴 WebSocket отключен');
+        },
+    });
 
     /**
      * В useLayoutEffect мы сравниваем ID предыдущего «последнего» сообщения
@@ -197,9 +219,10 @@ export default function ChatOverlay() {
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
-            <BackgroundContainer />
-            <ChatContainer ref={chatRef}>
-                {messages.map((msg, idx) => {
+            <Wrapper>
+                <BackgroundContainer />
+                <ChatContainer ref={chatRef}>
+                    {messages.map((msg, idx) => {
                     // Определяем «уникальный» ID для рефа
                     const id = msg.id ?? `idx_${idx}`;
                     if (!messageRefs.current[id]) {
@@ -237,7 +260,9 @@ export default function ChatOverlay() {
                         </div>
                     );
                 })}
-            </ChatContainer>
+                </ChatContainer>
+                {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
+            </Wrapper>
         </ThemeProvider>
     );
 }
