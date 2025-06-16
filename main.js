@@ -193,6 +193,28 @@ app.whenReady().then(() => {
         }
     })
 
+    ipcMain.handle('theme:import', async (_event, { name, theme }) => {
+        const themes = store.get('themes');
+        themes[name] = theme;
+        store.set('themes', themes);
+        broadcast('themes:get', { themes, currentThemeName });
+    });
+
+    ipcMain.handle('theme:delete', async (_event, name) => {
+        const themes = store.get('themes');
+        if (themes[name]) {
+            delete themes[name];
+            store.set('themes', themes);
+            if (currentThemeName === name) {
+                currentThemeName = 'default';
+                currentTheme = themes[currentThemeName] || defaultTheme;
+                store.set('currentTheme', currentThemeName);
+                broadcast('theme:update', currentTheme);
+            }
+            broadcast('themes:get', { themes, currentThemeName });
+        }
+    });
+
     eventSubService.registerEventHandlers((destination, parsedEvent) => {
         if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
             messageCache.addMessage({

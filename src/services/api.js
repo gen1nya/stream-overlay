@@ -50,3 +50,11 @@ export const openOverlay = () => {
 export const setRemoteTheme = (theme, name) => {
     ipcRenderer.send('theme:update', theme, name);
 }
+
+export const importTheme = (name, theme) => {
+    return ipcRenderer?.invoke('theme:import', { name, theme });
+};
+
+export const deleteTheme = (name) => {
+    return ipcRenderer?.invoke('theme:delete', name);
+};
