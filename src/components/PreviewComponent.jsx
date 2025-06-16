@@ -1,5 +1,6 @@
-import React, {useEffect, useState} from "react";
-import styled, {createGlobalStyle, ThemeProvider} from "styled-components";
+import React, { useState } from "react";
+import styled, { ThemeProvider } from "styled-components";
+import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
 import ChatMessage from "./ChatMessage";
 import ChatFollow from './ChatFollow';
 import {defaultTheme} from "../theme";
@@ -61,18 +62,31 @@ const MessagePreviewContainer = styled.div`
     }
 `;
 
+const ConnectionLost = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    color: red;
+    background: rgba(0,0,0,0.5);
+    z-index: 10;
+`;
+
 export default function PreviewComponent() {
     const [theme, setTheme] = useState(defaultTheme);
 
-    useEffect(() => {
-        const ws = new WebSocket('ws://localhost:42001');
-        ws.onopen = () => {
+    const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
+        onOpen: (_, socket) => {
             console.log('🟢 WebSocket подключен');
-            ws.send(JSON.stringify({ channel: 'theme:get' }));
-        };
-        ws.onmessage = event => {
+            socket.send(JSON.stringify({ channel: 'theme:get' }));
+        },
+        onMessage: event => {
             const { channel, payload } = JSON.parse(event.data);
-
             switch (channel) {
                 case 'theme:update':
                     setTheme(payload);
@@ -81,10 +95,9 @@ export default function PreviewComponent() {
                 default:
                     console.log('unknown channel', channel, payload);
             }
-        }
-        ws.onclose = () => console.log('🔴 WebSocket отключен');
-        return () => ws.close();
-    }, []);
+        },
+        onClose: () => console.log('🔴 WebSocket отключен'),
+    });
 
     const message = {
         username: "Пользователь",
@@ -127,6 +140,7 @@ export default function PreviewComponent() {
                     template={theme.followMessage.template}
                 />
             </MessagePreviewContainer>
+            {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
         </>
 
     </ThemeProvider>;
