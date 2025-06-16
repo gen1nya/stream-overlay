@@ -26,7 +26,7 @@ const MessageContainer = styled.div`
         return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
     backdrop-filter: ${({theme}) => {
-        if (theme.allMessages.blurRadius && theme.allMessages.blurRadius > 0) {
+        if (theme.allMessages?.blurRadius && theme.allMessages?.blurRadius > 0) {
             return `blur(${theme.allMessages.blurRadius}px)`;
         } else {
             return 'none';
@@ -45,6 +45,9 @@ const Username = styled.span`
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
     color: ${props => props.color || '#fff'};
     text-shadow: ${({theme}) => {
+        if (!theme.allMessages) {
+            return 'none';
+        }
         const {
             textShadowColor,
             textShadowOpacity,
@@ -60,6 +63,9 @@ const Username = styled.span`
 const MessageText = styled.span`
     display: inline-block;
     text-shadow: ${({theme}) => {
+        if (!theme.allMessages) {
+            return 'none';
+        }
         const {
             textShadowColor, 
             textShadowOpacity, 
@@ -70,7 +76,7 @@ const MessageText = styled.span`
         console.log(theme.allMessages);
         return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
     }};
-    color: ${({theme}) => theme.allMessages.textColor};
+    color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
 `;
 

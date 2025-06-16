@@ -2,7 +2,7 @@
 import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import {openPreview, setRemoteTheme, createNewTheme, setTheme} from '../services/api';
+import {openPreview, setRemoteTheme, createNewTheme, setTheme, importTheme, deleteTheme} from '../services/api';
 import MessageSettingsBlock from "./app/MessageSettingsBlock";
 import FollowSettingsBlock from "./app/FollowSettingsBlock";
 import PlayerSettingsComponent from "./app/PlayerSettingsComponent";
@@ -44,6 +44,7 @@ const Content = styled.div`
 `;
 
 const ThemeName = styled.div`
+    flex-grow: 1;
     font-size: 1.2rem;
     font-weight: bold;
     border-radius: 4px;
@@ -51,6 +52,8 @@ const ThemeName = styled.div`
     color: #d6d6d6;
     padding: 8px;
     border: ${({ selected }) => (selected ? '1px solid #00ff00' : '1px solid transparent')};
+    width: ${({ selected }) => (selected ? 'calc(100% - 72px)' : '100%')};
+    transition: width 0.3s ease;
 `;
 
 const ThemeCreate = styled.div`
@@ -114,6 +117,36 @@ const PopupContent = styled.div`
     gap: 8px;
 `;
 
+const ThemeItem = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    gap: 4px;
+`;
+
+const ThemeActions = styled.div`
+    display: flex;
+    gap: 4px;
+`;
+
+const ActionButton = styled.button`
+    border: 1px solid transparent;
+    padding: 4px 8px;
+    background: #3a3a3a;
+    color: #d6d6d6;
+    border-radius: 4px;
+    cursor: pointer;
+    &:hover {
+        background: #4a4a4a;
+        border-color: #646cff;
+    }
+`;
+
+const HiddenFileInput = styled.input`
+    display: none;
+`;
+
 export const Row = styled.div`
     display: flex;
     flex-direction: row;
@@ -126,6 +159,7 @@ export default function Settings() {
     const navigate = useNavigate();
 
     const themeNameRef = React.useRef(null);
+    const fileInputRef = React.useRef(null);
     const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
     const [selectedTheme, setSelectedTheme] = React.useState( defaultTheme);
     const [selectedThemeName, setSelectedThemeName] = React.useState("default");
@@ -184,6 +218,47 @@ export default function Settings() {
         }
     };
 
+    const handleExportTheme = (name) => {
+        const theme = themeList[name];
+        if (!theme) return;
+        const data = JSON.stringify({ [name]: theme }, null, 2);
+        const blob = new Blob([data], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleDeleteTheme = (name) => {
+        if (window.confirm(`Delete theme "${name}"?`)) {
+            deleteTheme(name);
+        }
+    };
+
+    const triggerImport = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = () => {
+            try {
+                const data = JSON.parse(reader.result);
+                const [name, theme] = Object.entries(data)[0] || [];
+                if (name && theme) {
+                    importTheme(name, theme);
+                }
+            } catch (err) {
+                console.error('Failed to import theme', err);
+            }
+        };
+        reader.readAsText(file);
+    };
+
     const handleThemeChange = (themeName) => {
         setTheme(themeName);
     }
@@ -194,14 +269,21 @@ export default function Settings() {
                 <Popup>
                     <PopupContent>
                         <ThemesTitle>Темы</ThemesTitle>
-                        { Object.keys(themeList).map((key, i) => (
-                            <ThemeName
-                                key={key}
-                                onClick={ () => { handleThemeChange(key) } }
-                                selected={key === selectedThemeName}
-                            >
-                                {key}
-                            </ThemeName>
+                        { Object.keys(themeList).map((key) => (
+                            <ThemeItem key={key}>
+                                <ThemeName
+                                    onClick={() => { handleThemeChange(key); }}
+                                    selected={key === selectedThemeName}
+                                >
+                                    {key}
+                                </ThemeName>
+                                {key === selectedThemeName && (
+                                    <ThemeActions>
+                                        <ActionButton onClick={() => handleExportTheme(key)}>📥</ActionButton>
+                                        <ActionButton onClick={() => handleDeleteTheme(key)}>🗑️</ActionButton>
+                                    </ThemeActions>
+                                )}
+                            </ThemeItem>
                         )) }
                         <ThemeCreate>
                             <label>
@@ -213,7 +295,13 @@ export default function Settings() {
                             </label>
                             <CreateThemeButton onClick={handleCreateThemeButton}>+</CreateThemeButton>
                         </ThemeCreate>
-                        <button onClick={() => setIsThemeSelectorOpen(false)}>Закрыть</button>
+                        <Row justify="space-between">
+                            <div>
+                                <ActionButton onClick={triggerImport}>Import</ActionButton>
+                                <HiddenFileInput ref={fileInputRef} type="file" accept=".json" onChange={handleFileChange} />
+                            </div>
+                            <ActionButton onClick={() => setIsThemeSelectorOpen(false)}>Закрыть</ActionButton>
+                        </Row>
                     </PopupContent>
                 </Popup>
             )}
