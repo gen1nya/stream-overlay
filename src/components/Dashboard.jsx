@@ -104,7 +104,16 @@ const StatusBlock = styled.div`
     display: flex;
     flex-direction: column;
     gap: 4px;
+    border: 1px solid #444;
+    box-shadow: -2px -2px 3px rgba(144, 144, 144, 0.2);
     align-items: flex-end;
+
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+
+    &:hover {
+        opacity: 1;
+    }
 `;
 
 const StatLine = styled.span``;
@@ -169,7 +178,7 @@ export default function Dashboard() {
     };
 
     const eventSubColor = sinceEventSub > 120000 ? 'red' : sinceEventSub > 30000 ? 'yellow' : '#b0b0b0';
-    const ircColor = sinceIRC > 120000 ? 'red' : sinceIRC > 60000 ? 'yellow' : '#b0b0b0';
+    const ircColor = sinceIRC > 360000 ? 'red' : sinceIRC > 300000 ? 'yellow' : '#b0b0b0';
 
     const handleReconnect = () => {
         reconnect();
