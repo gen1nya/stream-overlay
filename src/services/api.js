@@ -58,3 +58,11 @@ export const importTheme = (name, theme) => {
 export const deleteTheme = (name) => {
     return ipcRenderer?.invoke('theme:delete', name);
 };
+
+export const getStats = () => {
+    return ipcRenderer?.invoke('system:get-stats');
+};
+
+export const reconnect = () => {
+    return ipcRenderer?.invoke('system:reconnect');
+};
