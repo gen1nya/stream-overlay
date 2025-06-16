@@ -27,6 +27,10 @@ const WebSocket = require('ws');
 
 let currentThemeName = store.get('currentTheme') || "default";
 let currentTheme = store.get('themes')[currentThemeName] || require('./default-theme.json');
+messageCache.updateSettings({
+    lifetime: currentTheme.allMessages?.lifetime ?? 60,
+    maxCount: currentTheme.allMessages?.maxCount ?? 6,
+});
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -186,6 +190,10 @@ app.whenReady().then(() => {
             currentThemeName = themeName;
             currentTheme = themes[themeName];
             store.set('currentTheme', themeName);
+            messageCache.updateSettings({
+                lifetime: currentTheme.allMessages?.lifetime ?? 60,
+                maxCount: currentTheme.allMessages?.maxCount ?? 6,
+            });
             broadcast('theme:update', currentTheme);
             broadcast('themes:get', { themes, currentThemeName });
         } else {
@@ -209,6 +217,10 @@ app.whenReady().then(() => {
                 currentThemeName = 'default';
                 currentTheme = themes[currentThemeName] || defaultTheme;
                 store.set('currentTheme', currentThemeName);
+                messageCache.updateSettings({
+                    lifetime: currentTheme.allMessages?.lifetime ?? 60,
+                    maxCount: currentTheme.allMessages?.maxCount ?? 6,
+                });
                 broadcast('theme:update', currentTheme);
             }
             broadcast('themes:get', { themes, currentThemeName });
@@ -260,6 +272,10 @@ ipcMain.on('theme:update', (_e, theme, name) => {
     const themes = store.get('themes');
     themes[name] = theme;
     store.set('themes', themes);
+    messageCache.updateSettings({
+        lifetime: currentTheme.allMessages?.lifetime ?? 60,
+        maxCount: currentTheme.allMessages?.maxCount ?? 6,
+    });
     broadcast('theme:update', theme);
 });
 
