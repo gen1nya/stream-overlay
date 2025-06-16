@@ -24,6 +24,7 @@ const store = new Store({
 });
 
 const WebSocket = require('ws');
+const appStartTime = Date.now();
 
 let currentThemeName = store.get('currentTheme') || "default";
 let currentTheme = store.get('themes')[currentThemeName] || require('./default-theme.json');
@@ -175,6 +176,22 @@ app.whenReady().then(() => {
 
     ipcMain.handle('setting:open-preview', () => {
        createPreviewWindow();
+    });
+
+    ipcMain.handle('system:get-stats', () => {
+        return {
+            startTime: appStartTime,
+            lastEventSub: eventSubService.getLastEventTimestamp(),
+            lastIRC: chatService.getLastEventTimestamp(),
+        };
+    });
+
+    ipcMain.handle('system:reconnect', async () => {
+        eventSubService.stop();
+        chatService.stopChat();
+        eventSubService.start();
+        chatService.startChat();
+        return true;
     });
 
     ipcMain.handle('theme:create', async (event, newThemeName) => {

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
-import { logout, openOverlay, getAccountInfo } from '../services/api';
+import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from "react-fast-marquee";
 
@@ -93,10 +93,27 @@ const Avatar = styled.img`
     border-radius: 50%;
 `;
 
+const StatusBlock = styled.div`
+    position: absolute;
+    right: 8px;
+    bottom: 32px;
+    background: #2e2e2e;
+    border-radius: 8px;
+    padding: 8px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    align-items: flex-end;
+`;
+
+const StatLine = styled.span``;
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
     const [account, setAccount] = useState(null);
+    const [stats, setStats] = useState({ startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now() });
 
     const handleLogout = async () => {
         await logout();
@@ -129,7 +146,34 @@ export default function Dashboard() {
             console.log('Called only once, even in Strict Mode');
             getAccountInfo().then(info => setAccount(info));
         }
+        const update = async () => {
+            const s = await getStats();
+            if (s) setStats(s);
+        };
+        update();
+        const interval = setInterval(update, 1000);
+        return () => clearInterval(interval);
     }, []);
+
+    const now = Date.now();
+    const uptime = now - stats.startTime;
+    const sinceEventSub = now - stats.lastEventSub;
+    const sinceIRC = now - stats.lastIRC;
+
+    const formatDuration = (ms) => {
+        const totalSeconds = Math.floor(ms / 1000);
+        const h = Math.floor(totalSeconds / 3600);
+        const m = Math.floor((totalSeconds % 3600) / 60);
+        const s = totalSeconds % 60;
+        return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
+    };
+
+    const eventSubColor = sinceEventSub > 120000 ? 'red' : sinceEventSub > 30000 ? 'yellow' : '#b0b0b0';
+    const ircColor = sinceIRC > 120000 ? 'red' : sinceIRC > 60000 ? 'yellow' : '#b0b0b0';
+
+    const handleReconnect = () => {
+        reconnect();
+    };
 
     return (
         <>
@@ -177,6 +221,12 @@ export default function Dashboard() {
                         </ButtonsRow>
                     </Section>
                 </Container>
+                <StatusBlock>
+                    <StatLine style={{ color: '#b0b0b0' }}>Аптайм: {formatDuration(uptime)}</StatLine>
+                    <StatLine style={{ color: eventSubColor }}>EventSub: {formatDuration(sinceEventSub)}</StatLine>
+                    <StatLine style={{ color: ircColor }}>IRC: {formatDuration(sinceIRC)}</StatLine>
+                    <button onClick={handleReconnect}>Reconnect</button>
+                </StatusBlock>
                 <Footer>
                     <Marquee>Бета-тест: ellis_leaf, kururun_chan</Marquee>
                     <Version>v0.1.0-beta</Version>

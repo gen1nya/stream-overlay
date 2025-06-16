@@ -11,6 +11,7 @@ let client = null;
 let messageHandler = null;
 let isStopping = false;
 let isConnecting = false;
+let lastEventTimestamp = Date.now();
 
 // reconnect when auth tokens are refreshed
 authService.onTokenRefreshed(() => {
@@ -80,6 +81,7 @@ async function connect() {
 
     client.connect(PORT, HOST, () => {
         isConnecting = false;
+        lastEventTimestamp = Date.now();
         console.log('🟢 Connected to Twitch IRC');
         client.write(`CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n`);
         client.write(`PASS oauth:${accessToken}\r\n`);
@@ -88,6 +90,7 @@ async function connect() {
     });
 
     client.on('data', (data) => {
+        lastEventTimestamp = Date.now();
         const messages = data.toString().split('\r\n');
 
         messages.forEach(message => {
@@ -145,4 +148,5 @@ module.exports = {
     startChat,
     stopChat,
     registerMessageHandler,
+    getLastEventTimestamp: () => lastEventTimestamp,
 };

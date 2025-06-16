@@ -20,6 +20,7 @@ let isConnecting = false;
 let connectUrl = DEFAULT_URL;
 let skipSubscribe = false;
 let ignoreClose = false;
+let lastEventTimestamp = Date.now();
 
 // restart EventSub websocket when tokens are refreshed
 authService.onTokenRefreshed(() => {
@@ -58,12 +59,14 @@ async function start(url = DEFAULT_URL, skipSub = false) {
 
     ws.on('open', () => {
         isConnecting = false;
+        lastEventTimestamp = Date.now();
         console.log('🟢 Connected to Twitch EventSub WebSocket');
     });
 
     ws.on('ping', () => ws.pong());
 
     ws.on('message', async (data) => {
+        lastEventTimestamp = Date.now();
         const msg = JSON.parse(data);
         const { metadata, payload } = msg;
 
@@ -253,4 +256,9 @@ function stop(setStopping = true, ignore = false) {
     isConnecting = false;
 }
 
-module.exports = { start, stop, registerEventHandlers };
+module.exports = {
+    start,
+    stop,
+    registerEventHandlers,
+    getLastEventTimestamp: () => lastEventTimestamp,
+};
