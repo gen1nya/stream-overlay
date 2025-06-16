@@ -62,12 +62,6 @@ const MessagePreviewContainer = styled.div`
     }
 `;
 
-const Wrapper = styled.div`
-    position: relative;
-    width: 100%;
-    height: 100%;
-`;
-
 const ConnectionLost = styled.div`
     position: absolute;
     top: 0;
@@ -132,7 +126,7 @@ export default function PreviewComponent() {
     }
 
     return <ThemeProvider theme={theme}>
-        <Wrapper>
+        <>
             <BackgroundContainer />
             <MessagePreviewContainer>
                 <ChatMessage message={message}/>
@@ -147,7 +141,7 @@ export default function PreviewComponent() {
                 />
             </MessagePreviewContainer>
             {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
-        </Wrapper>
+        </>
 
     </ThemeProvider>;
 

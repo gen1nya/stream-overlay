@@ -85,12 +85,6 @@ const ChatContainer = styled.div`
     }
 `;
 
-const Wrapper = styled.div`
-    position: relative;
-    width: 100%;
-    height: 100%;
-`;
-
 const ConnectionLost = styled.div`
     position: absolute;
     top: 0;
@@ -219,7 +213,7 @@ export default function ChatOverlay() {
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
-            <Wrapper>
+            <>
                 <BackgroundContainer />
                 <ChatContainer ref={chatRef}>
                     {messages.map((msg, idx) => {
@@ -262,7 +256,7 @@ export default function ChatOverlay() {
                 })}
                 </ChatContainer>
                 {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
-            </Wrapper>
+            </>
         </ThemeProvider>
     );
 }
