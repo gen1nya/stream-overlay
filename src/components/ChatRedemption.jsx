@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {hexToRgba} from "../utils";
+import {defaultTheme} from "../theme";
 
 const MessageContainer = styled.div`
     padding: ${({theme}) => {
@@ -47,10 +48,23 @@ const MessageContainer = styled.div`
     }};
 `;
 
-export default function ChatRedemption({ message }) {
+export default function ChatRedemption({ message, template }) {
+
+    function applyTemplate(template, data) {
+        return template.replace(/\{(\w+)}/g, (_, key) => {
+            return key in data ? data[key] : `{${key}}`;
+        });
+    }
+
+    const rendered = applyTemplate(template, {
+        userName: message.userName,
+        cost: message.reward.cost,
+        title: message.reward.title
+    });
+
     return (
         <MessageContainer>
-            🎉 {message.userName} потратил {message.reward.cost} опыта на {message.reward.title}
+            {rendered}
         </MessageContainer>
     );
 }

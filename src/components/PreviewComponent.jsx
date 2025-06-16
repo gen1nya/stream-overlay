@@ -118,8 +118,14 @@ export default function PreviewComponent() {
             <MessagePreviewContainer>
                 <ChatMessage message={message}/>
                 <ChatMessage message={longMessage}/>
-                <ChatRedemption message={redemptionMessage}/>
-                <ChatFollow message={followMessage}/>
+                <ChatRedemption
+                    message={redemptionMessage}
+                    template={theme.redeemMessage.template}
+                />
+                <ChatFollow
+                    message={followMessage}
+                    template={theme.followMessage.template}
+                />
             </MessagePreviewContainer>
         </>
 

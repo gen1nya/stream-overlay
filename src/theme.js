@@ -47,6 +47,7 @@ export const defaultTheme = {
         marginH: 10,
         marginV: 10,
         backgroundOpacity: 1.0,
+        template: "🎉 {userName} just followed!",
     },
     redeemMessage: {
         backgroundColor: '#3e837c', // #311e64
@@ -59,6 +60,7 @@ export const defaultTheme = {
         marginH: 10,
         marginV: 10,
         backgroundOpacity: 1.0,
+        template: "🎉 {userName} потратил {rewardCost} балов на {rewardTitle}",
     },
     player: {
         backgroundColor: '#3e837c',

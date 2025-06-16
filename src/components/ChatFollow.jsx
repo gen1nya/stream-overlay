@@ -54,13 +54,19 @@ const MessageContainer = styled.div`
     }};
 `;
 
-export default function ChatMessage({ message }) {
+export default function ChatMessage({ message, template }) {
+
+    function applyTemplate(template, data) {
+        return template.replace(/\{(\w+)}/g, (_, key) => {
+            return key in data ? data[key] : `{${key}}`;
+        });
+    }
+
+    const rendered = applyTemplate(template, { userName: message.userName });
+
     return (
         <MessageContainer>
-            <Text>
-                🎉 {message.userName} just followed!
-            </Text>
-
+            <Text>{rendered}</Text>
         </MessageContainer>
     );
 }

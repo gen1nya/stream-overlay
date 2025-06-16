@@ -223,7 +223,10 @@ export default function ChatOverlay() {
                     } else if (msg.type === 'follow') {
                         Content = <ChatFollow message={msg} />;
                     } else if (msg.type === 'redemption') {
-                        Content = <ChatRedemption message={msg} />;
+                        Content = <ChatRedemption
+                            message={msg}
+                            template={theme.redeemMessage.template}
+                        />;
                     } else {
                         return null;
                     }

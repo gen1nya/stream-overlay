@@ -6,6 +6,7 @@ import ColorSelectorComponent from "../ColorSelectorComponent";
 import SeekbarComponent from "../SeekbarComponent";
 import {Row} from "../SettingsComponent";
 import Separator from "../Separator";
+import {TemplateEditor} from "./TemplateEditor";
 
 const SettingsBlock = styled.div`
     width: calc(50% - 12px);
@@ -38,7 +39,7 @@ export default function RedeemPointsBlock({ current, onChange }) {
     return (
         <SettingsBlock>
             <Title>Сообщения наград за балы</Title>
-            <Accordion title = "Шрифт сообщений">
+            <Accordion title = "Текст">
                 <NumericEditorComponent
                     title={"Шрифт сообщений:"}
                     value={current.redeemMessage.fontSize} max={82} min={9} onChange={ value => {
@@ -51,9 +52,25 @@ export default function RedeemPointsBlock({ current, onChange }) {
                     }));
                 } } />
 
+                <TemplateEditor
+                    hint={"Доступные плейсхолдеры: {userName}, {cost}, {title}"}
+                    label="Шаблон для баллов канала"
+                    value={current.redeemMessage?.template ?? "🎉 {userName} потратил {cost} балов на {title}"}
+                    onChange={(newValue) =>
+                        handleChange((prev) => ({
+                            ...prev,
+                            redeemMessage: {
+                                ...prev.redeemMessage,
+                                template: newValue,
+                            },
+                        }))
+                    }
+                    placeholders={["userName", "cost", "title"]}
+                />
+
             </Accordion>
 
-            <Accordion title={"Цвета сообщений"}>
+            <Accordion title={"Цвета"}>
                 <Row>
                     <ColorSelectorComponent
                         title="Цвет фона:"
@@ -84,9 +101,6 @@ export default function RedeemPointsBlock({ current, onChange }) {
                             },
                         }))}
                     />
-                </Row>
-
-                <Row>
                     <ColorSelectorComponent
                         title="Цвет тени"
                         valueOpacity={current.redeemMessage?.shadowOpacity ?? 0.5}
@@ -100,14 +114,10 @@ export default function RedeemPointsBlock({ current, onChange }) {
                             },
                         }))}
                     />
-                    <Separator/>
-
                 </Row>
-
-
             </Accordion>
 
-            <Accordion title={"Параметры сообщений"}>
+            <Accordion title={"Внешний вид"}>
                 <Row>
                     <SeekbarComponent
                         title="Радиус тени"
