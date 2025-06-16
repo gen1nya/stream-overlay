@@ -28,16 +28,60 @@ const GlobalStyle = createGlobalStyle`
     }
 `;
 
+
+const BackgroundContainer = styled.div`
+    position: absolute;
+    z-index: -1;
+    background: ${({ theme }) => {
+        switch (theme.overlay?.backgroundType ?? "none") {
+            case 'none':
+                return 'transparent';
+            case 'color':
+                return theme.overlay?.backgroundColor || 'transparent';
+            case 'image':
+                return `url(${theme.overlay?.backgroundImage}) no-repeat center / cover`;
+            default:
+                return 'transparent';
+        }
+    }};
+    ${({ theme }) =>
+            theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
+                    ?
+                    `
+            aspect-ratio: ${theme.overlay.backgroundImageAspectRatio};
+            width: ${theme.overlay.containerWidth || 500}px;
+        `
+                    : ''}
+`;
+
+
 const ChatContainer = styled.div`
-    width: 100%;
-    height: 100%;
-    background-color: transparent;
+    box-sizing: border-box;
     color: #fff;
     overflow-y: auto;
     font-family: Arial, sans-serif;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+
+    border-radius: ${({ theme }) => theme.overlay?.borderRadius || 0}px;
+    
+    margin: ${({ theme }) => {
+        return `${theme.overlay?.paddingTop || 0}px  0px 0px ${theme.overlay?.paddingLeft || 0}px`;
+    }};
+
+    ${({ theme }) =>
+            theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
+                    ?
+                    `
+            width: ${(theme.overlay.chatWidth || 500)}px;
+            height: ${(theme.overlay.chatHeight || 500)}px;
+        `
+                    : ''}
+    &::-webkit-scrollbar {
+        width: 0 !important;
+        height: 0 !important;
+    }
 `;
 
 export default function ChatOverlay() {
@@ -153,6 +197,7 @@ export default function ChatOverlay() {
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
+            <BackgroundContainer />
             <ChatContainer ref={chatRef}>
                 {messages.map((msg, idx) => {
                     // Определяем «уникальный» ID для рефа
@@ -178,7 +223,10 @@ export default function ChatOverlay() {
                     } else if (msg.type === 'follow') {
                         Content = <ChatFollow message={msg} />;
                     } else if (msg.type === 'redemption') {
-                        Content = <ChatRedemption message={msg} />;
+                        Content = <ChatRedemption
+                            message={msg}
+                            template={theme.redeemMessage.template}
+                        />;
                     } else {
                         return null;
                     }

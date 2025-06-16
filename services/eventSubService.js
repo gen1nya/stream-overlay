@@ -6,13 +6,20 @@ const {
     EVENT_REDEMPTION,
     EVENT_CHANEL
 } = require('./../channels.js');
+const MESSAGE_TYPES = require('./eventSubMessageTypes');
+const knownTypes = Object.values(MESSAGE_TYPES);
 
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
+
+const DEFAULT_URL = 'wss://eventsub.wss.twitch.tv/ws';
 
 let ws = null;
 let eventHandler = null;
 let isStopping = false;
 let isConnecting = false;
+let connectUrl = DEFAULT_URL;
+let skipSubscribe = false;
+let ignoreClose = false;
 
 // restart EventSub websocket when tokens are refreshed
 authService.onTokenRefreshed(() => {
@@ -27,8 +34,10 @@ function registerEventHandlers(handler) {
     eventHandler = handler;
 }
 
-async function start() {
+async function start(url = DEFAULT_URL, skipSub = false) {
     isStopping = false;
+    connectUrl = url;
+    skipSubscribe = skipSub;
     if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
         console.log('ℹ️ EventSub WebSocket already connected.');
         return;
@@ -45,18 +54,20 @@ async function start() {
         return;
     }
 
-    ws = new WebSocket('wss://eventsub.wss.twitch.tv/ws');
+    ws = new WebSocket(connectUrl);
 
     ws.on('open', () => {
         isConnecting = false;
         console.log('🟢 Connected to Twitch EventSub WebSocket');
     });
 
+    ws.on('ping', () => ws.pong());
+
     ws.on('message', async (data) => {
         const msg = JSON.parse(data);
         const { metadata, payload } = msg;
 
-        if (metadata.message_type === 'notification') {
+        if (metadata.message_type === MESSAGE_TYPES.NOTIFICATION) {
             const event = payload.event;
 
             if (payload.subscription.type === 'channel.follow') {
@@ -92,29 +103,48 @@ async function start() {
             }
         }
 
-        if (metadata.message_type === 'session_welcome') {
+        if (metadata.message_type === MESSAGE_TYPES.SESSION_WELCOME) {
             const sessionId = payload.session.id;
             console.log('📡 Session started, ID:', sessionId);
-            await subscribeToEvents(sessionId);
+            if (!skipSubscribe) {
+                await subscribeToEvents(sessionId);
+            }
+            skipSubscribe = false;
         }
 
-        if (metadata.message_type === 'notification') {
+        if (metadata.message_type === MESSAGE_TYPES.NOTIFICATION) {
             const event = payload.event;
             console.log('🎉 Event received:', event);
         }
 
-        if (metadata.message_type === 'session_keepalive') {
+        if (metadata.message_type === MESSAGE_TYPES.SESSION_KEEPALIVE) {
             console.log(`💓 Keep-alive received ${Date.now()}`);
         }
 
-        if (metadata.message_type === 'revocation') {
+        if (metadata.message_type === MESSAGE_TYPES.SESSION_RECONNECT) {
+            const newUrl = payload.session.reconnect_url;
+            console.log('🔄 Reconnect requested. Connecting to new URL:', newUrl);
+            stop(false, true);
+            start(newUrl, true);
+        }
+
+
+        if (metadata.message_type === MESSAGE_TYPES.REVOCATION) {
             console.warn('⚠️ Subscription revoked:', payload);
+        }
+
+        if (!knownTypes.includes(metadata.message_type)) {
+            console.log('❓ Unknown message type:', metadata.message_type, payload);
         }
     });
 
     ws.on('close', () => {
         isConnecting = false;
         console.log('🔴 Connection closed');
+        if (!ignoreClose && !isStopping) {
+            setTimeout(() => start(), 5000);
+        }
+        ignoreClose = false;
     });
     ws.on('error', (err) => {
         isConnecting = false;
@@ -210,13 +240,16 @@ async function subscribeToEvents(sessionId) {
 
 }
 
-function stop() {
+function stop(setStopping = true, ignore = false) {
     if (ws) {
+        ignoreClose = ignore;
         ws.close();
         ws = null;
         console.log('🛑 EventSub WebSocket closed.');
     }
-    isStopping = true;
+    if (setStopping) {
+        isStopping = true;
+    }
     isConnecting = false;
 }
 

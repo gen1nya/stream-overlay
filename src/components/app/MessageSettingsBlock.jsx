@@ -37,8 +37,8 @@ export default function MessageSettingsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Настройки сообщений</Title>
-            <Accordion title = {"Шрифт сообщений"}>
+            <Title>Сообщения чатерсов</Title>
+            <Accordion title = {"Текст"}>
                 <Row align="center" gap="0.5rem">
                     <NumericEditorComponent
                         title={"Шрифт сообщений:"}
@@ -74,76 +74,96 @@ export default function MessageSettingsBlock({ current, onChange }) {
                 </Row>
             </Accordion>
 
-            <Accordion title={"Цвета сообщений"}>
-                <ColorSelectorComponent
-                    title={"Цвет фона обычного сообщения:"}
-                    valueOpacity={current.chatMessage.backgroundOpacity}
-                    valueColor={current.chatMessage.backgroundColor}
-                    onChange={ values =>
-                        handleChange(prev => ({
+            <Accordion title={"Цвета"}>
+                <Row>
+                    <ColorSelectorComponent
+                        title={"Цвет фона"}
+                        valueOpacity={current.chatMessage.backgroundOpacity}
+                        valueColor={current.chatMessage.backgroundColor}
+                        onChange={ values =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    backgroundOpacity: values.o,
+                                    backgroundColor: values.color,
+                                },
+                            }))
+                        }
+                    />
+
+                    {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
+                    <ColorSelectorComponent
+                        title="Цвет обводки"
+                        valueOpacity={current.chatMessage.borderOpacity}
+                        valueColor={current.chatMessage.borderColor}
+                        onChange={value => handleChange(prev => ({
                             ...prev,
                             chatMessage: {
                                 ...prev.chatMessage,
-                                backgroundOpacity: values.o,
-                                backgroundColor: values.color,
+                                borderOpacity: value.o,
+                                borderColor: value.color,
                             },
-                        }))
-                    }
-                />
+                        }))}
+                    />
 
-                {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
-                <ColorSelectorComponent
-                    title="Цвет обводки обычного сообщения:"
-                    valueOpacity={current.chatMessage.borderOpacity}
-                    valueColor={current.chatMessage.borderColor}
-                    onChange={value => handleChange(prev => ({
-                        ...prev,
-                        chatMessage: {
-                            ...prev.chatMessage,
-                            borderOpacity: value.o,
-                            borderColor: value.color,
-                        },
-                    }))}
-                />
-
-                <ColorSelectorComponent
-                    title="Цвет тени &nbsp;«обычных»&nbsp;сообщений:"
-                    valueOpacity={current.chatMessage.shadowOpacity}
-                    valueColor={current.chatMessage.shadowColor}
-                    onChange={value => handleChange(prev => ({
-                        ...prev,
-                        chatMessage: {
-                            ...prev.chatMessage,
-                            shadowOpacity: value.o,
-                            shadowColor: value.color,
-                        },
-                    }))}
-                />
+                    <ColorSelectorComponent
+                        title="Цвет тени"
+                        valueOpacity={current.chatMessage.shadowOpacity}
+                        valueColor={current.chatMessage.shadowColor}
+                        onChange={value => handleChange(prev => ({
+                            ...prev,
+                            chatMessage: {
+                                ...prev.chatMessage,
+                                shadowOpacity: value.o,
+                                shadowColor: value.color,
+                            },
+                        }))}
+                    />
+                </Row>
             </Accordion>
 
-            <Accordion title={"Параметры сообщений"}>
-                <SeekbarComponent
-                    title="Радиус тени &nbsp;«обычных»&nbsp;сообщений:"
-                    min="0"
-                    max="20"
-                    value={current.chatMessage.shadowRadius ?? 0}
-                    step="1"
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                shadowRadius: e,
-                            },
-                        }))
-                    }
-                />
+            <Accordion title={"Внешний вид"}>
+                <Row>
+                    <SeekbarComponent
+                        title="Радиус тени"
+                        min="0"
+                        max="20"
+                        value={current.chatMessage.shadowRadius ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    shadowRadius: e,
+                                },
+                            }))
+                        }
+                    />
+                    <SeekbarComponent
+                        title="Радиус скругления"
+                        min="0"
+                        max="20"
+                        value={current.chatMessage.borderRadius ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    borderRadius: e,
+                                },
+                            }))
+                        }
+                    />
+                </Row>
 
                 <RadioGroupComponent
-                    title="Направление&nbsp;«обычных»&nbsp;сообщений:"
+                    title="положение заголовка"
                     options={[
-                        {value: "row", label: "По горизонтали"},
-                        {value: "column", label: "По вертикали"},
+                        {value: "row", label: "слева"},
+                        {value: "column", label: "сверху"},
                     ]}
                     selected={current.chatMessage.direction}
                     onChange={value =>
@@ -152,23 +172,6 @@ export default function MessageSettingsBlock({ current, onChange }) {
                             chatMessage: {
                                 ...prev.chatMessage,
                                 direction: value,
-                            },
-                        }))
-                    }
-                />
-
-                <SeekbarComponent
-                    title="Радиус скругления &nbsp;«обычных»&nbsp;сообщений:"
-                    min="0"
-                    max="20"
-                    value={current.chatMessage.borderRadius ?? 0}
-                    step="1"
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                borderRadius: e,
                             },
                         }))
                     }

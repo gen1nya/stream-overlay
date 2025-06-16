@@ -1,6 +1,7 @@
-import React from 'react';
+import React, {useState} from 'react';
 import styled from 'styled-components';
 import {hexToRgba} from "../utils";
+import {defaultTheme} from "../theme";
 
 const MessageContainer = styled.div`
     padding: ${({theme}) => {
@@ -26,12 +27,44 @@ const MessageContainer = styled.div`
         return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
     font-style: italic;
+    color: ${props => props.color || '#fff'};
+    text-shadow: ${({theme}) => {
+        const {
+            textShadowColor,
+            textShadowOpacity,
+            textShadowRadius,
+            textShadowXPosition,
+            textShadowYPosition
+        } = theme.allMessages;
+        console.log(theme.allMessages);
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+    }};
+    backdrop-filter: ${({theme}) => {
+        if (theme.allMessages.blurRadius && theme.allMessages.blurRadius > 0) {
+            return `blur(${theme.allMessages.blurRadius}px)`;
+        } else {
+            return 'none';
+        }
+    }};
 `;
 
-export default function ChatRedemption({ message }) {
+export default function ChatRedemption({ message, template }) {
+
+    function applyTemplate(template, data) {
+        return template.replace(/\{(\w+)}/g, (_, key) => {
+            return key in data ? data[key] : `{${key}}`;
+        });
+    }
+
+    const rendered = applyTemplate(template, {
+        userName: message.userName,
+        cost: message.reward.cost,
+        title: message.reward.title
+    });
+
     return (
         <MessageContainer>
-            🎉 {message.userName} потратил {message.reward.cost} опыта на {message.reward.title}
+            {rendered}
         </MessageContainer>
     );
 }

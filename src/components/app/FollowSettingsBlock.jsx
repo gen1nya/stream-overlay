@@ -6,6 +6,8 @@ import ColorSelectorComponent from "../ColorSelectorComponent";
 import SeekbarComponent from "../SeekbarComponent";
 import RadioGroupComponent from "../RadioGroupComponent";
 import {Row} from "../SettingsComponent";
+import Separator from "../Separator";
+import {TemplateEditor} from "./TemplateEditor";
 
 const SettingsBlock = styled.div`
     width: calc(50% - 12px);
@@ -37,74 +39,95 @@ export default function FollowSettingsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Настройки follow</Title>
-            <Accordion title = "Шрифт сообщений">
-                <NumericEditorComponent
-                    title={"Размер:"}
-                    value={current.followMessage.fontSize}
-                    max={82}
-                    min={9}
-                    onChange={ value => {
-                        handleChange(prev => ({
+            <Title>Сообщения "follow"</Title>
+            <Accordion title = "Текст">
+                <Row>
+                    <NumericEditorComponent
+                        title={"Размер:"}
+                        value={current.followMessage.fontSize}
+                        max={82}
+                        min={9}
+                        onChange={ value => {
+                            handleChange(prev => ({
+                                ...prev,
+                                followMessage: {
+                                    ...prev.followMessage,
+                                    fontSize: value,
+                                },
+                            }));
+                        } }
+                    />
+                    <Separator/>
+                    <Separator/>
+                </Row>
+                <TemplateEditor
+                    hint={"Доступные плейсхолдеры: {userName}"}
+                    label="Шаблон для новых фолловеров"
+                    value={current.followMessage?.template ?? "🎉 {userName} just followed!"}
+                    onChange={(newValue) =>
+                        handleChange((prev) => ({
                             ...prev,
                             followMessage: {
                                 ...prev.followMessage,
-                                fontSize: value,
-                            },
-                        }));
-                    } }
-                />
-            </Accordion>
-
-            <Accordion title={"Цвета сообщений"}>
-                {/* цвет фона обычного сообщения */}
-                <ColorSelectorComponent
-                    title="Цвет фона:"
-                    valueOpacity={current.followMessage?.backgroundOpacity ?? 1.0}
-                    valueColor={current.followMessage?.backgroundColor ?? "#3e837c"}
-                    onChange={ values =>
-                        handleChange(prev => ({
-                            ...prev,
-                            followMessage: {
-                                ...prev.followMessage,
-                                backgroundOpacity: values.o,
-                                backgroundColor: values.color,
+                                template: newValue,
                             },
                         }))
                     }
-                />
-
-                {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
-                <ColorSelectorComponent
-                    title="Цвет обводки:"
-                    valueOpacity={current.followMessage?.borderOpacity ?? 1.0}
-                    valueColor={current.followMessage?.borderColor ?? "#00ffe3"}
-                    onChange={value => handleChange(prev => ({
-                        ...prev,
-                        followMessage: {
-                            ...prev.followMessage,
-                            borderOpacity: value.o,
-                            borderColor: value.color,
-                        },
-                    }))}
-                />
-
-                <ColorSelectorComponent
-                    title="Цвет тени:"
-                    valueOpacity={current.followMessage?.shadowOpacity ?? 0.5}
-                    valueColor={current.followMessage?.shadowColor ?? "#000"}
-                    onChange={value => handleChange(prev => ({
-                        ...prev,
-                        followMessage: {
-                            ...prev.followMessage,
-                            shadowOpacity: value.o,
-                            shadowColor: value.color,
-                        },
-                    }))}
+                    placeholders={["userName"]}
                 />
             </Accordion>
 
-            <Accordion title={"Параметры сообщений"}>
+            <Accordion title={"Цвета"}>
+                {/* цвет фона обычного сообщения */}
+                <Row>
+                    <ColorSelectorComponent
+                        title="Цвет фона:"
+                        valueOpacity={current.followMessage?.backgroundOpacity ?? 1.0}
+                        valueColor={current.followMessage?.backgroundColor ?? "#3e837c"}
+                        onChange={ values =>
+                            handleChange(prev => ({
+                                ...prev,
+                                followMessage: {
+                                    ...prev.followMessage,
+                                    backgroundOpacity: values.o,
+                                    backgroundColor: values.color,
+                                },
+                            }))
+                        }
+                    />
+
+                    {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
+                    <ColorSelectorComponent
+                        title="Цвет обводки:"
+                        valueOpacity={current.followMessage?.borderOpacity ?? 1.0}
+                        valueColor={current.followMessage?.borderColor ?? "#00ffe3"}
+                        onChange={value => handleChange(prev => ({
+                            ...prev,
+                            followMessage: {
+                                ...prev.followMessage,
+                                borderOpacity: value.o,
+                                borderColor: value.color,
+                            },
+                        }))}
+                    />
+
+                    <ColorSelectorComponent
+                        title="Цвет тени:"
+                        valueOpacity={current.followMessage?.shadowOpacity ?? 0.5}
+                        valueColor={current.followMessage?.shadowColor ?? "#000"}
+                        onChange={value => handleChange(prev => ({
+                            ...prev,
+                            followMessage: {
+                                ...prev.followMessage,
+                                shadowOpacity: value.o,
+                                shadowColor: value.color,
+                            },
+                        }))}
+                    />
+                </Row>
+            </Accordion>
+
+            <Accordion title={"Внешний вид"}>
                 <Row>
                     <SeekbarComponent
                         title="Радиус тени:"

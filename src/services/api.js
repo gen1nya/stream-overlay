@@ -39,6 +39,10 @@ export const onAccountReady = () => {
     return ipcRenderer?.invoke('auth:onAccountReady');
 };
 
+export const getAccountInfo = () => {
+    return ipcRenderer?.invoke('auth:getAccountInfo');
+};
+
 export const openOverlay = () => {
     return ipcRenderer?.invoke('chat:open-overlay');
 };
