@@ -10,73 +10,82 @@ const MESSAGE_TYPES = require('./eventSubMessageTypes');
 const knownTypes = Object.values(MESSAGE_TYPES);
 
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
-
 const DEFAULT_URL = 'wss://eventsub.wss.twitch.tv/ws';
 
-let ws = null;
-let eventHandler = null;
-let isStopping = false;
-let isConnecting = false;
-let connectUrl = DEFAULT_URL;
-let skipSubscribe = false;
-let ignoreClose = false;
-let lastEventTimestamp = Date.now();
+class EventSubService {
+    constructor() {
+        this.ws = null;
+        this.eventHandler = null;
+        this.isStopping = false;
+        this.isConnecting = false;
+        this.connectUrl = DEFAULT_URL;
+        this.skipSubscribe = false;
+        this.ignoreClose = false;
+        this.lastEventTimestamp = Date.now();
 
-// restart EventSub websocket when tokens are refreshed
-authService.onTokenRefreshed(() => {
-    if (!isStopping) {
-        console.log('🔄 Tokens refreshed, restarting EventSub connection...');
-        stop();
-        start();
-    }
-});
-
-function registerEventHandlers(handler) {
-    eventHandler = handler;
-}
-
-async function start(url = DEFAULT_URL, skipSub = false) {
-    isStopping = false;
-    connectUrl = url;
-    skipSubscribe = skipSub;
-    if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
-        console.log('ℹ️ EventSub WebSocket already connected.');
-        return;
-    }
-    if (isConnecting) {
-        console.log('⏳ EventSub connection already in progress.');
-        return;
-    }
-    isConnecting = true;
-    const tokens = await authService.getTokens();
-    if (!tokens) {
-        console.error('❌ No tokens found. Cannot start EventSub.');
-        isConnecting = false;
-        return;
+        authService.onTokenRefreshed(() => {
+            if (!this.isStopping) {
+                console.log('🔄 Tokens refreshed, restarting EventSub connection...');
+                this.stop();
+                this.start();
+            }
+        });
     }
 
-    ws = new WebSocket(connectUrl);
+    registerEventHandlers(handler) {
+        this.eventHandler = handler;
+    }
 
-    ws.on('open', () => {
-        isConnecting = false;
-        lastEventTimestamp = Date.now();
-        console.log('🟢 Connected to Twitch EventSub WebSocket');
-    });
+    async start(url = DEFAULT_URL, skipSub = false) {
+        this.isStopping = false;
+        this.connectUrl = url;
+        this.skipSubscribe = skipSub;
 
-    ws.on('ping', () => ws.pong());
+        if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
+            console.log('ℹ️ EventSub WebSocket already connected.');
+            return;
+        }
 
-    ws.on('message', async (data) => {
-        lastEventTimestamp = Date.now();
-        const msg = JSON.parse(data);
-        const { metadata, payload } = msg;
+        if (this.isConnecting) {
+            console.log('⏳ EventSub connection already in progress.');
+            return;
+        }
+
+        this.isConnecting = true;
+        const tokens = await authService.getTokens();
+        if (!tokens) {
+            console.error('❌ No tokens found. Cannot start EventSub.');
+            this.isConnecting = false;
+            return;
+        }
+
+        const ws = new WebSocket(this.connectUrl);
+        this.ws = ws;
+
+        ws.on('open', () => {
+            this.isConnecting = false;
+            this.lastEventTimestamp = Date.now();
+            console.log('🟢 Connected to Twitch EventSub WebSocket');
+        });
+
+        ws.on('ping', function () {
+            if (this.readyState === WebSocket.OPEN) {
+                this.pong();
+            }
+        });
+
+        ws.on('message', async (data) => {
+            this.lastEventTimestamp = Date.now();
+            const msg = JSON.parse(data);
+            const { metadata, payload } = msg;
 
         if (metadata.message_type === MESSAGE_TYPES.NOTIFICATION) {
             const event = payload.event;
 
             if (payload.subscription.type === 'channel.follow') {
                 console.log(`🎉 Новый фолловер: ${event.user_name}`);
-                if (eventHandler) {
-                    eventHandler(
+                if (this.eventHandler) {
+                    this.eventHandler(
                         `${EVENT_CHANEL}:${EVENT_FOLLOW}`,
                         {
                             userId: event.user_id,
@@ -92,8 +101,8 @@ async function start(url = DEFAULT_URL, skipSub = false) {
             if (payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add') {
                 const reward = payload.event.reward;
                 console.log(`🎉 потрачены балы канала: ${reward.title} ${reward.prompt} стоило ${reward.cost} `);
-                if (eventHandler) {
-                    eventHandler(
+                if (this.eventHandler) {
+                    this.eventHandler(
                         `${EVENT_CHANEL}:${EVENT_REDEMPTION}`,
                         {
                             userId: event.user_id,
@@ -109,10 +118,10 @@ async function start(url = DEFAULT_URL, skipSub = false) {
         if (metadata.message_type === MESSAGE_TYPES.SESSION_WELCOME) {
             const sessionId = payload.session.id;
             console.log('📡 Session started, ID:', sessionId);
-            if (!skipSubscribe) {
-                await subscribeToEvents(sessionId);
+            if (!this.skipSubscribe) {
+                await this.subscribeToEvents(sessionId);
             }
-            skipSubscribe = false;
+            this.skipSubscribe = false;
         }
 
         if (metadata.message_type === MESSAGE_TYPES.NOTIFICATION) {
@@ -127,8 +136,8 @@ async function start(url = DEFAULT_URL, skipSub = false) {
         if (metadata.message_type === MESSAGE_TYPES.SESSION_RECONNECT) {
             const newUrl = payload.session.reconnect_url;
             console.log('🔄 Reconnect requested. Connecting to new URL:', newUrl);
-            stop(false, true);
-            start(newUrl, true);
+            this.stop(false, true);
+            this.start(newUrl, true);
         }
 
 
@@ -142,35 +151,35 @@ async function start(url = DEFAULT_URL, skipSub = false) {
     });
 
     ws.on('close', () => {
-        isConnecting = false;
+        this.isConnecting = false;
         console.log('🔴 Connection closed');
-        if (!ignoreClose && !isStopping) {
-            setTimeout(() => start(), 5000);
+        if (!this.ignoreClose && !this.isStopping) {
+            setTimeout(() => this.start(), 5000);
         }
-        ignoreClose = false;
+        this.ignoreClose = false;
     });
     ws.on('error', (err) => {
-        isConnecting = false;
+        this.isConnecting = false;
         console.error('❌ WebSocket Error:', err);
     });
-}
-
-async function subscribeToEvents(sessionId) {
-    const tokens = await authService.getTokens();
-    const broadcasterId = tokens ? tokens.user_id : null;
-    const accessToken = tokens ? tokens.access_token : null;
-
-    if (!accessToken || !broadcasterId) {
-        console.error('❌ Tokens unavailable. Stopping EventSub.');
-        stop();
-        return;
     }
 
-    if (!broadcasterId) {
-        console.log(tokens);
-        console.error('❌ Broadcaster ID not found.');
-        return;
-    }
+    async subscribeToEvents(sessionId) {
+        const tokens = await authService.getTokens();
+        const broadcasterId = tokens ? tokens.user_id : null;
+        const accessToken = tokens ? tokens.access_token : null;
+
+        if (!accessToken || !broadcasterId) {
+            console.error('❌ Tokens unavailable. Stopping EventSub.');
+            this.stop();
+            return;
+        }
+
+        if (!broadcasterId) {
+            console.log(tokens);
+            console.error('❌ Broadcaster ID not found.');
+            return;
+        }
 
     const subscriptions = {
         'channel.raid': {
@@ -198,67 +207,73 @@ async function subscribeToEvents(sessionId) {
         }
     };
 
-    for (const [type, sub] of Object.entries(subscriptions)) {
-        if (!sub || typeof sub.condition !== 'function' || !sub.version) {
-            console.warn(`⚠️ Invalid or incomplete subscription config for ${type}. Skipping...`);
-            continue;
-        }
+        for (const [type, sub] of Object.entries(subscriptions)) {
+            if (!sub || typeof sub.condition !== 'function' || !sub.version) {
+                console.warn(`⚠️ Invalid or incomplete subscription config for ${type}. Skipping...`);
+                continue;
+            }
 
-        const conditionData = sub.condition(broadcasterId);
+            const conditionData = sub.condition(broadcasterId);
 
-        try {
-            await axios.post('https://api.twitch.tv/helix/eventsub/subscriptions', {
-                type,
-                version: sub.version,
-                condition: conditionData,
-                transport: {
-                    method: 'websocket',
-                    session_id: sessionId
-                }
-            }, {
-                headers: {
-                    'Client-ID': CLIENT_ID,
-                    'Authorization': `Bearer ${accessToken}`,
-                    'Content-Type': 'application/json'
-                }
-            });
+            try {
+                await axios.post('https://api.twitch.tv/helix/eventsub/subscriptions', {
+                    type,
+                    version: sub.version,
+                    condition: conditionData,
+                    transport: {
+                        method: 'websocket',
+                        session_id: sessionId
+                    }
+                }, {
+                    headers: {
+                        'Client-ID': CLIENT_ID,
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
 
-            console.log(`✅ Subscribed to ${type}`);
-        } catch (error) {
-            const status = error.response?.status;
-            if (status === 401 && !isStopping) {
-                console.warn('⚠️ EventSub unauthorized, attempting token refresh...');
-                const refreshed = await authService.getTokens();
-                if (!refreshed) {
-                    console.error('❌ Token refresh failed. Stopping EventSub.');
-                    stop();
+                console.log(`✅ Subscribed to ${type}`);
+            } catch (error) {
+                const status = error.response?.status;
+                if (status === 401 && !this.isStopping) {
+                    console.warn('⚠️ EventSub unauthorized, attempting token refresh...');
+                    const refreshed = await authService.getTokens();
+                    if (!refreshed) {
+                        console.error('❌ Token refresh failed. Stopping EventSub.');
+                        this.stop();
+                        return;
+                    }
+                    await this.subscribeToEvents(sessionId); // retry with new token
                     return;
                 }
-                await subscribeToEvents(sessionId); // retry with new token
-                return;
+                console.error(`❌ Failed to subscribe to ${type}:`, error.response?.data || error.message);
             }
-            console.error(`❌ Failed to subscribe to ${type}:`, error.response?.data || error.message);
         }
     }
 
+    stop(setStopping = true, ignore = false) {
+        if (this.ws) {
+            this.ignoreClose = ignore;
+            this.ws.close();
+            this.ws = null;
+            console.log('🛑 EventSub WebSocket closed.');
+        }
+        if (setStopping) {
+            this.isStopping = true;
+        }
+        this.isConnecting = false;
+    }
+
+    getLastEventTimestamp() {
+        return this.lastEventTimestamp;
+    }
 }
 
-function stop(setStopping = true, ignore = false) {
-    if (ws) {
-        ignoreClose = ignore;
-        ws.close();
-        ws = null;
-        console.log('🛑 EventSub WebSocket closed.');
-    }
-    if (setStopping) {
-        isStopping = true;
-    }
-    isConnecting = false;
-}
+const instance = new EventSubService();
 
 module.exports = {
-    start,
-    stop,
-    registerEventHandlers,
-    getLastEventTimestamp: () => lastEventTimestamp,
+    start: (...args) => instance.start(...args),
+    stop: (...args) => instance.stop(...args),
+    registerEventHandlers: (handler) => instance.registerEventHandlers(handler),
+    getLastEventTimestamp: () => instance.getLastEventTimestamp(),
 };
