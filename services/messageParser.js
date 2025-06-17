@@ -83,7 +83,7 @@ function parseEmotes(message, emotesTag) {
     for (let i = 0; i < chars.length; i++) {
         if (emoteMap[i]) {
             const { end, emoteId } = emoteMap[i];
-            result += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" alt="emote" style="vertical-align: middle;" />`;
+            result += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" alt="emote" style="vertical-align: middle; height: 1em;" />`;
             i = end;
         } else {
             result += escapeHtml(chars[i]);
