@@ -78,6 +78,9 @@ const MessageText = styled.span`
     }};
     color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
+    img {
+        height: 1em;
+    }
 `;
 
 export default function ChatMessage({ message }) {
