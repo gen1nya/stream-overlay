@@ -49,8 +49,9 @@ const BackgroundContainer = styled.div`
             theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
                     ?
                     `
-            aspect-ratio: ${theme.overlay.backgroundImageAspectRatio};
-            width: ${theme.overlay.containerWidth || 500}px;
+                    opacity: ${theme.overlay?.backgroundOpacity || 1};
+                    aspect-ratio: ${theme.overlay.backgroundImageAspectRatio};
+                    width: ${theme.overlay.containerWidth || 500}px;
         `
                     : ''}
 `;

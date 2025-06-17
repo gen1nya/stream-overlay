@@ -41,7 +41,7 @@ const InputField = styled.input`
 
 const ConfirmButton = styled.button`
     padding: 8px 12px;
-    width: 90px;
+    width: 120px;
     background-color: ${({ confirmed }) => (confirmed ? '#4caf50' : '#f44336')};
     color: white;
     border: none;
@@ -54,8 +54,8 @@ const ConfirmButton = styled.button`
     }
 `;
 
-export default function ConfirmableInputField({ onConfirm, onSuccess, onError, placeholder }) {
-    const [inputValue, setInputValue] = useState('');
+export default function ConfirmableInputField({ onConfirm, onSuccess, onError, placeholder, initialValue = '' }) {
+    const [inputValue, setInputValue] = useState(initialValue);
     const [isValid, setIsValid] = useState(true);
     const [confirmed, setConfirmed] = useState(false);
     const inputRef = useRef(null);

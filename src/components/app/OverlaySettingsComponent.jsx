@@ -198,27 +198,48 @@ export default function OverlaySettingsComponent({ current, onChange }) {
                                     };
                                 });
                             }}
+                            initialValue={current.overlay?.backgroundImage ?? ""}
                             onSuccess={value => console.log("Image URL confirmed:", value)}
                             onError={error => console.error("Error confirming image URL:", error)}
                             placeholder="Введите ссылку на изображение"
                         />
-                        {/*задает ширину компонента*/}
-                        <SeekbarComponent
-                            title={`Ширина фона (${current.overlay.containerWidth}):`}
-                            min="100"
-                            max="2000"
-                            value={current.overlay?.containerWidth ?? 500}
-                            step="1"
-                            onChange={e =>
-                                handleChange(prev => ({
-                                    ...prev,
-                                    overlay: {
-                                        ...prev.overlay,
-                                        containerWidth: e,
-                                    },
-                                }))
-                            }
-                        />
+                        <Row>
+                            {/*задает ширину компонента*/}
+                            <SeekbarComponent
+                                title={`Ширина фона (${current.overlay.containerWidth}):`}
+                                min="100"
+                                max="2000"
+                                value={current.overlay?.containerWidth ?? 500}
+                                step="1"
+                                onChange={e =>
+                                    handleChange(prev => ({
+                                        ...prev,
+                                        overlay: {
+                                            ...prev.overlay,
+                                            containerWidth: e,
+                                        },
+                                    }))
+                                }
+                            />
+                            {/*задает ширину компонента*/}
+                            <SeekbarComponent
+                                title={`Прозрачность фона (${current.overlay?.backgroundOpacity ?? 1}):`}
+                                min="0"
+                                max="1"
+                                value={current.overlay?.backgroundOpacity ?? 1}
+                                step="0.01"
+                                onChange={e =>
+                                    handleChange(prev => ({
+                                        ...prev,
+                                        overlay: {
+                                            ...prev.overlay,
+                                            backgroundOpacity: e,
+                                        },
+                                    }))
+                                }
+                            />
+                        </Row>
+
                     </>
                 )}
 
