@@ -187,7 +187,9 @@ app.whenReady().then(() => {
     });
 
     ipcMain.handle('system:reconnect', async () => {
-        eventSubService.stop();
+        // Ignore the automatic reconnect triggered on close so we don't create
+        // duplicate EventSub connections when manually restarting
+        eventSubService.stop({ setStopping: false, ignoreClose: true });
         chatService.stopChat();
         eventSubService.start();
         chatService.startChat();

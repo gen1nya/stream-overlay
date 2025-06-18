@@ -11,6 +11,8 @@ const knownTypes = Object.values(MESSAGE_TYPES);
 
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
 const DEFAULT_URL = 'wss://eventsub.wss.twitch.tv/ws';
+const HEALTH_CHECK_INTERVAL = 60 * 1000; // 1 minute
+const INACTIVITY_THRESHOLD = 6 * 60 * 1000; // restart if no events for 6 min
 
 class EventSubService {
     constructor() {
@@ -26,10 +28,21 @@ class EventSubService {
         authService.onTokenRefreshed(() => {
             if (!this.isStopping) {
                 console.log('🔄 Tokens refreshed, restarting EventSub connection...');
-                this.stop();
+                // ignoreClose ensures the automatic reconnect on "close" doesn't
+                // spawn an extra connection while we manually restart
+                this.stop({ setStopping: false, ignoreClose: true });
                 this.start();
             }
         });
+
+        setInterval(() => {
+            const inactivity = Date.now() - this.lastEventTimestamp;
+            if (inactivity > INACTIVITY_THRESHOLD && !this.isConnecting && !this.isStopping) {
+                console.warn('⚠️ No EventSub activity detected, restarting connection...');
+                this.stop();
+                this.start();
+            }
+        }, HEALTH_CHECK_INTERVAL);
     }
 
     registerEventHandlers(handler) {
@@ -136,7 +149,7 @@ class EventSubService {
         if (metadata.message_type === MESSAGE_TYPES.SESSION_RECONNECT) {
             const newUrl = payload.session.reconnect_url;
             console.log('🔄 Reconnect requested. Connecting to new URL:', newUrl);
-            this.stop(false, true);
+            this.stop({ setStopping: false, ignoreClose: true });
             this.start(newUrl, true);
         }
 
@@ -251,9 +264,10 @@ class EventSubService {
         }
     }
 
-    stop(setStopping = true, ignore = false) {
+    stop(options = {}) {
+        const { setStopping = true, ignoreClose = false } = options;
         if (this.ws) {
-            this.ignoreClose = ignore;
+            this.ignoreClose = ignoreClose;
             this.ws.close();
             this.ws = null;
             console.log('🛑 EventSub WebSocket closed.');
