@@ -8,6 +8,7 @@ import LoadingComponent from "./components/LoadingComponent";
 import WrongPageComponent  from "./components/WrongPageComponent";
 import PreviewComponent from "./components/PreviewComponent";
 import AudioPlayerComponent from "./components/AudioPlayerComponent";
+import FFTBars from "./components/FFTBars";
 
 
 export default function App() {
@@ -15,6 +16,7 @@ export default function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/audio" element={<AudioPlayerComponent/>} />
+                <Route path="/audio-fft" element={<FFTBars/>} />
                 <Route path="/preview" element={<PreviewComponent/>}/>
                 <Route path="/loading" element={<LoadingComponent/>} />
                 <Route path="/settings" element={<Settings/>} />

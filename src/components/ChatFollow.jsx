@@ -65,6 +65,7 @@ export default function ChatMessage({ message, template }) {
                 return key in data ? data[key] : `{${key}}`;
             });
         } catch (error) {
+            console.log("Error applying template:", template, data);
             console.error("Error applying template:", error);
             return 'format error';
         }

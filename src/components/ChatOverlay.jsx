@@ -65,6 +65,7 @@ const ChatContainer = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
+    height: 100%;
 
     border-radius: ${({ theme }) => theme.overlay?.borderRadius || 0}px;
     
@@ -239,7 +240,10 @@ export default function ChatOverlay() {
                     if (msg.type === 'chat') {
                         Content = <ChatMessage message={msg} />;
                     } else if (msg.type === 'follow') {
-                        Content = <ChatFollow message={msg} />;
+                        Content = <ChatFollow
+                            message={msg}
+                            template={theme.followMessage.template}
+                        />;
                     } else if (msg.type === 'redemption') {
                         Content = <ChatRedemption
                             message={msg}
