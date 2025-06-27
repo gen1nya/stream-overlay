@@ -6,8 +6,8 @@ import styled from "styled-components";
     =============================== */
 
 const Canvas = styled.canvas`
-    width: 1800px;
-    height: 800px;
+    width: 100%;
+    height: 100%;
     display: block;
 `;
 
@@ -18,11 +18,11 @@ const FFTBars = ({
                      wsUrl             = "ws://localhost:5001/ws",
                      barColor          = "#1a9c00",
                      barGradient       = true,
-                     backgroundColor   = "#000000",
+                     backgroundColor   = "rgba(197,89,89,0.06)",
                      smoothDuration    = 60,      // ms, smoothing duration
                      reconnectInterval = 2000,    // ms, socket reconnect interval
                      /* ----- пики ----- */
-                     peakHold          = 500,     // ms, peak hold duration
+                     peakHold          = 10,     // ms, peak hold duration
                      peakFall          = 800,     // ms, peak fall duration
                      peakColor         = "#37ff00",
                      peakThickness     = 2,       // px, thickness of peak line
@@ -65,8 +65,12 @@ const FFTBars = ({
 
     const handleResize = (ctx) => {
         const canvas = canvasRef.current;
-        canvas.width  = canvas.clientWidth;
-        canvas.height = canvas.clientHeight;
+        //canvas.width  = canvas.clientWidth;
+        //canvas.height = canvas.clientHeight;
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width;
+        canvas.height = rect.height;
+
 
         const W = canvas.width;
         const barW = W / BAR_COUNT;
@@ -165,12 +169,22 @@ const FFTBars = ({
             ws.onmessage = (e) => {
                 try {
                     const { type, data } = JSON.parse(e.data);
-                    if (type !== "fft" || !Array.isArray(data) || data.length !== BAR_COUNT) return;
+                    if (type !== "fft" || !Array.isArray(data)) return;
+
+                    const input = data.map(x => Math.min(1, Math.max(0, x)));
+
+                    let processed;
+                    if (input.length === bars) {
+                        processed = input;
+                    } else {
+                        processed = downscaleSpectrumWeighted(input, bars);
+                    }
 
                     start.current.set(current.current);
-                    for (let i = 0; i < BAR_COUNT; i++) {
-                        target.current[i] = Math.min(1, Math.max(0, data[i]));
+                    for (let i = 0; i < bars; i++) {
+                        target.current[i] = processed[i];
                     }
+
                     animStart.current = performance.now();
                 } catch (err) {
                     console.error("WS parse error", err);
@@ -204,7 +218,81 @@ const FFTBars = ({
         bars,
     ]);
 
+    function downscaleSpectrumWeighted(input, targetSize) {
+        const inputSize = input.length;
+        const output = new Array(targetSize);
+        const curveFactor = 0.8;
+
+        for (let i = 0; i < targetSize; i++) {
+            const scaled = Math.pow(i / targetSize, curveFactor);
+            const start = Math.floor(inputSize * scaled);
+            const end = Math.floor(inputSize * Math.pow((i + 1) / targetSize, curveFactor));
+
+            let sum = 0;
+            let weightSum = 0;
+
+            for (let j = start; j < end; j++) {
+                const weight = 1 / (j + 1); // можно поиграться с весами
+                sum += input[j] * weight;
+                weightSum += weight;
+            }
+
+            output[i] = weightSum > 0 ? sum / weightSum : 0;
+        }
+
+        return output;
+    }
+
+    function downscaleSpectrum(input, targetSize, mode = 'avg') {
+        const factor = input.length / targetSize;
+        const output = new Array(targetSize);
+
+        for (let i = 0; i < targetSize; i++) {
+            const start = Math.floor(i * factor);
+            const end = Math.floor((i + 1) * factor);
+
+            let val;
+            if (mode === 'max') {
+                val = -Infinity;
+                for (let j = start; j < end; j++) {
+                    if (input[j] > val) val = input[j];
+                }
+            } else if (mode === 'min') {
+                val = Infinity;
+                for (let j = start; j < end; j++) {
+                    if (input[j] < val) val = input[j];
+                }
+            } else { // 'avg' or default
+                let sum = 0;
+                for (let j = start; j < end; j++) {
+                    sum += input[j];
+                }
+                val = sum / (end - start);
+            }
+
+            output[i] = val;
+        }
+
+        return output;
+    }
+
     return <Canvas ref={canvasRef} />;
 };
 
 export default FFTBars;
+
+
+/*
+function generateBands(count = 256, fStart = 20, fEnd = 20000, curve = 1) {
+    const bands = [];
+
+    for (let i = 0; i < count; i++) {
+        const x = i / (count - 1);
+        const powered = Math.pow(x, curve);
+        const freq = fStart * Math.pow(fEnd / fStart, powered);
+        bands.push(Math.round(freq));
+    }
+
+    return bands;
+}
+**/
