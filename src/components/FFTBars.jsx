@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
+import {downscaleSpectrumWeighted} from "../utils";
 
 /*  ===============================
     FFTBars — N‑channel spectrum visualizer with peaks
@@ -217,64 +218,6 @@ const FFTBars = ({
         peakThickness,
         bars,
     ]);
-
-    function downscaleSpectrumWeighted(input, targetSize) {
-        const inputSize = input.length;
-        const output = new Array(targetSize);
-        const curveFactor = 0.8;
-
-        for (let i = 0; i < targetSize; i++) {
-            const scaled = Math.pow(i / targetSize, curveFactor);
-            const start = Math.floor(inputSize * scaled);
-            const end = Math.floor(inputSize * Math.pow((i + 1) / targetSize, curveFactor));
-
-            let sum = 0;
-            let weightSum = 0;
-
-            for (let j = start; j < end; j++) {
-                const weight = 1 / (j + 1); // можно поиграться с весами
-                sum += input[j] * weight;
-                weightSum += weight;
-            }
-
-            output[i] = weightSum > 0 ? sum / weightSum : 0;
-        }
-
-        return output;
-    }
-
-    function downscaleSpectrum(input, targetSize, mode = 'avg') {
-        const factor = input.length / targetSize;
-        const output = new Array(targetSize);
-
-        for (let i = 0; i < targetSize; i++) {
-            const start = Math.floor(i * factor);
-            const end = Math.floor((i + 1) * factor);
-
-            let val;
-            if (mode === 'max') {
-                val = -Infinity;
-                for (let j = start; j < end; j++) {
-                    if (input[j] > val) val = input[j];
-                }
-            } else if (mode === 'min') {
-                val = Infinity;
-                for (let j = start; j < end; j++) {
-                    if (input[j] < val) val = input[j];
-                }
-            } else { // 'avg' or default
-                let sum = 0;
-                for (let j = start; j < end; j++) {
-                    sum += input[j];
-                }
-                val = sum / (end - start);
-            }
-
-            output[i] = val;
-        }
-
-        return output;
-    }
 
     return <Canvas ref={canvasRef} />;
 };

@@ -10,6 +10,7 @@ import PreviewComponent from "./components/PreviewComponent";
 import AudioPlayerComponent from "./components/AudioPlayerComponent";
 import FFTBars from "./components/FFTBars";
 import ModernAudioPlayer from "./components/ModerAudioPlayer";
+import FFTDonut from "./components/FFTDonut";
 
 
 export default function App() {
@@ -17,7 +18,7 @@ export default function App() {
         <BrowserRouter>
             <Routes>
                 <Route path="/audio" element={<AudioPlayerComponent/>} />
-                <Route path="/audio-fft" element={<FFTBars/>} />
+                <Route path="/audio-fft" element={<FFTDonut/>} />
                 <Route path="/audio-modern" element={<ModernAudioPlayer/>} />
                 <Route path="/preview" element={<PreviewComponent/>}/>
                 <Route path="/loading" element={<LoadingComponent/>} />

@@ -2,9 +2,11 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
 import diskImg from "../assets/disk.png";
 import { defaultTheme } from '../theme';
-import {hexToRgba} from "../utils.js";
+import {hexToRgba, lightenColor} from "../utils.js";
 import Marquee from "react-fast-marquee";
 import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
+import FFTDonut from "./FFTDonut";
+import ColorThief from "colorthief";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -55,6 +57,17 @@ const DiskContainer = styled.div`
     width: 250px;
     height: 250px;
     position: relative;
+`;
+
+const FFTWrapper = styled.div`
+    top: 0;
+    left: 0;
+  width: 290px;
+  height: 290px;
+  overflow: hidden;
+  position: absolute;
+  z-index: -1;
+  background: transparent;
 `;
 
 const Disk = styled.div`
@@ -174,8 +187,9 @@ const FixedMarquee = styled(Marquee)`
   }
 `;
 
-const ArtistContainer = styled.span`
-`;
+const ArtistContainer = styled.span``;
+
+const TitleContainer = styled.div``;
 
 export default function AudioPlayerComponent() {
     const [theme, setTheme] = useState(defaultTheme);
@@ -183,6 +197,10 @@ export default function AudioPlayerComponent() {
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(1);
     const [shouldArtistScroll, setShouldArtistScroll] = useState(false);
+    const [pendingColorData, setPendingColorData] = useState(null);
+    const colorApplyTimeoutRef = useRef(null);
+    const [spectrumPeakColor, setSpectrumPeakColor] = useState('#1e1e1e');
+    const [spectrumColor, setSpectrumColor] = useState('#1e1e1e');
 
     const timerRef = useRef(null);
     const diskRef = useRef(null);
@@ -236,6 +254,54 @@ export default function AudioPlayerComponent() {
         },
         onClose: () => console.log('🔴 WebSocket theme отключен'),
     });
+
+    useEffect(() => {
+        if (!albumRef.current || !metadata?.albumArtBase64) return;
+        const colorThief = new ColorThief();
+        const img = albumRef.current;
+
+        const onLoad = () => {
+            const palette = colorThief.getPalette(img, 6);
+            const color = colorThief.getColor(img);
+            const shadow = lightenColor(color, 0.2);
+            const spectrum = palette[1];
+            const spectrumPeak = palette[2];
+
+            const newColors = {
+                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
+                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
+                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
+                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
+            };
+
+            setPendingColorData(newColors);
+        };
+
+        if (img.complete) {
+            onLoad();
+        } else {
+            img.addEventListener('load', onLoad);
+        }
+        return () => img.removeEventListener('load', onLoad);
+    }, [metadata?.albumArtBase64]);
+
+    useEffect(() => {
+        if (!pendingColorData) return;
+
+        if (colorApplyTimeoutRef.current) {
+            clearTimeout(colorApplyTimeoutRef.current);
+        }
+
+        colorApplyTimeoutRef.current = setTimeout(() => {
+            setSpectrumColor(pendingColorData.spectrum);
+            setSpectrumPeakColor(pendingColorData.peak);
+        }, 150); // задержка
+    }, [pendingColorData]);
+
+    useEffect(() => {
+        return () => clearTimeout(colorApplyTimeoutRef.current);
+    }, []);
+
 
     // Инициализация Web Animations API для Disk и AlbumArt
     useEffect(() => {
@@ -324,6 +390,16 @@ export default function AudioPlayerComponent() {
             <GlobalStyle />
             <Wrapper>
             <AudioPlayerContainer>
+                <FFTWrapper>
+                    <FFTDonut
+                        bars={128}
+                        innerRadiusRatio={0.87}
+                        startAngle={-Math.PI}
+                        backgroundColor={"rgba(0,0,0,0.00)"}
+                        barColor={spectrumColor}
+                        peakColor={spectrumPeakColor}
+                    />
+                </FFTWrapper>
                 <DiskContainer>
                     <Disk ref={diskRef} />
                     <AlbumArt
@@ -334,7 +410,15 @@ export default function AudioPlayerComponent() {
                 </DiskContainer>
 
                 <div>
-                    <Title>{metadata ? metadata.title : ""}</Title>
+                    <Title ref={marqueeWrapperRef}>
+                        <FixedMarquee
+                            pauseOnHover={true}
+                            play={shouldArtistScroll}
+                            key={metadata?.artist}
+                        >
+                            <TitleContainer>{metadata ? metadata.title : ""}</TitleContainer>
+                        </FixedMarquee>
+                    </Title>
                     <Artist ref={marqueeWrapperRef}>
                         <FixedMarquee
                             pauseOnHover={true}

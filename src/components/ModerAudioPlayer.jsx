@@ -1,5 +1,6 @@
 import React, {useEffect, useRef, useState} from "react";
 import styled from "styled-components";
+import {hexToRgba, lightenColor} from "../utils.js"
 import FFTBars from "./FFTBars";
 import useReconnectingWebSocket from "../hooks/useReconnectingWebSocket";
 import ColorThief from "colorthief";
@@ -193,14 +194,6 @@ export default function ModernAudioPlayer() {
     useEffect(() => {
         return () => clearTimeout(colorApplyTimeoutRef.current);
     }, []);
-
-    function lightenColor([r, g, b], amount = 0.4) {
-        return [
-            Math.min(255, Math.floor(r + (255 - r) * amount)),
-            Math.min(255, Math.floor(g + (255 - g) * amount)),
-            Math.min(255, Math.floor(b + (255 - b) * amount)),
-        ];
-    }
 
     return (
         <Card $bgColor={bgColor} $shadowColor={shadowColor}>
