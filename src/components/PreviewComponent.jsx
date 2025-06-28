@@ -130,8 +130,8 @@ export default function PreviewComponent() {
         <>
             <BackgroundContainer />
             <MessagePreviewContainer>
-                <ChatMessage message={message}/>
-                <ChatMessage message={longMessage}/>
+                <ChatMessage message={message} showSourceChannel={false}/>
+                <ChatMessage message={longMessage} showSourceChannel={false}/>
                 <ChatRedemption
                     message={redemptionMessage}
                     template={theme.redeemMessage.template}

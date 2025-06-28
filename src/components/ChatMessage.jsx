@@ -35,11 +35,31 @@ const MessageContainer = styled.div`
 `;
 
 const TitleContainer = styled.div`
+    font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
     display: flex;
+    align-items: center;
     flex-direction: row;
 `
 
+const ChannelAvatar = styled.img`
+    height: 1em;
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+    margin-right: 4px;
+    vertical-align: middle;
+    display: inline-block;
+`;
+
+const BadgeContainer = styled.span`
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    margin-right: 6px;
+`;
+
 const Username = styled.span`
+    display: flex;
+    align-items: center;
     font-weight: bold;
     margin-right: 6px;
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
@@ -83,11 +103,19 @@ const MessageText = styled.span`
     }
 `;
 
-export default function ChatMessage({ message }) {
+export default function ChatMessage({ message, showSourceChannel }) {
     return (
         <MessageContainer>
             <TitleContainer>
-                <span dangerouslySetInnerHTML={{__html: message.htmlBadges}}/>
+                {message.sourceChannel?.avatarUrl && showSourceChannel && (
+                    <ChannelAvatar
+                        src={message.sourceChannel.avatarUrl}
+                        alt={message.sourceChannel.displayName}
+                    />
+                )}
+                <BadgeContainer
+                    dangerouslySetInnerHTML={{ __html: message.htmlBadges }}
+                />
                 <Username color={message.color}>{message.username}:</Username>
             </TitleContainer>
             <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>

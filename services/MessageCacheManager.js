@@ -5,6 +5,7 @@ const { randomUUID } = require('crypto');
 let messageHandler = null;
 let TTL = 60 * 1000; // milliseconds
 let MAX_CACHE_SIZE = 6;
+let showSourceChannel = false;
 
 function registerMessageHandler(handler) {
     messageHandler = handler;
@@ -29,6 +30,11 @@ function addMessage(message) {
 
     messageCache.set(id, { ...message, id, timestamp: Date.now() });
 
+    if (message.sourceRoomId && !showSourceChannel) {
+        showSourceChannel = true;
+        console.log('🔗 Detected collab-mode via foreign message');
+    }
+
     if (TTL > 0) {
         const timer = setTimeout(() => {
             messageCache.delete(id);
@@ -44,7 +50,10 @@ function addMessage(message) {
 
 function sendCached() {
     if (messageHandler && TTL !== 0) {
-        messageHandler(Array.from(messageCache.values()));
+        messageHandler({
+            messages: Array.from(messageCache.values()),
+            showSourceChannel
+        });
     }
 }
 
@@ -88,9 +97,10 @@ function updateSettings({ lifetime, maxCount }) {
     timers.clear();
 
     if (TTL === 0) {
+        showSourceChannel = false;
         messageCache.clear();
         if (messageHandler) {
-            messageHandler([]);
+            messageHandler({ messages: [], showSourceChannel: false });
         }
         return;
     }

@@ -270,9 +270,12 @@ app.whenReady().then(() => {
         messageCache.addMessage(parsedMessage);
     });
 
-    messageCache.registerMessageHandler((messages) => {
+    messageCache.registerMessageHandler(({ messages, showSourceChannel }) => {
         console.log('📨 Отправка кэша сообщений в WebSocket:', JSON.stringify(messages));
-        broadcast('chat:messages', Array.from(messages.values()));
+        broadcast('chat:messages', {
+            messages: Array.from(messages),
+            showSourceChannel
+        });
     });
 
 });

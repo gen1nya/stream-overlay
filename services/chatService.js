@@ -92,11 +92,11 @@ class ChatService {
             socket.write(`JOIN #${channel}\r\n`);
         });
 
-        socket.on('data', (data) => {
+        socket.on('data', async (data) => {
             this.lastEventTimestamp = Date.now();
             const messages = data.toString().split('\r\n');
 
-            messages.forEach(message => {
+            for (const message of messages) {
                 if (!message) return;
 
                 console.log('📨', message);
@@ -112,7 +112,7 @@ class ChatService {
                     return;
                 }
 
-                const parsed = messageParser.parseIrcMessage(message);
+                const parsed = await messageParser.parseIrcMessage(message);
 
                 if (parsed) {
                     console.log(`${parsed.username}: ${parsed.rawMessage}`);
@@ -123,7 +123,7 @@ class ChatService {
                         this.messageHandler(parsed);
                     }
                 }
-            });
+            }
         });
 
         socket.on('close', () => {

@@ -3,6 +3,39 @@ const authService = require('./authService');
 
 let globalBadges = {};
 let channelBadges = {};
+const roomCache = new Map();
+
+
+async function getChannelInfoByRoomId(roomId) {
+    if (roomCache.has(roomId)) return roomCache.get(roomId);
+
+    try {
+        const tokens = await authService.getTokens();
+        if (!tokens) throw new Error('No tokens');
+
+        const response = await axios.get(`https://api.twitch.tv/helix/users?id=${roomId}`, {
+            headers: {
+                'Client-ID': authService.CLIENT_ID,
+                'Authorization': `Bearer ${tokens.access_token}`
+            }
+        });
+
+        const user = response.data.data?.[0];
+        if (!user) throw new Error('User not found');
+
+        const result = {
+            displayName: user.display_name,
+            login: user.login,
+            profileImageUrl: user.profile_image_url
+        };
+
+        roomCache.set(roomId, result);
+        return result;
+    } catch (e) {
+        console.error(`❌ Failed to fetch user for room ${roomId}:`, e.response?.data || e.message);
+        return null;
+    }
+}
 
 async function loadGlobalBadges() {
     try {
@@ -100,11 +133,11 @@ function parseBadges(badgesTag) {
         const [type, version] = badge.split('/');
         const badgeUrl = getBadgeImage(type, version);
         if (!badgeUrl) return '';
-        return `<img src="${badgeUrl}" alt="${type}" title="${type}" style="vertical-align: middle; margin-right: 2px;" />`;
+        return `<img src="${badgeUrl}" alt="${type}" title="${type}" style="vertical-align: middle; height: 1em; margin-right: 2px;" />`;
     }).join('');
 }
 
-function parseIrcMessage(rawLine) {
+async function parseIrcMessage(rawLine) {
     const tagMatch = rawLine.match(/^@([^ ]+) /);
     const tags = {};
 
@@ -138,6 +171,11 @@ function parseIrcMessage(rawLine) {
     const color = tags['color'] || '#FFFFFF';
     const emotes = tags['emotes'] || '';
     const badgesTag = tags['badges'] || '';
+    const roomId = tags['room-id'] || null;
+    const sourceRoomId = tags['source-room-id'] || null;
+
+    console.log("extracted sourceRoomId", sourceRoomId, "roomId", roomId);
+    const channelInfo = await getChannelInfoByRoomId(roomId)
 
     return {
         type: type,                    // 'chat' или 'system'
@@ -146,7 +184,14 @@ function parseIrcMessage(rawLine) {
         rawMessage: messageContent,
         htmlBadges: parseBadges(badgesTag),
         htmlMessage: parseEmotes(messageContent, emotes),
-        id: id
+        id: id,
+        roomId: roomId,
+        sourceRoomId: sourceRoomId,
+        sourceChannel: {
+            displayName: channelInfo?.displayName,
+            login: channelInfo?.login,
+            avatarUrl: channelInfo?.profileImageUrl
+        }
     };
 }
 

@@ -105,6 +105,7 @@ const ConnectionLost = styled.div`
 export default function ChatOverlay() {
     const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
+    const [showSourceChannel, setShowSourceChannel] = useState([]);
     const [theme, setTheme] = useState(defaultTheme);
 
     // Здесь храним рефы для каждого сообщения
@@ -121,8 +122,10 @@ export default function ChatOverlay() {
             const { channel, payload } = JSON.parse(event.data);
             switch (channel) {
                 case 'chat:messages': {
-                    const initial = payload.map(m => ({ ...m, type: m.type || 'chat' }));
+                    const { messages = [], showSourceChannel = false } = payload;
+                    const initial = messages.map(m => ({ ...m, type: m.type || 'chat' }));
                     setMessages(initial);
+                    setShowSourceChannel(showSourceChannel);
                     break;
                 }
                 case 'theme:update':
@@ -238,7 +241,7 @@ export default function ChatOverlay() {
                     // Выбираем, какой компонент рендерить
                     let Content;
                     if (msg.type === 'chat') {
-                        Content = <ChatMessage message={msg} />;
+                        Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} />;
                     } else if (msg.type === 'follow') {
                         Content = <ChatFollow
                             message={msg}
