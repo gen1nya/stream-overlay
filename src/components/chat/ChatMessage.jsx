@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import {hexToRgba} from "../utils.js";
+import {hexToRgba} from "../../utils.js";
 
 const MessageContainer = styled.div`
     padding: ${({theme}) => { 

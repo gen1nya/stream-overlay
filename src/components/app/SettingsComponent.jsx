@@ -2,15 +2,15 @@
 import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import {openPreview, setRemoteTheme, createNewTheme, setTheme, importTheme, deleteTheme} from '../services/api';
-import MessageSettingsBlock from "./app/MessageSettingsBlock";
-import FollowSettingsBlock from "./app/FollowSettingsBlock";
-import PlayerSettingsComponent from "./app/PlayerSettingsComponent";
-import Popup from "./utils/PopupComponent";
-import { defaultTheme } from '../theme';
-import RedeemPointsBlock from "./app/RedeemPointsBlock";
-import OverlaySettingsComponent from "./app/OverlaySettingsComponent";
-import AllMessagesSettings from "./app/AllMessagesSettings";
+import {openPreview, setRemoteTheme, createNewTheme, setTheme, importTheme, deleteTheme} from '../../services/api';
+import MessageSettingsBlock from "./settings/MessageSettingsBlock";
+import FollowSettingsBlock from "./settings/FollowSettingsBlock";
+import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
+import Popup from "../utils/PopupComponent";
+import { defaultTheme } from '../../theme';
+import RedeemPointsBlock from "./settings/RedeemPointsBlock";
+import OverlaySettingsComponent from "./settings/OverlaySettingsComponent";
+import AllMessagesSettings from "./settings/AllMessagesSettings";
 
 
 const Panel = styled.div`

@@ -1,10 +1,10 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
 import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
-import diskImg from "../assets/disk.png";
-import { defaultTheme } from '../theme';
-import {hexToRgba, lightenColor} from "../utils.js";
+import diskImg from "../../assets/disk.png";
+import { defaultTheme } from '../../theme';
+import {hexToRgba, lightenColor} from "../../utils.js";
 import Marquee from "react-fast-marquee";
-import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
+import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import FFTDonut from "./FFTDonut";
 import ColorThief from "colorthief";
 

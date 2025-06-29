@@ -1,12 +1,13 @@
 import React from 'react';
 import styled from 'styled-components';
-import {Accordion} from "../utils/AccordionComponent";
-import NumericEditorComponent from "../NumericEditorComponent";
-import ColorSelectorComponent from "../ColorSelectorComponent";
-import SeekbarComponent from "../SeekbarComponent";
+import {Accordion} from "../../utils/AccordionComponent";
+import NumericEditorComponent from "../../utils/NumericEditorComponent";
+import ColorSelectorComponent from "../../utils/ColorSelectorComponent";
+import SeekbarComponent from "../../utils/SeekbarComponent";
+import RadioGroupComponent from "../../utils/RadioGroupComponent";
 import {Row} from "../SettingsComponent";
-import Separator from "../Separator";
-import {TemplateEditor} from "./TemplateEditor";
+import Separator from "../../utils/Separator";
+import {TemplateEditor} from "../../utils/TemplateEditor";
 
 const SettingsBlock = styled.div`
     width: calc(50% - 12px);
@@ -30,7 +31,7 @@ const Title = styled.h2`
     padding: 8px 0;
 `;
 
-export default function RedeemPointsBlock({ current, onChange }) {
+export default function FollowSettingsBlock({ current, onChange }) {
 
     const handleChange = updaterOrTheme => {
         onChange(updaterOrTheme)
@@ -38,49 +39,56 @@ export default function RedeemPointsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Сообщения наград за балы</Title>
+            <Title>Сообщения "follow"</Title>
             <Accordion title = "Текст">
-                <NumericEditorComponent
-                    title={"Шрифт сообщений:"}
-                    value={current.redeemMessage.fontSize} max={82} min={9} onChange={ value => {
-                    handleChange(prev => ({
-                        ...prev,
-                        redeemMessage: {
-                            ...prev.redeemMessage,
-                            fontSize: value,
-                        },
-                    }));
-                } } />
-
+                <Row>
+                    <NumericEditorComponent
+                        title={"Размер:"}
+                        value={current.followMessage.fontSize}
+                        max={82}
+                        min={9}
+                        onChange={ value => {
+                            handleChange(prev => ({
+                                ...prev,
+                                followMessage: {
+                                    ...prev.followMessage,
+                                    fontSize: value,
+                                },
+                            }));
+                        } }
+                    />
+                    <Separator/>
+                    <Separator/>
+                </Row>
                 <TemplateEditor
-                    hint={"Доступные плейсхолдеры: {userName}, {cost}, {title}"}
-                    label="Шаблон для баллов канала"
-                    value={current.redeemMessage?.template ?? "🎉 {userName} потратил {cost} балов на {title}"}
+                    hint={"Доступные плейсхолдеры: {userName}"}
+                    label="Шаблон для новых фолловеров"
+                    value={current.followMessage?.template ?? "🎉 {userName} just followed!"}
                     onChange={(newValue) =>
                         handleChange((prev) => ({
                             ...prev,
-                            redeemMessage: {
-                                ...prev.redeemMessage,
+                            followMessage: {
+                                ...prev.followMessage,
                                 template: newValue,
                             },
                         }))
                     }
-                    placeholders={["userName", "cost", "title"]}
+                    placeholders={["userName"]}
                 />
-
             </Accordion>
 
             <Accordion title={"Цвета"}>
+                {/* цвет фона обычного сообщения */}
                 <Row>
                     <ColorSelectorComponent
                         title="Цвет фона:"
-                        valueOpacity={ current.redeemMessage?.backgroundOpacity ?? 1.0 }
-                        valueColor={ current.redeemMessage?.backgroundColor ?? "#3e837c" }
+                        valueOpacity={current.followMessage?.backgroundOpacity ?? 1.0}
+                        valueColor={current.followMessage?.backgroundColor ?? "#3e837c"}
                         onChange={ values =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     backgroundOpacity: values.o,
                                     backgroundColor: values.color,
                                 },
@@ -88,27 +96,29 @@ export default function RedeemPointsBlock({ current, onChange }) {
                         }
                     />
 
+                    {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
                     <ColorSelectorComponent
-                        title="Цвет обводки"
-                        valueOpacity={current.redeemMessage?.borderOpacity ?? 1.0}
-                        valueColor={current.redeemMessage?.borderColor ?? "#00ffe3"}
+                        title="Цвет обводки:"
+                        valueOpacity={current.followMessage?.borderOpacity ?? 1.0}
+                        valueColor={current.followMessage?.borderColor ?? "#00ffe3"}
                         onChange={value => handleChange(prev => ({
                             ...prev,
-                            redeemMessage: {
-                                ...prev.redeemMessage,
+                            followMessage: {
+                                ...prev.followMessage,
                                 borderOpacity: value.o,
                                 borderColor: value.color,
                             },
                         }))}
                     />
+
                     <ColorSelectorComponent
-                        title="Цвет тени"
-                        valueOpacity={current.redeemMessage?.shadowOpacity ?? 0.5}
-                        valueColor={current.redeemMessage?.shadowColor ?? "#000"}
+                        title="Цвет тени:"
+                        valueOpacity={current.followMessage?.shadowOpacity ?? 0.5}
+                        valueColor={current.followMessage?.shadowColor ?? "#000"}
                         onChange={value => handleChange(prev => ({
                             ...prev,
-                            redeemMessage: {
-                                ...prev.redeemMessage,
+                            followMessage: {
+                                ...prev.followMessage,
                                 shadowOpacity: value.o,
                                 shadowColor: value.color,
                             },
@@ -120,16 +130,16 @@ export default function RedeemPointsBlock({ current, onChange }) {
             <Accordion title={"Внешний вид"}>
                 <Row>
                     <SeekbarComponent
-                        title="Радиус тени"
+                        title="Радиус тени:"
                         min="0"
                         max="20"
-                        value={current.redeemMessage?.shadowRadius ?? 0}
+                        value={current.followMessage?.shadowRadius ?? 0}
                         step="1"
-                        onChange={e =>
+                        onChange={ e =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     shadowRadius: e,
                                 },
                             }))
@@ -140,13 +150,13 @@ export default function RedeemPointsBlock({ current, onChange }) {
                         title="Радиус скругления:"
                         min="0"
                         max="20"
-                        value={current.redeemMessage?.borderRadius ?? 0}
+                        value={current.followMessage?.borderRadius ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     borderRadius: e,
                                 },
                             }))
@@ -154,19 +164,20 @@ export default function RedeemPointsBlock({ current, onChange }) {
                     />
                 </Row>
 
+
                 <span>Отступы снаружи:</span>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
                         title={"По горизонтали:"}
                         min="0"
                         max="100"
-                        value={current.redeemMessage?.marginH ?? 0}
+                        value={current.followMessage?.marginH ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     marginH: e,
                                 },
                             }))
@@ -177,13 +188,13 @@ export default function RedeemPointsBlock({ current, onChange }) {
                         title={"По вертикали:"}
                         min="0"
                         max="50"
-                        value={current.redeemMessage?.marginV ?? 0}
+                        value={current.followMessage?.marginV ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     marginV: e,
                                 },
                             }))
@@ -197,13 +208,13 @@ export default function RedeemPointsBlock({ current, onChange }) {
                         title={"По горизонтали:"}
                         min="0"
                         max="100"
-                        value={current.redeemMessage?.paddingH ?? 0}
+                        value={current.followMessage?.paddingH ?? 0}
                         step="1"
                         onChange={ e =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     paddingH: e,
                                 },
                             }))
@@ -214,13 +225,13 @@ export default function RedeemPointsBlock({ current, onChange }) {
                         title={"По вертикали:"}
                         min="0"
                         max="50"
-                        value={current.redeemMessage?.paddingV ?? 0}
+                        value={current.followMessage?.paddingV ?? 0}
                         step="1"
                         onChange={ e =>
                             handleChange(prev => ({
                                 ...prev,
-                                redeemMessage: {
-                                    ...prev.redeemMessage,
+                                followMessage: {
+                                    ...prev.followMessage,
                                     paddingV: e,
                                 },
                             }))

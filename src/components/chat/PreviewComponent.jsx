@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import styled, { ThemeProvider } from "styled-components";
-import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
+import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from "./ChatMessage";
 import ChatFollow from './ChatFollow';
-import {defaultTheme} from "../theme";
+import {defaultTheme} from "../../theme";
 import ChatRedemption from "./ChatRedemption";
 
 const BackgroundContainer = styled.div`

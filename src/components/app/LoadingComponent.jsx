@@ -1,6 +1,6 @@
 import React, {useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
-import { getTokens, onAccountReady } from "../services/api";
+import { getTokens, onAccountReady } from "../../services/api";
 
 export default function LoadingComponent() {
 

@@ -1,5 +1,5 @@
 import React from 'react';
-import {authorize, onAccountReady} from '../services/api';
+import {authorize, onAccountReady} from '../../services/api';
 import {useNavigate} from "react-router-dom";
 
 export default function AuthScreen() {

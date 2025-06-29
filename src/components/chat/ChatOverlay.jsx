@@ -1,10 +1,10 @@
 import React, { useLayoutEffect, useRef, useState } from 'react';
 import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
-import useReconnectingWebSocket from '../hooks/useReconnectingWebSocket';
+import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
 import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
-import { defaultTheme } from '../theme';
+import { defaultTheme } from '../../theme';
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {

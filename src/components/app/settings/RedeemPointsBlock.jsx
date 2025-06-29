@@ -1,11 +1,12 @@
 import React from 'react';
 import styled from 'styled-components';
-import {Accordion} from "../utils/AccordionComponent";
-import NumericEditorComponent from "../NumericEditorComponent";
-import ColorSelectorComponent from "../ColorSelectorComponent";
-import SeekbarComponent from "../SeekbarComponent";
-import RadioGroupComponent from "../RadioGroupComponent";
+import {Accordion} from "../../utils/AccordionComponent";
+import NumericEditorComponent from "../../utils/NumericEditorComponent";
+import ColorSelectorComponent from "../../utils/ColorSelectorComponent";
+import SeekbarComponent from "../../utils/SeekbarComponent";
 import {Row} from "../SettingsComponent";
+import Separator from "../../utils/Separator";
+import {TemplateEditor} from "../../utils/TemplateEditor";
 
 const SettingsBlock = styled.div`
     width: calc(50% - 12px);
@@ -29,7 +30,7 @@ const Title = styled.h2`
     padding: 8px 0;
 `;
 
-export default function MessageSettingsBlock({ current, onChange }) {
+export default function RedeemPointsBlock({ current, onChange }) {
 
     const handleChange = updaterOrTheme => {
         onChange(updaterOrTheme)
@@ -37,54 +38,49 @@ export default function MessageSettingsBlock({ current, onChange }) {
 
     return (
         <SettingsBlock>
-            <Title>Сообщения чатерсов</Title>
-            <Accordion title = {"Текст"}>
-                <Row align="center" gap="0.5rem">
-                    <NumericEditorComponent
-                        title={"Шрифт сообщений:"}
-                        value={current.chatMessage.fontSize}
-                        max={82}
-                        min={9}
-                        onChange={ value => {
-                            handleChange(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    fontSize: value,
-                                },
-                            }));
-                        } }
-                    />
+            <Title>Сообщения наград за балы</Title>
+            <Accordion title = "Текст">
+                <NumericEditorComponent
+                    title={"Шрифт сообщений:"}
+                    value={current.redeemMessage.fontSize} max={82} min={9} onChange={ value => {
+                    handleChange(prev => ({
+                        ...prev,
+                        redeemMessage: {
+                            ...prev.redeemMessage,
+                            fontSize: value,
+                        },
+                    }));
+                } } />
 
-                    <NumericEditorComponent
-                        title={"Шрифт заголовка:"}
-                        value={current.chatMessage.titleFontSize}
-                        max={82}
-                        min={9}
-                        onChange={ value => {
-                            handleChange(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    titleFontSize: value,
-                                },
-                            }));
-                        }}
-                    />
-                </Row>
+                <TemplateEditor
+                    hint={"Доступные плейсхолдеры: {userName}, {cost}, {title}"}
+                    label="Шаблон для баллов канала"
+                    value={current.redeemMessage?.template ?? "🎉 {userName} потратил {cost} балов на {title}"}
+                    onChange={(newValue) =>
+                        handleChange((prev) => ({
+                            ...prev,
+                            redeemMessage: {
+                                ...prev.redeemMessage,
+                                template: newValue,
+                            },
+                        }))
+                    }
+                    placeholders={["userName", "cost", "title"]}
+                />
+
             </Accordion>
 
             <Accordion title={"Цвета"}>
                 <Row>
                     <ColorSelectorComponent
-                        title={"Цвет фона"}
-                        valueOpacity={current.chatMessage.backgroundOpacity}
-                        valueColor={current.chatMessage.backgroundColor}
+                        title="Цвет фона:"
+                        valueOpacity={ current.redeemMessage?.backgroundOpacity ?? 1.0 }
+                        valueColor={ current.redeemMessage?.backgroundColor ?? "#3e837c" }
                         onChange={ values =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     backgroundOpacity: values.o,
                                     backgroundColor: values.color,
                                 },
@@ -92,29 +88,27 @@ export default function MessageSettingsBlock({ current, onChange }) {
                         }
                     />
 
-                    {/*Цвет обводки&nbsp;«обычных»&nbsp;сообщений:*/}
                     <ColorSelectorComponent
                         title="Цвет обводки"
-                        valueOpacity={current.chatMessage.borderOpacity}
-                        valueColor={current.chatMessage.borderColor}
+                        valueOpacity={current.redeemMessage?.borderOpacity ?? 1.0}
+                        valueColor={current.redeemMessage?.borderColor ?? "#00ffe3"}
                         onChange={value => handleChange(prev => ({
                             ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
+                            redeemMessage: {
+                                ...prev.redeemMessage,
                                 borderOpacity: value.o,
                                 borderColor: value.color,
                             },
                         }))}
                     />
-
                     <ColorSelectorComponent
                         title="Цвет тени"
-                        valueOpacity={current.chatMessage.shadowOpacity}
-                        valueColor={current.chatMessage.shadowColor}
+                        valueOpacity={current.redeemMessage?.shadowOpacity ?? 0.5}
+                        valueColor={current.redeemMessage?.shadowColor ?? "#000"}
                         onChange={value => handleChange(prev => ({
                             ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
+                            redeemMessage: {
+                                ...prev.redeemMessage,
                                 shadowOpacity: value.o,
                                 shadowColor: value.color,
                             },
@@ -129,29 +123,30 @@ export default function MessageSettingsBlock({ current, onChange }) {
                         title="Радиус тени"
                         min="0"
                         max="20"
-                        value={current.chatMessage.shadowRadius ?? 0}
+                        value={current.redeemMessage?.shadowRadius ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     shadowRadius: e,
                                 },
                             }))
                         }
                     />
+
                     <SeekbarComponent
-                        title="Радиус скругления"
+                        title="Радиус скругления:"
                         min="0"
                         max="20"
-                        value={current.chatMessage.borderRadius ?? 0}
+                        value={current.redeemMessage?.borderRadius ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     borderRadius: e,
                                 },
                             }))
@@ -159,37 +154,19 @@ export default function MessageSettingsBlock({ current, onChange }) {
                     />
                 </Row>
 
-                <RadioGroupComponent
-                    title="положение заголовка"
-                    options={[
-                        {value: "row", label: "слева"},
-                        {value: "column", label: "сверху"},
-                    ]}
-                    selected={current.chatMessage.direction}
-                    onChange={value =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                direction: value,
-                            },
-                        }))
-                    }
-                />
-
                 <span>Отступы снаружи:</span>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
                         title={"По горизонтали:"}
                         min="0"
                         max="100"
-                        value={current.chatMessage.marginH ?? 0}
+                        value={current.redeemMessage?.marginH ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     marginH: e,
                                 },
                             }))
@@ -200,13 +177,13 @@ export default function MessageSettingsBlock({ current, onChange }) {
                         title={"По вертикали:"}
                         min="0"
                         max="50"
-                        value={current.chatMessage.marginV ?? 0}
+                        value={current.redeemMessage?.marginV ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     marginV: e,
                                 },
                             }))
@@ -220,13 +197,13 @@ export default function MessageSettingsBlock({ current, onChange }) {
                         title={"По горизонтали:"}
                         min="0"
                         max="100"
-                        value={current.chatMessage.paddingH ?? 0}
+                        value={current.redeemMessage?.paddingH ?? 0}
                         step="1"
                         onChange={ e =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     paddingH: e,
                                 },
                             }))
@@ -237,13 +214,13 @@ export default function MessageSettingsBlock({ current, onChange }) {
                         title={"По вертикали:"}
                         min="0"
                         max="50"
-                        value={current.chatMessage.paddingV ?? 0}
+                        value={current.redeemMessage?.paddingV ?? 0}
                         step="1"
                         onChange={ e =>
                             handleChange(prev => ({
                                 ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
+                                redeemMessage: {
+                                    ...prev.redeemMessage,
                                     paddingV: e,
                                 },
                             }))

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
-import {downscaleSpectrumWeighted} from "../utils";
+import {downscaleSpectrumWeighted} from "../../utils";
 
 /*  ===============================
     FFTBars — N‑channel spectrum visualizer with peaks

@@ -1,16 +1,16 @@
 import React from 'react';
 import {Routes, Route, BrowserRouter} from 'react-router-dom';
-import AuthScreen from './components/AuthScreen';
-import Dashboard from './components/Dashboard';
-import ChatOverlay from "./components/ChatOverlay";
-import Settings from "./components/SettingsComponent";
-import LoadingComponent from "./components/LoadingComponent";
-import WrongPageComponent  from "./components/WrongPageComponent";
-import PreviewComponent from "./components/PreviewComponent";
-import AudioPlayerComponent from "./components/AudioPlayerComponent";
-import FFTBars from "./components/FFTBars";
-import ModernAudioPlayer from "./components/ModerAudioPlayer";
-import FFTDonut from "./components/FFTDonut";
+import AuthScreen from './components/app/AuthScreen';
+import Dashboard from './components/app/Dashboard';
+import ChatOverlay from "./components/chat/ChatOverlay";
+import Settings from "./components/app/SettingsComponent";
+import LoadingComponent from "./components/app/LoadingComponent";
+import WrongPageComponent  from "./components/app/WrongPageComponent";
+import PreviewComponent from "./components/chat/PreviewComponent";
+import AudioPlayerComponent from "./components/player/AudioPlayerComponent";
+import FFTBars from "./components/player/FFTBars";
+import ModernAudioPlayer from "./components/player/ModerAudioPlayer";
+import FFTDonut from "./components/player/FFTDonut";
 
 
 export default function App() {

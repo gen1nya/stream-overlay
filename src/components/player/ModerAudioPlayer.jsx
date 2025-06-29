@@ -1,8 +1,8 @@
 import React, {useEffect, useRef, useState} from "react";
 import styled from "styled-components";
-import {hexToRgba, lightenColor} from "../utils.js"
+import {hexToRgba, lightenColor} from "../../utils.js"
 import FFTBars from "./FFTBars";
-import useReconnectingWebSocket from "../hooks/useReconnectingWebSocket";
+import useReconnectingWebSocket from "../../hooks/useReconnectingWebSocket";
 import ColorThief from "colorthief";
 
 const Card = styled.div`

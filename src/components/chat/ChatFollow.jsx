@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import {hexToRgba} from "../utils.js";
+import {hexToRgba} from "../../utils.js";
 
 const Text = styled.span`
     font-size: ${({theme}) => theme.followMessage.fontSize}px;

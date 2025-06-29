@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
-import {downscaleSpectrumWeighted} from "../utils";
+import {downscaleSpectrumWeighted} from "../../utils";
 
 /*  ==========================================================
     FFTDonut — N-channel spectrum visualizer rendered as ring

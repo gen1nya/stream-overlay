@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled, {createGlobalStyle} from 'styled-components';
-import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../services/api';
+import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from "react-fast-marquee";
 

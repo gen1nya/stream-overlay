@@ -1,11 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
-import {Accordion} from "../utils/AccordionComponent";
-import ColorSelectorComponent from "../ColorSelectorComponent";
+import {Accordion} from "../../utils/AccordionComponent";
+import ColorSelectorComponent from "../../utils/ColorSelectorComponent";
 import {Row} from "../SettingsComponent";
-import SeekbarComponent from "../SeekbarComponent";
-import RadioGroupComponent from "../RadioGroupComponent";
-import NumericEditorComponent from "../NumericEditorComponent";
+import SeekbarComponent from "../../utils/SeekbarComponent";
+import RadioGroupComponent from "../../utils/RadioGroupComponent";
+import NumericEditorComponent from "../../utils/NumericEditorComponent";
 
 
 const SettingsBlock = styled.div`
