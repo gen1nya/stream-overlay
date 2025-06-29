@@ -80,10 +80,34 @@ const FFTDonut = ({
     const lastDraw   = useRef(animStart.current);
     const frameRef   = useRef();
     const runningRef = useRef(true);  // pause on visibility change (tab hidden)
+    const optsRef = useRef({
+        barColor,
+        barGradient,
+        backgroundColor,
+        peakColor,
+        peakHold,
+        peakFall,
+        peakThickness,
+    });
+
+    useEffect(() => {
+        optsRef.current = {
+            barColor,
+            barGradient,
+            backgroundColor,
+            peakColor,
+            peakHold,
+            peakFall,
+            peakThickness,
+        };
+        const ctx = canvasRef.current?.getContext("2d");
+        if (ctx) buildGradient(ctx, innerRRef.current, outerRRef.current);
+    }, [barColor, barGradient, backgroundColor, peakColor, peakHold, peakFall, peakThickness]);
 
     /* ---------- helpers ---------- */
     const buildGradient = (ctx, r0, rMax) => {
         // Радиальный градиент: от внутреннего к внешнему
+        const { barColor } = optsRef.current;
         const g = ctx.createRadialGradient(0, 0, r0, 0, 0, rMax);
         g.addColorStop(0, barColor);
         g.addColorStop(1, barColor);
@@ -145,7 +169,6 @@ const FFTDonut = ({
             if (!runningRef.current) return;
 
             const now = performance.now();
-            const dt  = now - lastDraw.current;
             lastDraw.current = now;
 
             /* smooth impl */
@@ -156,13 +179,14 @@ const FFTDonut = ({
             }
 
             /* peakhold */
+            const { peakHold: pHold, peakFall: pFall } = optsRef.current;
             for (let i = 0; i < BAR_COUNT; i++) {
                 const v = current.current[i];
                 if (v >= peak.current[i]) {
                     peak.current[i] = v;
                     peakTime.current[i] = now;
-                } else if (now - peakTime.current[i] > peakHold) {
-                    const r = Math.min(1, (now - peakTime.current[i] - peakHold) / peakFall);
+                } else if (now - peakTime.current[i] > pHold) {
+                    const r = Math.min(1, (now - peakTime.current[i] - pHold) / pFall);
                     const eased = easeQuad(r);
                     peak.current[i] -= (peak.current[i] - v) * eased;
                 }
@@ -173,8 +197,9 @@ const FFTDonut = ({
             ctx.save();
             ctx.translate(W * 0.5, H * 0.5); // (0,0) теперь в центре
             ctx.clearRect(-W * 0.5, -H * 0.5, W, H);
-            if (backgroundColor) {
-                ctx.fillStyle = backgroundColor;
+            const { barGradient: gradientEnabled, barColor: bc, peakColor: pc, peakThickness: pt, backgroundColor: bgColor } = optsRef.current;
+            if (bgColor) {
+                ctx.fillStyle = bgColor;
                 ctx.fillRect(-W * 0.5, -H * 0.5, W, H);
             }
 
@@ -198,15 +223,15 @@ const FFTDonut = ({
                 ctx.arc(0, 0, r0, aE[i], aS[i], true);
                 ctx.closePath();
 
-                ctx.fillStyle = barGradient ? grad : barColor;
+                ctx.fillStyle = gradientEnabled ? grad : bc;
                 ctx.fill();
 
                 /* peak arc */
                 const pVal = peak.current[i];
                 if (pVal > 0) {
                     const rPeak = r0 + pVal * (rMax - r0);
-                    ctx.strokeStyle = peakColor;
-                    ctx.lineWidth   = peakThickness;
+                    ctx.strokeStyle = pc;
+                    ctx.lineWidth   = pt;
                     ctx.beginPath();
                     ctx.arc(0, 0, rPeak, aS[i], aE[i]);
                     ctx.stroke();
@@ -219,11 +244,13 @@ const FFTDonut = ({
         frameRef.current = requestAnimationFrame(draw);
 
         /* ---- WebSocket ---- */
-        let ws;
+        const wsRef = { current: null };
+        const timerRef = { current: null };
+        const manualCloseRef = { current: false };
         const connect = () => {
-            ws = new WebSocket(wsUrl);
+            wsRef.current = new WebSocket(wsUrl);
 
-            ws.onmessage = (e) => {
+            wsRef.current.onmessage = (e) => {
                 try {
                     const { type, data } = JSON.parse(e.data);
                     if (type !== "fft" || !Array.isArray(data)) return;
@@ -248,36 +275,31 @@ const FFTDonut = ({
                 }
             };
 
-            ws.onclose = () => {
-                if (reconnectInterval > 0) setTimeout(connect, reconnectInterval);
+            wsRef.current.onclose = () => {
+                if (!manualCloseRef.current && reconnectInterval > 0) {
+                    timerRef.current = setTimeout(connect, reconnectInterval);
+                }
             };
         };
         connect();
 
         /* ---- cleanup ---- */
         return () => {
+            manualCloseRef.current = true;
             cancelAnimationFrame(frameRef.current);
-            ws.close();
+            clearTimeout(timerRef.current);
+            wsRef.current && wsRef.current.close();
             document.removeEventListener("visibilitychange", onVis);
             window.removeEventListener("resize", resizeHandler);
         };
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [
-        /* API & visuals */
         wsUrl,
-        barColor,
-        barGradient,
-        backgroundColor,
-        smoothDuration,
         reconnectInterval,
-        peakHold,
-        peakFall,
-        peakColor,
-        peakThickness,
         bars,
+        smoothDuration,
         innerRadiusRatio,
         sectorGap,
-        /* angular */
         startAngle,
         startAngleUnit,
         inactiveSector,

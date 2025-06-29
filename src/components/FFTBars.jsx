@@ -28,7 +28,7 @@ const FFTBars = ({
                      peakColor         = "#37ff00",
                      peakThickness     = 2,       // px, thickness of peak line
                      /* ----- количество полос ----- */
-                     bars              = 256,     // number of frequency bands
+                    bars              = 256,     // number of frequency bands
                  }) => {
     const BAR_COUNT = bars;
 
@@ -55,9 +55,33 @@ const FFTBars = ({
     const lastDraw   = useRef(animStart.current);
     const frameRef   = useRef();
     const runningRef = useRef(true);  // pause on visibility change (tab hidden)
+    const optsRef = useRef({
+        barColor,
+        barGradient,
+        backgroundColor,
+        peakHold,
+        peakFall,
+        peakColor,
+        peakThickness,
+    });
+
+    useEffect(() => {
+        optsRef.current = {
+            barColor,
+            barGradient,
+            backgroundColor,
+            peakHold,
+            peakFall,
+            peakColor,
+            peakThickness,
+        };
+        const ctx = canvasRef.current?.getContext("2d");
+        if (ctx) buildGradient(ctx, canvasRef.current.height);
+    }, [barColor, barGradient, backgroundColor, peakHold, peakFall, peakColor, peakThickness]);
 
     /* ---------- helpers ---------- */
     const buildGradient = (ctx, h) => {
+        const { barColor } = optsRef.current;
         const g = ctx.createLinearGradient(0, 0, 0, h);
         g.addColorStop(0, barColor);
         g.addColorStop(1, `${barColor}`);
@@ -106,7 +130,6 @@ const FFTBars = ({
             if (!runningRef.current) return;
 
             const now = performance.now();
-            const dt  = now - lastDraw.current;
             lastDraw.current = now;
 
             /* smooth impl */
@@ -117,13 +140,14 @@ const FFTBars = ({
             }
 
             /* peakhold */
+            const { peakHold: pHold, peakFall: pFall } = optsRef.current;
             for (let i = 0; i < BAR_COUNT; i++) {
                 const v = current.current[i];
                 if (v >= peak.current[i]) {
                     peak.current[i] = v;
                     peakTime.current[i] = now;
-                } else if (now - peakTime.current[i] > peakHold) {
-                    const r = Math.min(1, (now - peakTime.current[i] - peakHold) / peakFall);
+                } else if (now - peakTime.current[i] > pHold) {
+                    const r = Math.min(1, (now - peakTime.current[i] - pHold) / pFall);
                     const eased = easeQuad(r);
                     peak.current[i] -= (peak.current[i] - v) * eased;
                 }
@@ -132,8 +156,15 @@ const FFTBars = ({
             /* ---- render ---- */
             const { width: W, height: H } = canvas;
             ctx.clearRect(0, 0, W, H);
-            if (backgroundColor) {
-                ctx.fillStyle = backgroundColor;
+            const {
+                backgroundColor: bgColor,
+                barColor: bc,
+                barGradient: gradientEnabled,
+                peakColor: pc,
+                peakThickness: pt,
+            } = optsRef.current;
+            if (bgColor) {
+                ctx.fillStyle = bgColor;
                 ctx.fillRect(0, 0, W, H);
             }
 
@@ -143,17 +174,17 @@ const FFTBars = ({
 
             for (let i = 0; i < BAR_COUNT; i++) {
                 const h = current.current[i] * H;
-                ctx.fillStyle = barGradient ? grad : barColor;
+                ctx.fillStyle = gradientEnabled ? grad : bc;
                 ctx.fillRect(xs[i], H - h, barW * 0.88, h);
 
                 const peakH = peak.current[i] * H;
                 if (peakH > 0) {
-                    ctx.fillStyle = peakColor;
+                    ctx.fillStyle = pc;
                     ctx.fillRect(
                         xs[i],
-                        Math.max(0, H - peakH - peakThickness),
+                        Math.max(0, H - peakH - pt),
                         barW * 0.88,
-                        peakThickness
+                        pt
                     );
                 }
             }
@@ -163,11 +194,13 @@ const FFTBars = ({
         frameRef.current = requestAnimationFrame(draw);
 
         /* ---- WebSocket ---- */
-        let ws;
+        const wsRef = { current: null };
+        const timerRef = { current: null };
+        const manualCloseRef = { current: false };
         const connect = () => {
-            ws = new WebSocket(wsUrl);
+            wsRef.current = new WebSocket(wsUrl);
 
-            ws.onmessage = (e) => {
+            wsRef.current.onmessage = (e) => {
                 try {
                     const { type, data } = JSON.parse(e.data);
                     if (type !== "fft" || !Array.isArray(data)) return;
@@ -192,31 +225,28 @@ const FFTBars = ({
                 }
             };
 
-            ws.onclose = () => {
-                if (reconnectInterval > 0) setTimeout(connect, reconnectInterval);
+            wsRef.current.onclose = () => {
+                if (!manualCloseRef.current && reconnectInterval > 0) {
+                    timerRef.current = setTimeout(connect, reconnectInterval);
+                }
             };
         };
         connect();
 
         /* ---- cleanup ---- */
         return () => {
+            manualCloseRef.current = true;
             cancelAnimationFrame(frameRef.current);
-            ws.close();
+            clearTimeout(timerRef.current);
+            wsRef.current && wsRef.current.close();
             document.removeEventListener("visibilitychange", onVis);
             window.removeEventListener("resize", resizeHandler);
         };
     }, [
         wsUrl,
-        barColor,
-        barGradient,
-        backgroundColor,
-        smoothDuration,
         reconnectInterval,
-        peakHold,
-        peakFall,
-        peakColor,
-        peakThickness,
         bars,
+        smoothDuration,
     ]);
 
     return <Canvas ref={canvasRef} />;
