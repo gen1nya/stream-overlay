@@ -5,10 +5,16 @@ export default function useReconnectingWebSocket(url, handlers = {}) {
     const wsRef = useRef(null);
     const reconnectRef = useRef(0);
     const timerRef = useRef(null);
+    const manualCloseRef = useRef(false);
     const [isConnected, setIsConnected] = useState(false);
 
     const connect = () => {
         clearTimeout(timerRef.current);
+        if (wsRef.current) {
+            manualCloseRef.current = true;
+            wsRef.current.close();
+        }
+        manualCloseRef.current = false;
         const ws = new WebSocket(url);
         wsRef.current = ws;
         ws.onopen = (e) => {
@@ -20,7 +26,9 @@ export default function useReconnectingWebSocket(url, handlers = {}) {
         ws.onclose = (e) => {
             setIsConnected(false);
             if (onClose) onClose(e);
-            scheduleReconnect();
+            if (!manualCloseRef.current) {
+                scheduleReconnect();
+            }
         };
         ws.onerror = () => {
             ws.close();
@@ -36,6 +44,7 @@ export default function useReconnectingWebSocket(url, handlers = {}) {
     useEffect(() => {
         connect();
         return () => {
+            manualCloseRef.current = true;
             clearTimeout(timerRef.current);
             if (wsRef.current) wsRef.current.close();
         };
