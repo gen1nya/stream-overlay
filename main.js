@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain } = require('electron');
+const { app, BrowserWindow, ipcMain, shell  } = require('electron');
 const authService = require('./services/authService');
 const eventSubService = require('./services/eventSubService');
 const chatService = require('./services/chatService');
@@ -176,6 +176,10 @@ app.whenReady().then(() => {
 
     ipcMain.handle('setting:open-preview', () => {
        createPreviewWindow();
+    });
+
+    ipcMain.handle('utils:open_url', async (_event, url) => {
+        await shell.openExternal(url);
     });
 
     ipcMain.handle('system:get-stats', () => {

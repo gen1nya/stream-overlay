@@ -66,3 +66,7 @@ export const getStats = () => {
 export const reconnect = () => {
     return ipcRenderer?.invoke('system:reconnect');
 };
+
+export const openExternalLink = (url) => {
+    return ipcRenderer?.invoke('utils:open_url', url);
+};

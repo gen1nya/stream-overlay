@@ -4,21 +4,6 @@ import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../../
 import { useNavigate } from 'react-router-dom';
 import Marquee from "react-fast-marquee";
 
-
-const GlobalStyle = createGlobalStyle`
-    html, body, #root {
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        background: transparent !important;
-        overflow: hidden;
-    }
-    html, body {
-        scroll-behavior: auto;
-    }
-
-`;
 const Container = styled.div`
     display: flex;
     width: 100%;

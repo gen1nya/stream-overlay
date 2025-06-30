@@ -2,7 +2,15 @@
 import React, {useEffect} from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
-import {openPreview, setRemoteTheme, createNewTheme, setTheme, importTheme, deleteTheme} from '../../services/api';
+import {
+    openPreview,
+    setRemoteTheme,
+    createNewTheme,
+    setTheme,
+    importTheme,
+    deleteTheme,
+    openExternalLink
+} from '../../services/api';
 import MessageSettingsBlock from "./settings/MessageSettingsBlock";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
 import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
@@ -11,6 +19,7 @@ import { defaultTheme } from '../../theme';
 import RedeemPointsBlock from "./settings/RedeemPointsBlock";
 import OverlaySettingsComponent from "./settings/OverlaySettingsComponent";
 import AllMessagesSettings from "./settings/AllMessagesSettings";
+import Separator from "../utils/Separator";
 
 
 const Panel = styled.div`
@@ -29,8 +38,35 @@ const Panel = styled.div`
 `;
 
 const Toolbar = styled.div`
+    box-sizing: border-box;
+    padding: 8px ;
+    display: flex;
+    gap: 8px;
     width: 100%;
     height: 60px;
+`;
+
+
+const ToolbarButton = styled.button`
+    box-sizing: border-box;
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+    color: #fff;
+    background: #1f1f1f;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    cursor: pointer;
+
+    white-space: nowrap;
+    width: fit-content;
+    flex: 0 0 auto;
+    align-self: flex-start;
+
+    &:hover {
+        background: #232323;
+        border: 1px solid #646cff;
+    }
 `;
 
 const Content = styled.div`
@@ -208,6 +244,22 @@ export default function Settings() {
         setIsThemeSelectorOpen(true)
     };
 
+    const openPlayer1 = () => {
+        openExternalLink('http://localhost:5173/audio-modern');
+    };
+
+    const openPlayer2 = () => {
+        openExternalLink('http://localhost:5173/audio');
+    };
+
+    const openDemoFFTColumns = () => {
+        openExternalLink('http://localhost:5173/audio-fft-linear-demo');
+    }
+
+    const openDemoFFTRing = () => {
+        openExternalLink('http://localhost:5173/audio-fft-round-demo');
+    }
+
     const handleCreateThemeButton = () => {
         if (themeNameRef.current && themeNameRef.current.value) {
             const newThemeName = themeNameRef.current.value.trim();
@@ -306,9 +358,14 @@ export default function Settings() {
                 </Popup>
             )}
             <Toolbar>
-                <button onClick={handleBackButton}>Назад</button>
-                <button onClick={handlePreviewButton}>Превью</button>
-                <button onClick={handleThemesButton}>Темы</button>
+                <ToolbarButton onClick={handleBackButton}>Назад</ToolbarButton>
+                <ToolbarButton onClick={handlePreviewButton}>Превью</ToolbarButton>
+                <ToolbarButton onClick={handleThemesButton}>Темы</ToolbarButton>
+                <Separator/>
+                <ToolbarButton onClick={openPlayer2}>Плеер №2 (пластинка)</ToolbarButton>
+                <ToolbarButton onClick={openPlayer1}>Плеер №1</ToolbarButton>
+                <ToolbarButton onClick={openDemoFFTColumns}>Демо FFT (столбцы)</ToolbarButton>
+                <ToolbarButton onClick={openDemoFFTRing}>Демо FFT (кольцо)</ToolbarButton>
             </Toolbar>
 
 

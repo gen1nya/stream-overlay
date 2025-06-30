@@ -13,24 +13,42 @@ import ModernAudioPlayer from "./components/player/ModerAudioPlayer";
 import FFTDonut from "./components/player/FFTDonut";
 import RoundFFTDemo from "./components/player/RoundFFTDemo";
 import LinearFFTDemo from "./components/player/LinearFFTDemo";
+import {createGlobalStyle} from "styled-components";
+
+const GlobalStyle = createGlobalStyle`
+    html, body, #root {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        background: transparent !important;
+        overflow: hidden;
+    }
+    html, body {
+        scroll-behavior: auto;
+    }
+`;
 
 
 export default function App() {
     return (
-        <BrowserRouter>
-            <Routes>
-                <Route path="/audio-fft-round-demo" element={<RoundFFTDemo/>} />
-                <Route path="/audio-fft-linear-demo" element={<LinearFFTDemo/>} />
-                <Route path="/audio" element={<AudioPlayerComponent/>} />
-                <Route path="/audio-modern" element={<ModernAudioPlayer/>} />
-                <Route path="/preview" element={<PreviewComponent/>}/>
-                <Route path="/loading" element={<LoadingComponent/>} />
-                <Route path="/settings" element={<Settings/>} />
-                <Route path="/chat-overlay" element={<ChatOverlay/>} />
-                <Route path="/dashboard" element={<Dashboard/>} />
-                <Route path="/auth" element={<AuthScreen/>} />
-                <Route path="*" element={ <WrongPageComponent/> }/>
-            </Routes>
-        </BrowserRouter>
+        <>
+            <GlobalStyle/>
+            <BrowserRouter>
+                <Routes>
+                    <Route path="/audio-fft-round-demo" element={<RoundFFTDemo/>} />
+                    <Route path="/audio-fft-linear-demo" element={<LinearFFTDemo/>} />
+                    <Route path="/audio" element={<AudioPlayerComponent/>} />
+                    <Route path="/audio-modern" element={<ModernAudioPlayer/>} />
+                    <Route path="/preview" element={<PreviewComponent/>}/>
+                    <Route path="/loading" element={<LoadingComponent/>} />
+                    <Route path="/settings" element={<Settings/>} />
+                    <Route path="/chat-overlay" element={<ChatOverlay/>} />
+                    <Route path="/dashboard" element={<Dashboard/>} />
+                    <Route path="/auth" element={<AuthScreen/>} />
+                    <Route path="*" element={ <WrongPageComponent/> }/>
+                </Routes>
+            </BrowserRouter>
+        </>
     );
 }
