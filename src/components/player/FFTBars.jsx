@@ -17,7 +17,7 @@ const easeQuad = (x) => x * x;
 
 const FFTBars = ({
                      wsUrl             = "ws://localhost:5001/ws",
-                     barColor          = "#1a9c00",
+                     barColor          = "#37ff00",
                      barGradient       = true,
                      backgroundColor   = "rgba(197,89,89,0.06)",
                      smoothDuration    = 60,      // ms, smoothing duration
@@ -25,7 +25,7 @@ const FFTBars = ({
                      /* ----- пики ----- */
                      peakHold          = 10,     // ms, peak hold duration
                      peakFall          = 800,     // ms, peak fall duration
-                     peakColor         = "#37ff00",
+                     peakColor         = "#ce00ff",
                      peakThickness     = 2,       // px, thickness of peak line
                      /* ----- количество полос ----- */
                     bars              = 256,     // number of frequency bands

@@ -11,14 +11,17 @@ import AudioPlayerComponent from "./components/player/AudioPlayerComponent";
 import FFTBars from "./components/player/FFTBars";
 import ModernAudioPlayer from "./components/player/ModerAudioPlayer";
 import FFTDonut from "./components/player/FFTDonut";
+import RoundFFTDemo from "./components/player/RoundFFTDemo";
+import LinearFFTDemo from "./components/player/LinearFFTDemo";
 
 
 export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+                <Route path="/audio-fft-round-demo" element={<RoundFFTDemo/>} />
+                <Route path="/audio-fft-linear-demo" element={<LinearFFTDemo/>} />
                 <Route path="/audio" element={<AudioPlayerComponent/>} />
-                <Route path="/audio-fft" element={<FFTDonut/>} />
                 <Route path="/audio-modern" element={<ModernAudioPlayer/>} />
                 <Route path="/preview" element={<PreviewComponent/>}/>
                 <Route path="/loading" element={<LoadingComponent/>} />

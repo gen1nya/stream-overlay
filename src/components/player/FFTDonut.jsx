@@ -36,12 +36,12 @@ const FFTDonut = ({
                       barColor          = "#ce00ff",
                       barGradient       = true,
                       backgroundColor   = "rgba(197,89,89,0.06)",
-                      peakColor         = "#57fe04",
 
                       /* ---- пики ---- */
                       peakHold          = 10,      // ms, peak hold duration
                       peakFall          = 800,     // ms, peak fall duration
                       peakThickness     = 2,       // px, толщина линии пика
+                      peakColor         = "#57fe04",
 
                       /* ---- геометрия кольца ---- */
                       innerRadiusRatio  = 0.8,     // относительный внутренний радиус (0..1)
