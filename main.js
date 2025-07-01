@@ -168,6 +168,12 @@ app.whenReady().then(() => {
         messageParser.loadChannelBadges().then(r => {
             console.log("ChannelBadges loaded!");
         });
+        messageParser.load7tvGlobalEmotes().then(r => {
+            console.log("7TV Global Emotes loaded!");
+        });
+        messageParser.loadBTTVGlobalEmotes().then(r => {
+            console.log("BTTV Global Emotes loaded!");
+        });
     });
 
     ipcMain.handle('chat:open-overlay', () => {

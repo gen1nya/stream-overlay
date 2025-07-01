@@ -2,44 +2,33 @@
   "tasks": [
     {
       "type": "bug",
-      "status": "todo",
+      "status": "done",
       "title": "сделать ебаный реконнект при потере соединения с сервером twitch"
     },
     {
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "сделать еюаную подгрузку информации о канале"
     },
     {
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Стили для сообщений follow и subscribe"
     },
     {
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "Добавить eventSub в менеджер кеша"
     },
     {
       "priority": "high",
-      "type": "epic",
-      "status": "todo",
-      "title": "Сделать стили для растровых бекграундов для Тети Эли"
-    },
-    {
-      "type": "epic",
-      "status": "todo",
-      "title": "Сделать анимации для сообщений в чате (появление, исчезновение)"
-    },
-    {
-      "priority": "high",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "менеджер кеша для сообщений в чате"
     },
     {
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "FFT для плеера"
     },
     {
@@ -53,30 +42,21 @@
       "title": "сделать стили для сообщений в чате (появление, исчезновение)"
     },
     {
-      "type": "task",
-      "status": "todo",
-      "title": "сделать стили для сообщений в чате (появление, исчезновение) (2)"
-    },
-    {
       "type": "bug",
       "status": "todo",
       "title": "Селектор цвета открывает при клике на бекграунд"
     },
     {
-      "type": "task",
-      "status": "todo",
-      "title": "Сделать стили для сообщений в чате (появление, исчезновение) (3)"
-    },
-    {
-      "type": "task",
-      "status": "todo",
-      "title": "Сделать стили для сообщений в чате (появление, исчезновение) (4)"
-    },
-    {
       "priority": "medium",
       "type": "task",
-      "status": "todo",
+      "status": "done",
       "title": "7тв и беттертв эмоджи"
+    },
+    {
+      "priority": "high",
+      "type": "epic",
+      "status": "todo",
+      "title": "Сделать стили для растровых бекграундов для Тети Эли"
     }
   ]
 }

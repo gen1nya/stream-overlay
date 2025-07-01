@@ -157,7 +157,7 @@ export default function ModernAudioPlayer() {
             const spectrumPeak = palette[2];
 
             const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
+                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.9)`,
                 shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
                 spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
                 peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,

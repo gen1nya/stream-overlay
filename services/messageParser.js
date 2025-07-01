@@ -3,10 +3,13 @@ const authService = require('./authService');
 
 let globalBadges = {};
 let channelBadges = {};
+let _7tvGlobalEmotes = {};
+let bttvGlobalEmotes = {};
 const roomCache = new Map();
 
 
 async function getChannelInfoByRoomId(roomId) {
+    if (!roomId) return null;
     if (roomCache.has(roomId)) return roomCache.get(roomId);
 
     try {
@@ -56,6 +59,37 @@ async function loadGlobalBadges() {
     }
 }
 
+async function load7tvGlobalEmotes() {
+    try {
+        const response = await axios.get('https://api.7tv.app/v3/emote-sets/global');
+        _7tvGlobalEmotes = {};
+        response.data.emotes.forEach(emote => {
+            _7tvGlobalEmotes[emote.id] = {
+                name: emote.name,
+                data: emote.data,
+                urls: [
+                    "https:" + emote.data.host.url+ "/" + emote.data.host.files[2].name
+                ]
+            };
+        });
+        console.log('✅ Loaded 7TV global emotes');
+    } catch (error) {
+        console.error('❌ Failed to load 7TV global emotes:', error.response?.data || error.message);
+    }
+}
+
+async function loadBTTVGlobalEmotes() {
+    try {
+        const response = await axios.get('https://api.betterttv.net/3/cached/emotes/global');
+        response.data.forEach(emote => {
+            bttvGlobalEmotes[emote.id] = {code: emote.code, imageUrl: `https://cdn.betterttv.net/emote/${emote.id}/3x`};
+        });
+        console.log('✅ Loaded BTTV global emotes');
+    } catch (error) {
+        console.error('❌ Failed to load BTTV global emotes:', error.response?.data || error.message);
+    }
+}
+
 async function loadChannelBadges() {
     try {
         const tokens = await authService.getTokens();
@@ -99,31 +133,63 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-function parseEmotes(message, emotesTag) {
-    if (!emotesTag) return escapeHtml(message);
-
+function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes) {
     const emoteMap = {};
-    emotesTag.split('/').forEach(emoteEntry => {
-        const [emoteId, positions] = emoteEntry.split(':');
-        positions.split(',').forEach(range => {
-            const [start, end] = range.split('-').map(Number);
-            if (!emoteMap[start]) emoteMap[start] = { end, emoteId };
+    if (emotesTag) {
+        emotesTag.split('/').forEach(emoteEntry => {
+            const [emoteId, positions] = emoteEntry.split(':');
+            positions.split(',').forEach(range => {
+                const [start, end] = range.split('-').map(Number);
+                if (!emoteMap[start]) emoteMap[start] = {end, emoteId};
+            });
         });
-    });
+    }
+
+    const externalEmotesMap = {};
+    if (_7tvEmotes) {
+        Object.keys(_7tvEmotes).forEach(emoteId => {
+            const emote = _7tvEmotes[emoteId];
+            if (emote.data && emote.data.host) {
+                externalEmotesMap[emote.name] = emote.urls[0];
+            }
+        });
+    }
+    if (bttvEmotes) {
+        Object.keys(bttvEmotes).forEach(emoteId => {
+           const emote = bttvEmotes[emoteId];
+           if(emote.imageUrl) {
+               externalEmotesMap[emote.code] = emote.imageUrl;
+           }
+        });
+    }
 
     const chars = [...message];
-    let result = '';
+    let intermediate  = '';
     for (let i = 0; i < chars.length; i++) {
         if (emoteMap[i]) {
             const { end, emoteId } = emoteMap[i];
-            result += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" alt="emote" style="vertical-align: middle; height: 1em;" />`;
+            intermediate  += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" alt="emote" style="vertical-align: middle; height: 1em;" />`;
             i = end;
         } else {
-            result += escapeHtml(chars[i]);
+            intermediate  += escapeHtml(chars[i]);
         }
     }
 
-    return result;
+    const parts = intermediate.split(/(\s+)/); // разделяем слова и пробелы
+    let finalResult = '';
+    for (const part of parts) {
+        if (part.startsWith('<img') || /^\s+$/.test(part)) {
+            finalResult += part;
+            continue;
+        }
+        if (externalEmotesMap[part]) {
+            finalResult += `<img src="${externalEmotesMap[part]}" alt="${part}" style="vertical-align: middle; height: 1em;" />`;
+        } else {
+            finalResult += escapeHtml(part);
+        }
+    }
+
+    return finalResult;
 }
 
 function parseBadges(badgesTag) {
@@ -183,7 +249,7 @@ async function parseIrcMessage(rawLine) {
         color,
         rawMessage: messageContent,
         htmlBadges: parseBadges(badgesTag),
-        htmlMessage: parseEmotes(messageContent, emotes),
+        htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes),
         id: id,
         roomId: roomId,
         sourceRoomId: sourceRoomId,
@@ -202,6 +268,8 @@ function extractUsername(rawLine) {
 
 
 module.exports = {
+    loadBTTVGlobalEmotes,
+    load7tvGlobalEmotes,
     parseIrcMessage,
     loadGlobalBadges,
     loadChannelBadges

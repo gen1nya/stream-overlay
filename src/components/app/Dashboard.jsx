@@ -171,7 +171,6 @@ export default function Dashboard() {
 
     return (
         <>
-            <GlobalStyle />
             <Wrapper>
                 <Container>
                     <Section>
