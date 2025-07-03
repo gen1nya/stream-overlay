@@ -21,6 +21,7 @@ const SCOPES = [
     'moderator:read:followers',
     'chat:read',
     'chat:edit',
+    'bits:read',
 ].join(' ');
 
 const SERVICE = 'TwitchWatcherasd';

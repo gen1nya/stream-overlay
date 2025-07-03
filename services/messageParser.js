@@ -5,6 +5,7 @@ let globalBadges = {};
 let channelBadges = {};
 let _7tvGlobalEmotes = {};
 let bttvGlobalEmotes = {};
+let cheerEmotes = {};
 const roomCache = new Map();
 
 
@@ -37,6 +38,27 @@ async function getChannelInfoByRoomId(roomId) {
     } catch (e) {
         console.error(`❌ Failed to fetch user for room ${roomId}:`, e.response?.data || e.message);
         return null;
+    }
+}
+
+async function loadCheerEmotes() {
+    try {
+        const tokens = await authService.getTokens();
+        if (!tokens) throw new Error('No tokens available');
+
+        const response = await axios.get(`https://api.twitch.tv/helix/bits/cheermotes?broadcaster_id=${tokens.user_id}`, {
+            headers: {
+                'Client-ID': authService.CLIENT_ID,
+                'Authorization': `Bearer ${tokens.access_token}`
+            }
+        });
+
+        response.data.data.forEach(emote => {
+            cheerEmotes[emote.prefix] = emote.tiers;
+        });
+        console.log('✅ Loaded cheer emotes'/*, JSON.stringify(response.data, null, 2)*/);
+    } catch (error) {
+        console.error('❌ Failed to load cheer emotes:', error.response?.data || error.message);
     }
 }
 
@@ -133,7 +155,7 @@ function escapeHtml(text) {
     return text.replace(/[&<>"']/g, m => map[m]);
 }
 
-function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes) {
+function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes, cheerEmotes) {
     const emoteMap = {};
     if (emotesTag) {
         emotesTag.split('/').forEach(emoteEntry => {
@@ -182,13 +204,32 @@ function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes) {
             finalResult += part;
             continue;
         }
+        const match = part.match(/^([A-Za-z]+)(\d+)$/); // Например, Cheer100
+        if (match) {
+            const [_, prefix, bitsStr] = match;
+            const bits = parseInt(bitsStr, 10);
+            const tiers = cheerEmotes[prefix];
+            if (tiers) {
+                const tier = tiers
+                    .filter(t => bits >= t.min_bits)
+                    .sort((a, b) => b.min_bits - a.min_bits)[0];
+
+                if (tier) {
+                    const url = tier.images.dark.animated['1']; // или другой размер
+                    finalResult += `<span style="display: inline-flex; align-items: center; gap: 0.25em;">
+                    <img src="${url}" alt="${part}" style="vertical-align: middle; height: 1em;" />${bits}
+                    </span>`;
+                    continue;
+                }
+            }
+        }
+
         if (externalEmotesMap[part]) {
             finalResult += `<img src="${externalEmotesMap[part]}" alt="${part}" style="vertical-align: middle; height: 1em;" />`;
         } else {
-            finalResult += escapeHtml(part);
+            finalResult += part;
         }
     }
-
     return finalResult;
 }
 
@@ -249,7 +290,7 @@ async function parseIrcMessage(rawLine) {
         color,
         rawMessage: messageContent,
         htmlBadges: parseBadges(badgesTag),
-        htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes),
+        htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes, cheerEmotes),
         id: id,
         roomId: roomId,
         sourceRoomId: sourceRoomId,
@@ -268,6 +309,7 @@ function extractUsername(rawLine) {
 
 
 module.exports = {
+    loadCheerEmotes,
     loadBTTVGlobalEmotes,
     load7tvGlobalEmotes,
     parseIrcMessage,

@@ -199,7 +199,7 @@ class EventSubService {
             version: '1',
             condition: (id) => ({ to_broadcaster_user_id: id })
         },
-        'channel.cheer': {
+        'channel.bits.use': {
             version: '1',
             condition: (id) => ({ broadcaster_user_id: id })
         },

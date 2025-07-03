@@ -222,7 +222,7 @@ export default function Dashboard() {
                 </StatusBlock>
                 <Footer>
                     <Marquee>Бета-тест: ellis_leaf, kururun_chan</Marquee>
-                    <Version>v0.1.2-beta</Version>
+                    <Version>v0.1.3-beta</Version>
                 </Footer>
             </Wrapper>
             </>

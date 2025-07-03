@@ -157,6 +157,13 @@ app.whenReady().then(() => {
     });
 
     ipcMain.handle('auth:onAccountReady', async () => {
+        // TEST CHEER EMOTES
+        /*setTimeout(() => {
+            messageParser.parseIrcMessage("@badge-info=;badges=moderator/1,subtember-2024/1;bits=1;color=#8A2BE2;display-name=edna_nya;emotes=;first-msg=0;flags=;id=2179eb06-7e0c-473e-81d0-edb823ff3dd2;mod=1;returning-chatter=0;room-id=1015100674;subscriber=0;tmi-sent-ts=1751552575713;turbo=0;user-id=506654373;user-type=mod :edna_nya!edna_nya@edna_nya.tmi.twitch.tv PRIVMSG #ellis_leaf :SeemsGood1")
+                .then((parsedMessage => {
+                    messageCache.addMessage(parsedMessage)
+                }))
+        }, 5000);*/
         const tokens = await authService.getTokens();
         console.log('🎉 Starting Twitch IRC Chat...');
         chatService.startChat();
@@ -173,6 +180,9 @@ app.whenReady().then(() => {
         });
         messageParser.loadBTTVGlobalEmotes().then(r => {
             console.log("BTTV Global Emotes loaded!");
+        });
+        messageParser.loadCheerEmotes().then(r => {
+            console.log("Cheer Emotes loaded!");
         });
     });
 
