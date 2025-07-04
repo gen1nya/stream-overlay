@@ -138,7 +138,7 @@ export default function PreviewComponent() {
                 />
                 <ChatFollow
                     message={followMessage}
-                    template={theme.followMessage.template}
+                    template={theme.followMessage[0].template}
                 />
             </MessagePreviewContainer>
             {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}

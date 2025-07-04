@@ -17,21 +17,44 @@ const store = new Store({
         themes: {
             default: defaultTheme,
             theme1: defaultTheme,
-
         },
         currentTheme: "default"
     }
 });
+/*
+* ==================== theme migration ====================
+* */
+let themes = store.get('themes');
 
-const WebSocket = require('ws');
-const appStartTime = Date.now();
+let migrated = false;
+for (const name of Object.keys(themes)) {
+    const original = themes[name];
+    const migratedTheme = migrateTheme({ ...original });
+    if (JSON.stringify(migratedTheme) !== JSON.stringify(original)) {
+        themes[name] = migratedTheme;
+        migrated = true;
+    }
+}
+
+if (migrated) {
+    store.set('themes', themes);
+    console.log('Темы были мигрированы и сохранены ', JSON.stringify(themes, null, 2));
+}
+
+/*
+* ===================== theme migration end ====================
+* */
 
 let currentThemeName = store.get('currentTheme') || "default";
-let currentTheme = store.get('themes')[currentThemeName] || require('./default-theme.json');
+let currentTheme = themes[currentThemeName] || require('./default-theme.json');
+
 messageCache.updateSettings({
     lifetime: currentTheme.allMessages?.lifetime ?? 60,
     maxCount: currentTheme.allMessages?.maxCount ?? 6,
 });
+
+const WebSocket = require('ws');
+const appStartTime = Date.now();
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -334,3 +357,13 @@ process.on('unhandledRejection', (reason, promise) => {
 app.on('window-all-closed', () => {
     app.quit();
 });
+
+/*
+* Theme migrator
+* */
+function migrateTheme(theme) {
+    if (theme && theme.followMessage && !Array.isArray(theme.followMessage)) {
+        theme.followMessage = [theme.followMessage];
+    }
+    return theme;
+}

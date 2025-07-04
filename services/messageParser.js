@@ -190,7 +190,7 @@ function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes, cheerEmotes) {
     for (let i = 0; i < chars.length; i++) {
         if (emoteMap[i]) {
             const { end, emoteId } = emoteMap[i];
-            intermediate  += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" alt="emote" style="vertical-align: middle; height: 1em;" />`;
+            intermediate  += `<img src="https://static-cdn.jtvnw.net/emoticons/v2/${emoteId}/default/dark/1.0" alt="emote" style="vertical-align: middle; height: 1.25em;" />`;
             i = end;
         } else {
             intermediate  += escapeHtml(chars[i]);
@@ -217,7 +217,7 @@ function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes, cheerEmotes) {
                 if (tier) {
                     const url = tier.images.dark.animated['1']; // или другой размер
                     finalResult += `<span style="display: inline-flex; align-items: center; gap: 0.25em;">
-                    <img src="${url}" alt="${part}" style="vertical-align: middle; height: 1em;" />${bits}
+                    <img src="${url}" alt="${part}" style="vertical-align: middle; height: 1.25em;" />${bits}
                     </span>`;
                     continue;
                 }
@@ -225,7 +225,7 @@ function parseEmotes(message, emotesTag, _7tvEmotes, bttvEmotes, cheerEmotes) {
         }
 
         if (externalEmotesMap[part]) {
-            finalResult += `<img src="${externalEmotesMap[part]}" alt="${part}" style="vertical-align: middle; height: 1em;" />`;
+            finalResult += `<img src="${externalEmotesMap[part]}" alt="${part}" style="vertical-align: middle; height: 1.25em;" />`;
         } else {
             finalResult += part;
         }

@@ -388,6 +388,7 @@ export default function Settings() {
 
                 <FollowSettingsBlock
                     current={selectedTheme}
+                    index={0}
                     onChange={ updaterOrTheme => apply(updaterOrTheme) }
                 />
 
