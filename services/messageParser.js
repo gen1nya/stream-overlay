@@ -282,7 +282,7 @@ async function parseIrcMessage(rawLine) {
     const sourceRoomId = tags['source-room-id'] || null;
 
     console.log("extracted sourceRoomId", sourceRoomId, "roomId", roomId);
-    const channelInfo = await getChannelInfoByRoomId(roomId)
+    const channelInfo = await getChannelInfoByRoomId(sourceRoomId)
 
     return {
         type: type,                    // 'chat' или 'system'

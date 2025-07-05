@@ -245,7 +245,7 @@ export default function ChatOverlay() {
                     } else if (msg.type === 'follow') {
                         Content = <ChatFollow
                             message={msg}
-                            template={theme.followMessage.template}
+                            template={theme.followMessage[0].template}
                         />;
                     } else if (msg.type === 'redemption') {
                         Content = <ChatRedemption

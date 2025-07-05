@@ -9,12 +9,12 @@ import {Row} from "../SettingsComponent";
 import ConfirmableInputField from "../../utils/ConfirmableInputField";
 
 const SettingsBlock = styled.div`
-    width: calc(50% - 12px);
+    width: calc(100% - 12px);
     margin-left: 6px;
     margin-right: 6px;
     margin-top: 12px;
-    background: #272727;
-    border-radius: 18px;
+    background: #1e1e1e;
+    border-radius: 12px;
     padding: 0 12px 12px;
     flex-direction: column;
     display: flex;

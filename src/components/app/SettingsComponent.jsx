@@ -1,5 +1,5 @@
 // Settings.js
-import React, {useEffect} from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +20,8 @@ import RedeemPointsBlock from "./settings/RedeemPointsBlock";
 import OverlaySettingsComponent from "./settings/OverlaySettingsComponent";
 import AllMessagesSettings from "./settings/AllMessagesSettings";
 import Separator from "../utils/Separator";
+import {Sidebar} from "../utils/Sidebar";
+import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings} from "react-icons/fi";
 
 
 const Panel = styled.div`
@@ -29,12 +31,13 @@ const Panel = styled.div`
     width: 100%;
     height: 100vh;
     padding: 0;
+    margin: 0;
     background: #171717;
     color: #f6f6f6;
     box-shadow: -4px 0 8px #0002;
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0;
 `;
 
 const Toolbar = styled.div`
@@ -44,6 +47,7 @@ const Toolbar = styled.div`
     gap: 8px;
     width: 100%;
     height: 60px;
+    background: #1a1a1a;
 `;
 
 
@@ -69,8 +73,15 @@ const ToolbarButton = styled.button`
     }
 `;
 
+const ContentWrapper = styled.div`
+    display: flex;
+    flex-direction: row;
+    height: 100%;
+`;
+
 const Content = styled.div`
     display: flex;
+    flex: 1;
     height: 100%;
     align-content: flex-start;
     flex-direction: row;
@@ -200,6 +211,9 @@ export default function Settings() {
     const [selectedTheme, setSelectedTheme] = React.useState( defaultTheme);
     const [selectedThemeName, setSelectedThemeName] = React.useState("default");
     const [themeList, setThemeList] = React.useState({});
+
+    const [drawerOpen, setDrawerOpen] = useState(true);
+    const [activePage, setActivePage] = useState("general");
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
@@ -369,40 +383,88 @@ export default function Settings() {
             </Toolbar>
 
 
-            <Content>
-
-                <OverlaySettingsComponent
-                    current={selectedTheme}
-                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
+            <ContentWrapper>
+                <Sidebar
+                    open={drawerOpen}
+                    active={activePage}
+                    onSelect={setActivePage}
+                    items={[
+                        { key: "general", icon: <FiSettings />, label: "Общие" },
+                        { key: "chat", icon: <FiMessageCircle />, label: "Сообщения" },
+                        { key: "follow", icon: <FiHeart />, label: "Follow" },
+                        { key: "channel_points", icon: <FiAward />, label: "Баллы" },
+                        { key: "players", icon: <FiMusic />, label: "Плееры" },
+                    ]}
                 />
-
-                <AllMessagesSettings
-                    current={selectedTheme}
-                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                <MainContent
+                    page={activePage}
+                    apply={ updaterOrTheme => apply(updaterOrTheme) }
+                    selectedTheme={selectedTheme}
                 />
-
-                <MessageSettingsBlock
-                    current={selectedTheme}
-                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
-                />
-
-                <FollowSettingsBlock
-                    current={selectedTheme}
-                    index={0}
-                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
-                />
-
-                <PlayerSettingsComponent
-                    current={selectedTheme}
-                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
-                />
-
-                <RedeemPointsBlock
-                    current={selectedTheme}
-                    onChange={ updaterOrTheme => apply(updaterOrTheme) }
-                />
-
-            </Content>
+            </ContentWrapper>
         </Panel>
     );
 }
+
+const MainContent = ({ page, selectedTheme, apply }) => {
+    switch (page) {
+        case "general":
+            return (
+                <Content>
+                    <OverlaySettingsComponent
+                        current={selectedTheme}
+                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                    />
+
+                    <AllMessagesSettings
+                        current={selectedTheme}
+                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                    />
+                </Content>
+            );
+
+        case "chat":
+            return (
+                <Content>
+                    <MessageSettingsBlock
+                        current={selectedTheme}
+                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                    />
+                </Content>
+            );
+
+        case "follow":
+            return (
+                <Content>
+                    <FollowSettingsBlock
+                        current={selectedTheme}
+                        index={0}
+                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                    />
+                </Content>
+            );
+
+        case "channel_points":
+            return (
+                <Content>
+                    <RedeemPointsBlock
+                        current={selectedTheme}
+                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                    />
+                </Content>
+            );
+
+        case "players":
+            return (
+                <Content>
+                    <PlayerSettingsComponent
+                        current={selectedTheme}
+                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                    />
+                </Content>
+            );
+
+        default:
+            return <div>Неизвестная страница</div>;
+    }
+};

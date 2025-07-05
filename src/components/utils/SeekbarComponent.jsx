@@ -7,17 +7,17 @@ const Container = styled.label`
     flex-direction: column;
     padding: 2px 4px;
     border-radius: 4px;
-    background: #1e1e1e;
-`
+    background: #262626;
+`;
 
 const Seekbar = styled.input`
     width: calc(100% - 8px);
     height: 24px
-`
+`;
 
 const Title = styled.div`
     font-size: 14px;
-`
+`;
 
 export default function SeekbarComponent(
     { title, min, max, value, step, onChange }

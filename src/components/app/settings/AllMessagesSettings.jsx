@@ -18,7 +18,7 @@ import ConfirmableInputField from "../../utils/ConfirmableInputField";
 
 
 const SettingsBlock = styled.div`
-    width: calc(50% - 12px);
+    width: calc(100% - 12px);
     margin-left: 6px;
     margin-right: 6px;
     margin-top: 12px;
