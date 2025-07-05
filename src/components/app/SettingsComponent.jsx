@@ -23,6 +23,7 @@ import {Sidebar} from "../utils/Sidebar";
 import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings} from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
+import ColorPickerPopup from "./settings/ColorPickerPopup";
 
 const Panel = styled.div`
     position: fixed;
@@ -85,6 +86,28 @@ export default function Settings() {
 
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
+
+    const [colorPopup, setColorPopup] = useState({
+        open: false,
+        initialColor: '#ffffff',
+        initialAlpha: 1,
+        onChange: () => {},
+        title: 'Цвет',
+    });
+
+    const openColorPopup = ({ initialColor = '#ffffff', onChange, title = 'Цвет', initialAlpha }) => {
+        setColorPopup({
+            open: true,
+            initialColor,
+            initialAlpha,
+            onChange,
+            title,
+        });
+    };
+
+    const closeColorPopup = () => {
+        setColorPopup(prev => ({ ...prev, open: false }));
+    };
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
@@ -154,6 +177,15 @@ export default function Settings() {
 
     return (
         <Panel>
+            {colorPopup.open && (
+                <ColorPickerPopup
+                    title={colorPopup.title}
+                    initialColor={colorPopup.initialColor}
+                    initialAlpha={colorPopup.initialAlpha}
+                    onColorChange={colorPopup.onChange}
+                    onClose={closeColorPopup}
+                />
+            )}
             {isThemeSelectorOpen && (
                 <ThemePopup
                     onClose={() => setIsThemeSelectorOpen(false)}
@@ -194,13 +226,14 @@ export default function Settings() {
                     page={activePage}
                     apply={ updaterOrTheme => apply(updaterOrTheme) }
                     selectedTheme={selectedTheme}
+                    openColorPopup={openColorPopup}
                 />
             </ContentWrapper>
         </Panel>
     );
 }
 
-const MainContent = ({ page, selectedTheme, apply }) => {
+const MainContent = ({ page, selectedTheme, apply, openColorPopup}) => {
     switch (page) {
         case "general":
             return (
@@ -213,6 +246,7 @@ const MainContent = ({ page, selectedTheme, apply }) => {
                     <AllMessagesSettings
                         current={selectedTheme}
                         onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                        openColorPopup={ openColorPopup }
                     />
                 </Content>
             );
@@ -271,7 +305,7 @@ const MainContent = ({ page, selectedTheme, apply }) => {
                         onChange={ updaterOrTheme => apply(updaterOrTheme) }
                     />
                     <SettingsBlockHalf>
-                        <SettingsBlockTitle>Сылки</SettingsBlockTitle>
+                        <SettingsBlockTitle>Ссылки</SettingsBlockTitle>
                         <MediumSecondaryButton onClick={openPlayer2}>Плеер №2 (пластинка)</MediumSecondaryButton>
                         <MediumSecondaryButton onClick={openPlayer1}>Плеер №1</MediumSecondaryButton>
                         <MediumSecondaryButton onClick={openDemoFFTColumns}>Демо FFT (столбцы)</MediumSecondaryButton>

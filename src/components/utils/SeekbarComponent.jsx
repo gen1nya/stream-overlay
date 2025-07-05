@@ -2,11 +2,14 @@ import React from 'react';
 import styled from 'styled-components';
 
 const Container = styled.label`
+    align-items: flex-start;
     display: flex;
-    width: 100%;
     flex-direction: column;
     padding: 2px 4px;
+    height: 50px;
     border-radius: 4px;
+    max-width: ${({$width}) => $width || '100%'};
+    width: ${({$width}) => $width || '100%'};
     background: #262626;
 `;
 
@@ -20,17 +23,17 @@ const Title = styled.div`
 `;
 
 export default function SeekbarComponent(
-    { title, min, max, value, step, onChange }
+    {title, min, max, value, step, onChange, width = '100%'}
 ) {
 
-    return <Container>
+    return <Container $width={width}>
         <Title> {title} </Title>
         <Seekbar
             type="range"
-            min= {min}
-            max= {max}
-            step= {step}
-            value= {value}
+            min={min}
+            max={max}
+            step={step}
+            value={value}
             onChange={e => {
                 onChange(e.target.value);
             }}

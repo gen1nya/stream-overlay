@@ -1,14 +1,16 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
 const Container = styled.label`
+    align-items: flex-start;
     display: flex;
-    width: 100%;
-    height: 76px;
+    width: ${({$width}) => $width || '100%'};
+    height: 50px;
     flex-direction: column;
     padding: 4px 4px;
+    justify-content: center;
     border-radius: 4px;
-    background: #1e1e1e;
+    background: #262626;
 `;
 
 const Title = styled.div`
@@ -21,10 +23,14 @@ const Input = styled.input`
     height: 24px;
 `;
 
-export default function NumericEditorComponent(
-    { title, value, onChange, min = 1, max = 100 }
-) {
-
+export default function NumericEditorComponent({
+                                                   title,
+                                                   value,
+                                                   onChange,
+                                                   min = 1,
+                                                   max = 100,
+                                                   width,
+                                               }) {
     const [currentValue, setCurrentValue] = useState(value);
 
     useEffect(() => {
@@ -32,24 +38,21 @@ export default function NumericEditorComponent(
     }, [value]);
 
     const handleChange = (newValue) => {
-        if (newValue < min || newValue > max) {
-            return; // Ignore out-of-bounds values
-        }
+        if (newValue < min || newValue > max) return;
         setCurrentValue(newValue);
         onChange(newValue);
-    }
+    };
 
     return (
-        <Container>
+        <Container $width={width}>
             <Title>{title}</Title>
             <Input
                 type="number"
                 value={currentValue}
-                onChange={e => handleChange(Number(e.target.value))}
+                onChange={(e) => handleChange(Number(e.target.value))}
                 min={min}
                 max={max}
             />
         </Container>
     );
 }
-
