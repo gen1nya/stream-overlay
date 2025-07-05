@@ -7,29 +7,7 @@ import SeekbarComponent from "../../utils/SeekbarComponent";
 import RadioGroupComponent from "../../utils/RadioGroupComponent";
 import {Row} from "../SettingsComponent";
 import ConfirmableInputField from "../../utils/ConfirmableInputField";
-
-const SettingsBlock = styled.div`
-    width: calc(100% - 12px);
-    margin-left: 6px;
-    margin-right: 6px;
-    margin-top: 12px;
-    background: #1e1e1e;
-    border-radius: 12px;
-    padding: 0 12px 12px;
-    flex-direction: column;
-    display: flex;
-    gap: 12px;
-    box-sizing: border-box;
-`;
-
-const Title = styled.h2`
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #d6d6d6;
-    margin: 0;
-    padding: 8px 0;
-`;
-
+import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
 
 export default function OverlaySettingsComponent({ current, onChange }) {
 
@@ -38,8 +16,8 @@ export default function OverlaySettingsComponent({ current, onChange }) {
     }
 
     return(
-        <SettingsBlock>
-            <Title>Оверлей</Title>
+        <SettingsBlockFull>
+            <SettingsBlockTitle>Оверлей</SettingsBlockTitle>
             <Accordion title={"положение чата"}>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
@@ -244,7 +222,7 @@ export default function OverlaySettingsComponent({ current, onChange }) {
                 )}
 
             </Accordion>
-        </SettingsBlock>
+        </SettingsBlockFull>
 
         )
 

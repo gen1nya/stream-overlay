@@ -1,104 +1,101 @@
 export const defaultTheme = {
-    allMessages: {
-        lifetime: 60, // seconds
-        maxCount: 30,
-        textColor: '#ffffff',
-        textOpacity: 0,
-        blurRadius: 0,
-        textShadowColor: '#000000',
-        textShadowOpacity: 0.5,
-        textShadowRadius: 5,
-        textShadowXPosition: 0,
-        textShadowYPosition: 0,
-    },
-    overlay: {
-        paddingTop: 0,
-        paddingLeft: 0,
-        backgroundColor: null,
-        backgroundOpacity: 0.0,
-        backgroundImage: null,
-        backgroundImageAspectRatio: 1,
-        backgroundImageWidth: 1,
-        backgroundImageHeight: 1,
-        backgroundType: "none",
-        containerWidth: 500,
-        borderRadius: 0,
-    },
     chatMessage: {
-        backgroundColor: '#3e837c', // #311e64
-        borderColor: '#00ffe3',
-        shadowColor: '#000',
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
-        direction: "row",
-        borderRadius: 6,
-        marginH: 10,
-        marginV: 10,
-        backgroundOpacity: 1.0,
+        backgroundColor: "#422434",
+        borderColor: "#0af0d5",
+        shadowColor: "#ffffff",
+        shadowOpacity: "1",
+        shadowRadius: "5",
+        direction: "column",
+        borderRadius: "12",
+        marginH: "10",
+        marginV: "3",
+        backgroundOpacity: "0.77",
+        borderOpacity: "1",
+        paddingH: "8",
+        paddingV: "7",
+        fontSize: 24,
+        titleFontSize: 20
     },
     followMessage: [
         {
-            backgroundColor: '#3e837c', // #311e64
-            borderColor: '#00ffe3',
-            shadowColor: '#000',
-            shadowOpacity: 0.5,
-            shadowRadius: 5,
-            direction: "row",
-            borderRadius: 6,
-            marginH: 10,
-            marginV: 10,
-            backgroundOpacity: 1.0,
-            template: "🎉 {userName} just followed!",
+            backgroundColor: "#22a554",
+            borderColor: "#00ffe3",
+            shadowColor: "#000",
+            shadowOpacity: "1",
+            shadowRadius: "5",
+            direction: "column",
+            backgroundOpacity: "0.79",
+            borderOpacity: "1",
+            borderRadius: "16",
+            marginH: "10",
+            marginV: "4",
+            paddingH: "10",
+            paddingV: "3",
+            fontSize: 25,
+            template: "🎉 {userName} just followed!"
         }
     ],
     redeemMessage: {
-        backgroundColor: '#3e837c', // #311e64
-        borderColor: '#00ffe3',
-        shadowColor: '#000',
-        shadowOpacity: 0.5,
-        shadowRadius: 5,
+        backgroundColor: "#6968b1",
+        borderColor: "#00ffe3",
+        shadowColor: "#b65454",
+        shadowOpacity: "1",
+        shadowRadius: "5",
         direction: "row",
-        borderRadius: 6,
-        marginH: 10,
-        marginV: 10,
-        backgroundOpacity: 1.0,
-        template: "🎉 {userName} потратил {rewardCost} балов на {rewardTitle}",
+        backgroundOpacity: "0.79",
+        borderRadius: "20",
+        paddingV: "6",
+        paddingH: "6",
+        marginV: "6",
+        marginH: "7",
+        borderOpacity: "1",
+        fontSize: 24,
+        template: "🎉 {userName} потратил {cost} балов на {title}"
     },
     player: {
-        backgroundColor: '#3e837c',
-        backgroundOpacity: 1.0,
-
-        borderColor: '#00ffe3',
-        borderOpacity: 1.0,
+        backgroundColor: "#4c243d",
+        backgroundOpacity: "0.94",
+        borderColor: "#00ffe3",
+        borderOpacity: "1",
         borderRadius: {
-            topLeft: 0,
-            topRight: 0,
-            bottomLeft: 0,
-            bottomRight: 0,
+            topLeft: "145",
+            topRight: "145",
+            bottomLeft: "24",
+            bottomRight: "150"
         },
-
-        shadowColor: '#000',
-        shadowOpacity: 0.5,
-
-        diskShadowColor: '#000',
-        diskShadowOpacity: 0.5,
-
+        shadowColor: "#00ffcc",
+        shadowOpacity: "0.26",
+        diskShadowColor: "#00ffaa",
+        diskShadowOpacity: "0.44",
         shadowRadius: 20,
-
         text: {
-            textAlign: 'left',
+            textAlign: "left",
             title: {
                 fontSize: 16,
-                color: '#fff',
-                fontWeight: 'bold',
+                color: "#ffffff",
+                fontWeight: "bold"
             },
             artist: {
                 fontSize: 14,
-                color: '#b8b8b8',
-                fontWeight: 'normal',
-            },
-        },
+                color: "#858585",
+                fontWeight: "normal"
+            }
+        }
+    },
+    allMessages: {
+        lifetime: 60,
+        textColor: "#ffffff",
+        textOpacity: "1",
+        blurRadius: "0",
+        textShadowColor: "#000000",
+        textShadowOpacity: "1",
+        textShadowRadius: "2",
+        textShadowXPosition: 0,
+        textShadowYPosition: 0
+    },
+    overlay: {
+        backgroundType: "none",
+        backgroundColor: null,
+        backgroundImage: null
     }
-
-
 };

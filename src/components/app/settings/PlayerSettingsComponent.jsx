@@ -1,34 +1,11 @@
 import React from 'react';
-import styled from 'styled-components';
 import {Accordion} from "../../utils/AccordionComponent";
 import ColorSelectorComponent from "../../utils/ColorSelectorComponent";
 import {Row} from "../SettingsComponent";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import RadioGroupComponent from "../../utils/RadioGroupComponent";
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
-
-
-const SettingsBlock = styled.div`
-    width: calc(50% - 12px);
-    margin-left: 6px;
-    margin-right: 6px;
-    margin-top: 12px;
-    background: #272727;
-    border-radius: 18px;
-    padding: 0 12px 12px;
-    flex-direction: column;
-    display: flex;
-    gap: 12px;
-    box-sizing: border-box;
-`;
-
-const Title = styled.h2`
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #d6d6d6;
-    margin: 0;
-    padding: 8px 0;
-`;
+import {SettingsBlockHalf, SettingsBlockTitle} from "./SettingBloks";
 
 export default function PlayerSettingsComponent({ current, onChange }) {
 
@@ -37,8 +14,8 @@ export default function PlayerSettingsComponent({ current, onChange }) {
     }
 
     return (
-        <SettingsBlock>
-            <Title>Настройки плеера</Title>
+        <SettingsBlockHalf>
+            <SettingsBlockTitle>Настройки плеера</SettingsBlockTitle>
             <Accordion title = "Плеер - цвета">
                 <Row align="center" gap="0.5rem">
                     <ColorSelectorComponent
@@ -306,6 +283,6 @@ export default function PlayerSettingsComponent({ current, onChange }) {
                     />
                 </Row>
             </Accordion>
-        </SettingsBlock>
+        </SettingsBlockHalf>
     );
 }
