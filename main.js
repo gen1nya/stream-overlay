@@ -1,6 +1,6 @@
 const { app, BrowserWindow, ipcMain, shell  } = require('electron');
 const authService = require('./services/authService');
-const eventSubService = require('./services/eventSubService');
+const eventSubService = require('./services/esService');
 const chatService = require('./services/chatService');
 const messageParser = require('./services/messageParser');
 const messageCache = require('./services/MessageCacheManager');
@@ -145,11 +145,9 @@ app.whenReady().then(() => {
             switch (channel) {
                 case 'theme:get-all':
                     const themes = store.get('themes');
-                    console.log('Запрошены все темы, отправляем:', themes);
                     broadcast('themes:get', { themes, currentThemeName });
                     break;
                 case 'theme:get':
-                    console.log('Запрошена тема, отправляем текущую:', currentTheme);
                     broadcast('theme:update', currentTheme);
                     break;
                 default:
@@ -160,7 +158,6 @@ app.whenReady().then(() => {
 
     ipcMain.handle('auth:authorize', async () => {
         const result = await authService.authorizeIfNeeded();
-        console.log("authorize result", result);
         return result;
     });
 
@@ -206,22 +203,22 @@ app.whenReady().then(() => {
         const tokens = await authService.getTokens();
         console.log('🎉 Starting Twitch IRC Chat...');
         chatService.startChat();
-        console.log('🎉 Ready to work with Twitch API! Token:', tokens.access_token);
+        console.log('🎉 Ready to work with Twitch API!');
         eventSubService.start();
         messageParser.loadGlobalBadges().then(r => {
-            console.log("GlobalBadges loaded!");
+            console.log("✅ GlobalBadges loaded!");
         });
         messageParser.loadChannelBadges().then(r => {
-            console.log("ChannelBadges loaded!");
+            console.log("✅ ChannelBadges loaded!");
         });
         messageParser.load7tvGlobalEmotes().then(r => {
-            console.log("7TV Global Emotes loaded!");
+            console.log("✅ 7TV Global Emotes loaded!");
         });
         messageParser.loadBTTVGlobalEmotes().then(r => {
-            console.log("BTTV Global Emotes loaded!");
+            console.log("✅ BTTV Global Emotes loaded!");
         });
         messageParser.loadCheerEmotes().then(r => {
-            console.log("Cheer Emotes loaded!");
+            console.log("✅ Cheer Emotes loaded!");
         });
     });
 
@@ -330,7 +327,6 @@ app.whenReady().then(() => {
     });
 
     messageCache.registerMessageHandler(({ messages, showSourceChannel }) => {
-        console.log('📨 Отправка кэша сообщений в WebSocket:', JSON.stringify(messages));
         broadcast('chat:messages', {
             messages: Array.from(messages),
             showSourceChannel

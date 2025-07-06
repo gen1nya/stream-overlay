@@ -56,7 +56,6 @@ async function loadCheerEmotes() {
         response.data.data.forEach(emote => {
             cheerEmotes[emote.prefix] = emote.tiers;
         });
-        console.log('✅ Loaded cheer emotes'/*, JSON.stringify(response.data, null, 2)*/);
     } catch (error) {
         console.error('❌ Failed to load cheer emotes:', error.response?.data || error.message);
     }
@@ -75,7 +74,6 @@ async function loadGlobalBadges() {
         });
 
         globalBadges = processBadges(response.data.data);
-        console.log('✅ Loaded global badges');
     } catch (error) {
         console.error('❌ Failed to load global badges:', error.response?.data || error.message);
     }
@@ -94,7 +92,6 @@ async function load7tvGlobalEmotes() {
                 ]
             };
         });
-        console.log('✅ Loaded 7TV global emotes');
     } catch (error) {
         console.error('❌ Failed to load 7TV global emotes:', error.response?.data || error.message);
     }
@@ -106,7 +103,6 @@ async function loadBTTVGlobalEmotes() {
         response.data.forEach(emote => {
             bttvGlobalEmotes[emote.id] = {code: emote.code, imageUrl: `https://cdn.betterttv.net/emote/${emote.id}/3x`};
         });
-        console.log('✅ Loaded BTTV global emotes');
     } catch (error) {
         console.error('❌ Failed to load BTTV global emotes:', error.response?.data || error.message);
     }
@@ -125,7 +121,6 @@ async function loadChannelBadges() {
         });
 
         channelBadges = processBadges(response.data.data);
-        console.log('✅ Loaded channel badges');
     } catch (error) {
         console.error('❌ Failed to load channel badges:', error.response?.data || error.message);
     }
@@ -280,8 +275,6 @@ async function parseIrcMessage(rawLine) {
     const badgesTag = tags['badges'] || '';
     const roomId = tags['room-id'] || null;
     const sourceRoomId = tags['source-room-id'] || null;
-
-    console.log("extracted sourceRoomId", sourceRoomId, "roomId", roomId);
     const channelInfo = await getChannelInfoByRoomId(sourceRoomId)
 
     return {

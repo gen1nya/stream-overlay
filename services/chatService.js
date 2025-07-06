@@ -99,8 +99,6 @@ class ChatService {
             for (const message of messages) {
                 if (!message) return;
 
-                console.log('📨', message);
-
                 if (message.startsWith('PING')) {
                     socket.write('PONG :tmi.twitch.tv\r\n');
                     return;
@@ -115,10 +113,7 @@ class ChatService {
                 const parsed = await messageParser.parseIrcMessage(message);
 
                 if (parsed) {
-                    console.log(`${parsed.username}: ${parsed.rawMessage}`);
-                    console.log('Баджи:', parsed.htmlBadges);
-                    console.log('HTML для рендера:', parsed.htmlMessage);
-
+                    console.log('📨', 'IRC сообщение :', parsed.username, parsed.htmlMessage);
                     if (this.messageHandler && parsed) {
                         this.messageHandler(parsed);
                     }
