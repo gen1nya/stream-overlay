@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
 
 const Container = styled.label`
@@ -6,7 +6,10 @@ const Container = styled.label`
     flex-direction: column;
     padding: 2px 4px;
     border-radius: 4px;
-    background: #1e1e1e;
+    background: #262626;
+    height: 50px;
+    max-width: ${({$width}) => $width || '100%'};
+    width: ${({$width}) => $width || '100%'};
 `;
 
 const Title = styled.div`
@@ -14,7 +17,7 @@ const Title = styled.div`
 `;
 
 export default function RadioGroupComponent(
-    { title, options, selected, onChange }) {
+    {title, options, selected, onChange, width = '100%'}) {
 
     const [selectedValue, setSelectedValue] = useState(selected);
 
@@ -24,9 +27,9 @@ export default function RadioGroupComponent(
     }, [selected]);
 
     return (
-        <Container>
-            <Title dangerouslySetInnerHTML={{ __html: title }} />
-            <div style={{ display: 'flex', flexDirection: 'row', gap: '0.5rem' }}>
+        <Container $width={width}>
+            <Title dangerouslySetInnerHTML={{__html: title}}/>
+            <div style={{display: 'flex', flexDirection: 'row', gap: '0.5rem'}}>
                 {options.map(option => (
                     <label key={option.value}>
                         <input

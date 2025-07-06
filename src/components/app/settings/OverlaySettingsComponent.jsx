@@ -8,8 +8,10 @@ import RadioGroupComponent from "../../utils/RadioGroupComponent";
 import {Row} from "../SettingsComponent";
 import ConfirmableInputField from "../../utils/ConfirmableInputField";
 import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
+import {Spacer} from "../../utils/Separator";
+import ColorSelectorButton from "./ColorSelectorButton";
 
-export default function OverlaySettingsComponent({ current, onChange }) {
+export default function OverlaySettingsComponent({ current, onChange, openColorPopup }) {
 
     const handleChange = updaterOrTheme => {
         onChange(updaterOrTheme)
@@ -18,7 +20,60 @@ export default function OverlaySettingsComponent({ current, onChange }) {
     return(
         <SettingsBlockFull>
             <SettingsBlockTitle>Оверлей</SettingsBlockTitle>
-            <Accordion title={"положение чата"}>
+                <Row>
+                    <SeekbarComponent
+                        title={`ширина (${current.overlay?.chatWidth ?? "auto"}):`}
+                        min="100"
+                        max="700"
+                        value={current.overlay?.chatWidth ?? 0}
+                        step="1"
+                        width={"150px"}
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                overlay: {
+                                    ...prev.overlay,
+                                    chatWidth: e,
+                                },
+                            }))
+                        }
+                    />
+                    <SeekbarComponent
+                        title={`Высота (${current.overlay?.chatHeight ?? "auto"}):`}
+                        min="100"
+                        max="1000"
+                        value={current.overlay?.chatHeight ?? 100}
+                        step="1"
+                        width={"150px"}
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                overlay: {
+                                    ...prev.overlay,
+                                    chatHeight: e,
+                                },
+                            }))
+                        }
+                    />
+                    <Spacer/>
+                    <SeekbarComponent
+                        title={`скругление (${current.overlay?.borderRadius ?? 0}):`}
+                        min="0"
+                        max="64"
+                        width={"320px"}
+                        value={current.overlay?.borderRadius ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                overlay: {
+                                    ...prev.overlay,
+                                    borderRadius: e,
+                                },
+                            }))
+                        }
+                    />
+                </Row>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
                         title={"Отступ слева:"}
@@ -26,6 +81,7 @@ export default function OverlaySettingsComponent({ current, onChange }) {
                         max="250"
                         value={current.overlay?.paddingLeft ?? 0}
                         step="1"
+                        width={"150px"}
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
@@ -40,6 +96,7 @@ export default function OverlaySettingsComponent({ current, onChange }) {
                         title={"Отступ сверху:"}
                         min="0"
                         max="250"
+                        width={"150px"}
                         value={current.overlay?.paddingTop ?? 0}
                         step="1"
                         onChange={e =>
@@ -52,176 +109,128 @@ export default function OverlaySettingsComponent({ current, onChange }) {
                             }))
                         }
                     />
-
-                    <SeekbarComponent
-                        title={"ширина:"}
-                        min="100"
-                        max="700"
-                        value={current.overlay?.chatWidth ?? 0}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    chatWidth: e,
-                                },
-                            }))
-                        }
-                    />
-                    <SeekbarComponent
-                        title={"Высота:"}
-                        min="100"
-                        max="1000"
-                        value={current.overlay?.chatHeight ?? 100}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    chatHeight: e,
-                                },
-                            }))
-                        }
-                    />
-                    <SeekbarComponent
-                        title={"скругление:"}
-                        min="0"
-                        max="64"
-                        value={current.overlay?.borderRadius ?? 0}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    borderRadius: e,
-                                },
-                            }))
-                        }
-                    />
                 </Row>
-            </Accordion>
-            <Accordion title={"Фон"}>
-                <RadioGroupComponent
-                    title={"Тип фона:"}
-                    options={[
-                        { value: "color", label: "Цвет" },
-                        { value: "image", label: "Изображение" },
-                        { value: "none", label: "Нет/прозрачный" }
-                    ]}
-                    selected={current.overlay?.backgroundType ?? "none"}
-                    onChange={value =>
-                        handleChange(prev => ({
-                            ...prev,
-                            overlay: {
-                                ...prev.overlay,
-                                backgroundType: value,
-                                backgroundColor: value === "color" ? prev.overlay.backgroundColor : null,
-                                backgroundImage: value === "image" ? prev.overlay.backgroundImage : null,
-                            },
-                        }))
+            <RadioGroupComponent
+                width={"350px"}
+                title={"Тип фона:"}
+                options={[
+                    { value: "color", label: "Цвет" },
+                    { value: "image", label: "Изображение" },
+                    { value: "none", label: "Нет/прозрачный" }
+                ]}
+                selected={current.overlay?.backgroundType ?? "none"}
+                onChange={value =>
+                    handleChange(prev => ({
+                        ...prev,
+                        overlay: {
+                            ...prev.overlay,
+                            backgroundType: value,
+                            backgroundColor: value === "color" ? prev.overlay.backgroundColor : null,
+                            backgroundImage: value === "image" ? prev.overlay.backgroundImage : null,
+                        },
+                    }))
+                }
+            />
+
+            {current.overlay?.backgroundType === "color" && (
+                <ColorSelectorButton
+                    title={"Цвет текста:"}
+                    hex={current.overlay?.backgroundColor ?? "#000000"}
+                    alpha={1}
+                    onClick={() => {
+                        openColorPopup({
+                            initialColor: current.overlay?.backgroundColor ?? "#ffffff",
+                            initialAlpha: 1,
+                            title: 'Цвет фона',
+                            onChange: (e) => {
+                                handleChange(prev => ({
+                                    ...prev,
+                                    overlay: {
+                                        ...prev.overlay,
+                                        backgroundColor: e.color,
+                                    },
+                                }));
+                            }
+                        })
                     }
-                />
-                {/*в зависимости от current.overlay?.backgroundType показываем
-                color - селектор цвета ColorSelectorComponent
-                image - поле для ссылки на изображение
-                none - ничего не показываем
-                динамически меняем состояние в зависимости от выбора пользователя
-                */}
+                    }/>
+            )}
+            {current.overlay?.backgroundType === "image" && (
+                <>
+                    <ConfirmableInputField
+                        onConfirm={value => {
+                            return new Promise((resolve) => {
+                                const img = new Image();
+                                img.src = value;
+                                img.onload = () => {
+                                    const aspectRatio = img.width / img.height;
 
-                {current.overlay?.backgroundType === "color" && (
-                    <ColorSelectorComponent
-                        title={"Цвет фона:"}
-                        value={current.overlay?.backgroundColor ?? "#000000"}
-                        onChange={value =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    backgroundColor: value,
-                                },
-                            }))
-                        }
+                                    handleChange(prev => ({
+                                        ...prev,
+                                        overlay: {
+                                            ...prev.overlay,
+                                            containerWidth: img.width,
+                                            backgroundImage: value,
+                                            backgroundImageAspectRatio: aspectRatio,
+                                            backgroundImageWidth: img.width,
+                                            backgroundImageHeight: img.height
+                                        },
+                                    }));
+
+                                    resolve(true);
+                                };
+                                img.onerror = () => {
+                                    console.error("Failed to load image");
+                                    resolve(false);
+                                };
+                            });
+                        }}
+                        initialValue={current.overlay?.backgroundImage ?? ""}
+                        onSuccess={value => console.log("Image URL confirmed:", value)}
+                        onError={error => console.error("Error confirming image URL:", error)}
+                        placeholder="Введите ссылку на изображение"
                     />
-                )}
-                {current.overlay?.backgroundType === "image" && (
-                    <>
-                        <ConfirmableInputField
-                            onConfirm={value => {
-                                return new Promise((resolve) => {
-                                    const img = new Image();
-                                    img.src = value;
-                                    img.onload = () => {
-                                        const aspectRatio = img.width / img.height;
-
-                                        handleChange(prev => ({
-                                            ...prev,
-                                            overlay: {
-                                                ...prev.overlay,
-                                                containerWidth: img.width,
-                                                backgroundImage: value,
-                                                backgroundImageAspectRatio: aspectRatio,
-                                                backgroundImageWidth: img.width,
-                                                backgroundImageHeight: img.height
-                                            },
-                                        }));
-
-                                        resolve(true);
-                                    };
-                                    img.onerror = () => {
-                                        console.error("Failed to load image");
-                                        resolve(false);
-                                    };
-                                });
-                            }}
-                            initialValue={current.overlay?.backgroundImage ?? ""}
-                            onSuccess={value => console.log("Image URL confirmed:", value)}
-                            onError={error => console.error("Error confirming image URL:", error)}
-                            placeholder="Введите ссылку на изображение"
+                    <Row>
+                        {/*задает ширину компонента*/}
+                        <SeekbarComponent
+                            title={`Ширина фона (${current.overlay.containerWidth}):`}
+                            min="100"
+                            max="2000"
+                            value={current.overlay?.containerWidth ?? 500}
+                            step="1"
+                            width={"200px"}
+                            onChange={e =>
+                                handleChange(prev => ({
+                                    ...prev,
+                                    overlay: {
+                                        ...prev.overlay,
+                                        containerWidth: e,
+                                    },
+                                }))
+                            }
                         />
-                        <Row>
-                            {/*задает ширину компонента*/}
-                            <SeekbarComponent
-                                title={`Ширина фона (${current.overlay.containerWidth}):`}
-                                min="100"
-                                max="2000"
-                                value={current.overlay?.containerWidth ?? 500}
-                                step="1"
-                                onChange={e =>
-                                    handleChange(prev => ({
-                                        ...prev,
-                                        overlay: {
-                                            ...prev.overlay,
-                                            containerWidth: e,
-                                        },
-                                    }))
-                                }
-                            />
-                            {/*задает ширину компонента*/}
-                            <SeekbarComponent
-                                title={`Прозрачность фона (${current.overlay?.backgroundOpacity ?? 1}):`}
-                                min="0"
-                                max="1"
-                                value={current.overlay?.backgroundOpacity ?? 1}
-                                step="0.01"
-                                onChange={e =>
-                                    handleChange(prev => ({
-                                        ...prev,
-                                        overlay: {
-                                            ...prev.overlay,
-                                            backgroundOpacity: e,
-                                        },
-                                    }))
-                                }
-                            />
-                        </Row>
+                        {/*задает ширину компонента*/}
+                        <SeekbarComponent
+                            title={`Прозрачность фона (${current.overlay?.backgroundOpacity ?? 1}):`}
+                            min="0"
+                            max="1"
+                            value={current.overlay?.backgroundOpacity ?? 1}
+                            step="0.01"
+                            width={"200px"}
+                            onChange={e =>
+                                handleChange(prev => ({
+                                    ...prev,
+                                    overlay: {
+                                        ...prev.overlay,
+                                        backgroundOpacity: e,
+                                    },
+                                }))
+                            }
+                        />
+                    </Row>
 
-                    </>
-                )}
-
-            </Accordion>
+                </>
+            )}
         </SettingsBlockFull>
 
         )

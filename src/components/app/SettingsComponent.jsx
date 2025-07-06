@@ -1,7 +1,7 @@
 // Settings.js
 import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import {
     openPreview,
     setRemoteTheme,
@@ -14,7 +14,7 @@ import {
 import MessageSettingsBlock from "./settings/MessageSettingsBlock";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
 import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
-import { defaultTheme } from '../../theme';
+import {defaultTheme} from '../../theme';
 import RedeemPointsBlock from "./settings/RedeemPointsBlock";
 import OverlaySettingsComponent from "./settings/OverlaySettingsComponent";
 import AllMessagesSettings from "./settings/AllMessagesSettings";
@@ -43,7 +43,7 @@ const Panel = styled.div`
 
 const Toolbar = styled.div`
     box-sizing: border-box;
-    padding: 8px ;
+    padding: 8px;
     display: flex;
     gap: 8px;
     width: 100%;
@@ -71,16 +71,16 @@ const Content = styled.div`
 export const Row = styled.div`
     display: flex;
     flex-direction: row;
-    align-items: ${({ align = "center" }) => align};
-    justify-content: ${({ justify = "flex-start" }) => justify};
-    gap: ${({ gap = "0.5rem" }) => gap};
+    align-items: ${({align = "center"}) => align};
+    justify-content: ${({justify = "flex-start"}) => justify};
+    gap: ${({gap = "0.5rem"}) => gap};
 `;
 
 export default function Settings() {
     const navigate = useNavigate();
 
     const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
-    const [selectedTheme, setSelectedTheme] = React.useState( defaultTheme);
+    const [selectedTheme, setSelectedTheme] = React.useState(defaultTheme);
     const [selectedThemeName, setSelectedThemeName] = React.useState("default");
     const [themeList, setThemeList] = React.useState({});
 
@@ -91,11 +91,12 @@ export default function Settings() {
         open: false,
         initialColor: '#ffffff',
         initialAlpha: 1,
-        onChange: () => {},
+        onChange: () => {
+        },
         title: 'Цвет',
     });
 
-    const openColorPopup = ({ initialColor = '#ffffff', onChange, title = 'Цвет', initialAlpha }) => {
+    const openColorPopup = ({initialColor = '#ffffff', onChange, title = 'Цвет', initialAlpha}) => {
         setColorPopup({
             open: true,
             initialColor,
@@ -106,20 +107,20 @@ export default function Settings() {
     };
 
     const closeColorPopup = () => {
-        setColorPopup(prev => ({ ...prev, open: false }));
+        setColorPopup(prev => ({...prev, open: false}));
     };
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
         ws.onopen = () => {
             console.log('🟢 WebSocket подключен');
-            ws.send(JSON.stringify({ channel: 'theme:get-all' }));
+            ws.send(JSON.stringify({channel: 'theme:get-all'}));
         };
         ws.onmessage = (event) => {
-            const { channel, payload } = JSON.parse(event.data);
+            const {channel, payload} = JSON.parse(event.data);
             switch (channel) {
                 case "themes:get":
-                    const { themes, currentThemeName } = payload;
+                    const {themes, currentThemeName} = payload;
                     console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
                     setThemeList(themes);
                     setSelectedThemeName(currentThemeName);
@@ -155,8 +156,8 @@ export default function Settings() {
     const handleExportTheme = (name) => {
         const theme = themeList[name];
         if (!theme) return;
-        const data = JSON.stringify({ [name]: theme }, null, 2);
-        const blob = new Blob([data], { type: 'application/json' });
+        const data = JSON.stringify({[name]: theme}, null, 2);
+        const blob = new Blob([data], {type: 'application/json'});
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
@@ -215,16 +216,16 @@ export default function Settings() {
                     active={activePage}
                     onSelect={setActivePage}
                     items={[
-                        { key: "general", icon: <FiSettings />, label: "Общие" },
-                        { key: "chat", icon: <FiMessageCircle />, label: "Сообщения" },
-                        { key: "follow", icon: <FiHeart />, label: "Follow" },
-                        { key: "channel_points", icon: <FiAward />, label: "Баллы" },
-                        { key: "players", icon: <FiMusic />, label: "Плееры" },
+                        {key: "general", icon: <FiSettings/>, label: "Общие"},
+                        {key: "chat", icon: <FiMessageCircle/>, label: "Сообщения"},
+                        {key: "follow", icon: <FiHeart/>, label: "Follow"},
+                        {key: "channel_points", icon: <FiAward/>, label: "Баллы"},
+                        {key: "players", icon: <FiMusic/>, label: "Плееры"},
                     ]}
                 />
                 <MainContent
                     page={activePage}
-                    apply={ updaterOrTheme => apply(updaterOrTheme) }
+                    apply={updaterOrTheme => apply(updaterOrTheme)}
                     selectedTheme={selectedTheme}
                     openColorPopup={openColorPopup}
                 />
@@ -233,20 +234,21 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({ page, selectedTheme, apply, openColorPopup}) => {
+const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
     switch (page) {
         case "general":
             return (
                 <Content>
                     <OverlaySettingsComponent
                         current={selectedTheme}
-                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
                     />
 
                     <AllMessagesSettings
                         current={selectedTheme}
-                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
-                        openColorPopup={ openColorPopup }
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
                     />
                 </Content>
             );
@@ -256,7 +258,8 @@ const MainContent = ({ page, selectedTheme, apply, openColorPopup}) => {
                 <Content>
                     <MessageSettingsBlock
                         current={selectedTheme}
-                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
                     />
                 </Content>
             );
@@ -267,7 +270,7 @@ const MainContent = ({ page, selectedTheme, apply, openColorPopup}) => {
                     <FollowSettingsBlock
                         current={selectedTheme}
                         index={0}
-                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
                     />
                 </Content>
             );
@@ -277,7 +280,7 @@ const MainContent = ({ page, selectedTheme, apply, openColorPopup}) => {
                 <Content>
                     <RedeemPointsBlock
                         current={selectedTheme}
-                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
                     />
                 </Content>
             );
@@ -302,7 +305,7 @@ const MainContent = ({ page, selectedTheme, apply, openColorPopup}) => {
                 <Content>
                     <PlayerSettingsComponent
                         current={selectedTheme}
-                        onChange={ updaterOrTheme => apply(updaterOrTheme) }
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
                     />
                     <SettingsBlockHalf>
                         <SettingsBlockTitle>Ссылки</SettingsBlockTitle>
