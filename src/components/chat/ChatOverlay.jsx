@@ -107,6 +107,8 @@ const ConnectionLost = styled.div`
 /* ---------- Helper ---------- */
 const getFollowMax = (theme) =>
     Math.max(theme?.followMessage?.length ?? 0, 1);
+const getRedeemMax = (theme) =>
+    Math.max(theme?.redeemMessage?.length ?? 0, 1);
 
 export default function ChatOverlay() {
     const chatRef = useRef(null);
@@ -116,8 +118,12 @@ export default function ChatOverlay() {
 
     /* refs for follow index */
     const followIndexRef = useRef(0);
-    const followMaxRef = useRef(getFollowMax(defaultTheme));
+    const followMaxRef = useRef(getFollowMax(theme));
     const followIndexByIdRef = useRef({});
+    /* refs for redeem index */
+    const redeemIndexRef = useRef(0);
+    const redeemMaxRef = useRef(getRedeemMax(theme));
+    const redeemIndexByIdRef = useRef({});
 
     /* message refs */
     const messageRefs = useRef({});
@@ -156,6 +162,10 @@ export default function ChatOverlay() {
         followMaxRef.current = getFollowMax(theme);
         if (followIndexRef.current >= followMaxRef.current) {
             followIndexRef.current = 0;
+        }
+        redeemMaxRef.current = getRedeemMax(theme);
+        if (redeemIndexRef.current >= redeemMaxRef.current) {
+            redeemIndexRef.current = 0;
         }
     }, [theme]);
 
@@ -235,6 +245,15 @@ export default function ChatOverlay() {
                             }
                             followIndex = followIndexByIdRef.current[id];
                         }
+                        /* redemption index logic */
+                        let redemptionIndex;
+                        if (msg.type === 'redemption') {
+                            if (!(id in redeemIndexByIdRef.current)) {
+                                redeemIndexByIdRef.current[id] = redeemIndexRef.current;
+                                redeemIndexRef.current = (redeemIndexRef.current + 1) % redeemMaxRef.current;
+                            }
+                            redemptionIndex = redeemIndexByIdRef.current[id];
+                        }
 
                         let Content;
                         if (msg.type === 'chat') {
@@ -248,7 +267,8 @@ export default function ChatOverlay() {
                         } else if (msg.type === 'redemption') {
                             Content = <ChatRedemption
                                 message={msg}
-                                template={theme.redeemMessage.template}
+                                currentTheme={theme}
+                                index={redemptionIndex}
                             />;
                         } else {
                             return null;

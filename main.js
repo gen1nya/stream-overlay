@@ -377,5 +377,8 @@ function migrateTheme(theme) {
     if (theme && theme.followMessage && !Array.isArray(theme.followMessage)) {
         theme.followMessage = [theme.followMessage];
     }
+    if (theme && theme.redeemMessage && !Array.isArray(theme.redeemMessage)) {
+        theme.redeemMessage = [theme.redeemMessage];
+    }
     return theme;
 }

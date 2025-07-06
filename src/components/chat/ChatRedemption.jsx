@@ -4,55 +4,43 @@ import {hexToRgba} from "../../utils";
 import {defaultTheme} from "../../theme";
 
 const MessageContainer = styled.div`
-    padding: ${({theme}) => {
-        return `${theme.redeemMessage.paddingV}px ${theme.redeemMessage.paddingH}px`;
-    }};
-    display: flex;
-    width: auto;
-    margin: ${({theme}) => {
-        return `${theme.redeemMessage.marginV}px ${theme.redeemMessage.marginH}px`;
-    }};
-    border-radius: ${({theme}) => theme.redeemMessage.borderRadius}px;
-    align-items: flex-start;
-    flex-direction: ${({theme}) => theme.redeemMessage.direction};
+    ${({theme, $index = 0, color = '#fff'}) => {
+        const rm = theme.redeemMessage[$index];
+        const am = theme.allMessages;
 
-    border: 1px solid ${({theme}) => {
-        return hexToRgba(theme.redeemMessage.borderColor, theme.redeemMessage.borderOpacity);
-    }};
-    background: ${({theme}) => {
-        return hexToRgba(theme.redeemMessage.backgroundColor, theme.redeemMessage.backgroundOpacity);
-    }};
-    box-shadow: ${({theme}) => {
-        const {shadowColor, shadowOpacity, shadowRadius} = theme.redeemMessage;
-        return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
-    }};
-    font-style: italic;
-    font-size: ${({theme}) => theme.redeemMessage.fontSize}px;
-    color: ${props => props.color || '#fff'};
-    text-shadow: ${({theme}) => {
-        if (!theme.allMessages) {
-            return 'none';
-        }
-        const {
-            textShadowColor,
-            textShadowOpacity,
-            textShadowRadius,
-            textShadowXPosition,
-            textShadowYPosition
-        } = theme.allMessages;
-        console.log(theme.allMessages);
-        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
-    }};
-    backdrop-filter: ${({theme}) => {
-        if (theme.allMessages?.blurRadius && theme.allMessages?.blurRadius > 0) {
-            return `blur(${theme.allMessages.blurRadius}px)`;
-        } else {
-            return 'none';
-        }
-    }};
+        return `
+            padding: ${rm.paddingV}px ${rm.paddingH}px;
+            display: flex;
+            width: auto;
+            margin: ${rm.marginV}px ${rm.marginH}px;
+            border-radius: ${rm.borderRadius}px;
+            align-items: flex-start;
+            flex-direction: ${rm.direction};
+            border: 1px solid ${hexToRgba(rm.borderColor, rm.borderOpacity)};
+            background: ${hexToRgba(rm.backgroundColor, rm.backgroundOpacity)};
+            box-shadow: 0 0 ${rm.shadowRadius}px ${hexToRgba(rm.shadowColor, rm.shadowOpacity)};
+            font-style: italic;
+            font-size: ${rm.fontSize}px;
+            color: ${color};
+            text-shadow: ${
+                    am
+                            ? `${am.textShadowXPosition}px ${am.textShadowYPosition}px ${am.textShadowRadius}px ${hexToRgba(am.textShadowColor, am.textShadowOpacity)}`
+                            : 'none'
+            };
+            backdrop-filter: ${
+                    am?.blurRadius && am.blurRadius > 0
+                            ? `blur(${am.blurRadius}px)`
+                            : 'none'
+            };
+        `;
+    }}
 `;
 
-export default function ChatRedemption({ message, template }) {
+export default function ChatRedemption({
+                                           message,
+                                           currentTheme,
+                                           index = 0
+                                       }) {
 
     function applyTemplate(template, data) {
         try {
@@ -60,11 +48,14 @@ export default function ChatRedemption({ message, template }) {
                 return key in data ? data[key] : `{${key}}`;
             });
         } catch (error) {
+            console.log("Error applying template:", template, data);
             console.error("Error applying template:", error);
             return 'format error';
         }
     }
 
+    const _index = currentTheme?.redeemMessage?.length > index ? index : 0;
+    const template = currentTheme.redeemMessage[_index].template;
     const rendered = applyTemplate(template, {
         userName: message.userName,
         cost: message.reward.cost,
@@ -72,7 +63,7 @@ export default function ChatRedemption({ message, template }) {
     });
 
     return (
-        <MessageContainer>
+        <MessageContainer $index={_index}>
             {rendered}
         </MessageContainer>
     );

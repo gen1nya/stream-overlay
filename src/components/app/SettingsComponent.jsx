@@ -25,6 +25,7 @@ import {MediumSecondaryButton, SettingsBlockHalf, SettingsBlockTitle} from "./se
 import ThemePopup from "./settings/ThemePopup";
 import ColorPickerPopup from "./settings/ColorPickerPopup";
 import AddNewStyleButton from "../utils/AddNewStyleButton";
+import {AiFillRobot} from "react-icons/ai";
 
 const Panel = styled.div`
     position: fixed;
@@ -224,6 +225,7 @@ export default function Settings() {
                         {key: "chat", icon: <FiMessageCircle/>, label: "Сообщения"},
                         {key: "follow", icon: <FiHeart/>, label: "Follow"},
                         {key: "channel_points", icon: <FiAward/>, label: "Баллы"},
+                        {key: "bot", icon: <AiFillRobot/>, label: "Бот >_"},
                         {key: "players", icon: <FiMusic/>, label: "Плееры"},
                     ]}
                 />
@@ -309,10 +311,37 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
         case "channel_points":
             return (
                 <Content>
-                    <RedeemPointsBlock
-                        current={selectedTheme}
-                        onChange={updaterOrTheme => apply(updaterOrTheme)}
-                    />
+                    {selectedTheme.redeemMessage?.map((_, index) => (
+                        <RedeemPointsBlock
+                            key={index}
+                            current={selectedTheme}
+                            index={index}
+                            onChange={(updaterOrTheme) => apply(updaterOrTheme)}
+                            openColorPopup={openColorPopup}
+                            onRemove={(i) => {
+                                apply((prev) => {
+                                    const newRedeem = [...prev.redeemMessage];
+                                    newRedeem.splice(i, 1);
+                                    return {
+                                        ...prev,
+                                        redeemMessage: newRedeem,
+                                    };
+                                });
+                            }}
+                            disableRemove={selectedTheme.redeemMessage.length <= 1}
+                        />
+                    ))}
+                    <AddNewStyleButton onClick={
+                        () => {
+                            apply((prev) => {
+                                const last = prev.redeemMessage[prev.redeemMessage.length - 1];
+                                return {
+                                    ...prev,
+                                    redeemMessage: [...prev.redeemMessage, { ...last }],
+                                };
+                            });
+                        }
+                    }/>
                 </Content>
             );
 

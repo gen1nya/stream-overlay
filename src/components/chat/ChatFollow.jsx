@@ -64,9 +64,7 @@ export default function ChatMessage({
     }
 
     const _index = currentTheme?.followMessage?.length > index ? index : 0;
-
     const template = currentTheme.followMessage[_index].template;
-
     const rendered = applyTemplate(template, { userName: message.userName });
 
     return (

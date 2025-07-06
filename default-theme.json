@@ -35,23 +35,25 @@
       "template": "🎉 {userName} just followed!"
     }
   ],
-  "redeemMessage": {
-    "backgroundColor": "#6968b1",
-    "borderColor": "#00ffe3",
-    "shadowColor": "#b65454",
-    "shadowOpacity": "1",
-    "shadowRadius": "5",
-    "direction": "row",
-    "backgroundOpacity": "0.79",
-    "borderRadius": "20",
-    "paddingV": "6",
-    "paddingH": "6",
-    "marginV": "6",
-    "marginH": "7",
-    "borderOpacity": "1",
-    "fontSize": 24,
-    "template": "🎉 {userName} потратил {cost} балов на {title}"
-  },
+  "redeemMessage": [
+    {
+      "backgroundColor": "#6968b1",
+      "borderColor": "#00ffe3",
+      "shadowColor": "#b65454",
+      "shadowOpacity": "1",
+      "shadowRadius": "5",
+      "direction": "row",
+      "backgroundOpacity": "0.79",
+      "borderRadius": "20",
+      "paddingV": "6",
+      "paddingH": "6",
+      "marginV": "6",
+      "marginH": "7",
+      "borderOpacity": "1",
+      "fontSize": 24,
+      "template": "🎉 {userName} потратил {cost} балов на {title}"
+    }
+  ],
   "player": {
     "backgroundColor": "#4c243d",
     "backgroundOpacity": "0.94",

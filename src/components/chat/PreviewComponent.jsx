@@ -132,10 +132,14 @@ export default function PreviewComponent() {
             <MessagePreviewContainer>
                 <ChatMessage message={message} showSourceChannel={false}/>
                 <ChatMessage message={longMessage} showSourceChannel={false}/>
-                <ChatRedemption
-                    message={redemptionMessage}
-                    template={theme.redeemMessage.template}
-                />
+                {theme.redeemMessage?.map((_, index) => (
+                    <ChatRedemption
+                        key={index}
+                        message={redemptionMessage}
+                        currentTheme={theme}
+                        index={index}
+                    />
+                ))}
                 {theme.followMessage?.map((_, index) => (
                     <ChatFollow
                         key={index}

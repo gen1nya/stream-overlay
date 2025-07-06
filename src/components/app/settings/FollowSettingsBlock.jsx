@@ -3,70 +3,16 @@ import SeekbarComponent from "../../utils/SeekbarComponent";
 import { Row } from "../SettingsComponent";
 import { Spacer } from "../../utils/Separator";
 import { TemplateEditor } from "../../utils/TemplateEditor";
-import { SettingsBlockFull, SettingsBlockTitle } from "./SettingBloks";
+import {
+    CollapsedPreview,
+    RemoveButton,
+    SettingsBlockFull,
+    SettingsBlockTitle,
+    TitleRow,
+    Triangle
+} from "./SettingBloks";
 import ColorSelectorButton from "./ColorSelectorButton";
-import styled from "styled-components";
 import {FiTrash2} from "react-icons/fi";
-
-const CollapsedPreview = styled.div`
-  font-family: monospace;
-  background: #222;
-  color: #ddd;
-  padding: 0.5rem;
-  border-radius: 6px;
-  margin-top: 0.5rem;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  cursor: pointer;
-`;
-
-const TitleRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  cursor: pointer;
-`;
-
-const Triangle = styled.span`
-  font-size: 1.25rem;
-  user-select: none;
-  margin-left: 0.5rem;
-`;
-
-const RemoveButton = styled.button`
-    background: none;
-    color: #e74c3c;
-    font-size: 0.9rem;
-    cursor: pointer;
-    margin-left: 1rem;
-    border: 1px solid #e74c3c;
-    border-radius: 4px;
-    margin-bottom: -4px;
-    
-    transition:
-            background 0.2s ease,
-            color 0.2s ease,
-            border-color 0.2s ease,
-            opacity 0.2s ease;
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    &:hover:not(:disabled) {
-        background: #e74c3c;
-        color: white;
-        border-color: white;
-    }
-
-    &:hover:disabled {
-        border-color: white;
-        color: white;
-    }
-`;
-
 
 export default function FollowSettingsBlock({
                                                 current,
