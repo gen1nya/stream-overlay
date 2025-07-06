@@ -4,7 +4,7 @@ import {hexToRgba} from "../../utils";
 import {defaultTheme} from "../../theme";
 
 const MessageContainer = styled.div`
-    ${({theme, $index = 0, color = '#fff'}) => {
+    ${({theme, $index = 0}) => {
         const rm = theme.redeemMessage[$index];
         const am = theme.allMessages;
 
@@ -21,7 +21,7 @@ const MessageContainer = styled.div`
             box-shadow: 0 0 ${rm.shadowRadius}px ${hexToRgba(rm.shadowColor, rm.shadowOpacity)};
             font-style: italic;
             font-size: ${rm.fontSize}px;
-            color: ${color};
+            color: ${am?.textColor ?? '#fff'};
             text-shadow: ${
                     am
                             ? `${am.textShadowXPosition}px ${am.textShadowYPosition}px ${am.textShadowRadius}px ${hexToRgba(am.textShadowColor, am.textShadowOpacity)}`
