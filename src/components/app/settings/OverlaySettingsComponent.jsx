@@ -1,8 +1,4 @@
 import React from 'react';
-import styled from 'styled-components';
-import {Accordion} from "../../utils/AccordionComponent";
-import NumericEditorComponent from "../../utils/NumericEditorComponent";
-import ColorSelectorComponent from "../../utils/ColorSelectorComponent";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import RadioGroupComponent from "../../utils/RadioGroupComponent";
 import {Row} from "../SettingsComponent";
@@ -74,7 +70,7 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                         }
                     />
                 </Row>
-                <Row align="center" gap="0.5rem">
+                <Row align="center" gap="0.5em">
                     <SeekbarComponent
                         title={"Отступ слева:"}
                         min="0"
@@ -111,7 +107,7 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                     />
                 </Row>
             <RadioGroupComponent
-                width={"350px"}
+                width={"317px"}
                 title={"Тип фона:"}
                 options={[
                     { value: "color", label: "Цвет" },

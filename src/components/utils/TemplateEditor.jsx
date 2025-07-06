@@ -2,14 +2,35 @@ import React from "react";
 import styled from "styled-components";
 
 const Wrapper = styled.div`
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 1rem;
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    margin-bottom: 1rem;
+`;
+
+const Header = styled.div`
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1em;
 `;
 
 const Label = styled.label`
-  font-weight: bold;
-  margin-bottom: 0.25rem;
+    font-weight: bold;
+    margin-bottom: 0.25rem;
+`;
+
+const FontSizeControl = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+`;
+
+const FontSizeInput = styled.input`
+  width: 60px;
+  padding: 0.25rem;
+  font-size: 0.9rem;
 `;
 
 const Input = styled.textarea`
@@ -33,16 +54,32 @@ export function TemplateEditor({
                                    value,
                                    onChange,
                                    placeholders,
-                                   hint = "Доступные плейсхолдеры: {userName}, {rewardTitle}, {rewardCost}"
+                                   hint = "Доступные плейсхолдеры: {userName}, {rewardTitle}, {rewardCost}",
+                                   fontSize = "1rem",
+                                   onFontSizeChange,
                                }) {
     return (
         <Wrapper>
-            <Label>{label}</Label>
+            <Header>
+                <Label>{label}</Label>
+                <FontSizeControl>
+                    <span>Размер:</span>
+                    <FontSizeInput
+                        type="number"
+                        min="10"
+                        max="48"
+                        value={parseInt(fontSize)}
+                        onChange={(e) => onFontSizeChange?.(Number(e.target.value))}
+                    />
+                </FontSizeControl>
+            </Header>
+
             <Input
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={hint}
             />
+
             <Hint>
                 Доступные плейсхолдеры:{" "}
                 {placeholders.map((p) => (

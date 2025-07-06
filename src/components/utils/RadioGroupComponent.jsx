@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
+import {input} from "framer-motion/m";
 
 const Container = styled.label`
     display: flex;
@@ -14,6 +15,15 @@ const Container = styled.label`
 
 const Title = styled.div`
     font-size: 14px;
+`;
+
+const Radio = styled.input`
+    
+`;
+
+const RadioLabel = styled.label`
+    margin-top: 5px;
+    font-size: 13px;
 `;
 
 export default function RadioGroupComponent(
@@ -31,8 +41,8 @@ export default function RadioGroupComponent(
             <Title dangerouslySetInnerHTML={{__html: title}}/>
             <div style={{display: 'flex', flexDirection: 'row', gap: '0.5rem'}}>
                 {options.map(option => (
-                    <label key={option.value}>
-                        <input
+                    <RadioLabel key={option.value}>
+                        <Radio
                             type="radio"
                             name={title}             // группируем радиокнопки одним именем
                             value={option.value}
@@ -43,7 +53,7 @@ export default function RadioGroupComponent(
                             }}
                         />
                         {option.label}
-                    </label>
+                    </RadioLabel>
                 ))}
             </div>
         </Container>

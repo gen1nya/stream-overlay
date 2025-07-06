@@ -20,7 +20,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
             <Row>
                 <RadioGroupComponent
                     width={"150px"}
-                    title="Положение заголовка"
+                    title="Заголовок:"
                     options={[
                         {value: "row", label: "слева"},
                         {value: "column", label: "сверху"},
@@ -184,90 +184,87 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 />
             </Row>
 
-            <Row>
-                <div>
-                    <span>Отступы снаружи:</span>
-                    <Row align="center" gap="0.5rem">
-                        <SeekbarComponent
-                            title={`По горизонтали (${current.chatMessage.marginH ?? 0}):`}
-                            min="0"
-                            max="100"
-                            width={"150px"}
-                            value={current.chatMessage.marginH ?? 0}
-                            step="1"
-                            onChange={e =>
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        marginH: e,
-                                    },
-                                }))
-                            }
-                        />
+            <div>
+                <span>Отступы снаружи:</span>
+                <Row align="center" gap="0.5rem">
+                    <SeekbarComponent
+                        title={`По горизонтали (${current.chatMessage.marginH ?? 0}):`}
+                        min="0"
+                        max="100"
+                        width={"150px"}
+                        value={current.chatMessage.marginH ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    marginH: e,
+                                },
+                            }))
+                        }
+                    />
 
-                        <SeekbarComponent
-                            title={`По вертикали (${current.chatMessage.marginV ?? 0}):`}
-                            min="0"
-                            max="50"
-                            width={"150px"}
-                            value={current.chatMessage.marginV ?? 0}
-                            step="1"
-                            onChange={e =>
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        marginV: e,
-                                    },
-                                }))
-                            }
-                        />
-                    </Row>
-                </div>
-            </Row>
-            <Row>
-                <div>
-                    <span>Отступы внутри:</span>
-                    <Row>
-                        <SeekbarComponent
-                            title={`По горизонтали (${current.chatMessage.paddingH ?? 0}):`}
-                            min="0"
-                            max="100"
-                            width={"150px"}
-                            value={current.chatMessage.paddingH ?? 0}
-                            step="1"
-                            onChange={e =>
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        paddingH: e,
-                                    },
-                                }))
-                            }
-                        />
+                    <SeekbarComponent
+                        title={`По вертикали (${current.chatMessage.marginV ?? 0}):`}
+                        min="0"
+                        max="50"
+                        width={"150px"}
+                        value={current.chatMessage.marginV ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    marginV: e,
+                                },
+                            }))
+                        }
+                    />
+                </Row>
+            </div>
 
-                        <SeekbarComponent
-                            title={`По вертикали (${current.chatMessage.paddingV ?? 0}):`}
-                            min="0"
-                            max="50"
-                            value={current.chatMessage.paddingV ?? 0}
-                            step="1"
-                            width={"150px"}
-                            onChange={e =>
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        paddingV: e,
-                                    },
-                                }))
-                            }
-                        />
-                    </Row>
-                </div>
-            </Row>
+            <div>
+                <span>Отступы внутри:</span>
+                <Row>
+                    <SeekbarComponent
+                        title={`По горизонтали (${current.chatMessage.paddingH ?? 0}):`}
+                        min="0"
+                        max="100"
+                        width={"150px"}
+                        value={current.chatMessage.paddingH ?? 0}
+                        step="1"
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    paddingH: e,
+                                },
+                            }))
+                        }
+                    />
+
+                    <SeekbarComponent
+                        title={`По вертикали (${current.chatMessage.paddingV ?? 0}):`}
+                        min="0"
+                        max="50"
+                        value={current.chatMessage.paddingV ?? 0}
+                        step="1"
+                        width={"150px"}
+                        onChange={e =>
+                            handleChange(prev => ({
+                                ...prev,
+                                chatMessage: {
+                                    ...prev.chatMessage,
+                                    paddingV: e,
+                                },
+                            }))
+                        }
+                    />
+                </Row>
+            </div>
 
         </SettingsBlockFull>
     )

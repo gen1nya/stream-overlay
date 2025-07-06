@@ -271,6 +271,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                         current={selectedTheme}
                         index={0}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
                     />
                 </Content>
             );
