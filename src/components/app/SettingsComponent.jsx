@@ -24,6 +24,7 @@ import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings} from "react-icon
 import {MediumSecondaryButton, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
 import ColorPickerPopup from "./settings/ColorPickerPopup";
+import AddNewStyleButton from "../utils/AddNewStyleButton";
 
 const Panel = styled.div`
     position: fixed;
@@ -54,18 +55,21 @@ const Toolbar = styled.div`
 const ContentWrapper = styled.div`
     display: flex;
     flex-direction: row;
-    height: 100%;
+    flex: 1;
+    min-height: 0;
+    box-sizing: border-box;
+    padding-right: 8px;
 `;
 
 const Content = styled.div`
     display: flex;
     flex: 1;
-    height: 100%;
-    align-content: flex-start;
     flex-direction: row;
     flex-wrap: wrap;
     justify-content: space-between;
-    overflow-y: scroll;
+    align-content: flex-start;
+    overflow-y: auto;
+    min-height: 0;
 `;
 
 export const Row = styled.div`
@@ -267,12 +271,38 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
         case "follow":
             return (
                 <Content>
-                    <FollowSettingsBlock
-                        current={selectedTheme}
-                        index={0}
-                        onChange={updaterOrTheme => apply(updaterOrTheme)}
-                        openColorPopup={openColorPopup}
-                    />
+                    {selectedTheme.followMessage?.map((_, index) => (
+                        <FollowSettingsBlock
+                            key={index}
+                            current={selectedTheme}
+                            index={index}
+                            onChange={(updaterOrTheme) => apply(updaterOrTheme)}
+                            openColorPopup={openColorPopup}
+                            onRemove={(i) => {
+                                apply((prev) => {
+                                    const newFollow = [...prev.followMessage];
+                                    newFollow.splice(i, 1);
+                                    return {
+                                        ...prev,
+                                        followMessage: newFollow,
+                                    };
+                                });
+                            }}
+                            disableRemove={selectedTheme.followMessage.length <= 1}
+                        />
+                    ))}
+
+                    <AddNewStyleButton onClick={
+                        () => {
+                            apply((prev) => {
+                                const last = prev.followMessage[prev.followMessage.length - 1];
+                                return {
+                                    ...prev,
+                                    followMessage: [...prev.followMessage, { ...last }],
+                                };
+                            });
+                        }
+                    }/>
                 </Content>
             );
 
@@ -287,7 +317,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
             );
 
         case "players":
-            const openPlayer1 = () => {
+            { const openPlayer1 = () => {
                 openExternalLink('http://localhost:5173/audio-modern');
             };
 
@@ -316,7 +346,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                         <MediumSecondaryButton onClick={openDemoFFTRing}>Демо FFT (кольцо)</MediumSecondaryButton>
                     </SettingsBlockHalf>
                 </Content>
-            );
+            ); }
         default:
             return <div>Неизвестная страница</div>;
     }

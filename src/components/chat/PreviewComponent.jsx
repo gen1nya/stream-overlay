@@ -136,10 +136,14 @@ export default function PreviewComponent() {
                     message={redemptionMessage}
                     template={theme.redeemMessage.template}
                 />
-                <ChatFollow
-                    message={followMessage}
-                    template={theme.followMessage[0].template}
-                />
+                {theme.followMessage?.map((_, index) => (
+                    <ChatFollow
+                        key={index}
+                        message={followMessage}
+                        currentTheme={theme}
+                        index={index}
+                    />
+                ))}
             </MessagePreviewContainer>
             {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
         </>

@@ -187,6 +187,22 @@ app.whenReady().then(() => {
                     messageCache.addMessage(parsedMessage)
                 }))
         }, 5000);*/
+
+        // TEST FOLLOW EVENT
+        /*setTimeout(() => {
+            const event = {
+                userId: "asd",
+                userLogin: "dsadsa",
+                userName: "dsdsddssds",
+                followedAt: new Date().toISOString()
+            };
+            messageCache.addMessage({
+                id: `follow_${Date.now()}_asd`,
+                type: 'follow',
+                ...event
+            });
+        }, 10000);*/
+
         const tokens = await authService.getTokens();
         console.log('🎉 Starting Twitch IRC Chat...');
         chatService.startChat();

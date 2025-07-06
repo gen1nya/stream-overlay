@@ -1,12 +1,9 @@
 import React from 'react';
-import styled from 'styled-components';
+import styled, {css} from 'styled-components';
 import {hexToRgba} from "../../utils.js";
 
 const Text = styled.span`
-    font-size: ${({theme}) => theme.followMessage[0].fontSize}px;
-    //color: ${({theme}) => theme.followMessage[0].textColor};
-    //font-family: ${({theme}) => theme.followMessage[0].fontFamily};
-    //font-weight: ${({theme}) => theme.followMessage[0].fontWeight};
+    font-size: ${({theme, $index}) => theme.followMessage[$index].fontSize}px;
     text-shadow: ${({theme}) => {
         if (!theme.allMessages) {
             return 'none';
@@ -24,40 +21,35 @@ const Text = styled.span`
     color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
 `;
 
+const getFollowMessageStyle = ({ theme, $index }) => {
+    const m = theme.followMessage[$index];
+    const blur = theme.allMessages?.blurRadius ?? 0;
+
+    return css`
+    padding: ${m.paddingV}px ${m.paddingH}px;
+    margin: ${m.marginV}px ${m.marginH}px;
+    border-radius: ${m.borderRadius}px;
+    flex-direction: ${m.direction};
+    border: 1px solid ${hexToRgba(m.borderColor, m.borderOpacity)};
+    background: ${hexToRgba(m.backgroundColor, m.backgroundOpacity)};
+    box-shadow: 0 0 ${m.shadowRadius}px ${hexToRgba(m.shadowColor, m.shadowOpacity)};
+    backdrop-filter: ${blur > 0 ? `blur(${blur}px)` : 'none'};
+  `;
+};
 
 const MessageContainer = styled.div`
-    padding: ${({theme}) => {
-        return `${theme.followMessage[0].paddingV}px ${theme.followMessage[0].paddingH}px`;
-    }};
-    display: flex;
-    width: auto;
-    margin: ${({theme}) => {
-        return `${theme.followMessage[0].marginV}px ${theme.followMessage[0].marginH}px`;
-    }};
-    border-radius: ${({theme}) => theme.followMessage[0].borderRadius}px;
-    align-items: flex-start;
-    flex-direction: ${({theme}) => theme.followMessage[0].direction};
+  display: flex;
+  width: auto;
+  align-items: flex-start;
 
-    border: 1px solid ${({theme}) => {
-        return hexToRgba(theme.followMessage[0].borderColor, theme.followMessage[0].borderOpacity);
-    }};
-    background: ${({theme}) => {
-        return hexToRgba(theme.followMessage[0].backgroundColor, theme.followMessage[0].backgroundOpacity);
-    }};
-    box-shadow: ${({theme}) => {
-        const {shadowColor, shadowOpacity, shadowRadius} = theme.followMessage[0];
-        return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
-    }};
-    backdrop-filter: ${({theme}) => {
-        if (theme.allMessages?.blurRadius && theme.allMessages?.blurRadius > 0) {
-            return `blur(${theme.allMessages.blurRadius}px)`;
-        } else {
-            return 'none';
-        }
-    }};
+  ${getFollowMessageStyle}
 `;
 
-export default function ChatMessage({ message, template }) {
+export default function ChatMessage({
+                                        message,
+                                        currentTheme,
+                                        index = 0
+                                    }) {
 
     function applyTemplate(template, data) {
         try {
@@ -71,11 +63,15 @@ export default function ChatMessage({ message, template }) {
         }
     }
 
+    const _index = currentTheme?.followMessage?.length > index ? index : 0;
+
+    const template = currentTheme.followMessage[_index].template;
+
     const rendered = applyTemplate(template, { userName: message.userName });
 
     return (
-        <MessageContainer>
-            <Text>{rendered}</Text>
+        <MessageContainer $index={_index}>
+            <Text $index={_index}>{rendered}</Text>
         </MessageContainer>
     );
 }

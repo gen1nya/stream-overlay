@@ -6,6 +6,7 @@ import { TemplateEditor } from "../../utils/TemplateEditor";
 import { SettingsBlockFull, SettingsBlockTitle } from "./SettingBloks";
 import ColorSelectorButton from "./ColorSelectorButton";
 import styled from "styled-components";
+import {FiTrash2} from "react-icons/fi";
 
 const CollapsedPreview = styled.div`
   font-family: monospace;
@@ -33,7 +34,48 @@ const Triangle = styled.span`
   margin-left: 0.5rem;
 `;
 
-export default function FollowSettingsBlock({ current, onChange, index, openColorPopup }) {
+const RemoveButton = styled.button`
+    background: none;
+    color: #e74c3c;
+    font-size: 0.9rem;
+    cursor: pointer;
+    margin-left: 1rem;
+    border: 1px solid #e74c3c;
+    border-radius: 4px;
+    margin-bottom: -4px;
+    
+    transition:
+            background 0.2s ease,
+            color 0.2s ease,
+            border-color 0.2s ease,
+            opacity 0.2s ease;
+
+    &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+    }
+
+    &:hover:not(:disabled) {
+        background: #e74c3c;
+        color: white;
+        border-color: white;
+    }
+
+    &:hover:disabled {
+        border-color: white;
+        color: white;
+    }
+`;
+
+
+export default function FollowSettingsBlock({
+                                                current,
+                                                onChange,
+                                                index,
+                                                openColorPopup,
+                                                onRemove,
+                                                disableRemove = false,
+}) {
     const [isOpen, setIsOpen] = useState(false);
     const message = current.followMessage?.[index];
 
@@ -58,7 +100,7 @@ export default function FollowSettingsBlock({ current, onChange, index, openColo
         <SettingsBlockFull>
             <SettingsBlockTitle as="div">
                 <TitleRow onClick={toggleOpen}>
-                    <span>Сообщения "follow" #{index + 1}</span>
+                    <span>Follow вариант #{index + 1}</span>
                     <Triangle>{isOpen ? "▲" : "▼"}</Triangle>
                 </TitleRow>
             </SettingsBlockTitle>
@@ -254,6 +296,14 @@ export default function FollowSettingsBlock({ current, onChange, index, openColo
                                     }))
                                 }
                             />
+                            <Spacer/>
+                            <RemoveButton
+                                onClick={() => onRemove?.(index)}
+                                disabled={disableRemove}
+                                title={disableRemove ? "Нельзя удалить последний элемент" : "Удалить"}
+                            >
+                                <FiTrash2 size={24}></FiTrash2>
+                            </RemoveButton>
                         </Row>
                     </div>
                 </>

@@ -1,4 +1,9 @@
-import React, { useLayoutEffect, useRef, useState } from 'react';
+import React, {
+    useLayoutEffect,
+    useRef,
+    useState,
+    useEffect
+} from 'react';
 import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
@@ -6,6 +11,7 @@ import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
 import { defaultTheme } from '../../theme';
 
+/* ---------- Global styles ---------- */
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
         margin: 0;
@@ -19,7 +25,6 @@ const GlobalStyle = createGlobalStyle`
         scroll-behavior: auto;
     }
 
-    /* По желанию: плавное появление opacity у нового сообщения */
     .chat-animated {
         animation: fadeIn 300ms ease-out forwards;
     }
@@ -29,12 +34,12 @@ const GlobalStyle = createGlobalStyle`
     }
 `;
 
-
+/* ---------- Background ---------- */
 const BackgroundContainer = styled.div`
     position: absolute;
     z-index: -1;
     background: ${({ theme }) => {
-        switch (theme.overlay?.backgroundType ?? "none") {
+        switch (theme.overlay?.backgroundType ?? 'none') {
             case 'none':
                 return 'transparent';
             case 'color':
@@ -47,16 +52,15 @@ const BackgroundContainer = styled.div`
     }};
     ${({ theme }) =>
             theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
-                    ?
-                    `
-                    opacity: ${theme.overlay?.backgroundOpacity || 1};
-                    aspect-ratio: ${theme.overlay.backgroundImageAspectRatio};
-                    width: ${theme.overlay.containerWidth || 500}px;
-        `
+                    ? `
+                opacity: ${theme.overlay?.backgroundOpacity || 1};
+                aspect-ratio: ${theme.overlay.backgroundImageAspectRatio};
+                width: ${theme.overlay.containerWidth || 500}px;
+            `
                     : ''}
 `;
 
-
+/* ---------- Chat container ---------- */
 const ChatContainer = styled.div`
     box-sizing: border-box;
     color: #fff;
@@ -68,19 +72,17 @@ const ChatContainer = styled.div`
     height: 100%;
 
     border-radius: ${({ theme }) => theme.overlay?.borderRadius || 0}px;
-    
-    margin: ${({ theme }) => {
-        return `${theme.overlay?.paddingTop || 0}px  0px 0px ${theme.overlay?.paddingLeft || 0}px`;
-    }};
+
+    margin: ${({ theme }) => `${theme.overlay?.paddingTop || 0}px  0px 0px ${theme.overlay?.paddingLeft || 0}px`};
 
     ${({ theme }) =>
             theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
-                    ?
-                    `
-            width: ${(theme.overlay.chatWidth || 500)}px;
-            height: ${(theme.overlay.chatHeight || 500)}px;
-        `
+                    ? `
+                width: ${theme.overlay.chatWidth || 500}px;
+                height: ${theme.overlay.chatHeight || 500}px;
+            `
                     : ''}
+
     &::-webkit-scrollbar {
         width: 0 !important;
         height: 0 !important;
@@ -102,15 +104,23 @@ const ConnectionLost = styled.div`
     z-index: 10;
 `;
 
+/* ---------- Helper ---------- */
+const getFollowMax = (theme) =>
+    Math.max(theme?.followMessage?.length ?? 0, 1);
+
 export default function ChatOverlay() {
     const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
     const [showSourceChannel, setShowSourceChannel] = useState([]);
     const [theme, setTheme] = useState(defaultTheme);
 
-    // Здесь храним рефы для каждого сообщения
+    /* refs for follow index */
+    const followIndexRef = useRef(0);
+    const followMaxRef = useRef(getFollowMax(defaultTheme));
+    const followIndexByIdRef = useRef({});
+
+    /* message refs */
     const messageRefs = useRef({});
-    // Храним ID «последнего» сообщения после прошлого рендера
     const prevLastIdRef = useRef(null);
 
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
@@ -128,9 +138,10 @@ export default function ChatOverlay() {
                     setShowSourceChannel(showSourceChannel);
                     break;
                 }
-                case 'theme:update':
+                case 'theme:update': {
                     setTheme(payload);
                     break;
+                }
                 default:
                     console.log('unknown channel', channel, payload);
             }
@@ -140,81 +151,65 @@ export default function ChatOverlay() {
         },
     });
 
-    /**
-     * В useLayoutEffect мы сравниваем ID предыдущего «последнего» сообщения
-     * с текущим «последним». Если они разные, значит — новое сообщение,
-     * и тогда:
-     *   1) Скрытое элементом messageRefs измеряем его высоту
-     *   2) Сразу делаем chatContainer translateY(thisHeight) без transition
-     *   3) Убираем у нового сообщения visibility:hidden и запускаем у chatContainer
-     *      transition: transform 300ms ease → transform: translateY(0)
-     *   4) Через 300мс сбрасываем служебные inline-стили
-     *
-     * Если ID прежнего и нового совпадают (или сообщений нет) → просто скроллим вниз.
-     */
+    /* update followMax on theme change */
+    useEffect(() => {
+        followMaxRef.current = getFollowMax(theme);
+        if (followIndexRef.current >= followMaxRef.current) {
+            followIndexRef.current = 0;
+        }
+    }, [theme]);
+
+    /* scroll / animation logic */
     useLayoutEffect(() => {
         const chat = chatRef.current;
         if (!chat) return;
 
-        // Если в текущий момент нет сообщений, просто скроллим вниз и сбрасываем prevLastId
         if (messages.length === 0) {
             chat.scrollTop = chat.scrollHeight;
             prevLastIdRef.current = null;
             return;
         }
 
-        // Смотрим ID «последнего» элемента
         const lastMsg = messages[messages.length - 1];
         const currLastId = lastMsg.id ?? `idx_${messages.length - 1}`;
 
-        // Если ID изменился (или был null раньше) → анимируем «въезд»
         if (prevLastIdRef.current !== currLastId) {
-            // Убедимся, что есть реф
             if (!messageRefs.current[currLastId]) {
                 messageRefs.current[currLastId] = React.createRef();
             }
             const msgNode = messageRefs.current[currLastId].current;
             if (!msgNode) {
-                // вдруг ноды нет — просто скроллим вниз и запоминаем ID
                 chat.scrollTop = chat.scrollHeight;
                 prevLastIdRef.current = currLastId;
                 return;
             }
 
-            // 1) Измеряем высоту «нового» скрытого сообщения
             const newHeight = msgNode.getBoundingClientRect().height;
 
-            // 2) Сдвигаем chatContainer вниз на эту высоту без анимации
             chat.style.transition = 'none';
             chat.style.transform = `translateY(${newHeight}px)`;
 
-            // Форсим reflow, чтобы браузер зафиксировал transform=translateY(newHeight)
-            // eslint-disable-next-line no-unused-expressions
-            chat.offsetHeight;
+            chat.offsetHeight; // force reflow
 
-            // 3) Показываем сообщение и (опционально) даём ему класс .chat-animated для fadeIn
             msgNode.style.visibility = '';
             msgNode.classList.add('chat-animated');
 
-            // 4) Включаем анимацию контейнера и возвращаем transform → 0
             chat.style.transition = 'transform 300ms ease';
             chat.style.transform = 'translateY(0)';
 
-            // 5) Через 300мс убираем вспомогательные свойства
             setTimeout(() => {
                 chat.style.transition = '';
                 chat.style.transform = '';
                 msgNode.classList.remove('chat-animated');
             }, 300);
         } else {
-            // ID не поменялся — просто скроллим в самый низ
             chat.scrollTop = chat.scrollHeight;
         }
 
-        // Запоминаем текущий ID последнего
         prevLastIdRef.current = currLastId;
     }, [messages]);
 
+    /* ---------- Render ---------- */
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
@@ -222,46 +217,49 @@ export default function ChatOverlay() {
                 <BackgroundContainer />
                 <ChatContainer ref={chatRef}>
                     {messages.map((msg, idx) => {
-                    // Определяем «уникальный» ID для рефа
-                    const id = msg.id ?? `idx_${idx}`;
-                    if (!messageRefs.current[id]) {
-                        messageRefs.current[id] = React.createRef();
-                    }
-                    const nodeRef = messageRefs.current[id];
+                        const id = msg.id ?? `idx_${idx}`;
+                        if (!messageRefs.current[id]) {
+                            messageRefs.current[id] = React.createRef();
+                        }
+                        const nodeRef = messageRefs.current[id];
 
-                    // Теперь isLatest = просто «последний элемент + он не совпадает с prevLastId»
-                    const isLatest = idx === messages.length - 1
-                        && prevLastIdRef.current !== id;
+                        const isLatest = idx === messages.length - 1 && prevLastIdRef.current !== id;
+                        const styleForVisibility = isLatest ? { visibility: 'hidden' } : {};
 
-                    // Если isLatest, изначально скрываем его, чтобы замерить высоту
-                    const styleForVisibility = isLatest
-                        ? { visibility: 'hidden' }
-                        : {};
+                        /* follow index logic */
+                        let followIndex;
+                        if (msg.type === 'follow') {
+                            if (!(id in followIndexByIdRef.current)) {
+                                followIndexByIdRef.current[id] = followIndexRef.current;
+                                followIndexRef.current = (followIndexRef.current + 1) % followMaxRef.current;
+                            }
+                            followIndex = followIndexByIdRef.current[id];
+                        }
 
-                    // Выбираем, какой компонент рендерить
-                    let Content;
-                    if (msg.type === 'chat') {
-                        Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} />;
-                    } else if (msg.type === 'follow') {
-                        Content = <ChatFollow
-                            message={msg}
-                            template={theme.followMessage[0].template}
-                        />;
-                    } else if (msg.type === 'redemption') {
-                        Content = <ChatRedemption
-                            message={msg}
-                            template={theme.redeemMessage.template}
-                        />;
-                    } else {
-                        return null;
-                    }
+                        let Content;
+                        if (msg.type === 'chat') {
+                            Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} />;
+                        } else if (msg.type === 'follow') {
+                            Content = <ChatFollow
+                                message={msg}
+                                currentTheme={theme}
+                                index={followIndex}
+                            />;
+                        } else if (msg.type === 'redemption') {
+                            Content = <ChatRedemption
+                                message={msg}
+                                template={theme.redeemMessage.template}
+                            />;
+                        } else {
+                            return null;
+                        }
 
-                    return (
-                        <div key={id} ref={nodeRef} style={styleForVisibility}>
-                            {Content}
-                        </div>
-                    );
-                })}
+                        return (
+                            <div key={id} ref={nodeRef} style={styleForVisibility}>
+                                {Content}
+                            </div>
+                        );
+                    })}
                 </ChatContainer>
                 {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
             </>
