@@ -23,10 +23,10 @@ const Title = styled.div`
 `;
 
 export default function SeekbarComponent(
-    {title, min, max, value, step, onChange, width = '100%'}
+    {title, min, max, value, step, onChange, width = '100%', disabled = false, tooltip = ''}
 ) {
 
-    return <Container $width={width}>
+    return <Container $width={width} title={disabled ? tooltip : undefined}>
         <Title> {title} </Title>
         <Seekbar
             type="range"
@@ -34,8 +34,11 @@ export default function SeekbarComponent(
             max={max}
             step={step}
             value={value}
+            disabled={disabled}
             onChange={e => {
-                onChange(e.target.value);
+                if (!disabled) {
+                    onChange(e.target.value);
+                }
             }}
         />
 

@@ -13,6 +13,15 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
         onChange(updaterOrTheme)
     }
 
+    const isBackgroundImage = current.overlay?.backgroundType === 'image'
+    const hasImageSizes = isBackgroundImage &&
+        current.overlay?.backgroundImage &&
+        current.overlay?.backgroundImageWidth &&
+        current.overlay?.backgroundImageHeight
+
+    const widthMax = hasImageSizes ? current.overlay.backgroundImageWidth : 1000
+    const heightMax = hasImageSizes ? current.overlay.backgroundImageHeight : 1000
+
     return(
         <SettingsBlockFull>
             <SettingsBlockTitle>Оверлей</SettingsBlockTitle>
@@ -20,10 +29,12 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                     <SeekbarComponent
                         title={`ширина (${current.overlay?.chatWidth ?? "auto"}):`}
                         min="100"
-                        max="700"
+                        max={widthMax}
                         value={current.overlay?.chatWidth ?? 0}
                         step="1"
                         width={"150px"}
+                        disabled={!isBackgroundImage}
+                        tooltip="доступно только для фона-изображения"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
@@ -37,10 +48,12 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                     <SeekbarComponent
                         title={`Высота (${current.overlay?.chatHeight ?? "auto"}):`}
                         min="100"
-                        max="1000"
+                        max={heightMax}
                         value={current.overlay?.chatHeight ?? 100}
                         step="1"
                         width={"150px"}
+                        disabled={!isBackgroundImage}
+                        tooltip="доступно только для фона-изображения"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
@@ -72,12 +85,14 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                 </Row>
                 <Row align="center" gap="0.5em">
                     <SeekbarComponent
-                        title={"Отступ слева:"}
+                        title={`Отступ слева (${current.overlay?.paddingLeft ?? 0}):`}
                         min="0"
-                        max="250"
+                        max={widthMax}
                         value={current.overlay?.paddingLeft ?? 0}
                         step="1"
                         width={"150px"}
+                        disabled={!isBackgroundImage}
+                        tooltip="доступно только для фона-изображения"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
@@ -89,12 +104,14 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                         }
                     />
                     <SeekbarComponent
-                        title={"Отступ сверху:"}
+                        title={`Отступ сверху (${current.overlay?.paddingTop ?? 0}):`}
                         min="0"
-                        max="250"
+                        max={heightMax}
                         width={"150px"}
                         value={current.overlay?.paddingTop ?? 0}
                         step="1"
+                        disabled={!isBackgroundImage}
+                        tooltip="доступно только для фона-изображения"
                         onChange={e =>
                             handleChange(prev => ({
                                 ...prev,
