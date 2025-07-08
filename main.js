@@ -9,6 +9,7 @@ const Store     = require('electron-store');
 const defaultTheme = require('./default-theme.json')
 const path = require('path');
 const express = require('express');
+const fs = require('fs');
 
 let PORT = 5173;
 
@@ -54,6 +55,7 @@ messageCache.updateSettings({
 });
 
 const WebSocket = require('ws');
+const {urlencoded} = require("express");
 const appStartTime = Date.now();
 
 const wss = new WebSocket.Server({ port: 42001 });
@@ -67,7 +69,9 @@ function startHttpServer() {
     const appServer = express();
     const distPath = path.join(__dirname, 'dist');
 
+    const userDataPath = path.join(app.getPath('userData'), 'images');
     appServer.use(express.static(distPath));
+    appServer.use('/images', express.static(userDataPath));
     appServer.get("/", (req, res) => {
         res.sendFile(path.join(distPath, 'index.html'));
     });
@@ -79,6 +83,27 @@ function startHttpServer() {
     // TODO add custom port for prod builds
     appServer.listen(PORT, () => {
         console.log(`🌐 HTTP сервер запущен на http://localhost:${PORT}`);
+    });
+}
+
+function startDevStaticServer() {
+    const devServer = express();
+    const distPath = path.join(__dirname, 'dist');
+
+    const userDataPath = path.join(app.getPath('userData'), 'images');
+    devServer.use(express.static(distPath));
+    devServer.use('/images', express.static(userDataPath));
+    /*appServer.get("/", (req, res) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });
+    appServer.use((req, res, next) => {
+        res.sendFile(path.join(distPath, 'index.html'));
+    });*/
+
+    const DEV_PORT = 5123; // check vite.config.js also
+
+    devServer.listen(DEV_PORT, () => {
+        console.log(`🌐 HTTP сервер (для картинок) запущен на http://localhost:${DEV_PORT}`);
     });
 }
 
@@ -132,7 +157,9 @@ app.whenReady().then(() => {
     console.log('🚀 Electron App is ready.');
     const isDev = !app.isPackaged;
 
-    if (!isDev) {
+    if (isDev) {
+        startDevStaticServer();
+    } else {
         startHttpServer();
     }
 
@@ -356,6 +383,21 @@ ipcMain.on('theme:update', (_e, theme, name) => {
     broadcast('theme:update', theme);
 });
 
+ipcMain.handle('utils:save_image_buffer', async (event, fileName, buffer) => {
+    const saveDir = path.join(app.getPath('userData'), 'images');
+    await fs.promises.mkdir(saveDir, { recursive: true });
+
+    const fullPath = path.join(saveDir, fileName);
+    await fs.promises.writeFile(fullPath, Buffer.from(buffer));
+
+    return `file://${fullPath}`;
+});
+
+ipcMain.handle('utils:get_image_url', (event, fileName) => {
+    const path = encodeURIComponent(fileName)
+    return `/images/${path}`;
+})
+
 process.on('uncaughtException', (error) => {
     console.error('Uncaught Exception:', error);
     app.exit(1);
@@ -369,6 +411,8 @@ process.on('unhandledRejection', (reason, promise) => {
 app.on('window-all-closed', () => {
     app.quit();
 });
+
+
 
 /*
 * Theme migrator

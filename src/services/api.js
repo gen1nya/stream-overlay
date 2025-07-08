@@ -70,3 +70,11 @@ export const reconnect = () => {
 export const openExternalLink = (url) => {
     return ipcRenderer?.invoke('utils:open_url', url);
 };
+
+export const saveImageBuffer = (buffer, name) => {
+    return ipcRenderer?.invoke('utils:save_image_buffer', buffer, name);
+};
+
+export const getImageUrl = (fileName) => {
+    return ipcRenderer?.invoke('utils:get_image_url', fileName);
+};

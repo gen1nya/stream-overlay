@@ -221,8 +221,8 @@ export default function Dashboard() {
                     <button onClick={handleReconnect}>Reconnect</button>
                 </StatusBlock>
                 <Footer>
-                    <Marquee>Бета-тест: ellis_leaf, kururun_chan</Marquee>
-                    <Version>v0.1.3-beta</Version>
+                    <Marquee>Бета-тест: ellis_leaf, kururun_chan, fox1k_ru</Marquee>
+                    <Version>v0.1.4-beta</Version>
                 </Footer>
             </Wrapper>
             </>

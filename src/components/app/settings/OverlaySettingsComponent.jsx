@@ -154,19 +154,21 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
             {current.overlay?.backgroundType === "image" && (
                 <>
                     <ConfirmableInputField
-                        onConfirm={value => {
+                        onConfirm={(data) => {
                             return new Promise((resolve) => {
                                 const img = new Image();
-                                img.src = value;
+                                const imageUrl = data.value;
+                                console.log("Loading image from URL:", imageUrl);
+                                img.src = imageUrl
                                 img.onload = () => {
                                     const aspectRatio = img.width / img.height;
-
+                                    console.log("Image loaded:", img.width, img.height, aspectRatio);
                                     handleChange(prev => ({
                                         ...prev,
                                         overlay: {
                                             ...prev.overlay,
                                             containerWidth: img.width,
-                                            backgroundImage: value,
+                                            backgroundImage: imageUrl,
                                             backgroundImageAspectRatio: aspectRatio,
                                             backgroundImageWidth: img.width,
                                             backgroundImageHeight: img.height
@@ -181,10 +183,14 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                                 };
                             });
                         }}
+                        onSuccess={value => {
+                            console.log("Image confirmed:", value);
+                        }}
+                        onError={error => {
+                            console.error("Error confirming image:", error);
+                        }}
                         initialValue={current.overlay?.backgroundImage ?? ""}
-                        onSuccess={value => console.log("Image URL confirmed:", value)}
-                        onError={error => console.error("Error confirming image URL:", error)}
-                        placeholder="Введите ссылку на изображение"
+                        placeholder="Введите ссылку на изображение или жмяк папку справа -->"
                     />
                     <Row>
                         {/*задает ширину компонента*/}

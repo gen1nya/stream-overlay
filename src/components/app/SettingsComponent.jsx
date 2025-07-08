@@ -21,11 +21,12 @@ import AllMessagesSettings from "./settings/AllMessagesSettings";
 import Separator from "../utils/Separator";
 import {Sidebar} from "../utils/Sidebar";
 import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings} from "react-icons/fi";
-import {MediumSecondaryButton, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
+import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
 import ColorPickerPopup from "./settings/ColorPickerPopup";
 import AddNewStyleButton from "../utils/AddNewStyleButton";
 import {AiFillRobot} from "react-icons/ai";
+import {CommandList} from "./settings/bot/CommandList";
 
 const Panel = styled.div`
     position: fixed;
@@ -345,6 +346,16 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                 </Content>
             );
 
+        case "bot":
+            return (
+                <Content>
+                    <SettingsBlockFull
+                        style={{paddingBottom: '12px', paddingTop: '12px'}}>
+                        <SettingsBlockTitle>Команды бота</SettingsBlockTitle>
+                        <CommandList/>
+                    </SettingsBlockFull>
+                </Content>
+            );
         case "players":
             { const openPlayer1 = () => {
                 openExternalLink('http://localhost:5173/audio-modern');

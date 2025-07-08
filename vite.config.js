@@ -8,5 +8,10 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true
-  }
+  },
+  server: {
+    proxy: {
+      '/images': 'http://localhost:5123'
+    }
+  },
 })
