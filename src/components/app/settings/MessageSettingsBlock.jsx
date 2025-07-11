@@ -81,7 +81,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                         openColorPopup({
                             initialColor: current.chatMessage.backgroundColor ?? "#ffffff",
                             initialAlpha: current.chatMessage.backgroundOpacity ?? 1,
-                            title: 'Цвет текста',
+                            title: 'Цвет фона',
                             onChange: (e) => {
                                 handleChange(prev => ({
                                     ...prev,
@@ -107,7 +107,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                         openColorPopup({
                             initialColor: current.chatMessage.borderColor ?? "#ffffff",
                             initialAlpha: current.chatMessage.borderOpacity ?? 1,
-                            title: 'Цвет текста',
+                            title: 'Цвет обводки',
                             onChange: (e) => {
                                 handleChange(prev => ({
                                     ...prev,
@@ -123,7 +123,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 />
                 <Spacer/>
                 <SeekbarComponent
-                    title="Радиус скругления"
+                    title={`Радиус скругления (${current.chatMessage.borderRadius ?? 0}):`}
                     min="0"
                     max="20"
                     value={current.chatMessage.borderRadius ?? 0}
@@ -150,7 +150,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                         openColorPopup({
                             initialColor: current.chatMessage.shadowColor ?? "#ffffff",
                             initialAlpha: current.chatMessage.shadowOpacity ?? 1,
-                            title: 'Цвет текста',
+                            title: 'Цвет тени',
                             onChange: (e) => {
                                 handleChange(prev => ({
                                     ...prev,
@@ -166,7 +166,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 />
                 <Spacer/>
                 <SeekbarComponent
-                    title="Радиус тени"
+                    title={`Радиус тени (${current.chatMessage.shadowRadius ?? 0}):`}
                     min="0"
                     max="20"
                     value={current.chatMessage.shadowRadius ?? 0}

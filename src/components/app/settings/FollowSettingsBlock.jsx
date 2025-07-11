@@ -125,7 +125,7 @@ export default function FollowSettingsBlock({
                         />
                         <Spacer />
                         <SeekbarComponent
-                            title="Радиус скругления:"
+                            title={`Радиус скругления (${message?.borderRadius ?? 0}):`}
                             min="0"
                             max="20"
                             value={message?.borderRadius ?? 0}
@@ -162,7 +162,7 @@ export default function FollowSettingsBlock({
                         />
                         <Spacer />
                         <SeekbarComponent
-                            title="Радиус тени:"
+                            title={`Радиус тени (${message?.shadowRadius ?? 0}):`}
                             min="0"
                             max="20"
                             value={message?.shadowRadius ?? 0}
@@ -181,7 +181,7 @@ export default function FollowSettingsBlock({
                         <span>Отступы снаружи:</span>
                         <Row align="center" gap="0.5rem">
                             <SeekbarComponent
-                                title="По горизонтали:"
+                                title={`По горизонтали (${message?.marginH ?? 0}):`}
                                 min="0"
                                 max="100"
                                 value={message?.marginH ?? 0}
@@ -195,7 +195,7 @@ export default function FollowSettingsBlock({
                                 }
                             />
                             <SeekbarComponent
-                                title="По вертикали:"
+                                title={`По вертикали (${message?.marginV ?? 0}):`}
                                 min="0"
                                 max="50"
                                 value={message?.marginV ?? 0}
@@ -215,7 +215,7 @@ export default function FollowSettingsBlock({
                         <span>Отступы внутри:</span>
                         <Row align="center" gap="0.5rem">
                             <SeekbarComponent
-                                title="По горизонтали:"
+                                title={`По горизонтали (${message?.paddingH ?? 0}):`}
                                 min="0"
                                 max="100"
                                 value={message?.paddingH ?? 0}
@@ -229,7 +229,7 @@ export default function FollowSettingsBlock({
                                 }
                             />
                             <SeekbarComponent
-                                title="По вертикали:"
+                                title={`По вертикали (${message?.paddingV ?? 0}):`}
                                 min="0"
                                 max="50"
                                 value={message?.paddingV ?? 0}

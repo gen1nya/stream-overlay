@@ -252,14 +252,13 @@ async function parseIrcMessage(rawLine) {
 
     const isPrivMsg = rawLine.includes('PRIVMSG');
     let messageContent = '';
-    let type = 'system'; // по умолчанию считаем системным
+    let type = 'system';
 
     if (isPrivMsg) {
         const messageStart = rawLine.indexOf('PRIVMSG');
         messageContent = rawLine.substring(rawLine.indexOf(':', messageStart) + 1).trim();
         type = 'chat';
     } else {
-        // Пробуем вытащить системное сообщение, если оно есть
         const parts = rawLine.split(':');
         if (parts.length > 1) {
             messageContent = parts.slice(1).join(':').trim();
@@ -275,10 +274,11 @@ async function parseIrcMessage(rawLine) {
     const badgesTag = tags['badges'] || '';
     const roomId = tags['room-id'] || null;
     const sourceRoomId = tags['source-room-id'] || null;
-    const channelInfo = await getChannelInfoByRoomId(sourceRoomId)
+    const channelInfo = await getChannelInfoByRoomId(sourceRoomId);
+    const userId = tags['user-id'] || null;
 
     return {
-        type: type,                    // 'chat' или 'system'
+        type: type,
         username,
         color,
         rawMessage: messageContent,
@@ -286,6 +286,7 @@ async function parseIrcMessage(rawLine) {
         htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes, cheerEmotes),
         id: id,
         roomId: roomId,
+        userId: userId,
         sourceRoomId: sourceRoomId,
         sourceChannel: {
             displayName: channelInfo?.displayName,
@@ -295,11 +296,11 @@ async function parseIrcMessage(rawLine) {
     };
 }
 
+
 function extractUsername(rawLine) {
     const userMatch = rawLine.match(/^:([^!]+)!/);
     return userMatch ? userMatch[1] : null;
 }
-
 
 module.exports = {
     loadCheerEmotes,

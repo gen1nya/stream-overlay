@@ -72,3 +72,35 @@ export function downscaleSpectrum(input, targetSize, mode = 'avg') {
 
     return output;
 }
+
+export function getMatrix3dFromRotation(xDeg, yDeg, perspective = 800) {
+    const xRad = (xDeg * Math.PI) / 180;
+    const yRad = (yDeg * Math.PI) / 180;
+
+    const cosX = Math.cos(xRad);
+    const sinX = Math.sin(xRad);
+    const cosY = Math.cos(yRad);
+    const sinY = Math.sin(yRad);
+
+    // rotateX * rotateY
+    const m11 = cosY;
+    const m12 = sinX * sinY;
+    const m13 = cosX * sinY;
+    const m21 = 0;
+    const m22 = cosX;
+    const m23 = -sinX;
+    const m31 = -sinY;
+    const m32 = sinX * cosY;
+    const m33 = cosX * cosY;
+
+    const perspectiveZ = -1 / perspective;
+
+    const matrix = [
+        m11, m12, m13, 0,
+        m21, m22, m23, 0,
+        m31, m32, m33, perspectiveZ,
+        0,    0,    0, 1
+    ];
+
+    return `matrix3d(${matrix.map(n => n.toFixed(10)).join(',')})`;
+}

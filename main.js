@@ -54,9 +54,55 @@ messageCache.updateSettings({
     maxCount: currentTheme.allMessages?.maxCount ?? 6,
 });
 
+
 const WebSocket = require('ws');
 const {urlencoded} = require("express");
 const appStartTime = Date.now();
+const {MiddlewareProcessor} = require("./services/middleware/MiddlewareProcessor");
+const {ActionTypes} = require("./services/middleware/ActionTypes");
+const {timeoutUser} = require("./services/authorizedHelixApi");
+
+
+const applyAction = async (action) => {
+    console.log(`🔧 Applying action: ${action.type}`, action);
+    switch (action.type) {
+        case ActionTypes.SEND_MESSAGE:
+            if (action.payload.message) {
+                await chatService.sendMessage(action.payload.message);
+            }
+            if (action.payload.forwardToUi) {
+                const botMessage = {
+                    type: 'chat',
+                    username: 'Bot',
+                    color: '#69ff00',
+                    rawMessage: '',
+                    htmlBadges: '<img src="https://i.pinimg.com/originals/0c/e7/6b/0ce76b0e96c23be3331372599395b9da.gif" alt="broadcaster" title="broadcaster" style="vertical-align: middle; height: 1em\n; margin-right: 2px;" />',
+                    htmlMessage: action.payload.message,
+                    id: 'bot_' + Date.now(),
+                    roomId: null,
+                    userId: null,
+                    sourceRoomId: null,
+                    sourceChannel: { }
+                }
+                setTimeout(async () => {
+                    await messageCache.addMessage(botMessage);
+                }, 1000); // wait for the message to be sent
+            }
+            break;
+        case ActionTypes.MUTE_USER:
+            await timeoutUser(
+                action.payload.userId,
+                action.payload.duration,
+                action.payload.reason,
+            )
+            break;
+        default:
+            console.warn(`⚠️ Unknown action type: ${action.type}`);
+            break;
+    }
+};
+
+const middlewareProcessor = new MiddlewareProcessor(applyAction);
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -93,13 +139,6 @@ function startDevStaticServer() {
     const userDataPath = path.join(app.getPath('userData'), 'images');
     devServer.use(express.static(distPath));
     devServer.use('/images', express.static(userDataPath));
-    /*appServer.get("/", (req, res) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-    });
-    appServer.use((req, res, next) => {
-        res.sendFile(path.join(distPath, 'index.html'));
-    });*/
-
     const DEV_PORT = 5123; // check vite.config.js also
 
     devServer.listen(DEV_PORT, () => {
@@ -142,9 +181,6 @@ function createChatWindow() {
     chatWindow = new BrowserWindow({
         width: 400,
         height: 600,
-        //frame: false, // Убираем рамки окна (для OBS)
-        //alwaysOnTop: true, // Поверх других окон
-        //transparent: true, // Прозрачный фон (если нужно)
         webPreferences: {
             nodeIntegration: true,
             contextIsolation: false,
@@ -184,8 +220,7 @@ app.whenReady().then(() => {
     });
 
     ipcMain.handle('auth:authorize', async () => {
-        const result = await authService.authorizeIfNeeded();
-        return result;
+        return await authService.authorizeIfNeeded();
     });
 
     ipcMain.handle('auth:getTokens', async () => {
@@ -204,29 +239,6 @@ app.whenReady().then(() => {
     });
 
     ipcMain.handle('auth:onAccountReady', async () => {
-        // TEST CHEER EMOTES
-        /*setTimeout(() => {
-            messageParser.parseIrcMessage("@badge-info=;badges=moderator/1,subtember-2024/1;bits=1;color=#8A2BE2;display-name=edna_nya;emotes=;first-msg=0;flags=;id=2179eb06-7e0c-473e-81d0-edb823ff3dd2;mod=1;returning-chatter=0;room-id=1015100674;subscriber=0;tmi-sent-ts=1751552575713;turbo=0;user-id=506654373;user-type=mod :edna_nya!edna_nya@edna_nya.tmi.twitch.tv PRIVMSG #ellis_leaf :SeemsGood1")
-                .then((parsedMessage => {
-                    messageCache.addMessage(parsedMessage)
-                }))
-        }, 5000);*/
-
-        // TEST FOLLOW EVENT
-        /*setTimeout(() => {
-            const event = {
-                userId: "asd",
-                userLogin: "dsadsa",
-                userName: "dsdsddssds",
-                followedAt: new Date().toISOString()
-            };
-            messageCache.addMessage({
-                id: `follow_${Date.now()}_asd`,
-                type: 'follow',
-                ...event
-            });
-        }, 10000);*/
-
         const tokens = await authService.getTokens();
         console.log('🎉 Starting Twitch IRC Chat...');
         chatService.startChat();
@@ -348,9 +360,12 @@ app.whenReady().then(() => {
         }
     });
 
-    chatService.registerMessageHandler((parsedMessage) => {
-        broadcast('chat:message', parsedMessage);
-        messageCache.addMessage(parsedMessage);
+    chatService.registerMessageHandler( async (parsedMessage) => {
+        const result = await middlewareProcessor.processMessage(parsedMessage);
+        if (result) {
+            messageCache.addMessage(result);
+        }
+
     });
 
     messageCache.registerMessageHandler(({ messages, showSourceChannel }) => {
@@ -359,7 +374,6 @@ app.whenReady().then(() => {
             showSourceChannel
         });
     });
-
 });
 
 function broadcast(channel, payload) {

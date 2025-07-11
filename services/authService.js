@@ -19,6 +19,8 @@ const SCOPES = [
     'channel:read:cheers',
     'user:read:follows',
     'moderator:read:followers',
+    'moderator:manage:chat_messages',
+    'moderator:manage:banned_users',
     'chat:read',
     'chat:edit',
     'bits:read',
@@ -148,7 +150,8 @@ async function getAccountInfo() {
         displayName: user.display_name,
         login: user.login,
         avatar: user.profile_image_url,
-        followerCount: followers
+        followerCount: followers,
+        userId: user.id,
     };
 }
 
@@ -224,12 +227,25 @@ async function authorizeIfNeeded() {
     }
 }
 
+async function getUserId() {
+    const tokens = await getTokens();
+    if (!tokens) return null;
+    return tokens.user_id || null;
+}
+
+async function getCurrentLogin() {
+    const tokens = await getTokens();
+    return tokens?.login || null;
+}
+
 module.exports = {
     authorizeIfNeeded,
     getTokens,
     clearTokens,
     fetchUserInfo,
+    getUserId,
     getAccountInfo,
     CLIENT_ID,
+    getCurrentLogin,
     onTokenRefreshed: (listener) => authEmitter.on('tokenRefreshed', listener)
 };

@@ -115,7 +115,7 @@ class ChatService {
                 if (parsed) {
                     console.log('📨', 'IRC сообщение :', parsed.username, parsed.htmlMessage);
                     if (this.messageHandler && parsed) {
-                        this.messageHandler(parsed);
+                        await this.messageHandler(parsed);
                     }
                 }
             }
@@ -145,6 +145,44 @@ class ChatService {
     getLastEventTimestamp() {
         return this.lastEventTimestamp;
     }
+
+    /**
+     * Отправка обычного сообщения в чат
+     * @param {string} message
+     */
+    async sendMessage(message) {
+        if (this.client && !this.client.destroyed) {
+            const channel = (await authService.getCurrentLogin())?.toLowerCase();
+            this.client.write(`PRIVMSG #${channel} :${message}\r\n`);
+        }
+    }
+
+    /**
+     * Отправка сообщения и mute пользователя
+     * @param {string} userId - id того, кого мутим
+     * @param {string} username - кого мутим
+     * @param {string} reason - команда или причина (например, "!roulette")
+     * @param {number} duration - время в секундах (по умолчанию 600)
+     */
+    async sendMessageWithMute(userId, username, reason, duration = 600) {
+        if (this.client && !this.client.destroyed) {
+            await this.sendMessage(`${username} проиграл в рулетку (${reason}) и получает тайм-аут ${duration} секунд!`);
+
+            try {
+                const broadcasterUserId = await authService.getUserId();
+                await authService.timeoutUser({
+                    broadcaster_id: broadcasterUserId,
+                    moderator_id: broadcasterUserId,
+                    user_id: userId,
+                    duration,
+                    reason
+                });
+            } catch (err) {
+                console.error('❌ Failed to timeout via API:', err);
+            }
+        }
+    }
+
 }
 
 const instance = new ChatService();
@@ -152,6 +190,7 @@ const instance = new ChatService();
 module.exports = {
     startChat: (...args) => instance.startChat(...args),
     stopChat: (...args) => instance.stopChat(...args),
+    sendMessage: (message) => instance.sendMessage(message),
     registerMessageHandler: (handler) => instance.registerMessageHandler(handler),
     getLastEventTimestamp: () => instance.getLastEventTimestamp(),
 };
