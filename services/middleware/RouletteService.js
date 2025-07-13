@@ -128,7 +128,7 @@ class RouletteService extends Middleware {
     }
 
     checkRouletteWin() {
-        const ROULETTE_CHANCE = 10;
+        const ROULETTE_CHANCE = 6;
         return Math.floor(Math.random() * ROULETTE_CHANCE) + 1 === 1;
     }
 

@@ -10,8 +10,11 @@ const defaultTheme = require('./default-theme.json')
 const path = require('path');
 const express = require('express');
 const fs = require('fs');
-
-let PORT = 5173;
+const WebSocket = require('ws');
+const appStartTime = Date.now();
+const {MiddlewareProcessor} = require("./services/middleware/MiddlewareProcessor");
+const {ActionTypes} = require("./services/middleware/ActionTypes");
+const {timeoutUser} = require("./services/authorizedHelixApi");
 
 const store = new Store({
     defaults: {
@@ -22,6 +25,9 @@ const store = new Store({
         currentTheme: "default"
     }
 });
+
+let PORT = 5173;
+
 /*
 * ==================== theme migration ====================
 * */
@@ -53,15 +59,6 @@ messageCache.updateSettings({
     lifetime: currentTheme.allMessages?.lifetime ?? 60,
     maxCount: currentTheme.allMessages?.maxCount ?? 6,
 });
-
-
-const WebSocket = require('ws');
-const {urlencoded} = require("express");
-const appStartTime = Date.now();
-const {MiddlewareProcessor} = require("./services/middleware/MiddlewareProcessor");
-const {ActionTypes} = require("./services/middleware/ActionTypes");
-const {timeoutUser} = require("./services/authorizedHelixApi");
-
 
 const applyAction = async (action) => {
     console.log(`🔧 Applying action: ${action.type}`, action);
@@ -335,6 +332,7 @@ app.whenReady().then(() => {
                     lifetime: currentTheme.allMessages?.lifetime ?? 60,
                     maxCount: currentTheme.allMessages?.maxCount ?? 6,
                 });
+
                 broadcast('theme:update', currentTheme);
             }
             broadcast('themes:get', { themes, currentThemeName });
@@ -394,6 +392,7 @@ ipcMain.on('theme:update', (_e, theme, name) => {
         lifetime: currentTheme.allMessages?.lifetime ?? 60,
         maxCount: currentTheme.allMessages?.maxCount ?? 6,
     });
+    middlewareProcessor.onThemeUpdated(theme.bot);
     broadcast('theme:update', theme);
 });
 

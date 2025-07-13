@@ -42,6 +42,10 @@ class MiddlewareProcessor {
         return currentMessage
     }
 
+    onThemeUpdated(botConfig) {
+        console.log("Updating middlewares with new theme config", botConfig);
+    }
+
 }
 
 module.exports = {
