@@ -4,7 +4,8 @@ import { app } from 'electron';
 
 export function startHttpServer(port: number): void {
   const appServer = express();
-  const distPath = path.join(__dirname, 'dist');
+  const distPath = path.join(app.getAppPath(), 'dist');
+  //const distPath = path.join(__dirname, 'dist');
   const userDataPath = path.join(app.getPath('userData'), 'images');
   appServer.use(express.static(distPath));
   appServer.use('/images', express.static(userDataPath));
