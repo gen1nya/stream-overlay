@@ -5,6 +5,7 @@ import React, {
     useEffect
 } from 'react';
 import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
 import ChatFollow from './ChatFollow';
@@ -31,6 +32,14 @@ const GlobalStyle = createGlobalStyle`
     @keyframes fadeIn {
         from { opacity: 0; }
         to   { opacity: 1; }
+    }
+
+    /* fade-out animation for removed messages */
+    .fade-exit   { opacity: 1; transform: scale(1); }
+    .fade-exit-active {
+        opacity: 0;
+        transform: scale(0.95);
+        transition: opacity .3s ease, transform .3s ease;
     }
 `;
 
@@ -135,7 +144,7 @@ export default function ChatOverlay() {
             console.log('🟢 WebSocket подключен');
             socket.send(JSON.stringify({ channel: 'theme:get' }));
         },
-        onMessage: (event) => {
+        onMessage: async (event) => {
             const { channel, payload } = JSON.parse(event.data);
             switch (channel) {
                 case 'chat:messages': {
@@ -281,6 +290,7 @@ export default function ChatOverlay() {
             <>
                 <BackgroundContainer />
                 <ChatContainer ref={chatRef}>
+                    <TransitionGroup component={null}>
                     {messages.map((msg, idx) => {
                         const id = msg.id ?? `idx_${idx}`;
                         if (!messageRefs.current[id]) {
@@ -329,12 +339,15 @@ export default function ChatOverlay() {
                             return null;
                         }
 
-                        return (
-                            <div key={id} ref={nodeRef} style={styleForVisibility}>
-                                {Content}
-                            </div>
-                        );
-                    })}
+                            return (
+                                <CSSTransition key={id} nodeRef={nodeRef} timeout={500} classNames="fade">
+                                    <div ref={nodeRef} style={styleForVisibility}>
+                                        {Content}
+                                    </div>
+                                </CSSTransition>
+                            );
+                        })}
+                    </TransitionGroup>
                 </ChatContainer>
                 {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
             </>
