@@ -15,7 +15,7 @@ class ChatService {
   constructor() {
     authService.onTokenRefreshed(() => {
       if (this.client && !this.isStopping) {
-        console.log('🔄 Tokens refreshed, reconnecting IRC...');
+        console.log('🔄 Tokens refreshed (on auth service), reconnecting IRC...');
         this.handleAuthFailure();
       }
     });
@@ -39,6 +39,7 @@ class ChatService {
   }
 
   private async handleAuthFailure(): Promise<void> {
+    console.warn('⚠️ IRC authentication failed, attempting to refresh tokens...');
     const tokens = await authService.getTokens();
     if (!tokens) {
       console.error('❌ Token refresh failed or user logged out. Stopping IRC.');
@@ -46,6 +47,15 @@ class ChatService {
       return;
     }
     console.log('🔄 Reconnecting to IRC with refreshed token...');
+    await this.reconnect();
+  }
+
+  private async handleReconnect(): Promise<void> {
+    console.log('🔁 IRC RECONNECT requested by server.');
+    await this.reconnect();
+  }
+
+  private async reconnect(): Promise<void> {
     if (this.client) {
       this.client.removeAllListeners();
       this.client.destroy();
@@ -66,17 +76,20 @@ class ChatService {
       return;
     }
     this.isConnecting = true;
+
     const tokens = await authService.getTokens();
     if (!tokens) {
       console.error('❌ No tokens found. Cannot connect to IRC.');
       this.isConnecting = false;
       return;
     }
+
     const accessToken = tokens.access_token;
     const username = tokens.login!;
     const channel = username.toLowerCase();
     const socket = new net.Socket();
     this.client = socket;
+
     socket.connect(PORT, HOST, () => {
       this.isConnecting = false;
       this.lastEventTimestamp = Date.now();
@@ -86,33 +99,42 @@ class ChatService {
       socket.write(`NICK ${username}\r\n`);
       socket.write(`JOIN #${channel}\r\n`);
     });
+
     socket.on('data', async (data) => {
       this.lastEventTimestamp = Date.now();
       const messages = data.toString().split('\r\n');
       for (const message of messages) {
-        if (!message) return;
+        if (!message) continue;
+
         if (message.startsWith('PING')) {
           socket.write('PONG :tmi.twitch.tv\r\n');
-          return;
+          continue;
         }
+
         if (/authentication failed/i.test(message)) {
           console.warn('⚠️ IRC authentication failed.');
-          this.handleAuthFailure();
+          await this.handleAuthFailure();
           return;
         }
+
         const parsed = await messageParser.parseIrcMessage(message);
         if (parsed) {
           console.log('📨', 'IRC сообщение :', parsed.username, parsed.htmlMessage);
+          if (parsed.type === 'system,' && parsed.message.includes('RECONNECT')) {
+            await this.handleReconnect();
+          }
           if (this.messageHandler) {
             await this.messageHandler(parsed);
           }
         }
       }
     });
+
     socket.on('close', () => {
       this.isConnecting = false;
       console.log('🔴 IRC Connection closed.');
     });
+
     socket.on('error', (err) => {
       this.isConnecting = false;
       console.error('❌ IRC Error:', err.message);

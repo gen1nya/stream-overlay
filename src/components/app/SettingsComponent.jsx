@@ -30,6 +30,7 @@ import {CommandList} from "./settings/bot/CommandList";
 import NumericEditorComponent from "../utils/NumericEditorComponent";
 import {Accordion} from "../utils/AccordionComponent";
 import {SmallTemplateEditor} from "../utils/SmallTemplateEditor";
+import Roulette from "./settings/bot/roulette/Roulette";
 
 const Panel = styled.div`
     position: fixed;
@@ -163,7 +164,12 @@ export default function Settings() {
     };
 
     const handleExportTheme = (name) => {
-        const theme = themeList[name];
+        let theme;
+        if (name === selectedThemeName) {
+            theme = selectedTheme;
+        } else {
+            theme = themeList[name];
+        }
         if (!theme) return;
         const data = JSON.stringify({[name]: theme}, null, 2);
         const blob = new Blob([data], {type: 'application/json'});
@@ -358,112 +364,10 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                         <CommandList/>
                     </SettingsBlockFull>
 
-                    <SettingsBlockFull>
-                        <SettingsBlockTitle>Рулетка</SettingsBlockTitle>
-                        <Row>
-                            <NumericEditorComponent
-                                width={"150px"}
-                                title="Время мута"
-                                value={(selectedTheme?.bot?.roulette?.muteDuration ?? 60000) / 1000}
-                                onChange={(value) => apply((prev) => ({
-                                    ...prev,
-                                    bot: {
-                                        ...prev.bot,
-                                        roulette: {
-                                            ...prev?.bot?.roulette ?? {},
-                                            muteDuration: value * 1000
-                                        }
-                                    }
-                                }))}
-                                min={1}
-                                max={60 * 60}
-                            />
-                            <NumericEditorComponent
-                                width={"150px"}
-                                title="Время перезарядки"
-                                value={(selectedTheme?.bot?.roulette?.commandCooldown ?? 30000) / 1000}
-                                onChange={(value) => apply((prev) => ({
-                                    ...prev,
-                                    bot: {
-                                        ...prev?.bot ?? {},
-                                        roulette: {
-                                            ...prev?.bot?.roulette ?? {},
-                                            commandCooldown: value * 1000
-                                        }
-                                    }
-                                }))}
-                                min={1}
-                                max={60 * 60}
-                            />
-
-                            <NumericEditorComponent
-                                width={"150px"}
-                                title="Вероятность (%)"
-                                value={((selectedTheme?.bot?.roulette?.chance ?? 0.18) * 100)}
-                                onChange={(value) => apply((prev) => ({
-                                    ...prev,
-                                    bot: {
-                                        ...prev?.bot ?? {},
-                                        roulette: {
-                                            ...prev?.bot?.roulette ?? {},
-                                            chance: (value / 100)
-                                        }
-                                    }
-                                }))}
-                                min={0}
-                                max={100}
-                            />
-                            <Spacer/>
-                        </Row>
-                        <Accordion
-                            title="Сообщения для выживших"
-                        >
-                            {
-                                selectedTheme?.bot?.roulette?.survivalMessages?.map((msg, index) => (
-                                    <SmallTemplateEditor
-                                        value={msg}
-                                        onChange={(value) => apply((prev)  => {
-                                            const prevMessages = prev?.bot?.roulette?.survivalMessages ?? [];
-                                            const newMessages = prevMessages.map((msg, i) =>
-                                                i === index ? value : msg
-                                            );
-                                            return {
-                                                ...prev,
-                                                bot: {
-                                                    ...prev?.bot ?? {},
-                                                    roulette: {
-                                                        ...prev?.bot?.roulette ?? {},
-                                                        survivalMessages: newMessages
-                                                    }
-                                                }
-                                            };
-                                        })}
-                                    />
-                                ))
-                            }
-
-                            <AddNewStyleButton
-                                height={"40px"}
-                                margin={"8px 0 0 0"}
-                                onClick={
-                                () => {
-                                    apply((prev) => {
-                                        const newMessages = "Ты выжил, ${user}! 🎉";
-                                        return {
-                                            ...prev,
-                                            bot: {
-                                                ...prev.bot,
-                                                roulette: {
-                                                    ...prev.bot.roulette,
-                                                    survivalMessages: [...(prev.bot.roulette.survivalMessages || []), newMessages]
-                                                }
-                                            }
-                                        };
-                                    });
-                                }
-                            }/>
-                        </Accordion>
-                    </SettingsBlockFull>
+                    <Roulette
+                        apply={ updaterOrTheme => apply(updaterOrTheme) }
+                        selectedTheme={ selectedTheme }
+                    />
                 </Content>
             );
         case "players":

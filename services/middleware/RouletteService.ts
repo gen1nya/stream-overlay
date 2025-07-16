@@ -1,5 +1,6 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
+import {BotConfig} from "./MiddlewareProcessor";
 
 export default class RouletteService extends Middleware {
   private mutedUsers = new Set<string>();
@@ -9,6 +10,7 @@ export default class RouletteService extends Middleware {
   private deathMessages: string[];
   private cooldownMessages: string[];
   private muteDuration: number;
+  private enabled: boolean;
   private cooldowns: Map<string, number> = new Map();
 
   constructor(
@@ -46,7 +48,8 @@ export default class RouletteService extends Middleware {
       'Привет... чем могу помочь?',
       'WAAAAAAAAGH!!!!11!',
     ],
-    commands: string[] = ['!roulette', '!рулетка', '!stick', '!палочка']
+    commands: string[] = ['!roulette', '!рулетка', '!stick', '!палочка'],
+    enabled: boolean = false,
   ) {
     super();
     this.commands = commands;
@@ -55,10 +58,27 @@ export default class RouletteService extends Middleware {
     this.deathMessages = deathMessages;
     this.cooldownMessages = cooldownMessages;
     this.muteDuration = muteDuration;
+    this.enabled = enabled;
   }
 
+    updateConfig(config: BotConfig) {
+      this.commands = config.roulette.commands;
+      this.commandCooldown = config.roulette.commandCooldown;
+      this.survivalMessages = config.roulette.survivalMessages;
+      this.deathMessages = config.roulette.deathMessages;
+      this.cooldownMessages = config.roulette.cooldownMessage;
+      this.muteDuration = config.roulette.muteDuration;
+      this.enabled = config.roulette.enabled;
+      console.log('✅ RouletteService config updated:', config.roulette);
+    }
+
   processMessage(message: any) {
+    if (!this.enabled) {
+      console.warn('⏩ RouletteService is disabled, skipping message processing');
+      return { accepted: false, message: { ...message }, actions: [] };
+    }
     if (!this.commands.includes(message.htmlMessage)) {
+      console.warn(`⏩ Message is not a roulette command, skipping`);
       return { accepted: false, message: { ...message }, actions: [] };
     }
     const now = Date.now();

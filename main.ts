@@ -2,7 +2,6 @@ import { app } from 'electron';
 import WebSocket from 'ws';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
-import * as authService from './services/authService';
 import * as chatService from './services/chatService';
 import * as eventSubService from './services/esService';
 import * as messageCache from './services/MessageCacheManager';
@@ -12,6 +11,7 @@ import { timeoutUser } from './services/authorizedHelixApi';
 import { createMainWindow } from "./windowsManager";
 import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
+import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/esService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -60,7 +60,7 @@ const applyAction = async (action: { type: string; payload: any }) => {
           rawMessage: '',
           htmlBadges: '<img src="https://i.pinimg.com/originals/0c/e7/6b/0ce76b0e96c23be3331372599395b9da.gif" alt="broadcaster" title="broadcaster" style="vertical-align: middle; height: 1em; margin-right: 2px;" />',
           htmlMessage: action.payload.message,
-          id: 'bot_' + Date.now(),
+          id: 'bot_' + crypto.randomUUID(),
           roomId: null,
           userId: null,
           sourceRoomId: null,
@@ -81,6 +81,8 @@ const applyAction = async (action: { type: string; payload: any }) => {
 };
 
 const middlewareProcessor = new MiddlewareProcessor(applyAction);
+middlewareProcessor.onThemeUpdated(currentTheme.bot);
+
 const wss = new WebSocket.Server({ port: 42001 });
 
 function broadcast(channel: string, payload: any) {
@@ -100,7 +102,18 @@ app.whenReady().then(() => {
     startHttpServer(PORT);
   }
   createMainWindow('http://localhost:5173/loading');
-  registerIpcHandlers(store as any, broadcast, middlewareProcessor, appStartTime);
+  registerIpcHandlers(
+      store as any,
+      broadcast,
+      middlewareProcessor,
+      appStartTime,
+      () => currentTheme,
+      (name: string, theme: any) => {
+          currentThemeName = name;
+          currentTheme = theme;
+      },
+      messageCache
+  );
 
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
@@ -120,11 +133,19 @@ app.whenReady().then(() => {
   });
 
   eventSubService.registerEventHandlers((destination, parsedEvent) => {
-    if (destination === `channel:follow`) {
-      messageCache.addMessage({ id: `follow_${Date.now()}_${parsedEvent.userId}`, type: 'follow', ...parsedEvent });
-    } else if (destination === `channel:redemption`) {
+    if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
+      messageCache.addMessage({
+        id: `follow_${Date.now()}_${parsedEvent.userId}`,
+        type: 'follow',
+        ...parsedEvent
+      });
+    } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
       const rewardId = parsedEvent.reward?.id || Date.now();
-      messageCache.addMessage({ id: `redemption_${Date.now()}_${parsedEvent.userId}_${rewardId}`, type: 'redemption', ...parsedEvent });
+      messageCache.addMessage({
+        id: `redemption_${Date.now()}_${parsedEvent.userId}_${rewardId}`,
+        type: 'redemption',
+        ...parsedEvent
+      });
     } else {
       broadcast(destination, parsedEvent);
     }

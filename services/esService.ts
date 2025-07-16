@@ -9,9 +9,9 @@ const DEFAULT_URL = 'wss://eventsub.wss.twitch.tv/ws';
 const HEALTH_CHECK_INTERVAL = 60 * 1000;
 const INACTIVITY_THRESHOLD = 6 * 60 * 1000;
 
-const EVENT_CHANEL = "event";
-const EVENT_FOLLOW = "follow";
-const EVENT_REDEMPTION = "redemption";
+export const EVENT_CHANEL = "event";
+export const EVENT_FOLLOW = "follow";
+export const EVENT_REDEMPTION = "redemption";
 
 let globalLock: EventSubService | null = null;
 

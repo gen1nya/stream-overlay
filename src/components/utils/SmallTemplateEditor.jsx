@@ -21,19 +21,21 @@ const Input = styled.textarea`
 `;
 
 export function SmallTemplateEditor({
-                                       value,
-                                       onChange,
-                                   }) {
+                                        value,
+                                        onChange,
+                                        onDelete = () => {},
+                                        hideDelete = false,
+                                    }) {
     return (
         <Wrapper>
-            <Input
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-            />
-            <FiTrash2
-                size={"24px"}
-                style={{ cursor: "pointer", marginLeft: "8px" }}
-            />
+            <Input value={value} onChange={(e) => onChange(e.target.value)} />
+            {!hideDelete && (
+                <FiTrash2
+                    size={"24px"}
+                    style={{ cursor: "pointer", marginLeft: "8px" }}
+                    onClick={onDelete}
+                />
+            )}
         </Wrapper>
     );
 }

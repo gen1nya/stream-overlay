@@ -218,6 +218,14 @@ function parseBadges(badgesTag: string): string {
     .join('');
 }
 
+function cleanMessage(message) {
+  return message
+      .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '') // zero-width, BOM, nbsp
+      .replace(/[\u0000-\u001F\u007F]/g, '')       // ASCII control chars
+      .replace(/[\uD800-\uDFFF]/g, '')             // lone surrogates (half of emoji or corrupted pairs)
+      .trim();
+}
+
 export async function parseIrcMessage(rawLine: string): Promise<any> {
   const tagMatch = rawLine.match(/^@([^ ]+) /);
   const tags: Record<string, string> = {};
@@ -233,6 +241,7 @@ export async function parseIrcMessage(rawLine: string): Promise<any> {
   if (isPrivMsg) {
     const messageStart = rawLine.indexOf('PRIVMSG');
     messageContent = rawLine.substring(rawLine.indexOf(':', messageStart) + 1).trim();
+    messageContent = cleanMessage(messageContent);
     type = 'chat';
   } else {
     const parts = rawLine.split(':');

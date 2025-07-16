@@ -8,11 +8,17 @@ import * as messageParser from './services/messageParser';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import { ActionTypes } from './services/middleware/ActionTypes';
-import { timeoutUser } from './services/authorizedHelixApi';
 import { createChatWindow, createPreviewWindow } from './windowsManager';
 
-export function registerIpcHandlers(store: Store, broadcast: (ch: string, payload: any) => void, middlewareProcessor: MiddlewareProcessor, appStartTime: number) {
+export function registerIpcHandlers(
+    store: Store,
+    broadcast: (ch: string, payload: any) => void,
+    middlewareProcessor: MiddlewareProcessor,
+    appStartTime: number,
+    getCurrentTheme: () => any,
+    setCurrentTheme: (name: string, theme: any) => void,
+    messageCache: typeof import('./services/MessageCacheManager')
+) {
   ipcMain.handle('auth:authorize', async () => authService.authorizeIfNeeded());
   ipcMain.handle('auth:getTokens', async () => authService.getTokens());
   ipcMain.handle('auth:getAccountInfo', async () => authService.getAccountInfo());
@@ -50,9 +56,17 @@ export function registerIpcHandlers(store: Store, broadcast: (ch: string, payloa
   });
   ipcMain.handle('theme:set', async (_e, themeName) => {
     const themes = store.get('themes') as any;
-    if (themes[themeName]) {
+    console.log('Setting theme:', themeName, "stored themes names:", themes ? Object.keys(themes) : 'none');
+    const theme = themes[themeName];
+    if (theme) {
+      setCurrentTheme(themeName, theme);
       store.set('currentTheme', themeName);
-      broadcast('theme:update', themes[themeName]);
+      middlewareProcessor.onThemeUpdated(theme.bot);
+      messageCache.updateSettings({
+        lifetime: theme.allMessages?.lifetime ?? 60,
+        maxCount: theme.allMessages?.maxCount ?? 6,
+      });
+      broadcast('theme:update', theme);
       broadcast('themes:get', { themes, currentThemeName: themeName });
     }
   });
@@ -74,6 +88,10 @@ export function registerIpcHandlers(store: Store, broadcast: (ch: string, payloa
     const themes = store.get('themes') as any;
     themes[name] = theme;
     store.set('themes', themes);
+    messageCache.updateSettings({
+      lifetime: theme.allMessages?.lifetime ?? 60,
+      maxCount: theme.allMessages?.maxCount ?? 6,
+    });
     middlewareProcessor.onThemeUpdated(theme.bot);
     broadcast('theme:update', theme);
   });

@@ -128,6 +128,7 @@ export default function ChatOverlay() {
     /* message refs */
     const messageRefs = useRef({});
     const prevLastIdRef = useRef(null);
+    const animationTimeoutRef = useRef(null);
 
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
         onOpen: (_, socket) => {
@@ -169,10 +170,46 @@ export default function ChatOverlay() {
         }
     }, [theme]);
 
+    // Очистка рефов при изменении списка сообщений
+    useEffect(() => {
+        const currentMessageIds = new Set(messages.map((msg, idx) => msg.id ?? `idx_${idx}`));
+
+        // Удаляем рефы для несуществующих сообщений
+        Object.keys(messageRefs.current).forEach(id => {
+            if (!currentMessageIds.has(id)) {
+                delete messageRefs.current[id];
+            }
+        });
+
+        // Очищаем индексы для несуществующих сообщений
+        Object.keys(followIndexByIdRef.current).forEach(id => {
+            if (!currentMessageIds.has(id)) {
+                delete followIndexByIdRef.current[id];
+            }
+        });
+
+        Object.keys(redeemIndexByIdRef.current).forEach(id => {
+            if (!currentMessageIds.has(id)) {
+                delete redeemIndexByIdRef.current[id];
+            }
+        });
+
+        // Проверяем, существует ли prevLastId в текущем списке
+        if (prevLastIdRef.current && !currentMessageIds.has(prevLastIdRef.current)) {
+            prevLastIdRef.current = null;
+        }
+    }, [messages]);
+
     /* scroll / animation logic */
     useLayoutEffect(() => {
         const chat = chatRef.current;
         if (!chat) return;
+
+        // Очищаем предыдущий таймаут если он есть
+        if (animationTimeoutRef.current) {
+            clearTimeout(animationTimeoutRef.current);
+            animationTimeoutRef.current = null;
+        }
 
         if (messages.length === 0) {
             chat.scrollTop = chat.scrollHeight;
@@ -187,37 +224,55 @@ export default function ChatOverlay() {
             if (!messageRefs.current[currLastId]) {
                 messageRefs.current[currLastId] = React.createRef();
             }
-            const msgNode = messageRefs.current[currLastId].current;
-            if (!msgNode) {
-                chat.scrollTop = chat.scrollHeight;
-                prevLastIdRef.current = currLastId;
-                return;
-            }
 
-            const newHeight = msgNode.getBoundingClientRect().height;
+            // Используем requestAnimationFrame для более плавной работы
+            requestAnimationFrame(() => {
+                const msgNode = messageRefs.current[currLastId]?.current;
+                if (!msgNode) {
+                    chat.scrollTop = chat.scrollHeight;
+                    prevLastIdRef.current = currLastId;
+                    return;
+                }
 
-            chat.style.transition = 'none';
-            chat.style.transform = `translateY(${newHeight}px)`;
+                const newHeight = msgNode.getBoundingClientRect().height;
 
-            chat.offsetHeight; // force reflow
+                chat.style.transition = 'none';
+                chat.style.transform = `translateY(${newHeight}px)`;
 
-            msgNode.style.visibility = '';
-            msgNode.classList.add('chat-animated');
+                chat.offsetHeight; // force reflow
 
-            chat.style.transition = 'transform 300ms ease';
-            chat.style.transform = 'translateY(0)';
+                msgNode.style.visibility = '';
+                msgNode.classList.add('chat-animated');
 
-            setTimeout(() => {
-                chat.style.transition = '';
-                chat.style.transform = '';
-                msgNode.classList.remove('chat-animated');
-            }, 300);
+                chat.style.transition = 'transform 300ms ease';
+                chat.style.transform = 'translateY(0)';
+
+                animationTimeoutRef.current = setTimeout(() => {
+                    if (chat) {
+                        chat.style.transition = '';
+                        chat.style.transform = '';
+                    }
+                    if (msgNode && msgNode.isConnected) {
+                        msgNode.classList.remove('chat-animated');
+                    }
+                    animationTimeoutRef.current = null;
+                }, 300);
+            });
         } else {
             chat.scrollTop = chat.scrollHeight;
         }
 
         prevLastIdRef.current = currLastId;
     }, [messages]);
+
+    // Очистка таймаута при размонтировании
+    useEffect(() => {
+        return () => {
+            if (animationTimeoutRef.current) {
+                clearTimeout(animationTimeoutRef.current);
+            }
+        };
+    }, []);
 
     /* ---------- Render ---------- */
     return (
