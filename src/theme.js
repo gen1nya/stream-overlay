@@ -104,20 +104,26 @@ export const defaultTheme = {
         roulette: {
             enabled: false,
             commands: [
-                "!roulette"
+                "!roulette", "!рулетка"
             ],
             survivalMessages: [
-                `{user} still alive! 🎲`,
+                `@{user} still alive! 🎲`,
+                '@${user} Не пробил!',
+                '@${user} Need one more pull; Just one more!',
             ],
             deathMessages: [
-                '{user} won the lottery! 💀',
+                '@${user} Победил и хранится в темном прохладном месте. 🔇',
+                '@${user} *А разве Макаровым играют в рулетку?* 🔇'
             ],
             cooldownMessage: [
-                '{user}, the roulette is still reloading. Please wait a bit! 🔄',
+                '@${user}, Привет... Чем могу помочь?',
+                '@${user}, Привет... Чем могу [PEKO]?',
+                '@${user}, от факапа до факапа 30 секунд. ⏳',
+                'WAAAAAAAAGH!!!!11!',
             ],
             muteDuration: 120000,
             commandCooldown: 30000,
-            chance: 0.1,
+            chance: 0.18,
         },
         custom: { enabled: false },
         pingpong: {
