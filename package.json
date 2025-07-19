@@ -1,21 +1,22 @@
 {
   "name": "twitch-watcher",
   "private": true,
-  "version": "0.1.4",
-  "main": "main.js",
+  "version": "0.2.0",
+  "main": "dist-backend/main.js",
   "scripts": {
     "lint": "eslint .",
     "preview": "vite preview",
     "dev": "concurrently \"npm:start-react\" \"npm:start-electron\"",
     "start-react": "vite",
-    "start-electron": "wait-on http://localhost:5173 && electron .",
+    "start-electron": "wait-on http://localhost:5173 && npm run build:ts && electron .",
     "build": "vite build",
-    "build-electron": "electron-builder"
+    "build-electron": "npm run build:ts && electron-builder",
+    "build:ts": "tsc"
   },
   "build": {
     "appId": "com.twitch.watcher",
     "files": [
-      "main.js",
+      "dist-backend/**/*",
       "channels.js",
       "default-theme.json",
       "services/**/*",
@@ -48,8 +49,10 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",
+    "@types/express": "^5.0.3",
     "@types/react": "^19.1.2",
     "@types/react-dom": "^19.1.2",
+    "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^4.4.1",
     "concurrently": "^9.1.2",
     "electron": "^36.2.1",
@@ -58,6 +61,7 @@
     "eslint-plugin-react-hooks": "^5.2.0",
     "eslint-plugin-react-refresh": "^0.4.19",
     "globals": "^16.0.0",
+    "typescript": "^5.3.3",
     "vite": "^6.3.5",
     "wait-on": "^8.0.3"
   }

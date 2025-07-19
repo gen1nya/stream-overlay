@@ -7,7 +7,7 @@ import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
 import {Spacer} from "../../utils/Separator";
 import ColorSelectorButton from "./ColorSelectorButton";
 
-export default function OverlaySettingsComponent({ current, onChange, openColorPopup }) {
+export default function OverlaySettingsComponent({current, onChange, openColorPopup}) {
 
     const handleChange = updaterOrTheme => {
         onChange(updaterOrTheme)
@@ -21,115 +21,120 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
 
     const widthMax = hasImageSizes ? current.overlay.backgroundImageWidth : 1000
     const heightMax = hasImageSizes ? current.overlay.backgroundImageHeight : 1000
+    const overlaySizes = () => {
+        if (isBackgroundImage && current.overlay?.containerWidth && current.overlay?.backgroundImageAspectRatio) {
+            return " (Размеры для OBS: " + current.overlay.containerWidth + "x" + (current.overlay.containerWidth * current.overlay.backgroundImageAspectRatio.toFixed(0)) + ")"
+        } else {
+            return ""
+        }
+    }
 
-    return(
+    return (
         <SettingsBlockFull>
-            <SettingsBlockTitle>Оверлей</SettingsBlockTitle>
-                <Row>
-                    <SeekbarComponent
-                        title={`ширина (${current.overlay?.chatWidth ?? "auto"}):`}
-                        min="100"
-                        max={widthMax}
-                        value={current.overlay?.chatWidth ?? 0}
-                        step="1"
-                        width={"150px"}
-                        disabled={!isBackgroundImage}
-                        tooltip="доступно только для фона-изображения"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    chatWidth: e,
-                                },
-                            }))
-                        }
-                    />
-                    <SeekbarComponent
-                        title={`Высота (${current.overlay?.chatHeight ?? "auto"}):`}
-                        min="100"
-                        max={heightMax}
-                        value={current.overlay?.chatHeight ?? 100}
-                        step="1"
-                        width={"150px"}
-                        disabled={!isBackgroundImage}
-                        tooltip="доступно только для фона-изображения"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    chatHeight: e,
-                                },
-                            }))
-                        }
-                    />
-                    <Spacer/>
-                    <SeekbarComponent
-                        title={`скругление (${current.overlay?.borderRadius ?? 0}):`}
-                        min="0"
-                        max="64"
-                        width={"320px"}
-                        value={current.overlay?.borderRadius ?? 0}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    borderRadius: e,
-                                },
-                            }))
-                        }
-                    />
-                </Row>
-                <Row align="center" gap="0.5em">
-                    <SeekbarComponent
-                        title={`Отступ слева (${current.overlay?.paddingLeft ?? 0}):`}
-                        min="0"
-                        max={widthMax}
-                        value={current.overlay?.paddingLeft ?? 0}
-                        step="1"
-                        width={"150px"}
-                        disabled={!isBackgroundImage}
-                        tooltip="доступно только для фона-изображения"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    paddingLeft: e,
-                                },
-                            }))
-                        }
-                    />
-                    <SeekbarComponent
-                        title={`Отступ сверху (${current.overlay?.paddingTop ?? 0}):`}
-                        min="0"
-                        max={heightMax}
-                        width={"150px"}
-                        value={current.overlay?.paddingTop ?? 0}
-                        step="1"
-                        disabled={!isBackgroundImage}
-                        tooltip="доступно только для фона-изображения"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                overlay: {
-                                    ...prev.overlay,
-                                    paddingTop: e,
-                                },
-                            }))
-                        }
-                    />
-                </Row>
+            <SettingsBlockTitle>Оверлей{overlaySizes()}</SettingsBlockTitle>
+            <Row>
+                <SeekbarComponent
+                    title={`ширина (${current.overlay?.chatWidth ?? "auto"}):`}
+                    min="100"
+                    max={widthMax}
+                    value={current.overlay?.chatWidth ?? 0}
+                    step="1"
+                    width={"150px"}
+                    disabled={!isBackgroundImage}
+                    tooltip="доступно только для фона-изображения"
+                    onChange={e =>
+                        handleChange(prev => ({
+                            ...prev,
+                            overlay: {
+                                ...prev.overlay,
+                                chatWidth: e,
+                            },
+                        }))
+                    }
+                />
+                <SeekbarComponent
+                    title={`Высота (${current.overlay?.chatHeight ?? "auto"}):`}
+                    min="100"
+                    max={heightMax}
+                    value={current.overlay?.chatHeight ?? 100}
+                    step="1"
+                    width={"150px"}
+                    disabled={!isBackgroundImage}
+                    tooltip="доступно только для фона-изображения"
+                    onChange={e =>
+                        handleChange(prev => ({
+                            ...prev,
+                            overlay: {
+                                ...prev.overlay,
+                                chatHeight: e,
+                            },
+                        }))
+                    }
+                />
+                <Spacer/>
+                <SeekbarComponent
+                    title={`скругление (${current.overlay?.borderRadius ?? 0}):`}
+                    min="0"
+                    max="64"
+                    width={"320px"}
+                    value={current.overlay?.borderRadius ?? 0}
+                    step="1"
+                    onChange={e =>
+                        handleChange(prev => ({
+                            ...prev,
+                            overlay: {
+                                ...prev.overlay,
+                                borderRadius: e,
+                            },
+                        }))
+                    }
+                />
+            </Row>
+            <Row align="center" gap="0.5em">
+                <SeekbarComponent
+                    title={`Отступ слева (${current.overlay?.paddingLeft ?? 0}):`}
+                    min="0"
+                    max={widthMax}
+                    value={current.overlay?.paddingLeft ?? 0}
+                    step="1"
+                    width={"150px"}
+                    tooltip="доступно только для фона-изображения"
+                    onChange={e =>
+                        handleChange(prev => ({
+                            ...prev,
+                            overlay: {
+                                ...prev.overlay,
+                                paddingLeft: e,
+                            },
+                        }))
+                    }
+                />
+                <SeekbarComponent
+                    title={`Отступ сверху (${current.overlay?.paddingTop ?? 0}):`}
+                    min="0"
+                    max={heightMax}
+                    width={"150px"}
+                    value={current.overlay?.paddingTop ?? 0}
+                    step="1"
+                    tooltip="доступно только для фона-изображения"
+                    onChange={e =>
+                        handleChange(prev => ({
+                            ...prev,
+                            overlay: {
+                                ...prev.overlay,
+                                paddingTop: e,
+                            },
+                        }))
+                    }
+                />
+            </Row>
             <RadioGroupComponent
                 width={"317px"}
                 title={"Тип фона:"}
                 options={[
-                    { value: "color", label: "Цвет" },
-                    { value: "image", label: "Изображение" },
-                    { value: "none", label: "Нет/прозрачный" }
+                    {value: "color", label: "Цвет"},
+                    {value: "image", label: "Изображение"},
+                    {value: "none", label: "Нет/прозрачный"}
                 ]}
                 selected={current.overlay?.backgroundType ?? "none"}
                 onChange={value =>
@@ -138,8 +143,8 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                         overlay: {
                             ...prev.overlay,
                             backgroundType: value,
-                            backgroundColor: value === "color" ? prev.overlay.backgroundColor : null,
-                            backgroundImage: value === "image" ? prev.overlay.backgroundImage : null,
+                            backgroundColor: prev.overlay.backgroundColor,
+                            backgroundImage: prev.overlay.backgroundImage,
                         },
                     }))
                 }
@@ -154,7 +159,7 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
                         openColorPopup({
                             initialColor: current.overlay?.backgroundColor ?? "#ffffff",
                             initialAlpha: 1,
-                            title: 'Цвет фона',
+                            title: 'Цвет текста',
                             onChange: (e) => {
                                 handleChange(prev => ({
                                     ...prev,
@@ -252,6 +257,6 @@ export default function OverlaySettingsComponent({ current, onChange, openColorP
             )}
         </SettingsBlockFull>
 
-        )
+    )
 
 }

@@ -5,6 +5,7 @@ import React, {
     useEffect
 } from 'react';
 import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
+import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
 import ChatFollow from './ChatFollow';
@@ -31,6 +32,41 @@ const GlobalStyle = createGlobalStyle`
     @keyframes fadeIn {
         from { opacity: 0; }
         to   { opacity: 1; }
+    }
+
+    /* Improved fade-out animation - prevent conflicts with container animation */
+    .fade-enter {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+    .fade-enter-active {
+        opacity: 1;
+        transform: scale(1);
+        transition: opacity 250ms ease-out, transform 250ms ease-out;
+    }
+    .fade-exit {
+        opacity: 1;
+        transform: scale(1);
+        filter: blur(0);
+    }
+    .fade-exit-active {
+        opacity: 0;
+        transform: scale(0.8);
+        filter: blur(4px);
+        transition: opacity 250ms ease-in, transform 250ms ease-in,  filter 250ms ease-in;;
+    }
+
+    /* Critical: prevent container transforms from affecting exiting messages */
+    .fade-exit,
+    .fade-exit-active {
+        position: relative;
+        z-index: 1;
+    }
+
+    /* Ensure chat-animated doesn't interfere with exit animations */
+    .fade-exit .chat-animated,
+    .fade-exit-active .chat-animated {
+        animation: none !important;
     }
 `;
 
@@ -128,13 +164,15 @@ export default function ChatOverlay() {
     /* message refs */
     const messageRefs = useRef({});
     const prevLastIdRef = useRef(null);
+    const animationTimeoutRef = useRef(null);
+    const exitingMessagesRef = useRef(new Set()); // Track exiting messages
 
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
         onOpen: (_, socket) => {
             console.log('🟢 WebSocket подключен');
             socket.send(JSON.stringify({ channel: 'theme:get' }));
         },
-        onMessage: (event) => {
+        onMessage: async (event) => {
             const { channel, payload } = JSON.parse(event.data);
             switch (channel) {
                 case 'chat:messages': {
@@ -169,10 +207,50 @@ export default function ChatOverlay() {
         }
     }, [theme]);
 
-    /* scroll / animation logic */
+    // Improved cleanup with delayed ref removal
+    useEffect(() => {
+        const currentMessageIds = new Set(messages.map((msg, idx) => msg.id ?? `idx_${idx}`));
+
+        // Don't immediately remove refs - they might be needed for exit animations
+        // Instead, schedule cleanup after potential exit animations
+        const cleanupTimeout = setTimeout(() => {
+            Object.keys(messageRefs.current).forEach(id => {
+                if (!currentMessageIds.has(id) && !exitingMessagesRef.current.has(id)) {
+                    delete messageRefs.current[id];
+                }
+            });
+
+            Object.keys(followIndexByIdRef.current).forEach(id => {
+                if (!currentMessageIds.has(id) && !exitingMessagesRef.current.has(id)) {
+                    delete followIndexByIdRef.current[id];
+                }
+            });
+
+            Object.keys(redeemIndexByIdRef.current).forEach(id => {
+                if (!currentMessageIds.has(id) && !exitingMessagesRef.current.has(id)) {
+                    delete redeemIndexByIdRef.current[id];
+                }
+            });
+        }, 500); // Wait for exit animation to complete
+
+        // Check prevLastId
+        if (prevLastIdRef.current && !currentMessageIds.has(prevLastIdRef.current)) {
+            prevLastIdRef.current = null;
+        }
+
+        return () => clearTimeout(cleanupTimeout);
+    }, [messages]);
+
+    /* scroll / animation logic - restored original approach */
     useLayoutEffect(() => {
         const chat = chatRef.current;
         if (!chat) return;
+
+        // Clear previous timeout if exists
+        if (animationTimeoutRef.current) {
+            clearTimeout(animationTimeoutRef.current);
+            animationTimeoutRef.current = null;
+        }
 
         if (messages.length === 0) {
             chat.scrollTop = chat.scrollHeight;
@@ -187,37 +265,55 @@ export default function ChatOverlay() {
             if (!messageRefs.current[currLastId]) {
                 messageRefs.current[currLastId] = React.createRef();
             }
-            const msgNode = messageRefs.current[currLastId].current;
-            if (!msgNode) {
-                chat.scrollTop = chat.scrollHeight;
-                prevLastIdRef.current = currLastId;
-                return;
-            }
 
-            const newHeight = msgNode.getBoundingClientRect().height;
+            // Use requestAnimationFrame for better timing
+            requestAnimationFrame(() => {
+                const msgNode = messageRefs.current[currLastId]?.current;
+                if (!msgNode) {
+                    chat.scrollTop = chat.scrollHeight;
+                    prevLastIdRef.current = currLastId;
+                    return;
+                }
 
-            chat.style.transition = 'none';
-            chat.style.transform = `translateY(${newHeight}px)`;
+                const newHeight = msgNode.getBoundingClientRect().height;
 
-            chat.offsetHeight; // force reflow
+                chat.style.transition = 'none';
+                chat.style.transform = `translateY(${newHeight}px)`;
 
-            msgNode.style.visibility = '';
-            msgNode.classList.add('chat-animated');
+                chat.offsetHeight; // force reflow
 
-            chat.style.transition = 'transform 300ms ease';
-            chat.style.transform = 'translateY(0)';
+                msgNode.style.visibility = '';
+                msgNode.classList.add('chat-animated');
 
-            setTimeout(() => {
-                chat.style.transition = '';
-                chat.style.transform = '';
-                msgNode.classList.remove('chat-animated');
-            }, 300);
+                chat.style.transition = 'transform 300ms ease-out';
+                chat.style.transform = 'translateY(0)';
+
+                animationTimeoutRef.current = setTimeout(() => {
+                    if (chat && chat.isConnected) {
+                        chat.style.transition = '';
+                        chat.style.transform = '';
+                    }
+                    if (msgNode && msgNode.isConnected) {
+                        msgNode.classList.remove('chat-animated');
+                    }
+                    animationTimeoutRef.current = null;
+                }, 300);
+            });
         } else {
             chat.scrollTop = chat.scrollHeight;
         }
 
         prevLastIdRef.current = currLastId;
     }, [messages]);
+
+    // Cleanup on unmount
+    useEffect(() => {
+        return () => {
+            if (animationTimeoutRef.current) {
+                clearTimeout(animationTimeoutRef.current);
+            }
+        };
+    }, []);
 
     /* ---------- Render ---------- */
     return (
@@ -226,60 +322,107 @@ export default function ChatOverlay() {
             <>
                 <BackgroundContainer />
                 <ChatContainer ref={chatRef}>
-                    {messages.map((msg, idx) => {
-                        const id = msg.id ?? `idx_${idx}`;
-                        if (!messageRefs.current[id]) {
-                            messageRefs.current[id] = React.createRef();
-                        }
-                        const nodeRef = messageRefs.current[id];
-
-                        const isLatest = idx === messages.length - 1 && prevLastIdRef.current !== id;
-                        const styleForVisibility = isLatest ? { visibility: 'hidden' } : {};
-
-                        /* follow index logic */
-                        let followIndex;
-                        if (msg.type === 'follow') {
-                            if (!(id in followIndexByIdRef.current)) {
-                                followIndexByIdRef.current[id] = followIndexRef.current;
-                                followIndexRef.current = (followIndexRef.current + 1) % followMaxRef.current;
+                    <TransitionGroup component={null}>
+                        {messages.map((msg, idx) => {
+                            const id = msg.id ?? `idx_${idx}`;
+                            if (!messageRefs.current[id]) {
+                                messageRefs.current[id] = React.createRef();
                             }
-                            followIndex = followIndexByIdRef.current[id];
-                        }
-                        /* redemption index logic */
-                        let redemptionIndex;
-                        if (msg.type === 'redemption') {
-                            if (!(id in redeemIndexByIdRef.current)) {
-                                redeemIndexByIdRef.current[id] = redeemIndexRef.current;
-                                redeemIndexRef.current = (redeemIndexRef.current + 1) % redeemMaxRef.current;
+                            const nodeRef = messageRefs.current[id];
+
+                            const isLatest = idx === messages.length - 1 && prevLastIdRef.current !== id;
+                            const styleForVisibility = isLatest ? { visibility: 'hidden' } : {};
+
+                            /* follow index logic */
+                            let followIndex;
+                            if (msg.type === 'follow') {
+                                if (!(id in followIndexByIdRef.current)) {
+                                    followIndexByIdRef.current[id] = followIndexRef.current;
+                                    followIndexRef.current = (followIndexRef.current + 1) % followMaxRef.current;
+                                }
+                                followIndex = followIndexByIdRef.current[id];
                             }
-                            redemptionIndex = redeemIndexByIdRef.current[id];
-                        }
+                            /* redemption index logic */
+                            let redemptionIndex;
+                            if (msg.type === 'redemption') {
+                                if (!(id in redeemIndexByIdRef.current)) {
+                                    redeemIndexByIdRef.current[id] = redeemIndexRef.current;
+                                    redeemIndexRef.current = (redeemIndexRef.current + 1) % redeemMaxRef.current;
+                                }
+                                redemptionIndex = redeemIndexByIdRef.current[id];
+                            }
 
-                        let Content;
-                        if (msg.type === 'chat') {
-                            Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} />;
-                        } else if (msg.type === 'follow') {
-                            Content = <ChatFollow
-                                message={msg}
-                                currentTheme={theme}
-                                index={followIndex}
-                            />;
-                        } else if (msg.type === 'redemption') {
-                            Content = <ChatRedemption
-                                message={msg}
-                                currentTheme={theme}
-                                index={redemptionIndex}
-                            />;
-                        } else {
-                            return null;
-                        }
+                            let Content;
+                            if (msg.type === 'chat') {
+                                Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} />;
+                            } else if (msg.type === 'follow') {
+                                Content = <ChatFollow
+                                    message={msg}
+                                    currentTheme={theme}
+                                    index={followIndex}
+                                />;
+                            } else if (msg.type === 'redemption') {
+                                Content = <ChatRedemption
+                                    message={msg}
+                                    currentTheme={theme}
+                                    index={redemptionIndex}
+                                />;
+                            } else {
+                                return null;
+                            }
 
-                        return (
-                            <div key={id} ref={nodeRef} style={styleForVisibility}>
-                                {Content}
-                            </div>
-                        );
-                    })}
+                            // Create handlers with message id in closure
+                            const handleEnterForMessage = (node, isAppearing) => {
+                                exitingMessagesRef.current.delete(id);
+                            };
+
+                            const handleExitForMessage = (node) => {
+                                exitingMessagesRef.current.add(id);
+
+                                // If container animation is running, wait for it to finish
+                                if (animationTimeoutRef.current) {
+                                    clearTimeout(animationTimeoutRef.current);
+                                    animationTimeoutRef.current = null;
+
+                                    // Reset container styles immediately
+                                    const chat = chatRef.current;
+                                    if (chat) {
+                                        chat.style.transition = '';
+                                        chat.style.transform = '';
+                                    }
+                                }
+                            };
+
+                            const handleExitedForMessage = (node) => {
+                                exitingMessagesRef.current.delete(id);
+                                // Clean up refs after exit animation completes
+                                setTimeout(() => {
+                                    delete messageRefs.current[id];
+                                    delete followIndexByIdRef.current[id];
+                                    delete redeemIndexByIdRef.current[id];
+                                }, 50);
+                            };
+
+                            return (
+                                <CSSTransition
+                                    key={id}
+                                    nodeRef={nodeRef}
+                                    timeout={250}
+                                    classNames="fade"
+                                    onEnter={handleEnterForMessage}
+                                    onExit={handleExitForMessage}
+                                    onExited={handleExitedForMessage}
+                                >
+                                    <div
+                                        ref={nodeRef}
+                                        style={styleForVisibility}
+                                    >
+                                        {Content}
+                                    </div>
+                                </CSSTransition>
+                            );
+                        })}
+                    </TransitionGroup>
                 </ChatContainer>
                 {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
             </>

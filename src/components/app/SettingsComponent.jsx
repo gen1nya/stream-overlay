@@ -18,7 +18,7 @@ import {defaultTheme} from '../../theme';
 import RedeemPointsBlock from "./settings/RedeemPointsBlock";
 import OverlaySettingsComponent from "./settings/OverlaySettingsComponent";
 import AllMessagesSettings from "./settings/AllMessagesSettings";
-import Separator from "../utils/Separator";
+import Separator, {Spacer} from "../utils/Separator";
 import {Sidebar} from "../utils/Sidebar";
 import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings} from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
@@ -27,6 +27,13 @@ import ColorPickerPopup from "./settings/ColorPickerPopup";
 import AddNewStyleButton from "../utils/AddNewStyleButton";
 import {AiFillRobot} from "react-icons/ai";
 import {CommandList} from "./settings/bot/CommandList";
+import NumericEditorComponent from "../utils/NumericEditorComponent";
+import {Accordion} from "../utils/AccordionComponent";
+import {SmallTemplateEditor} from "../utils/SmallTemplateEditor";
+import Roulette from "./settings/bot/roulette/Roulette";
+import TextRadioGroup from "../utils/TextRadioGroup";
+import RadioGroup from "../utils/TextRadioGroup";
+import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -160,7 +167,12 @@ export default function Settings() {
     };
 
     const handleExportTheme = (name) => {
-        const theme = themeList[name];
+        let theme;
+        if (name === selectedThemeName) {
+            theme = selectedTheme;
+        } else {
+            theme = themeList[name];
+        }
         if (!theme) return;
         const data = JSON.stringify({[name]: theme}, null, 2);
         const blob = new Blob([data], {type: 'application/json'});
@@ -349,11 +361,15 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
         case "bot":
             return (
                 <Content>
-                    <SettingsBlockFull
-                        style={{paddingBottom: '12px', paddingTop: '12px'}}>
-                        <SettingsBlockTitle>Команды бота</SettingsBlockTitle>
-                        <CommandList/>
-                    </SettingsBlockFull>
+                    <PingPongComponent
+                        apply={ updaterOrTheme => apply(updaterOrTheme) }
+                        selectedTheme={ selectedTheme }
+                    />
+
+                    <Roulette
+                        apply={ updaterOrTheme => apply(updaterOrTheme) }
+                        selectedTheme={ selectedTheme }
+                    />
                 </Content>
             );
         case "players":

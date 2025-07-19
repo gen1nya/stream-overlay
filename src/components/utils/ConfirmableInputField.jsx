@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, {useState, useRef, useEffect} from 'react';
 import styled from 'styled-components';
 import {Row} from "../app/SettingsComponent";
 
@@ -82,6 +82,29 @@ export default function ConfirmableInputField({ onConfirm, onSuccess, onError, p
             return false;
         }
     };
+
+    function isFilePath(str) {
+        if (/^[a-zA-Z]+:\/\//.test(str)) return false;
+        if (/^\s*$/.test(str)) return false;
+
+        const fileName = str.split('/').pop();
+        if (!/\.[a-zA-Z0-9]+$/.test(fileName)) return false;
+
+        if (/\s/.test(str)) return false;
+
+        return true;
+    }
+
+    useEffect(() => {
+        const valid = isFilePath(initialValue);
+        if (valid) {
+            setIsValid(true);
+            setConfirmed(true);
+        } else {
+            setIsValid(false);
+            setConfirmed(false);
+        }
+    }, [initialValue]);
 
     const handleConfirm = () => {
         const value = inputValue;

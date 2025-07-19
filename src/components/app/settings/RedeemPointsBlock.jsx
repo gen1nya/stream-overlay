@@ -1,11 +1,7 @@
 import React, {useState} from 'react';
-import styled from 'styled-components';
-import {Accordion} from "../../utils/AccordionComponent";
-import NumericEditorComponent from "../../utils/NumericEditorComponent";
-import ColorSelectorComponent from "../../utils/ColorSelectorComponent";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import {Row} from "../SettingsComponent";
-import Separator, {Spacer} from "../../utils/Separator";
+import {Spacer} from "../../utils/Separator";
 import {TemplateEditor} from "../../utils/TemplateEditor";
 import {
     CollapsedPreview,
@@ -68,7 +64,7 @@ export default function RedeemPointsBlock({
                         <TemplateEditor
                             hint={"Доступные плейсхолдеры: {userName}, {cost}, {title}"}
                             label="Шаблон для баллов канала"
-                            value={message?.template ?? "🎉 {userName} потратил {cost} балов на {title}"}
+                            value={message?.template ?? "🎉 {userName} потратил {cost} баллов на {title}"}
                             onChange={(newValue) =>
                                 handleChange((prev) => ({
                                     ...prev,
@@ -129,7 +125,7 @@ export default function RedeemPointsBlock({
                         />
                         <Spacer/>
                         <SeekbarComponent
-                            title="Радиус скругления:"
+                            title={`Радиус скругления (${message?.borderRadius ?? 0}):`}
                             min="0"
                             max="20"
                             value={message?.borderRadius ?? 0}
@@ -165,7 +161,7 @@ export default function RedeemPointsBlock({
                         />
                         <Spacer/>
                         <SeekbarComponent
-                            title="Радиус тени:"
+                            title={`Радиус тени (${message?.shadowRadius ?? 0}):`}
                             min="0"
                             max="20"
                             value={message?.shadowRadius ?? 0}
@@ -183,7 +179,7 @@ export default function RedeemPointsBlock({
                         <span>Отступы снаружи:</span>
                         <Row align="center" gap="0.5rem">
                             <SeekbarComponent
-                                title="По горизонтали:"
+                                title={`По горизонтали (${message?.marginH ?? 0}):`}
                                 min="0"
                                 max="100"
                                 value={message?.marginH ?? 0}
@@ -197,7 +193,7 @@ export default function RedeemPointsBlock({
                                 }
                             />
                             <SeekbarComponent
-                                title="По вертикали:"
+                                title={`По вертикали (${message?.marginV ?? 0}):`}
                                 min="0"
                                 max="50"
                                 value={message?.marginV ?? 0}
@@ -217,7 +213,7 @@ export default function RedeemPointsBlock({
                         <span>Отступы внутри:</span>
                         <Row align="center" gap="0.5rem">
                             <SeekbarComponent
-                                title="По горизонтали:"
+                                title={`По горизонтали (${message?.paddingH ?? 0}):`}
                                 min="0"
                                 max="100"
                                 value={message?.paddingH ?? 0}
@@ -231,7 +227,7 @@ export default function RedeemPointsBlock({
                                 }
                             />
                             <SeekbarComponent
-                                title="По вертикали:"
+                                title={`По вертикали (${message?.paddingV ?? 0}):`}
                                 min="0"
                                 max="50"
                                 value={message?.paddingV ?? 0}
