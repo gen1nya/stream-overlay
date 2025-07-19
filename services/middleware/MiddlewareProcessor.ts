@@ -46,7 +46,7 @@ export class MiddlewareProcessor {
     const actions: { type: ActionType; payload: any }[] = [];
     let currentMessage = message;
     for (const middleware of this.middlewares) {
-      const result = middleware.processMessage(currentMessage);
+      const result = await middleware.processMessage(currentMessage);
       if (result.message !== undefined) currentMessage = result.message;
       if (result.actions?.length) actions.push(...result.actions);
       if (result.accepted) break;

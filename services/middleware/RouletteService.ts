@@ -1,6 +1,7 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
-import {BotConfig} from "./MiddlewareProcessor";
+import { BotConfig } from './MiddlewareProcessor';
+import RoleRestoreManager from './RoleRestoreManager';
 
 export default class RouletteService extends Middleware {
   private mutedUsers = new Set<string>();
@@ -12,6 +13,7 @@ export default class RouletteService extends Middleware {
   private muteDuration: number;
   private enabled: boolean;
   private cooldowns: Map<string, number> = new Map();
+  private roleManager = new RoleRestoreManager();
 
   constructor(
     muteDuration = 2 * 60 * 1000,
@@ -72,7 +74,7 @@ export default class RouletteService extends Middleware {
       console.log('✅ RouletteService config updated:', config.roulette);
     }
 
-  processMessage(message: any) {
+  async processMessage(message: any) {
     if (!this.enabled) {
       console.warn('⏩ RouletteService is disabled, skipping message processing');
       return { accepted: false, message: { ...message }, actions: [] };
@@ -96,6 +98,17 @@ export default class RouletteService extends Middleware {
     this.cooldowns.set(message.userId, now);
     const actions: any[] = [];
     if (this.checkRouletteWin()) {
+      const prepared = await this.roleManager.prepareMute(message.userId, message.username, this.muteDuration);
+      if (!prepared) {
+        return {
+          accepted: true,
+          message: { ...message },
+          actions: [
+            { type: ActionTypes.SEND_MESSAGE, payload: { message: 'чтото внутри пошло не так', forwardToUi: true } },
+          ],
+        };
+      }
+
       const reason = this.getRandomMessage(this.deathMessages, message.username);
       actions.push(
         { type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } },

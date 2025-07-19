@@ -14,7 +14,7 @@ export default class GreetingMiddleware extends Middleware {
   private commands: CompiledCommand[] = [];
   private enabled = true;
 
-  processMessage(message: any) {
+  async processMessage(message: any) {
     if (!this.enabled) {
       console.log('⏩ GreetingMiddleware is disabled, skipping message processing');
       return { message, actions: [], accepted: false };
