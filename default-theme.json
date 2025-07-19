@@ -109,7 +109,7 @@
       "survivalMessages": [
         "@{user} still alive! 🎲",
         "@${user} Не пробил!",
-        "@${user} Need one more pull; Just one more!",
+        "@${user} Need one more pull; Just one more!"
       ],
       "deathMessages": [
         "@${user} Победил и хранится в темном прохладном месте. 🔇",
