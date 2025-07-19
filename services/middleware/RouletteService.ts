@@ -83,7 +83,12 @@ export default class RouletteService extends Middleware {
     this.cooldowns.set(message.userId, now);
     const actions: any[] = [];
     if (this.checkRouletteWin()) {
-      const prepared = await this.roleManager.prepareMute(message.userId, message.username, this.muteDuration);
+      const prepared = await this.roleManager.prepareMute(
+          message.userId,
+          message.username,
+          this.muteDuration,
+          message.roles
+      );
       if (!prepared) {
         return {
           accepted: true,

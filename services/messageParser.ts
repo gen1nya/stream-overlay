@@ -7,6 +7,15 @@ interface ChannelInfo {
   profileImageUrl: string;
 }
 
+export interface ChatRoles {
+  isModerator: boolean;
+  isVip: boolean;
+  isBroadcaster: boolean;
+  isStaff: boolean;
+  isAdmin: boolean;
+  isGlobalMod: boolean;
+}
+
 let globalBadges: Record<string, any> = {};
 let channelBadges: Record<string, any> = {};
 let _7tvGlobalEmotes: Record<string, any> = {};
@@ -262,6 +271,8 @@ export async function parseIrcMessage(rawLine: string): Promise<any> {
   const channelInfo = await getChannelInfoByRoomId(sourceRoomId);
   const userId = tags['user-id'] || null;
 
+  const roles = extractRolesFromBadges(badgesTag);
+
   return {
     type,
     username,
@@ -278,10 +289,29 @@ export async function parseIrcMessage(rawLine: string): Promise<any> {
       login: channelInfo?.login,
       avatarUrl: channelInfo?.profileImageUrl,
     },
+    roles,
   };
 }
 
 function extractUsername(rawLine: string): string | null {
   const userMatch = rawLine.match(/^:([^!]+)!/);
   return userMatch ? userMatch[1] : null;
+}
+
+/**
+ * badges=moderator/1,vip/1,subscriber/6  →  { isModerator: true, isVip: true, … }
+ */
+function extractRolesFromBadges(badgesTag: string): ChatRoles {
+  const badgeIds = badgesTag
+      ? badgesTag.split(',').map((b) => b.split('/')[0])
+      : [];
+
+  return {
+    isModerator:  badgeIds.includes('moderator'),
+    isVip:        badgeIds.includes('vip'),
+    isBroadcaster: badgeIds.includes('broadcaster'),
+    isStaff:      badgeIds.includes('staff'),
+    isAdmin:      badgeIds.includes('admin'),
+    isGlobalMod:  badgeIds.includes('global_mod'),
+  };
 }
