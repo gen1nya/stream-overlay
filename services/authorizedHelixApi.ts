@@ -33,7 +33,7 @@ interface RoleCacheEntry {
   expiresAt: number;
 }
 
-const ROLE_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const ROLE_CACHE_DURATION = 60 * 1000; // 1 minutes
 const roleCache: Map<string, RoleCacheEntry> = new Map();
 
 export async function getUserRoles(user_id: string): Promise<UserRoles> {

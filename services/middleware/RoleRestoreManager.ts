@@ -16,8 +16,6 @@ export default class RoleRestoreManager {
         this.restoreRoles(userId).catch(err => console.error('Failed to restore roles', err));
       }, duration);
       this.muted.set(userId, { username, roles, timer });
-      if (roles.isModerator) await removeModerator(userId);
-      if (roles.isVip) await removeVip(userId);
       return true;
     } catch (e) {
       console.error('Failed to prepare mute:', (e as any).message);

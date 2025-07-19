@@ -14,6 +14,7 @@ export default class RouletteService extends Middleware {
   private enabled: boolean;
   private cooldowns: Map<string, number> = new Map();
   private roleManager = new RoleRestoreManager();
+  private chance: number;
 
   constructor(
     muteDuration = 2 * 60 * 1000,
@@ -61,6 +62,7 @@ export default class RouletteService extends Middleware {
     this.cooldownMessages = cooldownMessages;
     this.muteDuration = muteDuration;
     this.enabled = enabled;
+    this.chance = 18;
   }
 
     updateConfig(config: BotConfig) {
@@ -71,6 +73,7 @@ export default class RouletteService extends Middleware {
       this.cooldownMessages = config.roulette.cooldownMessage;
       this.muteDuration = config.roulette.muteDuration;
       this.enabled = config.roulette.enabled;
+      this.chance = config.roulette.chance || 18;
       console.log('✅ RouletteService config updated:', config.roulette);
     }
 
@@ -104,7 +107,13 @@ export default class RouletteService extends Middleware {
           accepted: true,
           message: { ...message },
           actions: [
-            { type: ActionTypes.SEND_MESSAGE, payload: { message: 'чтото внутри пошло не так', forwardToUi: true } },
+            {
+              type: ActionTypes.SEND_MESSAGE,
+              payload: {
+                message: `@${message.username}, ты же не думаешь, что ты, что сидит за экраном, и ты здесь, в Сети - это одно и то же?`,
+                forwardToUi: true
+              }
+            },
           ],
         };
       }
@@ -122,8 +131,11 @@ export default class RouletteService extends Middleware {
   }
 
   private checkRouletteWin(): boolean {
-    const ROULETTE_CHANCE = 6;
-    return Math.floor(Math.random() * ROULETTE_CHANCE) + 1 === 1;
+    if (this.chance <= 0) return false;
+    if (this.chance >= 1) return true;
+    const roll = Math.random();
+    console.log(`🎲 Roulette roll: ${roll} (chance: ${this.chance})`);
+    return roll < this.chance;
   }
 
   private getRandomMessage(array: string[], username: string): string {
