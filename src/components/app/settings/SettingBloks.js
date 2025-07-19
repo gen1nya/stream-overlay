@@ -3,6 +3,7 @@ import styled from "styled-components";
 export const SettingsBlockFull = styled.div`
     width: calc(100% - 12px);
     margin-left: 6px;
+    box-shadow: 0 0 10px rgba(92, 56, 169, 0.6);
     margin-right: 6px;
     margin-top: 12px;
     background: #1e1e1e;
@@ -17,6 +18,7 @@ export const SettingsBlockFull = styled.div`
 export const SettingsBlockHalf = styled.div`
     width: calc(50% - 12px);
     margin-left: 6px;
+    box-shadow: 0 0 10px rgba(92, 56, 169, 0.6);
     margin-right: 6px;
     margin-top: 12px;
     background: #1e1e1e;

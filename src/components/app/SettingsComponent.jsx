@@ -31,6 +31,9 @@ import NumericEditorComponent from "../utils/NumericEditorComponent";
 import {Accordion} from "../utils/AccordionComponent";
 import {SmallTemplateEditor} from "../utils/SmallTemplateEditor";
 import Roulette from "./settings/bot/roulette/Roulette";
+import TextRadioGroup from "../utils/TextRadioGroup";
+import RadioGroup from "../utils/TextRadioGroup";
+import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -358,11 +361,10 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
         case "bot":
             return (
                 <Content>
-                    <SettingsBlockFull
-                        style={{paddingBottom: '12px', paddingTop: '12px'}}>
-                        <SettingsBlockTitle>Команды бота</SettingsBlockTitle>
-                        <CommandList/>
-                    </SettingsBlockFull>
+                    <PingPongComponent
+                        apply={ updaterOrTheme => apply(updaterOrTheme) }
+                        selectedTheme={ selectedTheme }
+                    />
 
                     <Roulette
                         apply={ updaterOrTheme => apply(updaterOrTheme) }

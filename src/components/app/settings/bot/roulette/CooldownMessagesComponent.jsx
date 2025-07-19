@@ -3,10 +3,16 @@ import AddNewStyleButton from "../../../../utils/AddNewStyleButton";
 import { Accordion } from "../../../../utils/AccordionComponent";
 import React from "react";
 import { mergeWithDefaults } from "../../../../utils/defaultBotConfig";
+import {CollapsedPreview} from "../../SettingBloks";
 
 export default function CooldownMessagesComponent({ selectedTheme, apply }) {
     return (
         <Accordion title="Для КД">
+            <CollapsedPreview>
+                  <span>
+                      {'В сообщения можно вставлять переменную ${user}; В ответе будет видно имя чатерса'}
+                  </span>
+            </CollapsedPreview>
             {mergeWithDefaults(selectedTheme).bot.roulette.cooldownMessage.map((msg, index) => (
                 <SmallTemplateEditor
                     key={index}

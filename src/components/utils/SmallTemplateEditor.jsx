@@ -5,6 +5,7 @@ import {FiDelete, FiTrash2} from "react-icons/fi";
 const Wrapper = styled.div`
     display: flex;
     flex: 1;
+    max-width: ${({ maxWidth }) => maxWidth || "100%"};
     flex-direction: row;
     align-items: center;
 `;
@@ -25,9 +26,9 @@ export function SmallTemplateEditor({
                                         onChange,
                                         onDelete = () => {},
                                         hideDelete = false,
-                                    }) {
+                                        width = "100%",                                    }) {
     return (
-        <Wrapper>
+        <Wrapper maxWidth={width}>
             <Input value={value} onChange={(e) => onChange(e.target.value)} />
             {!hideDelete && (
                 <FiTrash2

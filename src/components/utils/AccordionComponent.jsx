@@ -4,6 +4,7 @@ import styled from "styled-components";
 const AccordionWrapper = styled.div`
     border: 1px solid #ccc;
     border-radius: 8px;
+    width: 100%;
 `;
 
 const AccordionHeader = styled.button`

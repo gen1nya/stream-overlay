@@ -3,6 +3,7 @@ import AddNewStyleButton from "../../../../utils/AddNewStyleButton";
 import {Accordion} from "../../../../utils/AccordionComponent";
 import React from "react";
 import {mergeWithDefaults} from "../../../../utils/defaultBotConfig";
+import {CollapsedPreview} from "../../SettingBloks";
 
 export default function SurvivalMessagesComponent({selectedTheme, apply}) {
     const config = mergeWithDefaults(selectedTheme);
@@ -10,6 +11,11 @@ export default function SurvivalMessagesComponent({selectedTheme, apply}) {
 
     return (
         <Accordion title="Для выживших">
+            <CollapsedPreview>
+                  <span>
+                      {'В сообщения можно вставлять переменную ${user}; В ответе будет видно имя чатерса'}
+                  </span>
+            </CollapsedPreview>
             {messages.map((msg, index) => (
                 <SmallTemplateEditor
                     key={index}
