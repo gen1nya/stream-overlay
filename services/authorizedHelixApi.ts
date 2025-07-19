@@ -28,7 +28,20 @@ export interface UserRoles {
   isModerator: boolean;
 }
 
+interface RoleCacheEntry {
+  roles: UserRoles;
+  expiresAt: number;
+}
+
+const ROLE_CACHE_DURATION = 10 * 60 * 1000; // 10 minutes
+const roleCache: Map<string, RoleCacheEntry> = new Map();
+
 export async function getUserRoles(user_id: string): Promise<UserRoles> {
+  const cached = roleCache.get(user_id);
+  if (cached && cached.expiresAt > Date.now()) {
+    return cached.roles;
+  }
+
   const tokens = await authService.getTokens();
   if (!tokens?.access_token) throw new Error('No access token');
   const broadcaster_id = await authService.getUserId();
@@ -50,7 +63,9 @@ export async function getUserRoles(user_id: string): Promise<UserRoles> {
   const isVip = Array.isArray(vipResp.data.data) && vipResp.data.data.length > 0;
   const isModerator = Array.isArray(modResp.data.data) && modResp.data.data.length > 0;
 
-  return { isVip, isModerator };
+  const roles = { isVip, isModerator };
+  roleCache.set(user_id, { roles, expiresAt: Date.now() + ROLE_CACHE_DURATION });
+  return roles;
 }
 
 export async function addVip(user_id: string): Promise<void> {
