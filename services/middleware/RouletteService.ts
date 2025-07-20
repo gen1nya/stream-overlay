@@ -2,6 +2,7 @@ import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
 import { BotConfig } from './MiddlewareProcessor';
 import RoleRestoreManager from './RoleRestoreManager';
+import {AppEvent} from "../messageParser";
 
 export default class RouletteService extends Middleware {
   private commands: string[];
@@ -59,9 +60,17 @@ export default class RouletteService extends Middleware {
       console.log('✅ RouletteService config updated:', config.roulette);
     }
 
-  async processMessage(message: any) {
+  async processMessage(message: AppEvent) {
     if (!this.enabled) {
       console.warn('⏩ RouletteService is disabled, skipping message processing');
+      return { accepted: false, message: { ...message }, actions: [] };
+    }
+    if (message.type !== 'chat') {
+      console.warn('⏩ RouletteService only processes chat messages, skipping:', message.type);
+      return { message, actions: [], accepted: false };
+    }
+    if (message.userId === null || message.userName === null) {
+      console.warn('❌ Message is missing userId or userName, skipping RouletteService processing');
       return { accepted: false, message: { ...message }, actions: [] };
     }
     if (!this.commands.includes(message.htmlMessage)) {
@@ -71,7 +80,7 @@ export default class RouletteService extends Middleware {
     const now = Date.now();
     const lastUsed = this.cooldowns.get(message.userId) || 0;
     if (now - lastUsed < this.commandCooldown) {
-      const cooldownMsg = this.getRandomMessage(this.cooldownMessages, message.username);
+      const cooldownMsg = this.getRandomMessage(this.cooldownMessages, message.userName);
       return {
         accepted: false,
         message: { ...message },
@@ -85,7 +94,7 @@ export default class RouletteService extends Middleware {
     if (this.checkRouletteWin()) {
       const prepared = await this.roleManager.prepareMute(
           message.userId,
-          message.username,
+          message.userName,
           this.muteDuration,
           message.roles
       );
@@ -97,7 +106,7 @@ export default class RouletteService extends Middleware {
             {
               type: ActionTypes.SEND_MESSAGE,
               payload: {
-                message: `@${message.username}, ты же не думаешь, что ты, что сидит за экраном, и ты здесь, в Сети - это одно и то же?`,
+                message: `@${message.userName}, ты же не думаешь, что ты, что сидит за экраном, и ты здесь, в Сети - это одно и то же?`,
                 forwardToUi: true
               }
             },
@@ -105,13 +114,13 @@ export default class RouletteService extends Middleware {
         };
       }
 
-      const reason = this.getRandomMessage(this.deathMessages, message.username);
+      const reason = this.getRandomMessage(this.deathMessages, message.userName);
       actions.push(
         { type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } },
         { type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000 } }
       );
     } else {
-      const reason = this.getRandomMessage(this.survivalMessages, message.username);
+      const reason = this.getRandomMessage(this.survivalMessages, message.userName);
       actions.push({ type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } });
     }
     return { accepted: true, message: { ...message }, actions };

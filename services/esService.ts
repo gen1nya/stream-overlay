@@ -2,6 +2,7 @@ import WebSocket from 'ws';
 import axios from 'axios';
 import * as authService from './authService';
 import MESSAGE_TYPES from './eventSubMessageTypes';
+import {AppEvent, FollowEvent, ParserRedeemMessage, RedeemEvent} from "./messageParser";
 
 const knownTypes = Object.values(MESSAGE_TYPES);
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
@@ -131,22 +132,30 @@ class EventSubService {
         const event = payload.event;
         if (payload.subscription.type === 'channel.follow') {
           console.log(`🎉 [${this.connectionId}] Новый фолловер: ${event.user_name}`);
-          this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_FOLLOW}`, {
+          const followEvent: FollowEvent = {
+            timestamp: Date.now(),
+            id: `follow_${Date.now()}_${event.user_id}`,
+            type: 'follow',
             userId: event.user_id,
             userLogin: event.user_login,
             userName: event.user_name,
             followedAt: event.followed_at,
-          });
+          };
+          this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_FOLLOW}`, followEvent);
         }
         if (payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add') {
           const reward = payload.event.reward;
           console.log(`🎉 [${this.connectionId}] потрачены балы: ${reward.title}`);
-          this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_REDEMPTION}`, {
+          const redeemEvent: RedeemEvent = {
+            timestamp: Date.now(),
+            id: `redemption_${Date.now()}_${event.user_id}_${event.reward.id}`,
+            type: 'redemption',
             userId: event.user_id,
             userLogin: event.user_login,
             userName: event.user_name,
-            reward,
-          });
+            reward: reward,
+          };
+          this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_REDEMPTION}`, redeemEvent);
         }
       }
       if (metadata.message_type === MESSAGE_TYPES.SESSION_WELCOME) {
@@ -313,7 +322,7 @@ if (!instance) {
 
 export const start = (...args: any[]) => instance?.start(...args);
 export const stop = (...args: any[]) => instance?.stop(...args);
-export const registerEventHandlers = (handler: (dest: string, payload: any) => void) => instance?.registerEventHandlers(handler);
+export const registerEventHandlers = (handler: (dest: string, payload: AppEvent) => void) => instance?.registerEventHandlers(handler);
 export const getLastEventTimestamp = () => instance?.getLastEventTimestamp();
 export const getConnectionId = () => instance?.getConnectionId();
 export const getInstance = () => instance;

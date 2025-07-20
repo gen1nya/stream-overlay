@@ -1,25 +1,20 @@
 import { randomUUID } from 'crypto';
+import {AppEvent, ParsedIrcMessage} from "./messageParser";
 
-interface ChatMessage {
-  id?: string;
-  timestamp?: number;
-  [key: string]: any;
-}
-
-const messageCache: Map<string, ChatMessage> = new Map();
+const messageCache: Map<string, AppEvent> = new Map();
 const timers: Map<string, NodeJS.Timeout> = new Map();
-let messageHandler: ((data: { messages: ChatMessage[]; showSourceChannel: boolean }) => void) | null = null;
+let messageHandler: ((data: { messages: AppEvent[]; showSourceChannel: boolean }) => void) | null = null;
 let TTL = 60 * 1000; // milliseconds
 let MAX_CACHE_SIZE = 6;
 let showSourceChannel = false;
 
 export function registerMessageHandler(
-  handler: (data: { messages: ChatMessage[]; showSourceChannel: boolean }) => void
+  handler: (data: { messages: AppEvent[]; showSourceChannel: boolean }) => void
 ): void {
   messageHandler = handler;
 }
 
-export function addMessage(message: ChatMessage): void {
+export function addMessage(message: AppEvent): void {
   if (!message || typeof message !== 'object') {
     console.error('❌ Invalid message format:', message);
     return;
@@ -31,8 +26,8 @@ export function addMessage(message: ChatMessage): void {
   if (timers.has(id)) {
     clearTimeout(timers.get(id)!);
   }
-  messageCache.set(id, { ...message, id, timestamp: Date.now() });
-  if ((message as any).sourceRoomId && !showSourceChannel) {
+  messageCache.set(id, message);
+  if ((message as ParsedIrcMessage).sourceRoomId && !showSourceChannel) {
     showSourceChannel = true;
     console.log('🔗 Detected collab-mode via foreign message');
   }

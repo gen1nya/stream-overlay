@@ -60,9 +60,8 @@ export default function Roulette({ selectedTheme, apply }) {
             <CollapsedPreview onClick={toggleOpen} style={{ cursor: 'pointer' }}>
               <span>
                   Бот будет мутить чатерсов, которые используют команды русской рулетки с заданным шансом на заданное время<br/> <br/>
-                  <span style={{fontWeight: 'bold'}}>Внимание!</span> Бот НЕ СОХРАНЯЕТ роли чата (VIP, mod). После "размьюта" роли не вернутся.<br/>
-                  В следующих версиях добавлю сохранение и восстановление. <br/>
-                  <span style={{fontWeight: 'bold'}}>Серверные роли, такие как "редактор" ОСТАЮТСЯ</span>
+                  <span style={{fontWeight: 'bold'}}>Внимание!</span> Если перезапустить приложение во время мута - роли чата (VIP, mod) не сохранятся и не восстановятся автоматически.<br/>
+                  <span style={{fontWeight: 'bold'}}>Серверные роли, такие как "редактор" бот не трогает</span>
               </span>
             </CollapsedPreview>
 

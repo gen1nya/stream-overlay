@@ -1,6 +1,7 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
 import { BotConfig } from './MiddlewareProcessor';
+import {AppEvent} from "../messageParser";
 
 interface CompiledCommand {
   enabled: boolean;
@@ -14,9 +15,13 @@ export default class GreetingMiddleware extends Middleware {
   private commands: CompiledCommand[] = [];
   private enabled = true;
 
-  async processMessage(message: any) {
+  async processMessage(message: AppEvent) {
     if (!this.enabled) {
       console.log('⏩ GreetingMiddleware is disabled, skipping message processing');
+      return { message, actions: [], accepted: false };
+    }
+    if (message.type !== 'chat') {
+      console.warn('❌ GreetingMiddleware only processes chat messages, skipping:', message.type);
       return { message, actions: [], accepted: false };
     }
     const text = message.htmlMessage?.trim();

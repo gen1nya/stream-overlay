@@ -1,6 +1,7 @@
 import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
 import { ActionType } from './ActionTypes';
+import {AppEvent, ParsedIrcMessage} from "../messageParser";
 
 export interface BotConfig {
   roulette: {
@@ -42,7 +43,7 @@ export class MiddlewareProcessor {
     this.applyAction = applyAction;
   }
 
-  async processMessage(message: any): Promise<any> {
+  async processMessage(message: AppEvent): Promise<AppEvent> {
     const actions: { type: ActionType; payload: any }[] = [];
     let currentMessage = message;
     for (const middleware of this.middlewares) {

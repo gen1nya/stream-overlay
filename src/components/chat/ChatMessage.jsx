@@ -116,7 +116,7 @@ export default function ChatMessage({ message, showSourceChannel }) {
                 <BadgeContainer
                     dangerouslySetInnerHTML={{ __html: message.htmlBadges }}
                 />
-                <Username color={message.color}>{message.username}:</Username>
+                <Username color={message.color}>{message.userName}:</Username>
             </TitleContainer>
             <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>
         </MessageContainer>

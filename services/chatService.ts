@@ -1,13 +1,14 @@
 import net from 'net';
 import * as authService from './authService';
 import * as messageParser from './messageParser';
+import {AppEvent, ChatEvent} from "./messageParser";
 
 const HOST = 'irc.chat.twitch.tv';
 const PORT = 6667;
 
 class ChatService {
   private client: net.Socket | null = null;
-  private messageHandler: ((msg: any) => Promise<void>) | null = null;
+  private messageHandler: ((msg: AppEvent) => Promise<void>) | null = null;
   private isStopping = false;
   private isConnecting = false;
   private lastEventTimestamp = Date.now();
@@ -21,7 +22,7 @@ class ChatService {
     });
   }
 
-  registerMessageHandler(handler: (msg: any) => Promise<void>): void {
+  registerMessageHandler(handler: (msg: AppEvent) => Promise<void>): void {
     this.messageHandler = handler;
   }
 
@@ -119,8 +120,8 @@ class ChatService {
 
         const parsed = await messageParser.parseIrcMessage(message);
         if (parsed) {
-          console.log('📨', 'IRC сообщение :', parsed.username, parsed.htmlMessage);
-          if (parsed.type === 'system,' && parsed.message.includes('RECONNECT')) {
+          console.log('📨', 'IRC сообщение :', parsed.userName, (parsed as ChatEvent).htmlMessage);
+          if (parsed.type === 'system' && parsed.rawMessage.includes('RECONNECT')) {
             await this.handleReconnect();
           }
           if (this.messageHandler) {

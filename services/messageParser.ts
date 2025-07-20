@@ -8,12 +8,66 @@ interface ChannelInfo {
 }
 
 export interface ChatRoles {
-  isModerator: boolean;
-  isVip: boolean;
-  isBroadcaster: boolean;
-  isStaff: boolean;
-  isAdmin: boolean;
-  isGlobalMod: boolean;
+  isModerator: boolean | false;
+  isVip: boolean | false;
+  isBroadcaster: boolean | false;
+  isStaff: boolean | false;
+  isAdmin: boolean | false;
+  isGlobalMod: boolean | false;
+}
+
+type Envelope<K extends string, P> = {
+  id: string;
+  type: K;
+  timestamp: number;
+} & P;
+
+interface Identity {
+  userId:    string | null;
+  userName:  string | null;
+}
+
+export interface ParsedIrcMessage extends Identity {
+  type: 'chat' | 'system';
+  color: string;
+  rawMessage: string;
+  htmlBadges: string;
+  htmlMessage: string;
+  id: string | null;
+  roomId: string | null;
+  sourceRoomId: string | null;
+  sourceChannel: {
+    displayName?: string | null;
+    login?: string | null;
+    avatarUrl?: string | null;
+  };
+  roles: ChatRoles;
+}
+
+export interface ParserFollowMessage extends Identity {
+  userLogin: string;
+  followedAt: string;
+}
+
+export interface ParserRedeemMessage extends Identity {
+  userLogin: string;
+  reward: any;
+}
+
+export type ChatEvent  = Envelope<'chat', ParsedIrcMessage>;
+export type SystemEvent  = Envelope<'system', ParsedIrcMessage>;
+export type RedeemEvent  = Envelope<'redemption', ParserRedeemMessage>;
+export type FollowEvent  = Envelope<'follow', ParserFollowMessage>;
+
+export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent;
+
+export const emptyRoles: ChatRoles = {
+    isModerator: false,
+    isVip: false,
+    isBroadcaster: false,
+    isStaff: false,
+    isAdmin: false,
+    isGlobalMod: false,
 }
 
 let globalBadges: Record<string, any> = {};
@@ -22,6 +76,24 @@ let _7tvGlobalEmotes: Record<string, any> = {};
 let bttvGlobalEmotes: Record<string, any> = {};
 let cheerEmotes: Record<string, any> = {};
 const roomCache: Map<string, ChannelInfo> = new Map();
+
+export function createBotMessage(message: string): ChatEvent {
+  return {
+    type: 'chat',
+    userName: 'Bot',
+    color: '#69ff00',
+    rawMessage: '',
+    htmlBadges: '<img src="https://i.pinimg.com/originals/0c/e7/6b/0ce76b0e96c23be3331372599395b9da.gif" alt="broadcaster" title="broadcaster" style="vertical-align: middle; height: 1em; margin-right: 2px;" />',
+    htmlMessage: message,
+    id: 'bot_' + crypto.randomUUID(),
+    roomId: null,
+    sourceRoomId: null,
+    userId: null,
+    sourceChannel: {displayName:null, login:null, avatarUrl:null},
+    roles: emptyRoles,
+    timestamp: Date.now(),
+  };
+}
 
 async function getChannelInfoByRoomId(roomId: string | null): Promise<ChannelInfo | null> {
   if (!roomId) return null;
@@ -235,7 +307,7 @@ function cleanMessage(message) {
       .trim();
 }
 
-export async function parseIrcMessage(rawLine: string): Promise<any> {
+export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
   const tagMatch = rawLine.match(/^@([^ ]+) /);
   const tags: Record<string, string> = {};
   if (tagMatch) {
@@ -261,7 +333,7 @@ export async function parseIrcMessage(rawLine: string): Promise<any> {
     }
   }
 
-  const id = tags['id'] || null;
+  const id = tags['id'] || crypto.randomUUID();
   const username = tags['display-name'] || extractUsername(rawLine) || 'unknown';
   const color = tags['color'] || '#FFFFFF';
   const emotes = tags['emotes'] || '';
@@ -274,16 +346,17 @@ export async function parseIrcMessage(rawLine: string): Promise<any> {
   const roles = extractRolesFromBadges(badgesTag);
 
   return {
-    type,
-    username,
-    color,
+    type: type as 'chat' | 'system',
+    timestamp: Date.now(),
+    userName: username,
+    color: color,
     rawMessage: messageContent,
     htmlBadges: parseBadges(badgesTag),
     htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes, cheerEmotes),
-    id,
-    roomId,
-    userId,
-    sourceRoomId,
+    id: id,
+    roomId: roomId,
+    userId: userId,
+    sourceRoomId: sourceRoomId,
     sourceChannel: {
       displayName: channelInfo?.displayName,
       login: channelInfo?.login,

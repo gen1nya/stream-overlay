@@ -12,6 +12,7 @@ import { createMainWindow } from "./windowsManager";
 import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/esService";
+import {ChatEvent, createBotMessage} from "./services/messageParser";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -53,21 +54,9 @@ const applyAction = async (action: { type: string; payload: any }) => {
         await chatService.sendMessage(action.payload.message);
       }
       if (action.payload.forwardToUi) {
-        const botMessage = {
-          type: 'chat',
-          username: 'Bot',
-          color: '#69ff00',
-          rawMessage: '',
-          htmlBadges: '<img src="https://i.pinimg.com/originals/0c/e7/6b/0ce76b0e96c23be3331372599395b9da.gif" alt="broadcaster" title="broadcaster" style="vertical-align: middle; height: 1em; margin-right: 2px;" />',
-          htmlMessage: action.payload.message,
-          id: 'bot_' + crypto.randomUUID(),
-          roomId: null,
-          userId: null,
-          sourceRoomId: null,
-          sourceChannel: {},
-        } as any;
         setTimeout(async () => {
-          await messageCache.addMessage(botMessage);
+          const botMessage: ChatEvent = createBotMessage(action.payload.message);
+          messageCache.addMessage(botMessage);
         }, 1000);
       }
       break;
@@ -134,18 +123,9 @@ app.whenReady().then(() => {
 
   eventSubService.registerEventHandlers((destination, parsedEvent) => {
     if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
-      messageCache.addMessage({
-        id: `follow_${Date.now()}_${parsedEvent.userId}`,
-        type: 'follow',
-        ...parsedEvent
-      });
+      messageCache.addMessage(parsedEvent);
     } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
-      const rewardId = parsedEvent.reward?.id || Date.now();
-      messageCache.addMessage({
-        id: `redemption_${Date.now()}_${parsedEvent.userId}_${rewardId}`,
-        type: 'redemption',
-        ...parsedEvent
-      });
+      messageCache.addMessage(parsedEvent);
     } else {
       broadcast(destination, parsedEvent);
     }
