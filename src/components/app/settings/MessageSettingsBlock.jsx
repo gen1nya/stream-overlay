@@ -77,22 +77,16 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                     title={"Цвет фона:"}
                     hex={current.chatMessage?.backgroundColor ?? "#000000"}
                     alpha={current.chatMessage?.backgroundOpacity ?? 1}
-                    onClick={() => {
-                        openColorPopup({
-                            initialColor: current.chatMessage.backgroundColor ?? "#ffffff",
-                            initialAlpha: current.chatMessage.backgroundOpacity ?? 1,
-                            title: 'Цвет фона',
-                            onChange: (e) => {
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        backgroundColor: e.color,
-                                        backgroundOpacity: e.alpha,
-                                    },
-                                }));
-                            }
-                        })
+                    openColorPopup={openColorPopup}
+                    onColorChange={(e) => {
+                        handleChange(prev => ({
+                            ...prev,
+                            chatMessage: {
+                                ...prev.chatMessage,
+                                backgroundColor: e.color,
+                                backgroundOpacity: e.alpha,
+                            },
+                        }));
                     }}
                 />
                 <Spacer/>
@@ -103,22 +97,16 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                     title={"Цвет обводки:"}
                     hex={current.chatMessage?.borderColor ?? "#000000"}
                     alpha={current.chatMessage?.borderOpacity ?? 1}
-                    onClick={() => {
-                        openColorPopup({
-                            initialColor: current.chatMessage.borderColor ?? "#ffffff",
-                            initialAlpha: current.chatMessage.borderOpacity ?? 1,
-                            title: 'Цвет обводки',
-                            onChange: (e) => {
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        borderColor: e.color,
-                                        borderOpacity: e.alpha,
-                                    },
-                                }));
-                            }
-                        })
+                    openColorPopup={openColorPopup}
+                    onColorChange={(e) => {
+                        handleChange(prev => ({
+                            ...prev,
+                            chatMessage: {
+                                ...prev.chatMessage,
+                                borderColor: e.color,
+                                borderOpacity: e.alpha,
+                            },
+                        }));
                     }}
                 />
                 <Spacer/>
@@ -146,22 +134,16 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                     title={"Цвет тени:"}
                     hex={current.chatMessage?.shadowColor ?? "#000000"}
                     alpha={current.chatMessage?.shadowOpacity ?? 1}
-                    onClick={() => {
-                        openColorPopup({
-                            initialColor: current.chatMessage.shadowColor ?? "#ffffff",
-                            initialAlpha: current.chatMessage.shadowOpacity ?? 1,
-                            title: 'Цвет тени',
-                            onChange: (e) => {
-                                handleChange(prev => ({
-                                    ...prev,
-                                    chatMessage: {
-                                        ...prev.chatMessage,
-                                        shadowColor: e.color,
-                                        shadowOpacity: e.alpha,
-                                    },
-                                }));
-                            }
-                        })
+                    openColorPopup={openColorPopup}
+                    onColorChange={(e) => {
+                        handleChange(prev => ({
+                            ...prev,
+                            chatMessage: {
+                                ...prev.chatMessage,
+                                shadowColor: e.color,
+                                shadowOpacity: e.alpha,
+                            },
+                        }));
                     }}
                 />
                 <Spacer/>

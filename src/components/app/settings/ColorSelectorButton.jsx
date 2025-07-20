@@ -67,13 +67,36 @@ const SolidLayer = styled(Half)`
     background-color: ${({ color }) => color || '#000'};
 `;
 
-export default function ColorSelectorButton({ hex, alpha, onClick, title }) {
+export default function ColorSelectorButton({
+                                                hex,
+                                                alpha,
+                                                title,
+                                                onColorChange,
+                                                getInitial = () => ({ color: hex, alpha }),
+                                                openColorPopup
+                                            }) {
     const rgbaStr = hexToRgba(hex, alpha);
     const solidStr = hexToRgba(hex, 1);
+
+
+    const handleClick = () => {
+        openColorPopup({
+            initialColor: getInitial().color,
+            initialAlpha: getInitial().alpha,
+            title: title ?? 'Выбор цвета',
+            onChange: (e) => {
+                if (onColorChange) {
+                    onColorChange(e);
+                }
+            }
+        });
+    };
+
+
     return (
         <Container>
             <Title>{title}</Title>
-            <Button onClick={onClick} title={rgbaStr}>
+            <Button onClick={handleClick} title={rgbaStr}>
                 <AlphaLayer>
                     <Overlay color={rgbaStr} />
                 </AlphaLayer>

@@ -155,23 +155,17 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                     title={"Цвет текста:"}
                     hex={current.overlay?.backgroundColor ?? "#000000"}
                     alpha={1}
-                    onClick={() => {
-                        openColorPopup({
-                            initialColor: current.overlay?.backgroundColor ?? "#ffffff",
-                            initialAlpha: 1,
-                            title: 'Цвет текста',
-                            onChange: (e) => {
-                                handleChange(prev => ({
-                                    ...prev,
-                                    overlay: {
-                                        ...prev.overlay,
-                                        backgroundColor: e.color,
-                                    },
-                                }));
-                            }
-                        })
-                    }
-                    }/>
+                    openColorPopup={openColorPopup}
+                    onColorChange={(e) => {
+                        handleChange(prev => ({
+                            ...prev,
+                            overlay: {
+                                ...prev.overlay,
+                                backgroundColor: e.color,
+                            },
+                        }));
+                    }}
+                />
             )}
             {current.overlay?.backgroundType === "image" && (
                 <>

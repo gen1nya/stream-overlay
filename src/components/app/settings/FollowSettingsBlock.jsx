@@ -86,19 +86,13 @@ export default function FollowSettingsBlock({
                             title={"Цвет фона:"}
                             hex={message?.backgroundColor ?? "#3e837c"}
                             alpha={message?.backgroundOpacity ?? 1.0}
-                            onClick={() => {
-                                openColorPopup({
-                                    initialColor: message?.backgroundColor ?? "#3e837c",
-                                    initialAlpha: message?.backgroundOpacity ?? 1.0,
-                                    title: 'Цвет фона',
-                                    onChange: (e) => {
-                                        handleChange((prev) => ({
-                                            ...prev,
-                                            backgroundOpacity: e.alpha,
-                                            backgroundColor: e.color,
-                                        }))
-                                    }
-                                })
+                            openColorPopup={openColorPopup}
+                            onColorChange={(e) => {
+                                handleChange((prev) => ({
+                                    ...prev,
+                                    backgroundOpacity: e.alpha,
+                                    backgroundColor: e.color,
+                                }));
                             }}
                         />
                     </Row>
@@ -108,19 +102,13 @@ export default function FollowSettingsBlock({
                             title={"Цвет обводки:"}
                             hex={message?.borderColor ?? "#3e837c"}
                             alpha={message?.borderOpacity ?? 1.0}
-                            onClick={() => {
-                                openColorPopup({
-                                    initialColor: message?.borderColor ?? "#3e837c",
-                                    initialAlpha: message?.borderOpacity ?? 1.0,
-                                    title: 'Цвет обводки',
-                                    onChange: (e) => {
-                                        handleChange((prev) => ({
-                                            ...prev,
-                                            borderOpacity: e.alpha,
-                                            borderColor: e.color,
-                                        }))
-                                    }
-                                })
+                            openColorPopup={openColorPopup}
+                            onColorChange={(e) => {
+                                handleChange((prev) => ({
+                                    ...prev,
+                                    borderOpacity: e.alpha,
+                                    borderColor: e.color,
+                                }));
                             }}
                         />
                         <Spacer />
@@ -145,19 +133,13 @@ export default function FollowSettingsBlock({
                             title={"Цвет тени:"}
                             hex={message?.shadowColor ?? "#3e837c"}
                             alpha={message?.shadowOpacity ?? 1.0}
-                            onClick={() => {
-                                openColorPopup({
-                                    initialColor: message?.shadowColor ?? "#3e837c",
-                                    initialAlpha: message?.shadowOpacity ?? 1.0,
-                                    title: 'Цвет тени',
-                                    onChange: (e) => {
-                                        handleChange((prev) => ({
-                                            ...prev,
-                                            shadowOpacity: e.alpha,
-                                            shadowColor: e.color,
-                                        }))
-                                    }
-                                })
+                            openColorPopup={openColorPopup}
+                            onColorChange={(e) =>{
+                                handleChange((prev) => ({
+                                    ...prev,
+                                    shadowOpacity: e.alpha,
+                                    shadowColor: e.color,
+                                }));
                             }}
                         />
                         <Spacer />
