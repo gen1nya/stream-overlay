@@ -60,8 +60,14 @@ export default function Roulette({ selectedTheme, apply }) {
             <CollapsedPreview onClick={toggleOpen} style={{ cursor: 'pointer' }}>
               <span>
                   Бот будет мутить чатерсов, которые используют команды русской рулетки с заданным шансом на заданное время<br/> <br/>
-                  <span style={{fontWeight: 'bold'}}>Внимание!</span> Если перезапустить приложение во время мута - роли чата (VIP, mod) не сохранятся и не восстановятся автоматически.<br/>
-                  <span style={{fontWeight: 'bold'}}>Серверные роли, такие как "редактор" бот не трогает</span>
+                  <span style={{fontWeight: 'bold'}}>Внимание!</span> Если перезапустить приложение во время мута - роли чата (VIP, mod) не восстановятся.
+                    <br/><br/>
+                    В сообщения можно вставлять переменные: <br/>
+                    <span style={{color: '#00ffdd'}}>{'${user}'}</span>
+                  {` - имя пользователя`} <br/>
+                      <span style={{color: '#00ffdd'}}>{'${random(1000,9999)}'}</span>
+                  {` - случайное число в диапазоне`} <br/>
+
               </span>
             </CollapsedPreview>
 

@@ -136,6 +136,14 @@ export default function PingPongComponent({ selectedTheme, apply }) {
                 <CollapsedPreview onClick={toggleOpen} style={{ cursor: 'pointer' }}>
                   <span>
                     Бот будет отвечать на ключевые слова и команды (например !пинг)
+                    <br/><br/>
+                      В сообщения можно вставлять переменные: <br/>
+                    <span style={{color: '#00ffdd'}}>{'${user}'}</span>
+                      {` - имя пользователя`} <br/>
+                      <span style={{color: '#00ffdd'}}>{'${last_message}'}</span>
+                      {` - сообщение пользователя`} <br/>
+                      <span style={{color: '#00ffdd'}}>{'${random(1000,9999)}'}</span>
+                      {` - случайное число в диапазоне`} <br/>
                   </span>
                 </CollapsedPreview>
             )}

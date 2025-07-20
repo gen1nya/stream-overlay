@@ -1,6 +1,6 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
-import { BotConfig } from './MiddlewareProcessor';
+import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
 import {AppEvent} from "../messageParser";
 
 interface CompiledCommand {
@@ -43,7 +43,11 @@ export default class GreetingMiddleware extends Middleware {
       const matched = command.triggers.some(test => test(text));
       if (matched) {
         console.log('✅ Command matched:', command.name);
-        const response = this.pickRandom(command.responses);
+        const response = this.pickRandom(
+            command.responses,
+            message.userName || 'user',
+            message.htmlMessage || ''
+        );
         actions.push(
           {
             type: ActionTypes.SEND_MESSAGE,
@@ -116,7 +120,23 @@ export default class GreetingMiddleware extends Middleware {
     return () => false;
   }
 
-  private pickRandom<T>(arr: T[]): T {
-    return arr[Math.floor(Math.random() * arr.length)];
+  private pickRandom(
+      arr: string[],
+      username: string,
+      lastMessage: string = ''
+  ): string {
+    const template = arr[Math.floor(Math.random() * arr.length)];
+    const cleanedMessage = lastMessage.replace(/[\r\n]+/g, ' ').trim();
+    const words = cleanedMessage.split(/\s+/).slice(0, 10).join(' ');
+    let shortMessage = words.length > 100 ? words.slice(0, 100).trim() : words;
+
+    if (shortMessage.length < cleanedMessage.length) {
+      shortMessage += '...';
+    }
+
+    let result = template.replace(/\$\{user\}/g, username)
+        .replace(/\$\{last_message\}/g, shortMessage)
+
+    return applyRandomInt(result);
   }
 }

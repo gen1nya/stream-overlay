@@ -139,6 +139,7 @@ app.whenReady().then(() => {
   });
 
   messageCache.registerMessageHandler(({ messages, showSourceChannel }) => {
+    console.log('📦 Sending cached messages to clients:', messages.map(msg => msg.id));
     broadcast('chat:messages', { messages: Array.from(messages), showSourceChannel });
   });
 });

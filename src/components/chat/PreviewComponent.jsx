@@ -101,14 +101,14 @@ export default function PreviewComponent() {
     });
 
     const message = {
-        username: "Пользователь",
+        userName: "Пользователь",
         color: "#ffffff",
         htmlBadges: "",
         htmlMessage: "Это пример сообщения в чате.",
     };
 
     const longMessage = {
-        username: "Пользователь",
+        userName: "Пользователь",
         color: "#ffffff",
         htmlBadges: "",
         htmlMessage: "Открой волшебный мир Teyvat в Genshin Impact! Собирай команду героев, исследуй потрясающие локации, сражайся с могущественными врагами и раскрывай тайны семи стихий. Бесплатно играй на ПК, PlayStation и мобильных устройствах. Присоединяйся к миллионам игроков по всему миру — начни своё великое приключение уже сегодня! #GenshinImpact #ИграйБесплатно"

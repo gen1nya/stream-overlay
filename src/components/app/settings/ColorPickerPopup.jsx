@@ -59,7 +59,7 @@ export default function ColorPickerPopup({
     }, [color, alpha, throttledCallback]);
 
     return (
-        <Popup>
+        <Popup onClose={onClose}>
             <PopupContent>
                 <Title>{title}</Title>
                 <ColorPicker

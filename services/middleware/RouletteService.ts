@@ -1,6 +1,6 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
-import { BotConfig } from './MiddlewareProcessor';
+import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
 import RoleRestoreManager from './RoleRestoreManager';
 import {AppEvent} from "../messageParser";
 
@@ -117,7 +117,7 @@ export default class RouletteService extends Middleware {
       const reason = this.getRandomMessage(this.deathMessages, message.userName);
       actions.push(
         { type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } },
-        { type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000 } }
+        //{ type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000 } }
       );
     } else {
       const reason = this.getRandomMessage(this.survivalMessages, message.userName);
@@ -136,6 +136,9 @@ export default class RouletteService extends Middleware {
 
   private getRandomMessage(array: string[], username: string): string {
     const template = array[Math.floor(Math.random() * array.length)];
-    return template.replace(/\$\{user\}/g, username);
+
+    let result = template.replace(/\$\{user\}/g, username)
+
+    return applyRandomInt(result);
   }
 }

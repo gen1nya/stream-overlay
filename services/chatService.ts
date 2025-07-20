@@ -158,8 +158,9 @@ class ChatService {
 
   async sendMessage(message: string): Promise<void> {
     if (this.client && !this.client.destroyed) {
+      const sanitized = message.replace(/[\r\n]+/g, ' ');
       const channel = (await authService.getCurrentLogin())?.toLowerCase();
-      this.client.write(`PRIVMSG #${channel} :${message}\r\n`);
+      this.client.write(`PRIVMSG #${channel} :${sanitized}\r\n`);
     }
   }
 }

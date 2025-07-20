@@ -1,7 +1,7 @@
 import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
-import { ActionType } from './ActionTypes';
-import {AppEvent, ParsedIrcMessage} from "../messageParser";
+import {ActionType} from './ActionTypes';
+import {AppEvent} from "../messageParser";
 
 export interface BotConfig {
   roulette: {
@@ -118,5 +118,19 @@ export class MiddlewareProcessor {
 
   }
 
-
 }
+
+export function applyRandomInt(template: string): string {
+  try{
+    return template.replace(/\$\{random\((\d+),\s*(\d+)\)\}/g, (_, min, max) => {
+      const a = parseInt(min, 10);
+      const b = parseInt(max, 10);
+      const r = Math.floor(Math.random() * (b - a + 1)) + a;
+      return r.toString();
+    });
+  } catch (e) {
+    console.error('❌ Error processing random replacement in template:', template, e);
+    return template
+  }
+}
+

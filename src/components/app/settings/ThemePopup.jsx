@@ -130,7 +130,7 @@ export default function ThemePopup({
     };
 
     return (
-        <Popup>
+        <Popup onClose={onClose}>
             <PopupContent>
                 <ThemesTitle>Темы</ThemesTitle>
                 {Object.keys(themeList).map((key) => (

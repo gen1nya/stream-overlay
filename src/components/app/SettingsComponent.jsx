@@ -34,6 +34,7 @@ import Roulette from "./settings/bot/roulette/Roulette";
 import TextRadioGroup from "../utils/TextRadioGroup";
 import RadioGroup from "../utils/TextRadioGroup";
 import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
+import FontSelector from "../utils/FontSelector";
 
 const Panel = styled.div`
     position: fixed;
