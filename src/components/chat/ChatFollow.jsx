@@ -15,9 +15,9 @@ const Text = styled.span`
             textShadowXPosition,
             textShadowYPosition
         } = theme.allMessages;
-        console.log(theme.allMessages);
         return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
     }};
+    font-family: ${({theme, $index}) => theme.followMessage[$index].messageFont.family};
     color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
 `;
 

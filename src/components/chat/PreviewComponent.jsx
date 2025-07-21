@@ -5,6 +5,7 @@ import ChatMessage from "./ChatMessage";
 import ChatFollow from './ChatFollow';
 import {defaultTheme} from "../../theme";
 import ChatRedemption from "./ChatRedemption";
+import {registerFontFace} from "../utils/fontsCache";
 
 const BackgroundContainer = styled.div`
     position: absolute;
@@ -91,6 +92,20 @@ export default function PreviewComponent() {
             switch (channel) {
                 case 'theme:update':
                     setTheme(payload);
+                    payload?.followMessage?.forEach((m, index) => {
+                        registerFontFace(m.messageFont.family, m.messageFont.url);
+                    })
+                    payload?.redeemMessage?.forEach((m, index) => {
+                        registerFontFace(m.messageFont.family, m.messageFont.url);
+                    })
+                    registerFontFace(
+                        payload.chatMessage.titleFont.family,
+                        payload.chatMessage.titleFont.url
+                    );
+                    registerFontFace(
+                        payload.chatMessage.messageFont.family,
+                        payload.chatMessage.messageFont.url
+                    );
                     console.log('Тема обновлена:', payload);
                     break;
                 default:

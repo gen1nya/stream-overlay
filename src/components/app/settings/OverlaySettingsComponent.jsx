@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import RadioGroupComponent from "../../utils/RadioGroupComponent";
 import {Row} from "../SettingsComponent";
@@ -6,6 +6,7 @@ import ConfirmableInputField from "../../utils/ConfirmableInputField";
 import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
 import {Spacer} from "../../utils/Separator";
 import ColorSelectorButton from "./ColorSelectorButton";
+import {mergeWithDefaults} from "../../utils/defaultBotConfig";
 
 export default function OverlaySettingsComponent({current, onChange, openColorPopup}) {
 
@@ -13,17 +14,20 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
         onChange(updaterOrTheme)
     }
 
-    const isBackgroundImage = current.overlay?.backgroundType === 'image'
-    const hasImageSizes = isBackgroundImage &&
-        current.overlay?.backgroundImage &&
-        current.overlay?.backgroundImageWidth &&
-        current.overlay?.backgroundImageHeight
+    const cfg = useMemo(() => mergeWithDefaults(current), [current]);
+    const { overlay } = cfg;
 
-    const widthMax = hasImageSizes ? current.overlay.backgroundImageWidth : 1000
-    const heightMax = hasImageSizes ? current.overlay.backgroundImageHeight : 1000
+    const isBackgroundImage = overlay?.backgroundType === 'image'
+    const hasImageSizes = isBackgroundImage &&
+        overlay?.backgroundImage &&
+        overlay?.backgroundImageWidth &&
+        overlay?.backgroundImageHeight
+
+    const widthMax = hasImageSizes ? overlay.backgroundImageWidth : 1000
+    const heightMax = hasImageSizes ? overlay.backgroundImageHeight : 1000
     const overlaySizes = () => {
-        if (isBackgroundImage && current.overlay?.containerWidth && current.overlay?.backgroundImageAspectRatio) {
-            return " (Размеры для OBS: " + current.overlay.containerWidth + "x" + (current.overlay.containerWidth * current.overlay.backgroundImageAspectRatio.toFixed(0)) + ")"
+        if (isBackgroundImage && overlay?.containerWidth && overlay?.backgroundImageAspectRatio) {
+            return " (Размеры для OBS: " + overlay.containerWidth + "x" + (overlay.containerWidth * overlay.backgroundImageAspectRatio.toFixed(0)) + ")"
         } else {
             return ""
         }
@@ -34,10 +38,10 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
             <SettingsBlockTitle>Оверлей{overlaySizes()}</SettingsBlockTitle>
             <Row>
                 <SeekbarComponent
-                    title={`ширина (${current.overlay?.chatWidth ?? "auto"}):`}
+                    title={`ширина (${overlay?.chatWidth ?? "auto"}):`}
                     min="100"
                     max={widthMax}
-                    value={current.overlay?.chatWidth ?? 0}
+                    value={overlay?.chatWidth ?? 0}
                     step="1"
                     width={"150px"}
                     disabled={!isBackgroundImage}
@@ -53,10 +57,10 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                     }
                 />
                 <SeekbarComponent
-                    title={`Высота (${current.overlay?.chatHeight ?? "auto"}):`}
+                    title={`Высота (${overlay?.chatHeight ?? "auto"}):`}
                     min="100"
                     max={heightMax}
-                    value={current.overlay?.chatHeight ?? 100}
+                    value={overlay?.chatHeight ?? 100}
                     step="1"
                     width={"150px"}
                     disabled={!isBackgroundImage}
@@ -73,11 +77,11 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                 />
                 <Spacer/>
                 <SeekbarComponent
-                    title={`скругление (${current.overlay?.borderRadius ?? 0}):`}
+                    title={`скругление (${overlay?.borderRadius ?? 0}):`}
                     min="0"
                     max="64"
                     width={"320px"}
-                    value={current.overlay?.borderRadius ?? 0}
+                    value={overlay?.borderRadius ?? 0}
                     step="1"
                     onChange={e =>
                         handleChange(prev => ({
@@ -92,10 +96,10 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
             </Row>
             <Row align="center" gap="0.5em">
                 <SeekbarComponent
-                    title={`Отступ слева (${current.overlay?.paddingLeft ?? 0}):`}
+                    title={`Отступ слева (${overlay?.paddingLeft ?? 0}):`}
                     min="0"
                     max={widthMax}
-                    value={current.overlay?.paddingLeft ?? 0}
+                    value={overlay?.paddingLeft ?? 0}
                     step="1"
                     width={"150px"}
                     tooltip="доступно только для фона-изображения"
@@ -110,11 +114,11 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                     }
                 />
                 <SeekbarComponent
-                    title={`Отступ сверху (${current.overlay?.paddingTop ?? 0}):`}
+                    title={`Отступ сверху (${overlay?.paddingTop ?? 0}):`}
                     min="0"
                     max={heightMax}
                     width={"150px"}
-                    value={current.overlay?.paddingTop ?? 0}
+                    value={overlay?.paddingTop ?? 0}
                     step="1"
                     tooltip="доступно только для фона-изображения"
                     onChange={e =>
@@ -136,7 +140,7 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                     {value: "image", label: "Изображение"},
                     {value: "none", label: "Нет/прозрачный"}
                 ]}
-                selected={current.overlay?.backgroundType ?? "none"}
+                selected={overlay?.backgroundType ?? "none"}
                 onChange={value =>
                     handleChange(prev => ({
                         ...prev,
@@ -150,10 +154,10 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                 }
             />
 
-            {current.overlay?.backgroundType === "color" && (
+            {overlay?.backgroundType === "color" && (
                 <ColorSelectorButton
                     title={"Цвет текста:"}
-                    hex={current.overlay?.backgroundColor ?? "#000000"}
+                    hex={overlay?.backgroundColor ?? "#000000"}
                     alpha={1}
                     openColorPopup={openColorPopup}
                     onColorChange={(e) => {
@@ -167,7 +171,7 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                     }}
                 />
             )}
-            {current.overlay?.backgroundType === "image" && (
+            {overlay?.backgroundType === "image" && (
                 <>
                     <ConfirmableInputField
                         onConfirm={(data) => {
@@ -205,16 +209,16 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                         onError={error => {
                             console.error("Error confirming image:", error);
                         }}
-                        initialValue={current.overlay?.backgroundImage ?? ""}
+                        initialValue={overlay?.backgroundImage ?? ""}
                         placeholder="Введите ссылку на изображение или жмяк папку справа -->"
                     />
                     <Row>
                         {/*задает ширину компонента*/}
                         <SeekbarComponent
-                            title={`Ширина фона (${current.overlay.containerWidth}):`}
+                            title={`Ширина фона (${overlay.containerWidth}):`}
                             min="100"
                             max="2000"
-                            value={current.overlay?.containerWidth ?? 500}
+                            value={overlay?.containerWidth ?? 500}
                             step="1"
                             width={"200px"}
                             onChange={e =>
@@ -229,10 +233,10 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                         />
                         {/*задает ширину компонента*/}
                         <SeekbarComponent
-                            title={`Прозрачность фона (${current.overlay?.backgroundOpacity ?? 1}):`}
+                            title={`Прозрачность фона (${overlay?.backgroundOpacity ?? 1}):`}
                             min="0"
                             max="1"
-                            value={current.overlay?.backgroundOpacity ?? 1}
+                            value={overlay?.backgroundOpacity ?? 1}
                             step="0.01"
                             width={"200px"}
                             onChange={e =>

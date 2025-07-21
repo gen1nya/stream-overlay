@@ -19,7 +19,6 @@ const MessageContainer = styled.div`
             border: 1px solid ${hexToRgba(rm.borderColor, rm.borderOpacity)};
             background: ${hexToRgba(rm.backgroundColor, rm.backgroundOpacity)};
             box-shadow: 0 0 ${rm.shadowRadius}px ${hexToRgba(rm.shadowColor, rm.shadowOpacity)};
-            font-style: italic;
             font-size: ${rm.fontSize}px;
             color: ${am?.textColor ?? '#fff'};
             text-shadow: ${
@@ -32,6 +31,7 @@ const MessageContainer = styled.div`
                             ? `blur(${am.blurRadius}px)`
                             : 'none'
             };
+            font-family: ${rm.messageFont.family};
         `;
     }}
 `;

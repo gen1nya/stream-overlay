@@ -6,12 +6,16 @@ import {Row} from "../SettingsComponent";
 import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
 import ColorSelectorButton from "./ColorSelectorButton";
 import {Spacer} from "../../utils/Separator";
+import FontAndSizeEditor from "../../utils/FontAndSizeEditor";
 
 export default function MessageSettingsBlock({current, onChange, openColorPopup}) {
 
     const handleChange = updaterOrTheme => {
         onChange(updaterOrTheme)
     }
+
+    const { chatMessage } = current;
+    console.log("chatMessage", JSON.stringify(chatMessage, null, 2));
 
     return (
         <SettingsBlockFull>
@@ -25,7 +29,7 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                         {value: "row", label: "слева"},
                         {value: "column", label: "сверху"},
                     ]}
-                    selected={current.chatMessage.direction}
+                    selected={chatMessage.direction}
                     onChange={value =>
                         handleChange(prev => ({
                             ...prev,
@@ -37,30 +41,48 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                     }
                 />
                 <Spacer/>
-                <NumericEditorComponent
+                <FontAndSizeEditor
                     title={"Шрифт сообщений:"}
-                    value={current.chatMessage.fontSize}
-                    max={82}
-                    min={9}
-                    width={"150px"}
-                    onChange={value => {
+                    fontSize={chatMessage.fontSize}
+                    fontFamily={chatMessage.messageFont.family}
+                    onFontChange={(newFont) =>
+                        handleChange(prev => ({
+                            ...prev,
+                            chatMessage: {
+                                ...prev.chatMessage,
+                                messageFont: {
+                                    ...prev.chatMessage.messageFont,
+                                    family: newFont.family,
+                                    url: newFont.url,
+                                },
+                            },
+                        }))}
+                    onFontSizeChange={value =>
                         handleChange(prev => ({
                             ...prev,
                             chatMessage: {
                                 ...prev.chatMessage,
                                 fontSize: value,
                             },
-                        }));
-                    }}
+                        }))}
                 />
 
-                <NumericEditorComponent
+                <FontAndSizeEditor
                     title={"Шрифт заголовка:"}
-                    value={current.chatMessage.titleFontSize}
-                    max={82}
-                    min={9}
-                    width={"150px"}
-                    onChange={value => {
+                    fontSize={chatMessage.titleFontSize}
+                    fontFamily={chatMessage.titleFont.family}
+                    onFontChange={(newFont) => handleChange(prev => ({
+                        ...prev,
+                        chatMessage: {
+                            ...prev.chatMessage,
+                            titleFont: {
+                                ...prev.chatMessage.titleFont,
+                                family: newFont.family,
+                                url: newFont.url,
+                            },
+                        },
+                    }))}
+                    onFontSizeChange={value => {
                         handleChange(prev => ({
                             ...prev,
                             chatMessage: {
@@ -75,8 +97,8 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
             <Row>
                 <ColorSelectorButton
                     title={"Цвет фона:"}
-                    hex={current.chatMessage?.backgroundColor ?? "#000000"}
-                    alpha={current.chatMessage?.backgroundOpacity ?? 1}
+                    hex={chatMessage?.backgroundColor ?? "#000000"}
+                    alpha={chatMessage?.backgroundOpacity ?? 1}
                     openColorPopup={openColorPopup}
                     onColorChange={(e) => {
                         handleChange(prev => ({
@@ -95,8 +117,8 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
             <Row>
                 <ColorSelectorButton
                     title={"Цвет обводки:"}
-                    hex={current.chatMessage?.borderColor ?? "#000000"}
-                    alpha={current.chatMessage?.borderOpacity ?? 1}
+                    hex={chatMessage?.borderColor ?? "#000000"}
+                    alpha={chatMessage?.borderOpacity ?? 1}
                     openColorPopup={openColorPopup}
                     onColorChange={(e) => {
                         handleChange(prev => ({
@@ -111,10 +133,10 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 />
                 <Spacer/>
                 <SeekbarComponent
-                    title={`Радиус скругления (${current.chatMessage.borderRadius ?? 0}):`}
+                    title={`Радиус скругления (${chatMessage.borderRadius ?? 0}):`}
                     min="0"
                     max="20"
-                    value={current.chatMessage.borderRadius ?? 0}
+                    value={chatMessage.borderRadius ?? 0}
                     step="1"
                     width={"320px"}
                     onChange={e =>
@@ -132,8 +154,8 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
             <Row>
                 <ColorSelectorButton
                     title={"Цвет тени:"}
-                    hex={current.chatMessage?.shadowColor ?? "#000000"}
-                    alpha={current.chatMessage?.shadowOpacity ?? 1}
+                    hex={chatMessage?.shadowColor ?? "#000000"}
+                    alpha={chatMessage?.shadowOpacity ?? 1}
                     openColorPopup={openColorPopup}
                     onColorChange={(e) => {
                         handleChange(prev => ({
@@ -148,10 +170,10 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 />
                 <Spacer/>
                 <SeekbarComponent
-                    title={`Радиус тени (${current.chatMessage.shadowRadius ?? 0}):`}
+                    title={`Радиус тени (${chatMessage.shadowRadius ?? 0}):`}
                     min="0"
                     max="20"
-                    value={current.chatMessage.shadowRadius ?? 0}
+                    value={chatMessage.shadowRadius ?? 0}
                     step="1"
                     width={"320px"}
                     onChange={e =>
@@ -170,11 +192,11 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 <span>Отступы снаружи:</span>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
-                        title={`По горизонтали (${current.chatMessage.marginH ?? 0}):`}
+                        title={`По горизонтали (${chatMessage.marginH ?? 0}):`}
                         min="0"
                         max="100"
                         width={"150px"}
-                        value={current.chatMessage.marginH ?? 0}
+                        value={chatMessage.marginH ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
@@ -188,11 +210,11 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                     />
 
                     <SeekbarComponent
-                        title={`По вертикали (${current.chatMessage.marginV ?? 0}):`}
+                        title={`По вертикали (${chatMessage.marginV ?? 0}):`}
                         min="0"
                         max="50"
                         width={"150px"}
-                        value={current.chatMessage.marginV ?? 0}
+                        value={chatMessage.marginV ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
@@ -211,11 +233,11 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                 <span>Отступы внутри:</span>
                 <Row>
                     <SeekbarComponent
-                        title={`По горизонтали (${current.chatMessage.paddingH ?? 0}):`}
+                        title={`По горизонтали (${chatMessage.paddingH ?? 0}):`}
                         min="0"
                         max="100"
                         width={"150px"}
-                        value={current.chatMessage.paddingH ?? 0}
+                        value={chatMessage.paddingH ?? 0}
                         step="1"
                         onChange={e =>
                             handleChange(prev => ({
@@ -229,10 +251,10 @@ export default function MessageSettingsBlock({current, onChange, openColorPopup}
                     />
 
                     <SeekbarComponent
-                        title={`По вертикали (${current.chatMessage.paddingV ?? 0}):`}
+                        title={`По вертикали (${chatMessage.paddingV ?? 0}):`}
                         min="0"
                         max="50"
-                        value={current.chatMessage.paddingV ?? 0}
+                        value={chatMessage.paddingV ?? 0}
                         step="1"
                         width={"150px"}
                         onChange={e =>

@@ -36,6 +36,7 @@ const MessageContainer = styled.div`
 
 const TitleContainer = styled.div`
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
+    font-family: ${({theme}) => theme.chatMessage.titleFont.family};
     display: flex;
     align-items: center;
     flex-direction: row;
@@ -82,6 +83,7 @@ const Username = styled.span`
 
 const MessageText = styled.span`
     display: inline-block;
+    font-family: ${({theme}) => theme.chatMessage.messageFont.family};
     text-shadow: ${({theme}) => {
         if (!theme.allMessages) {
             return 'none';

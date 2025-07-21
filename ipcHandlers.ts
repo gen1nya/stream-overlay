@@ -93,6 +93,7 @@ export function registerIpcHandlers(
       maxCount: theme.allMessages?.maxCount ?? 6,
     });
     middlewareProcessor.onThemeUpdated(theme.bot);
+    setCurrentTheme(name, theme);
     broadcast('theme:update', theme);
   });
   ipcMain.handle('utils:save_image_buffer', async (_e, fileName, buffer) => {

@@ -64,7 +64,7 @@ export default class GreetingMiddleware extends Middleware {
 
   updateConfig(config: BotConfig): void {
     const pingpong = config.pingpong;
-    console.log('✅ GreetingMiddleware config updated:', pingpong);
+    console.log('✅ GreetingMiddleware config updated');
 
     this.enabled = pingpong.enabled;
     if (!this.enabled) {

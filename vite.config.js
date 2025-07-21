@@ -11,7 +11,8 @@ export default defineConfig({
   },
   server: {
     proxy: {
-      '/images': 'http://localhost:5123'
+      '/images': 'http://localhost:5123',
+      '/font': 'http://localhost:5123'
     }
   },
 })

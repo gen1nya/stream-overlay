@@ -77,6 +77,17 @@ export default function FollowSettingsBlock({
                                     fontSize: newSize,
                                 }))
                             }
+                            currentFontFamily={message?.messageFont.family ?? 'Roboto'}
+                            onFontSelected={(font) =>
+                                handleChange((prev) => ({
+                                    ...prev,
+                                    messageFont: {
+                                        ...prev.messageFont,
+                                        family: font.family,
+                                        url: font.files.regular || Object.values(font.files)[0]
+                                    },
+                                }))
+                            }
                             placeholders={["userName"]}
                         />
                     </Row>

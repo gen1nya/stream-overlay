@@ -1,125 +1,193 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import styled from 'styled-components';
-import fonts from './cyrillic_fonts_minimal.json';
+import { FixedSizeList as List, areEqual } from 'react-window';
 import { createPortal } from 'react-dom';
-import Popup from "./PopupComponent";
+import fonts from './cyrillic_fonts_minimal.json';
+import Popup from './PopupComponent';
 
+/**
+ * ---------------------------------------------------------------------------
+ *  CONFIG (tweak here without touching the rest of the logic)
+ * ---------------------------------------------------------------------------
+ */
+const ITEM_HEIGHT = 56;          // px — height of one option row
+const LIST_HEIGHT = 600;         // px — height of the scroll container
+const LIST_WIDTH  = 460;         // px — width of the scroll container
+const PRELOAD_ITEMS = 15;        // how many top-items to preload on mount
+
+/**
+ * ---------------------------------------------------------------------------
+ *  STYLED COMPONENTS
+ * ---------------------------------------------------------------------------
+ */
 const SelectorWrapper = styled.div`
     position: relative;
     display: inline-block;
+    margin-bottom: ${({ $mb }) => $mb};
 `;
 
 const SelectedFontButton = styled.button`
-    padding: 10px 14px;
+    padding: 4px 14px;
     border-radius: 8px;
     border: 1px solid #ccc;
     background: #2c2c2c;
-    color: white;
+    color: #fff;
     font-size: 16px;
     cursor: pointer;
-`;
-
-const Container = styled.div`
-    display: flex;
-    padding: 8px 16px 16px 16px;
-    flex-direction: column;
-    height: 500px;
-    max-height: 500px;
-    gap: 8px;
-    overflow-y: auto;
 `;
 
 const OptionPreview = styled.div`
     padding: 8px;
+    width: 100%;            /* prevent horizontal overflow */
+    box-sizing: border-box; /* include padding in the width calc */
     border-radius: 6px;
     background: #2a2a2a;
-    color: white;
+    color: #fff;
     font-size: 16px;
     cursor: pointer;
-    margin-bottom: 4px;
 
     &:hover {
         background: #3c3c3c;
     }
 `;
 
-const loadFont = (family, url) => {
-    if (document.getElementById(`font-${family}`)) return;
-    const style = document.createElement('style');
-    style.id = `font-${family}`;
-    style.innerHTML = `
-    @font-face {
-      font-family: '${family}';
-      src: url('${url}') format('woff2');
-      font-weight: normal;
-      font-style: normal;
-    }
-  `;
-    document.head.appendChild(style);
-};
+const SearchInput = styled.input`
+  width: 100%;
+  padding: 6px 10px;
+  margin-bottom: 8px;
+  border-radius: 6px;
+  border: 1px solid #555;
+  background: #1e1e1e;
+  color: #fff;
+  font-size: 15px;
+  box-sizing: border-box;
 
+  &::placeholder {
+    color: #888;
+  }
+`;
+
+const PopupInner = styled.div`
+  width: ${LIST_WIDTH}px;
+  max-height: ${LIST_HEIGHT + 48}px; /* search + list */
+`;
+
+/**
+ * ---------------------------------------------------------------------------
+ *  VIRTUALIZED ROW (memoised to avoid re-renders)
+ * ---------------------------------------------------------------------------
+ */
+const Row = memo(({ index, style, data }) => {
+    const font = data.fonts[index];
+    const handleClick = () => data.onSelectFont(font);
+
+    return (
+        <OptionPreview
+            style={{
+                ...style,
+                fontFamily: `'${font.family}', sans-serif`,
+            }}
+            onClick={handleClick}
+        >
+            {font.family} — Пример: Привет, мир!
+        </OptionPreview>
+    );
+}, areEqual);
+
+/**
+ * ---------------------------------------------------------------------------
+ *  INNER POPUP (search + virtualised list)
+ * ---------------------------------------------------------------------------
+ */
 const FontSelectorPopup = ({ onClose, onSelectFont }) => {
-    useEffect(() => {
-        fonts.forEach((font) => {
-            const url = font.files.regular || Object.values(font.files)[0];
-            if (url) loadFont(font.family, url);
-        });
-    }, []);
+    const [query, setQuery] = useState('');
+
+    // Filter fonts lazily with memoization
+    const filteredFonts = useMemo(() => {
+        if (!query) return fonts;
+        const lower = query.toLowerCase();
+        return fonts.filter((f) => f.family.toLowerCase().includes(lower));
+    }, [query]);
 
     return (
         <Popup onClose={onClose}>
-            <Container>
-                {fonts.map((font) => (
-                    <OptionPreview
-                        key={font.family}
-                        onClick={() => {
-                            onSelectFont(font);
-                            onClose();
-                        }}
-                        style={{ fontFamily: `'${font.family}', sans-serif` }}
-                    >
-                        {font.family} — Пример: Привет, мир!
-                    </OptionPreview>
-                ))}
-            </Container>
+            <PopupInner>
+                <SearchInput
+                    placeholder="Поиск шрифта…"
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                />
+
+                <List
+                    height={LIST_HEIGHT}
+                    width={LIST_WIDTH}
+                    itemSize={ITEM_HEIGHT}
+                    itemCount={filteredFonts.length}
+                    itemData={{ fonts: filteredFonts, onSelectFont }}
+                    style={{ overflowX: 'hidden' }}
+                >
+                    {Row}
+                </List>
+            </PopupInner>
         </Popup>
     );
 };
 
-const FontSelector = ({ onSelect }) => {
-    const [selectedFont, setSelectedFont] = useState(fonts[0]);
+/**
+ * ---------------------------------------------------------------------------
+ *  MAIN COMPONENT
+ * ---------------------------------------------------------------------------
+ */
+const FontSelector = ({ onSelect, initialFontName, marginbottom = '0px' }) => {
+    const [selectedFont, setSelectedFont] = useState(
+        fonts.find((f) => f.family === initialFontName) || fonts[0],
+    );
     const [isOpen, setIsOpen] = useState(false);
     const popupRoot = document.getElementById('popup-root');
 
+    /**
+     * Pre-load just enough fonts so the first paint is smooth.
+     * Additional fonts will be fetched lazily as the list scrolls.
+     */
     useEffect(() => {
-        const previewUrl = selectedFont.files.regular || Object.values(selectedFont.files)[0];
-        if (previewUrl) loadFont(selectedFont.family, previewUrl);
-    }, [selectedFont]);
+        const preload = async () => {
+            const slice = fonts.slice(0, PRELOAD_ITEMS);
+            await Promise.all(
+                slice.map((f) => document.fonts.load(`16px '${f.family}'`)),
+            );
+        };
 
-    const handleSelectFont = (font) => {
-        setSelectedFont(font);
-        onSelect?.(font);
-    };
+        if (document?.fonts?.status === 'loaded') return; // already cached
+        window.requestIdleCallback(preload, { timeout: 2000 });
+    }, []);
 
-    const togglePopup = () => {
-        setIsOpen((prev) => !prev);
-    };
+    /** Handle selection */
+    const handleSelectFont = useCallback(
+        (font) => {
+            setSelectedFont(font);
+            onSelect?.(font);
+            setIsOpen(false);
+        },
+        [onSelect],
+    );
 
     return (
-        <SelectorWrapper>
+        <SelectorWrapper $mb={marginbottom}>
             <SelectedFontButton
-                onClick={togglePopup}
+                onClick={() => setIsOpen((prev) => !prev)}
                 style={{ fontFamily: `'${selectedFont.family}', sans-serif` }}
             >
                 {selectedFont.family}
             </SelectedFontButton>
-            {isOpen && popupRoot && createPortal(
-                <FontSelectorPopup
-                    onClose={() => setIsOpen(false)}
-                    onSelectFont={handleSelectFont}
-                />,
-                popupRoot
-            )}
+
+            {isOpen && popupRoot &&
+                createPortal(
+                    <FontSelectorPopup
+                        onClose={() => setIsOpen(false)}
+                        onSelectFont={handleSelectFont}
+                    />,
+                    popupRoot,
+                )}
         </SelectorWrapper>
     );
 };

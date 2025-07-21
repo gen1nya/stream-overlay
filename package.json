@@ -36,6 +36,7 @@
     "express": "^5.1.0",
     "framer-motion": "^12.15.0",
     "keytar": "^7.9.0",
+    "lodash.merge": "^4.6.2",
     "lodash.throttle": "^4.1.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -44,6 +45,7 @@
     "react-pick-color": "^2.0.0",
     "react-router-dom": "^7.6.0",
     "react-transition-group": "^4.4.5",
+    "react-window": "^1.8.11",
     "styled-components": "^6.1.18",
     "ws": "^8.18.2"
   },

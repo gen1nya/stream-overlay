@@ -12,6 +12,8 @@ import ModernAudioPlayer from "./components/player/ModerAudioPlayer";
 import RoundFFTDemo from "./components/player/RoundFFTDemo";
 import LinearFFTDemo from "./components/player/LinearFFTDemo";
 import {createGlobalStyle} from "styled-components";
+import {preloadAllFonts} from "./components/utils/fontsCache";
+import fonts from './components/utils/cyrillic_fonts_minimal.json';
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -29,6 +31,7 @@ const GlobalStyle = createGlobalStyle`
 
 
 export default function App() {
+    preloadAllFonts(fonts);
     return (
         <>
             <GlobalStyle/>

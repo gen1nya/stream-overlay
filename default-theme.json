@@ -14,7 +14,17 @@
     "paddingH": "8",
     "paddingV": "7",
     "fontSize": 24,
-    "titleFontSize": 20
+    "titleFontSize": 20,
+    "titleFont": {
+      "family": "Roboto",
+      "url": "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
+    },
+    "messageFont": {
+      "family": "Roboto",
+      "url": "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
+      "color": "#ffffff",
+      "alpha": "1"
+    }
   },
   "followMessage": [
     {
@@ -32,7 +42,13 @@
       "paddingH": "10",
       "paddingV": "3",
       "fontSize": 25,
-      "template": "🎉 {userName} just followed!"
+      "template": "🎉 {userName} just followed!",
+      "messageFont": {
+        "family": "Roboto",
+        "url": "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
+        "color": "#ffffff",
+        "alpha": "1"
+      }
     }
   ],
   "redeemMessage": [
@@ -51,7 +67,13 @@
       "marginH": "7",
       "borderOpacity": "1",
       "fontSize": 24,
-      "template": "🎉 {userName} потратил {cost} балов на {title}"
+      "template": "🎉 {userName} потратил {cost} балов на {title}",
+      "messageFont": {
+        "family": "Roboto",
+        "url": "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
+        "color": "#ffffff",
+        "alpha": "1"
+      }
     }
   ],
   "player": {

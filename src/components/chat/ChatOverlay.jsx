@@ -11,6 +11,7 @@ import ChatMessage from './ChatMessage';
 import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
 import { defaultTheme } from '../../theme';
+import {registerFontFace} from "../utils/fontsCache";
 
 /* ---------- Global styles ---------- */
 const GlobalStyle = createGlobalStyle`
@@ -184,6 +185,20 @@ export default function ChatOverlay() {
                 }
                 case 'theme:update': {
                     setTheme(payload);
+                    payload?.followMessage?.forEach((m, index) => {
+                        registerFontFace(m.messageFont.family, m.messageFont.url);
+                    })
+                    payload?.redeemMessage?.forEach((m, index) => {
+                        registerFontFace(m.messageFont.family, m.messageFont.url);
+                    })
+                    registerFontFace(
+                        payload.chatMessage.titleFont.family,
+                        payload.chatMessage.titleFont.url
+                    );
+                    registerFontFace(
+                        payload.chatMessage.messageFont.family,
+                        payload.chatMessage.messageFont.url
+                    );
                     break;
                 }
                 default:

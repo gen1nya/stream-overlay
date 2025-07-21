@@ -1,5 +1,7 @@
 import React from "react";
 import styled from "styled-components";
+import FontSelector from "./FontSelector";
+import {Spacer} from "./Separator";
 
 const Wrapper = styled.div`
     display: flex;
@@ -57,11 +59,20 @@ export function TemplateEditor({
                                    hint = "Доступные плейсхолдеры: {userName}, {rewardTitle}, {rewardCost}",
                                    fontSize = "1rem",
                                    onFontSizeChange,
+                                   currentFontFamily = 'Roboto',
+                                   onFontSelected = (font) => console.log(`Selected font: ${font}`),
                                }) {
     return (
         <Wrapper>
             <Header>
                 <Label>{label}</Label>
+                <Spacer/>
+                <FontSelector
+                    onSelect={onFontSelected}
+                    initialFontName={currentFontFamily}
+                    style={{width: "200px"}}
+                    marginbottom={"0.25rem"}
+                />
                 <FontSizeControl>
                     <span>Размер:</span>
                     <FontSizeInput

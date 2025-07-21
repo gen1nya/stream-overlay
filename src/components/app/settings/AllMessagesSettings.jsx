@@ -1,10 +1,11 @@
-import React from 'react';
+import React, {useMemo} from 'react';
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import {Row} from "../SettingsComponent";
 import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
 import ColorSelectorButton from "./ColorSelectorButton";
 import {Spacer} from "../../utils/Separator";
+import {mergeWithDefaults} from "../../utils/defaultBotConfig";
 
 export default function AllMessagesSettings({current, onChange, openColorPopup}) {
 
@@ -12,14 +13,16 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
         onChange(updaterOrTheme)
     }
 
+    const { allMessages } = current;
+
     return (
         <SettingsBlockFull>
             <SettingsBlockTitle>Настройки для всех типов сообщений</SettingsBlockTitle>
             <Row align="center" gap="0.5rem">
                 <ColorSelectorButton
                     title={"Цвет текста:"}
-                    hex={current.allMessages?.textColor ?? "#000000"}
-                    alpha={current.allMessages?.textOpacity ?? 1}
+                    hex={allMessages?.textColor ?? "#000000"}
+                    alpha={allMessages?.textOpacity ?? 1}
                     openColorPopup={openColorPopup}
                     onColorChange={
                         (e) => {
@@ -35,7 +38,7 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
                     }/>
                 <NumericEditorComponent
                     title={"Время жизни(сек):"}
-                    value={current.allMessages?.lifetime ?? 10}
+                    value={allMessages?.lifetime ?? 10}
                     max={60}
                     min={-1}
                     width={"150px"}
@@ -51,7 +54,7 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
                 />
                 <NumericEditorComponent
                     title={"Кол-во сообщений:"}
-                    value={current.allMessages?.maxCount ?? 30}
+                    value={allMessages?.maxCount ?? 30}
                     max={30}
                     min={1}
                     width={"150px"}
@@ -70,7 +73,7 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
                     title={"Блюр фона:"}
                     min="0"
                     max="20"
-                    value={current.allMessages?.blurRadius ?? 0}
+                    value={allMessages?.blurRadius ?? 0}
                     step="1"
                     width={"300px"}
                     onChange={e =>
@@ -88,8 +91,8 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
             <Row>
                 <ColorSelectorButton
                     title={"Цвет тени текста:"}
-                    hex={current.allMessages?.textShadowColor ?? "#000000"}
-                    alpha={current.allMessages?.textShadowOpacity ?? 1}
+                    hex={allMessages?.textShadowColor ?? "#000000"}
+                    alpha={allMessages?.textShadowOpacity ?? 1}
                     openColorPopup={openColorPopup}
                     onColorChange={(e) => {
                             handleChange(prev => ({
@@ -104,7 +107,7 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
                 />
                 <NumericEditorComponent
                     title={"Положение по X:"}
-                    value={current.allMessages?.textShadowXPosition ?? 0}
+                    value={allMessages?.textShadowXPosition ?? 0}
                     max={20}
                     min={-20}
                     width={"150px"}
@@ -120,7 +123,7 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
                 />
                 <NumericEditorComponent
                     title={"Положение по Y:"}
-                    value={current.allMessages?.textShadowYPosition ?? 0}
+                    value={allMessages?.textShadowYPosition ?? 0}
                     max={20}
                     min={-20}
                     width={"150px"}
@@ -136,10 +139,10 @@ export default function AllMessagesSettings({current, onChange, openColorPopup})
                 />
                 <Spacer/>
                 <SeekbarComponent
-                    title={`Радиус тени: ${current.allMessages?.textShadowRadius ?? 5}`}
+                    title={`Радиус тени: ${allMessages?.textShadowRadius ?? 5}`}
                     min="0"
                     max="20"
-                    value={current.allMessages?.textShadowRadius ?? 5}
+                    value={allMessages?.textShadowRadius ?? 5}
                     step="1"
                     width={"300px"}
                     onChange={e =>

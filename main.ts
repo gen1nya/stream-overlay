@@ -157,11 +157,43 @@ app.on('window-all-closed', () => {
 });
 
 function migrateTheme(theme: any) {
+  if (!theme) return theme;
+
+  // 1
   if (theme && theme.followMessage && !Array.isArray(theme.followMessage)) {
     theme.followMessage = [theme.followMessage];
   }
   if (theme && theme.redeemMessage && !Array.isArray(theme.redeemMessage)) {
     theme.redeemMessage = [theme.redeemMessage];
   }
+  // 2
+  const defaultTitleFont = {
+    family: 'Roboto',
+    url: 'https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf'
+  };
+
+  const defaultMessageFont = {
+    family: 'Roboto',
+    url: 'https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf',
+    color: '#ffffff',
+    alpha: '1'
+  };
+
+  if (!theme.chatMessage) theme.chatMessage = defaultTheme.chatMessage || {};
+  if (!theme.chatMessage.titleFont)   theme.chatMessage.titleFont   = { ...defaultTitleFont };
+  if (!theme.chatMessage.messageFont) theme.chatMessage.messageFont = { ...defaultMessageFont };
+
+  const ensureMessageFont = (msgs?: any[]) => {
+    if (!Array.isArray(msgs)) return;
+    for (const msg of msgs) {
+      if (msg && !msg.messageFont) {
+        msg.messageFont = { ...defaultMessageFont };
+      }
+    }
+  };
+
+  ensureMessageFont(theme.followMessage);
+  ensureMessageFont(theme.redeemMessage);
+
   return theme;
 }

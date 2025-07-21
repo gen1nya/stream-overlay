@@ -35,6 +35,7 @@ import TextRadioGroup from "../utils/TextRadioGroup";
 import RadioGroup from "../utils/TextRadioGroup";
 import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
 import FontSelector from "../utils/FontSelector";
+import {useTheme} from "../../hooks/useTheme";
 
 const Panel = styled.div`
     position: fixed;
@@ -94,7 +95,7 @@ export default function Settings() {
     const navigate = useNavigate();
 
     const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
-    const [selectedTheme, setSelectedTheme] = React.useState(defaultTheme);
+    const [selectedTheme, setSelectedTheme] = useTheme(defaultTheme);
     const [selectedThemeName, setSelectedThemeName] = React.useState("default");
     const [themeList, setThemeList] = React.useState({});
 
@@ -150,13 +151,14 @@ export default function Settings() {
 
     /** Единая «точка входа» для всех изменений темы */
     const apply = updaterOrTheme => {
-        const nextTheme =
-            typeof updaterOrTheme === 'function'
-                ? updaterOrTheme(selectedTheme) // превращаем updater-функцию в объект
-                : updaterOrTheme;
-        console.log("Применение темы:", nextTheme);
-        setSelectedTheme(nextTheme);
-        setRemoteTheme(nextTheme, selectedThemeName);
+        setSelectedTheme((prev) => {
+            const next =
+                typeof updaterOrTheme === 'function'
+                    ? updaterOrTheme(prev)
+                    : updaterOrTheme;
+            setRemoteTheme(next, selectedThemeName);
+            return next;
+        });
     };
 
     const handleBackButton = () => navigate(-1);
