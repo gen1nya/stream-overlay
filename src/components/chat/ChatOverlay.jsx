@@ -120,6 +120,15 @@ const ChatContainer = styled.div`
             `
                     : ''}
 
+    ${({ theme }) => {
+        switch (theme.overlay?.backgroundType ?? 'none') {
+            case 'color':
+                return `background-color: ${theme.overlay?.backgroundColor || 'transparent'};`;
+            default:
+                return 'background: transparent;';
+        }
+    }};
+
     &::-webkit-scrollbar {
         width: 0 !important;
         height: 0 !important;

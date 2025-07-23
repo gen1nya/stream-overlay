@@ -60,7 +60,6 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
         <SettingsBlockFull>
             <SettingsBlockTitle>Сообщения чатерсов</SettingsBlockTitle>
 
-            {/* Направление и шрифты */}
             <Row>
                 <RadioGroupComponent
                     width="150px"
@@ -90,7 +89,6 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
                 />
             </Row>
 
-            {/* Фон */}
             <SettingsBlockSubTitle>Фон</SettingsBlockSubTitle>
             <Row>
                 <RadioGroup
@@ -133,15 +131,12 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
             )}
 
             {backgroundMode === 'image' &&
-                <>
-                    <BackgroundImageEditorComponent
-                        message={chatMessage}
-                        onImageChanged={(image) => {
-                            updateNested('backgroundImages', image);
-                        }}
-                    />
-                </>
-
+                <BackgroundImageEditorComponent
+                    message={chatMessage}
+                    onImageChanged={(image) => {
+                        updateNested('backgroundImages', image);
+                    }}
+                />
             }
             {backgroundMode === 'gradient' && <div style={{ height: 120 }} />}
 
@@ -167,7 +162,6 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
                 />
             </Row>
 
-            {/* Паддинги/отступы */}
             <PaddingEditorComponent
                 message={chatMessage}
                 onVerticalPaddingChange={(v) => updateField('paddingV', v)}

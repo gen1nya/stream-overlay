@@ -1,3 +1,5 @@
+import { css } from 'styled-components';
+
 export function hexToRgba(hex, opacity) {
     const cleanHex = hex.replace('#', '');
     const bigint = parseInt(cleanHex, 16);
@@ -103,4 +105,41 @@ export function getMatrix3dFromRotation(xDeg, yDeg, perspective = 800) {
     ];
 
     return `matrix3d(${matrix.map(n => n.toFixed(10)).join(',')})`;
+}
+
+export function getLayeredBackgroundStyles(themeObject) {
+    if (!themeObject || themeObject.backgroundMode !== 'image') return '';
+
+    const { backgroundImages = {} } = themeObject;
+    const layers = [];
+    const positions = [];
+    const sizes = [];
+
+    if (backgroundImages.top) {
+        layers.push(`url(${backgroundImages.top})`);
+        positions.push('top center');
+        sizes.push('100% auto');
+    }
+    if (backgroundImages.bottom) {
+        layers.push(`url(${backgroundImages.bottom})`);
+        positions.push('bottom center');
+        sizes.push('100% auto');
+    }
+    if (backgroundImages.middle) {
+        const middleAlign = backgroundImages.middleAlign || 'center';
+        layers.push(`url(${backgroundImages.middle})`);
+        positions.push(`${middleAlign} center`);
+        sizes.push('100% auto');
+    }
+
+    if (!layers.length) return '';
+
+    return css`
+        background-image: ${layers.join(', ')};
+        background-position: ${positions.join(', ')};
+        background-size: ${sizes.join(', ')};
+        background-repeat: no-repeat;
+        background-origin: border-box;
+        background-clip: border-box;
+    `;
 }

@@ -1,39 +1,61 @@
-import React, {useState} from 'react';
+import React from 'react';
 import styled from 'styled-components';
-import {hexToRgba} from "../../utils";
-import {defaultTheme} from "../../theme";
+import {getLayeredBackgroundStyles, hexToRgba} from '../../utils';
 
 const MessageContainer = styled.div`
-    ${({theme, $index = 0}) => {
-        const rm = theme.redeemMessage[$index];
-        const am = theme.allMessages;
+    position: relative;
+    display: flex;
+    width: auto;
 
-        return `
-            padding: ${rm.paddingV}px ${rm.paddingH}px;
-            display: flex;
-            width: auto;
-            margin: ${rm.marginV}px ${rm.marginH}px;
-            border-radius: ${rm.borderRadius}px;
-            align-items: flex-start;
-            flex-direction: ${rm.direction};
-            border: 1px solid ${hexToRgba(rm.borderColor, rm.borderOpacity)};
-            background: ${hexToRgba(rm.backgroundColor, rm.backgroundOpacity)};
-            box-shadow: 0 0 ${rm.shadowRadius}px ${hexToRgba(rm.shadowColor, rm.shadowOpacity)};
-            font-size: ${rm.fontSize}px;
-            color: ${am?.textColor ?? '#fff'};
-            text-shadow: ${
-                    am
-                            ? `${am.textShadowXPosition}px ${am.textShadowYPosition}px ${am.textShadowRadius}px ${hexToRgba(am.textShadowColor, am.textShadowOpacity)}`
-                            : 'none'
-            };
-            backdrop-filter: ${
-                    am?.blurRadius && am.blurRadius > 0
-                            ? `blur(${am.blurRadius}px)`
-                            : 'none'
-            };
-            font-family: ${rm.messageFont.family};
-        `;
-    }}
+    margin: ${({theme, $index = 0}) => {
+        const rm = theme.redeemMessage[$index];
+        return `${rm.marginV}px ${rm.marginH}px`;
+    }};
+
+    border-radius: ${({theme, $index = 0}) => theme.redeemMessage[$index].borderRadius}px;
+
+    border: 1px solid ${({theme, $index = 0}) => {
+        const rm = theme.redeemMessage[$index];
+        return hexToRgba(rm.borderColor, rm.borderOpacity);
+    }};
+
+    background-color: ${({theme, $index = 0}) => {
+        const rm = theme.redeemMessage[$index];
+        return hexToRgba(rm.backgroundColor, rm.backgroundOpacity);
+    }};
+
+    ${({theme, $index = 0}) => getLayeredBackgroundStyles(theme.redeemMessage[$index])}
+
+    box-shadow: ${({theme, $index = 0}) => {
+        const rm = theme.redeemMessage[$index];
+        return `0 0 ${rm.shadowRadius}px ${hexToRgba(rm.shadowColor, rm.shadowOpacity)}`;
+    }};
+
+    backdrop-filter: ${({theme}) => {
+        const am = theme.allMessages;
+        return am?.blurRadius > 0 ? `blur(${am.blurRadius}px)` : 'none';
+    }};
+`;
+
+const Content = styled.div`
+    display: flex;
+    flex-direction: ${({theme, $index = 0}) => theme.redeemMessage[$index].direction};
+    align-items: flex-start;
+
+    padding: ${({theme, $index = 0}) => {
+        const rm = theme.redeemMessage[$index];
+        return `${rm.paddingV}px ${rm.paddingH}px`;
+    }};
+
+    font-size: ${({theme, $index = 0}) => theme.redeemMessage[$index].fontSize}px;
+    font-family: ${({theme, $index = 0}) => theme.redeemMessage[$index].messageFont.family};
+    color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
+
+    text-shadow: ${({theme}) => {
+        const am = theme.allMessages;
+        if (!am) return 'none';
+        return `${am.textShadowXPosition}px ${am.textShadowYPosition}px ${am.textShadowRadius}px ${hexToRgba(am.textShadowColor, am.textShadowOpacity)}`;
+    }};
 `;
 
 export default function ChatRedemption({
@@ -41,7 +63,6 @@ export default function ChatRedemption({
                                            currentTheme,
                                            index = 0
                                        }) {
-
     function applyTemplate(template, data) {
         try {
             return template.replace(/\{(\w+)}/g, (_, key) => {
@@ -64,7 +85,9 @@ export default function ChatRedemption({
 
     return (
         <MessageContainer $index={_index}>
-            {rendered}
+            <Content $index={_index}>
+                {rendered}
+            </Content>
         </MessageContainer>
     );
 }

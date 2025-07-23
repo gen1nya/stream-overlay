@@ -156,7 +156,7 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
 
             {overlay?.backgroundType === "color" && (
                 <ColorSelectorButton
-                    title={"Цвет текста:"}
+                    title={"Цвет Фона:"}
                     hex={overlay?.backgroundColor ?? "#000000"}
                     alpha={1}
                     openColorPopup={openColorPopup}

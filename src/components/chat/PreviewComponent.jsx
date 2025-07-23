@@ -62,6 +62,15 @@ const MessagePreviewContainer = styled.div`
         width: 0 !important;
         height: 0 !important;
     }
+
+    ${({ theme }) => {
+        switch (theme.overlay?.backgroundType ?? 'none') {
+            case 'color':
+                return `background-color: ${theme.overlay?.backgroundColor || 'transparent'};`;
+            default:
+                return 'background: transparent;';
+        }
+    }};
 `;
 
 const ConnectionLost = styled.div`

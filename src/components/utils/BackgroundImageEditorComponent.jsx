@@ -25,7 +25,7 @@ export default function BackgroundImageEditorComponent({
                 onConfirm={(data) => {
                     const imageUrl = data.value;
                     onImageChanged({ top: imageUrl });
-                    resolve(true);
+                    return Promise.resolve(true);
                 }}
                 onSuccess={value => {
                     console.log("Image confirmed:", value);
@@ -60,7 +60,7 @@ export default function BackgroundImageEditorComponent({
                 onConfirm={(data) => {
                     const imageUrl = data.value;
                     onImageChanged({ middle: imageUrl });
-                    resolve(true);
+                    return Promise.resolve(true);
                 }}
                 onSuccess={value => {
                     console.log("Image confirmed:", value);
@@ -79,7 +79,7 @@ export default function BackgroundImageEditorComponent({
                 onConfirm={(data) => {
                     const imageUrl = data.value;
                     onImageChanged({ bottom: imageUrl });
-                    resolve(true);
+                    return Promise.resolve(true);
                 }}
                 onSuccess={value => {
                     console.log("Image confirmed:", value);

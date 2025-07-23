@@ -1,18 +1,28 @@
-import React, {useState} from 'react';
-import SeekbarComponent from "../../utils/SeekbarComponent";
-import {Row} from "../SettingsComponent";
-import {Spacer} from "../../utils/Separator";
-import {TemplateEditor} from "../../utils/TemplateEditor";
+import React, { useState, useCallback } from 'react';
+import SeekbarComponent from '../../utils/SeekbarComponent';
+import { Row } from '../SettingsComponent';
+import { Spacer } from '../../utils/Separator';
+import { TemplateEditor } from '../../utils/TemplateEditor';
 import {
     CollapsedPreview,
     RemoveButton,
     SettingsBlockFull,
     SettingsBlockTitle,
     TitleRow,
-    Triangle
-} from "./SettingBloks";
-import ColorSelectorButton from "./ColorSelectorButton";
-import {FiTrash2} from "react-icons/fi";
+    Triangle,
+} from './SettingBloks';
+import ColorSelectorButton from './ColorSelectorButton';
+import RadioGroup from '../../utils/TextRadioGroup';
+import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorComponent';
+import { FiTrash2 } from 'react-icons/fi';
+import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
+import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
+
+const BACKGROUND_MODE_ITEMS = [
+    { key: 'color', text: 'цвет' },
+    { key: 'image', text: 'картинки' },
+    { key: 'gradient', text: 'градиент' },
+];
 
 export default function RedeemPointsBlock({
                                               current,
@@ -22,24 +32,46 @@ export default function RedeemPointsBlock({
                                               onRemove,
                                               disableRemove = false,
                                           }) {
-
     const [isOpen, setIsOpen] = useState(false);
-    const message = current.redeemMessage?.[index];
+    const message = current.redeemMessage?.[index] ?? {};
 
-    const handleChange =  (updater) => {
-        onChange((prev) => {
-            const updatedMessage =
-                typeof updater === 'function' ? updater(prev.redeemMessage[index]) : updater;
+    const updateRedeemMessage = useCallback(
+        (updater) =>
+            onChange((prev) => {
+                const updatedMsg =
+                    typeof updater === 'function'
+                        ? updater(prev.redeemMessage[index])
+                        : { ...prev.redeemMessage[index], ...updater };
 
-            const updatedArray = [...prev.redeemMessage];
-            updatedArray[index] = updatedMessage;
+                const updatedArray = [...prev.redeemMessage];
+                updatedArray[index] = updatedMsg;
 
-            return {
-                ...prev,
-                redeemMessage: updatedArray,
-            };
-        });
-    };
+                return {
+                    ...prev,
+                    redeemMessage: updatedArray,
+                };
+            }),
+        [index, onChange],
+    );
+
+    const updateField = (key, val) =>
+        updateRedeemMessage((msg) => ({ ...msg, [key]: val }));
+    const updateNested = (key, part) =>
+        updateRedeemMessage((msg) => ({
+            ...msg,
+            [key]: { ...msg[key], ...part },
+        }));
+
+    const {
+        template = '🎉 {userName} потратил {cost} баллов на {title}',
+        fontSize = 16,
+        messageFont = { family: 'Roboto' },
+        backgroundMode = 'color',
+        borderRadius = 0,
+        shadowColor = '#3e837c',
+        shadowOpacity = 1,
+        shadowRadius = 0,
+    } = message;
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
@@ -48,204 +80,122 @@ export default function RedeemPointsBlock({
             <SettingsBlockTitle as="div">
                 <TitleRow onClick={toggleOpen}>
                     <span>Трата баллов вариант #{index + 1}</span>
-                    <Triangle>{isOpen ? "▲" : "▼"}</Triangle>
+                    <Triangle>{isOpen ? '▲' : '▼'}</Triangle>
                 </TitleRow>
             </SettingsBlockTitle>
 
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    {message?.template ?? "🎉 {userName} just followed!"}
-                </CollapsedPreview>
-            )}
+            {!isOpen && <CollapsedPreview onClick={toggleOpen}>{template}</CollapsedPreview>}
 
             {isOpen && (
                 <>
-                    <Row align={"flex-start"} gap="0.5rem">
+                    <Row align="flex-start" gap="0.5rem">
                         <TemplateEditor
-                            hint={"Доступные плейсхолдеры: {userName}, {cost}, {title}"}
+                            hint="Доступные плейсхолдеры: {userName}, {cost}, {title}"
                             label="Шаблон для баллов канала"
-                            value={message?.template ?? "🎉 {userName} потратил {cost} баллов на {title}"}
-                            onChange={(newValue) =>
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    template: newValue,
-                                }))
+                            value={template}
+                            onChange={(val) => updateField('template', val)}
+                            fontSize={`${fontSize}px`}
+                            onFontSizeChange={(v) => updateField('fontSize', v)}
+                            currentFontFamily={messageFont.family}
+                            onFontSelected={({ family, files }) =>
+                                updateNested('messageFont', {
+                                    family,
+                                    url: files.regular || Object.values(files)[0],
+                                })
                             }
-                            fontSize={`${message?.fontSize ?? 16}px`}
-                            onFontSizeChange={(newSize) =>
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    fontSize: newSize,
-                                }))
-                            }
-                            currentFontFamily={message?.messageFont.family ?? 'Roboto'}
-                            onFontSelected={(font) =>
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    messageFont: {
-                                        ...prev.messageFont,
-                                        family: font.family,
-                                        url: font.files.regular || Object.values(font.files)[0]
-                                    },
-                                }))
-                            }
-                            placeholders={["userName", "cost", "title"]}
+                            placeholders={['userName', 'cost', 'title']}
                         />
                     </Row>
 
                     <Row>
-                        <ColorSelectorButton
-                            title={"Цвет фона:"}
-                            hex={message?.backgroundColor ?? "#3e837c"}
-                            alpha={message?.backgroundOpacity ?? 1.0}
-                            openColorPopup={openColorPopup}
-                            onColorChange={(e) => {
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    backgroundOpacity: e.alpha,
-                                    backgroundColor: e.color,
-                                }))
-                            }}
+                        <RadioGroup
+                            defaultSelected={backgroundMode}
+                            items={BACKGROUND_MODE_ITEMS}
+                            direction="horizontal"
+                            itemWidth="120px"
+                            onChange={(v) => updateField('backgroundMode', v)}
                         />
-                    </Row>
-                    <Row>
-                        <ColorSelectorButton
-                            title={"Цвет обводки:"}
-                            hex={message?.borderColor ?? "#3e837c"}
-                            alpha={message?.borderOpacity ?? 1.0}
-                            openColorPopup={openColorPopup}
-                            onColorChange={(e) => {
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    borderOpacity: e.alpha,
-                                    borderColor: e.color,
-                                }))
-                            }}
-                        />
-                        <Spacer/>
+                        <Spacer />
                         <SeekbarComponent
-                            title={`Радиус скругления (${message?.borderRadius ?? 0}):`}
+                            title={`Радиус скругления (${borderRadius}):`}
                             min="0"
                             max="20"
-                            value={message?.borderRadius ?? 0}
                             step="1"
-                            width={"150px"}
-                            onChange={(e) =>
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    borderRadius: e,
-                                }))
-                            }
+                            width="150px"
+                            value={borderRadius}
+                            onChange={(v) => updateField('borderRadius', v)}
                         />
                     </Row>
-                    <Row>
-                        <ColorSelectorButton
-                            title={"Цвет тени:"}
-                            hex={message?.shadowColor ?? "#3e837c"}
-                            alpha={message?.shadowOpacity ?? 1.0}
-                            openColorPopup={openColorPopup}
-                            onColorChange={(e) => {
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    shadowOpacity: e.alpha,
-                                    shadowColor: e.color,
-                                }))
-                            }}
-                        />
-                        <Spacer/>
-                        <SeekbarComponent
-                            title={`Радиус тени (${message?.shadowRadius ?? 0}):`}
-                            min="0"
-                            max="20"
-                            value={message?.shadowRadius ?? 0}
-                            step="1"
-                            width={"150px"}
-                            onChange={(e) =>
-                                handleChange((prev) => ({
-                                    ...prev,
-                                    shadowRadius: e,
-                                }))
-                            }
-                        />
-                    </Row>
-                    <div>
-                        <span>Отступы снаружи:</span>
-                        <Row align="center" gap="0.5rem">
-                            <SeekbarComponent
-                                title={`По горизонтали (${message?.marginH ?? 0}):`}
-                                min="0"
-                                max="100"
-                                value={message?.marginH ?? 0}
-                                step="1"
-                                width={"150px"}
-                                onChange={(e) =>
-                                    handleChange((prev) => ({
-                                        ...prev,
-                                        marginH: e,
-                                    }))
-                                }
-                            />
-                            <SeekbarComponent
-                                title={`По вертикали (${message?.marginV ?? 0}):`}
-                                min="0"
-                                max="50"
-                                value={message?.marginV ?? 0}
-                                step="1"
-                                width={"150px"}
-                                onChange={(e) =>
-                                    handleChange((prev) => ({
-                                        ...prev,
-                                        marginV: e,
-                                    }))
-                                }
-                            />
-                        </Row>
-                    </div>
 
-                    <div>
-                        <span>Отступы внутри:</span>
-                        <Row align="center" gap="0.5rem">
-                            <SeekbarComponent
-                                title={`По горизонтали (${message?.paddingH ?? 0}):`}
-                                min="0"
-                                max="100"
-                                value={message?.paddingH ?? 0}
-                                step="1"
-                                width={"150px"}
-                                onChange={(e) =>
-                                    handleChange((prev) => ({
-                                        ...prev,
-                                        paddingH: e,
-                                    }))
-                                }
-                            />
-                            <SeekbarComponent
-                                title={`По вертикали (${message?.paddingV ?? 0}):`}
-                                min="0"
-                                max="50"
-                                value={message?.paddingV ?? 0}
-                                step="1"
-                                width={"150px"}
-                                onChange={(e) =>
-                                    handleChange((prev) => ({
-                                        ...prev,
-                                        paddingV: e,
-                                    }))
-                                }
-                            />
-                            <Spacer/>
-                            <RemoveButton
-                                onClick={() => onRemove?.(index)}
-                                disabled={disableRemove}
-                                title={disableRemove ? "Нельзя удалить последний элемент" : "Удалить"}
-                            >
-                                <FiTrash2 size={24}></FiTrash2>
-                            </RemoveButton>
-                        </Row>
-                    </div>
+                    {backgroundMode === 'color' && (
+                        <BackgroundColorEditorComponent
+                            message={message}
+                            onBackgroundColorChange={({ color, alpha }) =>
+                                updateRedeemMessage({
+                                    backgroundColor: color,
+                                    backgroundOpacity: alpha,
+                                })
+                            }
+                            onBorderColorChange={({ color, alpha }) =>
+                                updateRedeemMessage({ borderColor: color, borderOpacity: alpha })
+                            }
+                            openColorPopup={openColorPopup}
+                        />
+                    )}
+
+                    {backgroundMode === 'image' &&
+                        <BackgroundImageEditorComponent
+                            message={message}
+                            onImageChanged={(image) => {
+                                updateNested('backgroundImages', image);
+                            }}
+                        />
+                    }
+                    {backgroundMode === 'gradient' && <div style={{ height: 120 }} />}
+
+                    {/* Тень */}
+                    <Row>
+                        <ColorSelectorButton
+                            title="Цвет тени:"
+                            hex={shadowColor}
+                            alpha={shadowOpacity}
+                            openColorPopup={openColorPopup}
+                            onColorChange={({ color, alpha }) =>
+                                updateRedeemMessage({ shadowColor: color, shadowOpacity: alpha })
+                            }
+                        />
+                        <Spacer />
+                        <SeekbarComponent
+                            title={`Радиус тени (${shadowRadius}):`}
+                            min="0"
+                            max="20"
+                            step="1"
+                            width="150px"
+                            value={shadowRadius}
+                            onChange={(v) => updateField('shadowRadius', v)}
+                        />
+                    </Row>
+
+                    <PaddingEditorComponent
+                        message={message}
+                        onVerticalPaddingChange={(v) => updateField('paddingV', v)}
+                        onHorizontalPaddingChange={(v) => updateField('paddingH', v)}
+                        onVerticalMarginChange={(v) => updateField('marginV', v)}
+                        onHorizontalMarginChange={(v) => updateField('marginH', v)}
+                    />
+
+                    <Row>
+                        <Spacer />
+                        <RemoveButton
+                            onClick={() => onRemove?.(index)}
+                            disabled={disableRemove}
+                            title={disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить'}
+                        >
+                            <FiTrash2 size={24} />
+                        </RemoveButton>
+                    </Row>
                 </>
             )}
-
         </SettingsBlockFull>
-    )
+    );
 }

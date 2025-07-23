@@ -1,5 +1,5 @@
 import React from 'react';
-import {hexToRgba} from "../../utils.js";
+import {getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
 import styled, { css } from 'styled-components';
 
 const MessageContainer = styled.div`
@@ -19,44 +19,7 @@ const MessageContainer = styled.div`
     background-color: ${({ theme }) =>
             hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity)};
 
-    ${({ theme }) => {
-        if (theme.chatMessage.backgroundMode !== 'image') return '';
-
-        const { backgroundImages = {} } = theme.chatMessage;
-
-        /** порядок слоёв: top (сверху) → bottom (снизу) → middle (в основании) */
-        const layers = [];
-        const positions = [];
-        const sizes = [];
-
-        if (backgroundImages.top) {
-            layers.push(`url(${backgroundImages.top})`);
-            positions.push('top center');
-            sizes.push('100% auto');
-        }
-        if (backgroundImages.bottom) {
-            layers.push(`url(${backgroundImages.bottom})`);
-            positions.push('bottom center');
-            sizes.push('100% auto');
-        }
-        if (backgroundImages.middle) {
-            const middleAlign = backgroundImages.middleAlign || 'center';
-            layers.push(`url(${backgroundImages.middle})`);
-            positions.push(`${middleAlign} center`);
-            sizes.push('100% auto');
-        }
-        
-        if (!layers.length) return '';
-
-        return css`
-          background-image: ${layers.join(', ')};
-          background-position: ${positions.join(', ')};
-          background-size: ${sizes.join(', ')};
-          background-repeat: no-repeat;
-          background-origin: border-box;
-          background-clip: border-box;
-        `;
-    }}
+    ${({ theme }) => getLayeredBackgroundStyles(theme.chatMessage)}
 
     box-shadow: ${({ theme }) => {
         const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
