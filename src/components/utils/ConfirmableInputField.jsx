@@ -2,7 +2,7 @@ import React, {useState, useRef, useEffect} from 'react';
 import styled from 'styled-components';
 import {Row} from "../app/SettingsComponent";
 
-import {AiFillFolderOpen, AiOutlinePaperClip} from "react-icons/ai";
+import {AiFillFolderOpen, AiOutlineCloseCircle, AiOutlinePaperClip} from "react-icons/ai";
 import {getImageUrl, saveImageBuffer} from "../../services/api";
 
 const InputContainer = styled.div`
@@ -18,7 +18,7 @@ const InputWrapper = styled.div`
 
 const InputField = styled.input`
     width: 100%;
-    padding: 8px 40px 8px 8px;
+    padding: 8px 66px 8px 8px;
     border: 1px solid ${({ isValid }) => (isValid ? '#ccc' : 'red')};
     border-radius: 4px;
     box-sizing: border-box;
@@ -60,7 +60,7 @@ const AttachIcon = styled.label`
     cursor: pointer;
 
     &:hover {
-        color: #444;
+        color: #8553f2;
     }
 
     svg {
@@ -68,65 +68,92 @@ const AttachIcon = styled.label`
     }
 `;
 
-export default function ConfirmableInputField({ onConfirm, onSuccess, onError, placeholder, initialValue = '' }) {
+const ClearIcon = styled.label`
+    position: absolute;
+    right: 38px;
+    top: 58%;
+    transform: translateY(-50%);
+    color: #311e64;
+    cursor: pointer;
+
+    &:hover {
+        color: #ca2525;
+    }
+
+    svg {
+        font-size: 1.2rem;
+    }
+`;
+
+function isFilePath(str) {
+    if (/^[a-zA-Z]+:\/\//.test(str)) return false;
+    if (/^\s*$/.test(str)) return false;
+    const fileName = str.split('/').pop();
+    return /\.[a-zA-Z0-9]+$/.test(fileName) && !/\s/.test(str);
+}
+
+function isFileUrl(str) {
+    try {
+        const url = new URL(str);
+        if (url.protocol !== 'https:') return false;
+        const fileName = url.pathname.split('/').pop();
+        return /\.[a-zA-Z0-9]+$/.test(fileName);
+    } catch {
+        return false;
+    }
+}
+
+function validateInput(value) {
+    return isFilePath(value) || isFileUrl(value);
+}
+
+export default function ConfirmableInputField({
+                                                  onConfirm,
+                                                  onSuccess,
+                                                  onError,
+                                                  placeholder,
+                                                  initialValue = '',
+                                                  onClear = () => {},
+                                              }) {
     const [inputValue, setInputValue] = useState(initialValue);
     const [isValid, setIsValid] = useState(true);
     const [confirmed, setConfirmed] = useState(false);
     const fileInputRef = useRef(null);
 
-    const validateUrl = (url) => {
-        try {
-            new URL(url);
-            return true;
-        } catch {
-            return false;
-        }
-    };
-
-    function isFilePath(str) {
-        if (/^[a-zA-Z]+:\/\//.test(str)) return false;
-        if (/^\s*$/.test(str)) return false;
-
-        const fileName = str.split('/').pop();
-        if (!/\.[a-zA-Z0-9]+$/.test(fileName)) return false;
-
-        if (/\s/.test(str)) return false;
-
-        return true;
-    }
-
     useEffect(() => {
-        const valid = isFilePath(initialValue);
-        if (valid) {
-            setIsValid(true);
-            setConfirmed(true);
-        } else {
-            setIsValid(false);
-            setConfirmed(false);
-        }
+        const valid = validateInput(initialValue);
+        setInputValue(initialValue);
+        setIsValid(valid);
+        setConfirmed(valid);
     }, [initialValue]);
 
     const handleConfirm = () => {
         const value = inputValue;
-        if (validateUrl(value)) {
-            setIsValid(true);
-            setConfirmed(true);
-            Promise.resolve(onConfirm({ type: 'url', value })).then(success => {
-                if (success) {
-                    setConfirmed(true);
-                    console.log('Confirmed URL:', value);
-                    onSuccess({ type: 'url', value });
-                } else {
-                    setConfirmed(false);
-                    console.error('Confirmation failed for URL:', value);
-                    onError('Confirmation failed');
-                }
-            });
-        } else {
+        const valid = validateInput(value);
+        if (!valid) {
             setIsValid(false);
-            console.error('Invalid URL format:', value);
-            onError('Invalid URL format');
+            setConfirmed(false);
+            onError('Invalid input format');
+            return;
         }
+
+        setIsValid(true);
+        setConfirmed(true);
+
+        const result = {
+            type: 'url',
+            value,
+        };
+
+        Promise.resolve(onConfirm(result)).then(success => {
+            if (success) {
+                setConfirmed(true);
+                onSuccess(result);
+            } else {
+                setConfirmed(false);
+                onError('Confirmation failed');
+            }
+        });
     };
 
     const handleFileChange = async (e) => {
@@ -139,9 +166,7 @@ export default function ConfirmableInputField({ onConfirm, onSuccess, onError, p
             reader.onload = async () => {
                 const arrayBuffer = reader.result;
                 const storedFilePath = await saveImageBuffer(file.name, arrayBuffer);
-                console.log('Saved file to:', storedFilePath);
                 const storedFileUrl = await getImageUrl(file.name);
-                console.log('stored file URL:', storedFileUrl);
                 const img = new Image();
                 img.src = storedFileUrl;
 
@@ -186,27 +211,35 @@ export default function ConfirmableInputField({ onConfirm, onSuccess, onError, p
     return (
         <InputContainer>
             <Row>
-            <InputWrapper>
-                <InputField
-                    value={inputValue}
-                    onChange={(e) => setInputValue(e.target.value)}
-                    isValid={isValid}
-                    placeholder={placeholder}
-                />
-                <AttachIcon htmlFor="file-input">
-                    <AiFillFolderOpen size={24} />
-                </AttachIcon>
-                <FileInput
-                    id="file-input"
-                    type="file"
-                    accept="image/*"
-                    onChange={handleFileChange}
-                    ref={fileInputRef}
-                />
-            </InputWrapper>
-            <ConfirmButton confirmed={confirmed} onClick={handleConfirm}>
-                {confirmed ? 'Confirmed' : 'Confirm'}
-            </ConfirmButton>
+                <InputWrapper>
+                    <InputField
+                        value={inputValue}
+                        onChange={(e) => setInputValue(e.target.value)}
+                        isValid={isValid}
+                        placeholder={placeholder}
+                    />
+                    <AttachIcon htmlFor="file-input">
+                        <AiFillFolderOpen size={24} />
+                    </AttachIcon>
+                    <ClearIcon onClick={() => {
+                        setInputValue('');
+                        setIsValid(true);
+                        setConfirmed(false);
+                        onClear();
+                    }}>
+                        <AiOutlineCloseCircle size={24} />
+                    </ClearIcon>
+                    <FileInput
+                        id="file-input"
+                        type="file"
+                        accept="image/*"
+                        onChange={handleFileChange}
+                        ref={fileInputRef}
+                    />
+                </InputWrapper>
+                <ConfirmButton confirmed={confirmed} onClick={handleConfirm}>
+                    {confirmed ? 'Confirmed' : 'Confirm'}
+                </ConfirmButton>
             </Row>
         </InputContainer>
     );

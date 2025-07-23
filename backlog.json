@@ -1,58 +1,6 @@
 {
   "tasks": [
     {
-      "type": "bug",
-      "status": "done",
-      "title": "сделать ебаный реконнект при потере соединения с сервером twitch"
-    },
-    {
-      "type": "task",
-      "status": "done",
-      "title": "сделать еюаную подгрузку информации о канале"
-    },
-    {
-      "type": "task",
-      "status": "done",
-      "title": "Стили для сообщений follow и subscribe"
-    },
-    {
-      "type": "task",
-      "status": "done",
-      "title": "Добавить eventSub в менеджер кеша"
-    },
-    {
-      "priority": "high",
-      "type": "task",
-      "status": "done",
-      "title": "менеджер кеша для сообщений в чате"
-    },
-    {
-      "type": "task",
-      "status": "done",
-      "title": "FFT для плеера"
-    },
-    {
-      "type": "task",
-      "status": "todo",
-      "title": "сделать стили для сообщений в чате"
-    },
-    {
-      "type": "task",
-      "status": "todo",
-      "title": "сделать стили для сообщений в чате (появление, исчезновение)"
-    },
-    {
-      "type": "bug",
-      "status": "todo",
-      "title": "Селектор цвета открывает при клике на бекграунд"
-    },
-    {
-      "priority": "medium",
-      "type": "task",
-      "status": "done",
-      "title": "7тв и беттертв эмоджи"
-    },
-    {
       "priority": "high",
       "type": "epic",
       "status": "todo",

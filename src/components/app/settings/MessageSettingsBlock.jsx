@@ -1,275 +1,180 @@
-import React from 'react';
-import NumericEditorComponent from "../../utils/NumericEditorComponent";
-import SeekbarComponent from "../../utils/SeekbarComponent";
-import RadioGroupComponent from "../../utils/RadioGroupComponent";
-import {Row} from "../SettingsComponent";
-import {SettingsBlockFull, SettingsBlockTitle} from "./SettingBloks";
-import ColorSelectorButton from "./ColorSelectorButton";
-import {Spacer} from "../../utils/Separator";
-import FontAndSizeEditor from "../../utils/FontAndSizeEditor";
+import React, { useCallback } from 'react';
+import SeekbarComponent from '../../utils/SeekbarComponent';
+import RadioGroupComponent from '../../utils/RadioGroupComponent';
+import { Row } from '../SettingsComponent';
+import {
+    SettingsBlockFull,
+    SettingsBlockSubTitle,
+    SettingsBlockTitle,
+} from './SettingBloks';
+import ColorSelectorButton from './ColorSelectorButton';
+import { Spacer } from '../../utils/Separator';
+import FontAndSizeEditor from '../../utils/FontAndSizeEditor';
+import RadioGroup from '../../utils/TextRadioGroup';
+import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorComponent';
+import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
+import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 
-export default function MessageSettingsBlock({current, onChange, openColorPopup}) {
+const MESSAGE_DIRECTION_OPTIONS = [
+    { value: 'row', label: 'слева' },
+    { value: 'column', label: 'сверху' },
+];
 
-    const handleChange = updaterOrTheme => {
-        onChange(updaterOrTheme)
-    }
+export default function MessageSettingsBlock({ current: { chatMessage }, onChange, openColorPopup }) {
+    /** Универсальный апдейтер настроек сообщения */
+    const updateChatMessage = useCallback(
+        (updater) =>
+            onChange((prev) => ({
+                ...prev,
+                chatMessage:
+                    typeof updater === 'function'
+                        ? updater(prev.chatMessage)
+                        : { ...prev.chatMessage, ...updater },
+            })),
+        [onChange],
+    );
 
-    const { chatMessage } = current;
-    console.log("chatMessage", JSON.stringify(chatMessage, null, 2));
+    /* Сахарные обёртки */
+    const updateField = (key, val) =>
+        updateChatMessage((msg) => ({ ...msg, [key]: val }));
+    const updateNested = (key, part) =>
+        updateChatMessage((msg) => ({
+            ...msg,
+            [key]: { ...msg[key], ...part },
+        }));
+
+    const {
+        direction = 'row',
+        fontSize,
+        messageFont,
+        titleFontSize,
+        titleFont,
+        backgroundMode = 'color',
+        borderRadius = 0,
+        shadowColor = '#000000',
+        shadowOpacity = 1,
+        shadowRadius = 0,
+    } = chatMessage;
 
     return (
         <SettingsBlockFull>
             <SettingsBlockTitle>Сообщения чатерсов</SettingsBlockTitle>
 
+            {/* Направление и шрифты */}
             <Row>
                 <RadioGroupComponent
-                    width={"150px"}
+                    width="150px"
                     title="Заголовок:"
-                    options={[
-                        {value: "row", label: "слева"},
-                        {value: "column", label: "сверху"},
+                    options={MESSAGE_DIRECTION_OPTIONS}
+                    selected={direction}
+                    onChange={(v) => updateField('direction', v)}
+                />
+                <Spacer />
+                <FontAndSizeEditor
+                    title="Шрифт сообщений:"
+                    fontSize={fontSize}
+                    fontFamily={messageFont.family}
+                    onFontChange={({ family, url }) =>
+                        updateNested('messageFont', { family, url })
+                    }
+                    onFontSizeChange={(v) => updateField('fontSize', v)}
+                />
+                <FontAndSizeEditor
+                    title="Шрифт заголовка:"
+                    fontSize={titleFontSize}
+                    fontFamily={titleFont.family}
+                    onFontChange={({ family, url }) =>
+                        updateNested('titleFont', { family, url })
+                    }
+                    onFontSizeChange={(v) => updateField('titleFontSize', v)}
+                />
+            </Row>
+
+            {/* Фон */}
+            <SettingsBlockSubTitle>Фон</SettingsBlockSubTitle>
+            <Row>
+                <RadioGroup
+                    defaultSelected={backgroundMode}
+                    items={[
+                        { key: 'color', text: 'цвет' },
+                        { key: 'image', text: 'картинки' },
+                        { key: 'gradient', text: 'градиент' },
                     ]}
-                    selected={chatMessage.direction}
-                    onChange={value =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                direction: value,
-                            },
-                        }))
-                    }
+                    direction="horizontal"
+                    itemWidth="120px"
+                    onChange={(v) => updateField('backgroundMode', v)}
                 />
-                <Spacer/>
-                <FontAndSizeEditor
-                    title={"Шрифт сообщений:"}
-                    fontSize={chatMessage.fontSize}
-                    fontFamily={chatMessage.messageFont.family}
-                    onFontChange={(newFont) =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                messageFont: {
-                                    ...prev.chatMessage.messageFont,
-                                    family: newFont.family,
-                                    url: newFont.url,
-                                },
-                            },
-                        }))}
-                    onFontSizeChange={value =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                fontSize: value,
-                            },
-                        }))}
-                />
-
-                <FontAndSizeEditor
-                    title={"Шрифт заголовка:"}
-                    fontSize={chatMessage.titleFontSize}
-                    fontFamily={chatMessage.titleFont.family}
-                    onFontChange={(newFont) => handleChange(prev => ({
-                        ...prev,
-                        chatMessage: {
-                            ...prev.chatMessage,
-                            titleFont: {
-                                ...prev.chatMessage.titleFont,
-                                family: newFont.family,
-                                url: newFont.url,
-                            },
-                        },
-                    }))}
-                    onFontSizeChange={value => {
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                titleFontSize: value,
-                            },
-                        }));
-                    }}
-                />
-            </Row>
-
-            <Row>
-                <ColorSelectorButton
-                    title={"Цвет фона:"}
-                    hex={chatMessage?.backgroundColor ?? "#000000"}
-                    alpha={chatMessage?.backgroundOpacity ?? 1}
-                    openColorPopup={openColorPopup}
-                    onColorChange={(e) => {
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                backgroundColor: e.color,
-                                backgroundOpacity: e.alpha,
-                            },
-                        }));
-                    }}
-                />
-                <Spacer/>
-            </Row>
-
-            <Row>
-                <ColorSelectorButton
-                    title={"Цвет обводки:"}
-                    hex={chatMessage?.borderColor ?? "#000000"}
-                    alpha={chatMessage?.borderOpacity ?? 1}
-                    openColorPopup={openColorPopup}
-                    onColorChange={(e) => {
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                borderColor: e.color,
-                                borderOpacity: e.alpha,
-                            },
-                        }));
-                    }}
-                />
-                <Spacer/>
+                <Spacer />
                 <SeekbarComponent
-                    title={`Радиус скругления (${chatMessage.borderRadius ?? 0}):`}
+                    title={`Радиус скругления (${borderRadius}):`}
                     min="0"
                     max="20"
-                    value={chatMessage.borderRadius ?? 0}
                     step="1"
-                    width={"320px"}
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                borderRadius: e,
-                            },
-                        }))
-                    }
+                    width="260px"
+                    value={borderRadius}
+                    onChange={(v) => updateField('borderRadius', v)}
                 />
             </Row>
+
+            {backgroundMode === 'color' && (
+                <BackgroundColorEditorComponent
+                    message={chatMessage}
+                    onBackgroundColorChange={({ color, alpha }) =>
+                        updateChatMessage({
+                            backgroundColor: color,
+                            backgroundOpacity: alpha,
+                        })
+                    }
+                    onBorderColorChange={({ color, alpha }) =>
+                        updateChatMessage({ borderColor: color, borderOpacity: alpha })
+                    }
+                    openColorPopup={openColorPopup}
+                />
+            )}
+
+            {backgroundMode === 'image' &&
+                <>
+                    <BackgroundImageEditorComponent
+                        message={chatMessage}
+                        onImageChanged={(image) => {
+                            updateNested('backgroundImages', image);
+                        }}
+                    />
+                </>
+
+            }
+            {backgroundMode === 'gradient' && <div style={{ height: 120 }} />}
 
             <Row>
                 <ColorSelectorButton
-                    title={"Цвет тени:"}
-                    hex={chatMessage?.shadowColor ?? "#000000"}
-                    alpha={chatMessage?.shadowOpacity ?? 1}
+                    title="Цвет тени:"
+                    hex={shadowColor}
+                    alpha={shadowOpacity}
                     openColorPopup={openColorPopup}
-                    onColorChange={(e) => {
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                shadowColor: e.color,
-                                shadowOpacity: e.alpha,
-                            },
-                        }));
-                    }}
+                    onColorChange={({ color, alpha }) =>
+                        updateChatMessage({ shadowColor: color, shadowOpacity: alpha })
+                    }
                 />
-                <Spacer/>
+                <Spacer />
                 <SeekbarComponent
-                    title={`Радиус тени (${chatMessage.shadowRadius ?? 0}):`}
+                    title={`Радиус тени (${shadowRadius}):`}
                     min="0"
                     max="20"
-                    value={chatMessage.shadowRadius ?? 0}
                     step="1"
-                    width={"320px"}
-                    onChange={e =>
-                        handleChange(prev => ({
-                            ...prev,
-                            chatMessage: {
-                                ...prev.chatMessage,
-                                shadowRadius: e,
-                            },
-                        }))
-                    }
+                    width="260px"
+                    value={shadowRadius}
+                    onChange={(v) => updateField('shadowRadius', v)}
                 />
             </Row>
 
-            <div>
-                <span>Отступы снаружи:</span>
-                <Row align="center" gap="0.5rem">
-                    <SeekbarComponent
-                        title={`По горизонтали (${chatMessage.marginH ?? 0}):`}
-                        min="0"
-                        max="100"
-                        width={"150px"}
-                        value={chatMessage.marginH ?? 0}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    marginH: e,
-                                },
-                            }))
-                        }
-                    />
-
-                    <SeekbarComponent
-                        title={`По вертикали (${chatMessage.marginV ?? 0}):`}
-                        min="0"
-                        max="50"
-                        width={"150px"}
-                        value={chatMessage.marginV ?? 0}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    marginV: e,
-                                },
-                            }))
-                        }
-                    />
-                </Row>
-            </div>
-
-            <div>
-                <span>Отступы внутри:</span>
-                <Row>
-                    <SeekbarComponent
-                        title={`По горизонтали (${chatMessage.paddingH ?? 0}):`}
-                        min="0"
-                        max="100"
-                        width={"150px"}
-                        value={chatMessage.paddingH ?? 0}
-                        step="1"
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    paddingH: e,
-                                },
-                            }))
-                        }
-                    />
-
-                    <SeekbarComponent
-                        title={`По вертикали (${chatMessage.paddingV ?? 0}):`}
-                        min="0"
-                        max="50"
-                        value={chatMessage.paddingV ?? 0}
-                        step="1"
-                        width={"150px"}
-                        onChange={e =>
-                            handleChange(prev => ({
-                                ...prev,
-                                chatMessage: {
-                                    ...prev.chatMessage,
-                                    paddingV: e,
-                                },
-                            }))
-                        }
-                    />
-                </Row>
-            </div>
-
+            {/* Паддинги/отступы */}
+            <PaddingEditorComponent
+                message={chatMessage}
+                onVerticalPaddingChange={(v) => updateField('paddingV', v)}
+                onHorizontalPaddingChange={(v) => updateField('paddingH', v)}
+                onVerticalMarginChange={(v) => updateField('marginV', v)}
+                onHorizontalMarginChange={(v) => updateField('marginH', v)}
+            />
         </SettingsBlockFull>
-    )
+    );
 }

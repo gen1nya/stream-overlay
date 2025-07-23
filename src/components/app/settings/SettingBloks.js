@@ -38,6 +38,17 @@ export const SettingsBlockTitle = styled.h2`
     padding: 8px 0;
 `;
 
+export const SettingsBlockSubTitle = styled.h3`
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #d6d6d6;
+    margin: 0;
+    padding: 0;
+`;
+
+export const SmallSubTitle = styled.span`
+    font-size: 1rem;
+`;
 
 export const MediumSecondaryButton = styled.button`
     box-sizing: border-box;

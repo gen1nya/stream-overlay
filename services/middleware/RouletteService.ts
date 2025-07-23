@@ -117,7 +117,7 @@ export default class RouletteService extends Middleware {
       const reason = this.getRandomMessage(this.deathMessages, message.userName);
       actions.push(
         { type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } },
-        //{ type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000 } }
+        { type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000 } }
       );
     } else {
       const reason = this.getRandomMessage(this.survivalMessages, message.userName);

@@ -1,38 +1,86 @@
 import React from 'react';
-import styled from 'styled-components';
 import {hexToRgba} from "../../utils.js";
+import styled, { css } from 'styled-components';
 
 const MessageContainer = styled.div`
-    padding: ${({theme}) => { 
-        return `${theme.chatMessage.paddingV}px ${theme.chatMessage.paddingH}px`;
-    }};
+    position: relative;
     display: flex;
     width: auto;
-    margin: ${({theme}) => {
-        return `${theme.chatMessage.marginV}px ${theme.chatMessage.marginH}px`;
-    }};
-    border-radius: ${({theme}) => theme.chatMessage.borderRadius}px;
-    align-items: flex-start;
-    flex-direction: ${({theme}) => theme.chatMessage.direction};
 
-    border: 1px solid ${({theme}) => {
-        return hexToRgba(theme.chatMessage.borderColor, theme.chatMessage.borderOpacity);
-    }};
-    background: ${({theme}) => {
-        return hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity);
-    }};
-    box-shadow: ${({theme}) => {
-        const {shadowColor, shadowOpacity, shadowRadius} = theme.chatMessage;
+    margin: ${({ theme }) =>
+            `${theme.chatMessage.marginV}px ${theme.chatMessage.marginH}px`};
+
+    border-radius: ${({ theme }) => theme.chatMessage.borderRadius}px;
+
+    border: 1px solid
+    ${({ theme }) =>
+            hexToRgba(theme.chatMessage.borderColor, theme.chatMessage.borderOpacity)};
+    
+    background-color: ${({ theme }) =>
+            hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity)};
+
+    ${({ theme }) => {
+        if (theme.chatMessage.backgroundMode !== 'image') return '';
+
+        const { backgroundImages = {} } = theme.chatMessage;
+
+        /** порядок слоёв: top (сверху) → bottom (снизу) → middle (в основании) */
+        const layers = [];
+        const positions = [];
+        const sizes = [];
+
+        if (backgroundImages.top) {
+            layers.push(`url(${backgroundImages.top})`);
+            positions.push('top center');
+            sizes.push('100% auto');
+        }
+        if (backgroundImages.bottom) {
+            layers.push(`url(${backgroundImages.bottom})`);
+            positions.push('bottom center');
+            sizes.push('100% auto');
+        }
+        if (backgroundImages.middle) {
+            const middleAlign = backgroundImages.middleAlign || 'center';
+            layers.push(`url(${backgroundImages.middle})`);
+            positions.push(`${middleAlign} center`);
+            sizes.push('100% auto');
+        }
+        
+        if (!layers.length) return '';
+
+        return css`
+          background-image: ${layers.join(', ')};
+          background-position: ${positions.join(', ')};
+          background-size: ${sizes.join(', ')};
+          background-repeat: no-repeat;
+          background-origin: border-box;
+          background-clip: border-box;
+        `;
+    }}
+
+    box-shadow: ${({ theme }) => {
+        const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
         return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
-    backdrop-filter: ${({theme}) => {
-        if (theme.allMessages?.blurRadius && theme.allMessages?.blurRadius > 0) {
-            return `blur(${theme.allMessages.blurRadius}px)`;
-        } else {
-            return 'none';
-        }
-    }};
+
+    backdrop-filter: ${({ theme }) =>
+            theme.allMessages?.blurRadius > 0
+                    ? `blur(${theme.allMessages.blurRadius}px)`
+                    : 'none'};
 `;
+
+const Content = styled.div`
+  display: flex;
+  flex-direction: ${({theme}) => theme.chatMessage.direction};
+  align-items: flex-start;
+
+  padding: ${({theme}) =>
+    `${theme.chatMessage.paddingV}px ${theme.chatMessage.paddingH}px`};
+
+  width: 100%;           /* чтобы фон всегда перекрывался контентом */
+  box-sizing: border-box;
+`;
+
 
 const TitleContainer = styled.div`
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
@@ -108,6 +156,7 @@ const MessageText = styled.span`
 export default function ChatMessage({ message, showSourceChannel }) {
     return (
         <MessageContainer>
+            <Content>
             <TitleContainer>
                 {message.sourceChannel?.avatarUrl && showSourceChannel && (
                     <ChannelAvatar
@@ -121,6 +170,7 @@ export default function ChatMessage({ message, showSourceChannel }) {
                 <Username color={message.color}>{message.userName}:</Username>
             </TitleContainer>
             <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>
+            </Content>
         </MessageContainer>
     );
 }

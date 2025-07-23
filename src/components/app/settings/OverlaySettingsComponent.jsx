@@ -203,6 +203,15 @@ export default function OverlaySettingsComponent({current, onChange, openColorPo
                                 };
                             });
                         }}
+                        onClear={() => {
+                            handleChange(prev => ({
+                                ...prev,
+                                overlay: {
+                                    ...prev.overlay,
+                                    backgroundImage: undefined,
+                                },
+                            }));
+                        }}
                         onSuccess={value => {
                             console.log("Image confirmed:", value);
                         }}
