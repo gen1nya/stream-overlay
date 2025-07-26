@@ -3,6 +3,7 @@ import axios from 'axios';
 import * as authService from './authService';
 import MESSAGE_TYPES from './eventSubMessageTypes';
 import {AppEvent, FollowEvent, ParserRedeemMessage, RedeemEvent} from "./messageParser";
+import {LogService} from "./logService";
 
 const knownTypes = Object.values(MESSAGE_TYPES);
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
@@ -27,6 +28,7 @@ class EventSubService {
   private lastEventTimestamp = Date.now();
   private healthCheckTimer: NodeJS.Timeout | null = null;
   private connectionId: string;
+  private logger: LogService | null = null;
 
   constructor() {
     if (globalLock) {
@@ -118,6 +120,12 @@ class EventSubService {
       this.isConnecting = false;
       this.lastEventTimestamp = Date.now();
       console.log(`🟢 [${this.connectionId}] Connected to Twitch EventSub`);
+      this.logger?.log({
+        timestamp: new Date().toISOString(),
+        message: 'Соединение с EventSub установлено',
+        userId: null,
+        userName: null
+      });
     });
     ws.on('ping', function () {
       if (this.readyState === WebSocket.OPEN) {
@@ -141,6 +149,12 @@ class EventSubService {
             userName: event.user_name,
             followedAt: event.followed_at,
           };
+          this.logger?.log({
+            timestamp: new Date().toISOString(),
+            message: `Новый фолловер`,
+            userId: event.user_id,
+            userName: event.user_name
+          });
           this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_FOLLOW}`, followEvent);
         }
         if (payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add') {
@@ -155,6 +169,12 @@ class EventSubService {
             userName: event.user_name,
             reward: reward,
           };
+          this.logger?.log({
+            timestamp: new Date().toISOString(),
+            message: `Потрачены балы (${reward.cost}) на : ${reward.title}`,
+            userId: event.user_id,
+            userName: event.user_name
+          });
           this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_REDEMPTION}`, redeemEvent);
         }
       }
@@ -185,6 +205,12 @@ class EventSubService {
     ws.on('close', () => {
       this.isConnecting = false;
       console.log(`🔴 [${this.connectionId}] Connection closed`);
+      this.logger?.log({
+          timestamp: new Date().toISOString(),
+          message: 'Соединение с EventSub закрыто',
+          userId: null,
+          userName: null
+      });
       if (!this.ignoreClose && !this.isStopping && globalLock === this) {
         setTimeout(() => this.start(), 5000);
       }
@@ -192,6 +218,12 @@ class EventSubService {
     });
     ws.on('error', (err) => {
       this.isConnecting = false;
+      this.logger?.log({
+        timestamp: new Date().toISOString(),
+        message: `Ошибка WebSocket: ${err.message}`,
+        userId: null,
+        userName: null
+      });
       console.error(`❌ [${this.connectionId}] WebSocket Error:`, err);
     });
   }
@@ -239,12 +271,24 @@ class EventSubService {
           }
         );
         console.log(`✅ [${this.connectionId}] Subscribed to ${type}`);
+        this.logger?.log({
+          timestamp: new Date().toISOString(),
+          message: `Отслеживание события ${type} запущено`,
+          userId: null,
+          userName: null
+        });
       } catch (error: any) {
         const status = error.response?.status;
         if (status === 401 && !this.isStopping) {
           console.warn(`⚠️ [${this.connectionId}] Unauthorized, refreshing...`);
           const refreshed = await authService.getTokens();
           if (!refreshed) {
+            this.logger?.log({
+              timestamp: new Date().toISOString(),
+              message: `Ошибка обновления токенов при подписке на ${type}`,
+              userId: null,
+              userName: null
+            });
             console.error(`❌ [${this.connectionId}] Token refresh failed.`);
             this.stop();
             return;
@@ -252,6 +296,12 @@ class EventSubService {
           await this.subscribeToEvents(sessionId);
           return;
         }
+        this.logger?.log({
+            timestamp: new Date().toISOString(),
+            message: `Ошибка подписки на ${type}: ${error.message}`,
+            userId: null,
+            userName: null
+        });
         console.error(`❌ [${this.connectionId}] Failed to subscribe to ${type}:`, error.response?.data || error.message);
       }
     }
@@ -298,6 +348,10 @@ class EventSubService {
   static hasActiveInstance(): boolean {
     return globalLock !== null;
   }
+
+  setLogger(logger: LogService): void {
+    this.logger = logger;
+  }
 }
 
 let instance: EventSubService | null = null;
@@ -324,6 +378,7 @@ export const start = (...args: any[]) => instance?.start(...args);
 export const stop = (...args: any[]) => instance?.stop(...args);
 export const registerEventHandlers = (handler: (dest: string, payload: AppEvent) => void) => instance?.registerEventHandlers(handler);
 export const getLastEventTimestamp = () => instance?.getLastEventTimestamp();
+export const setLogger = (logger: LogService) => instance?.setLogger(logger);
 export const getConnectionId = () => instance?.getConnectionId();
 export const getInstance = () => instance;
 export const hasActiveInstance = () => EventSubService.hasActiveInstance();

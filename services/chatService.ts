@@ -2,6 +2,7 @@ import net from 'net';
 import * as authService from './authService';
 import * as messageParser from './messageParser';
 import {AppEvent, ChatEvent} from "./messageParser";
+import {LogService} from "./logService";
 
 const HOST = 'irc.chat.twitch.tv';
 const PORT = 6667;
@@ -12,6 +13,7 @@ class ChatService {
   private isStopping = false;
   private isConnecting = false;
   private lastEventTimestamp = Date.now();
+  private logger: LogService | null = null;
 
   constructor() {
     authService.onTokenRefreshed(() => {
@@ -95,6 +97,14 @@ class ChatService {
       this.isConnecting = false;
       this.lastEventTimestamp = Date.now();
       console.log('🟢 Connected to Twitch IRC');
+
+      this.logger?.log({
+        timestamp: new Date().toISOString(),
+        message: 'Подключено к IRC',
+        userId: username,
+        userName: username
+      });
+
       socket.write('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n');
       socket.write(`PASS oauth:${accessToken}\r\n`);
       socket.write(`NICK ${username}\r\n`);
@@ -124,6 +134,22 @@ class ChatService {
           if (parsed.type === 'system' && parsed.rawMessage.includes('RECONNECT')) {
             await this.handleReconnect();
           }
+          if (parsed.type === 'join') {
+            this.logger?.log({
+              timestamp: new Date().toISOString(),
+              message: `Зашел в чат`,
+              userId: parsed.userId,
+              userName: parsed.userName
+            });
+          }
+          if (parsed.type === 'part') {
+            this.logger?.log({
+              timestamp: new Date().toISOString(),
+              message: `Покинул чат`,
+              userId: parsed.userId,
+              userName: parsed.userName
+            });
+          }
           if (this.messageHandler) {
             await this.messageHandler(parsed);
           }
@@ -133,11 +159,23 @@ class ChatService {
 
     socket.on('close', () => {
       this.isConnecting = false;
+      this.logger?.log({
+        timestamp: new Date().toISOString(),
+        message: 'Соединение с IRC закрыто',
+        userId: null,
+        userName: null
+      });
       console.log('🔴 IRC Connection closed.');
     });
 
     socket.on('error', (err) => {
       this.isConnecting = false;
+      this.logger?.log({
+          timestamp: new Date().toISOString(),
+          message: `Ошибка IRC: ${err.message}`,
+          userId: null,
+          userName: null
+      });
       console.error('❌ IRC Error:', err.message);
     });
   }
@@ -147,6 +185,12 @@ class ChatService {
       this.client.end();
       this.client = null;
       console.log('🛑 IRC Connection terminated.');
+      this.logger?.log({
+          timestamp: new Date().toISOString(),
+          message: 'Соединение с IRC завершено',
+          userId: null,
+          userName: null
+      });
     }
     this.isStopping = true;
     this.isConnecting = false;
@@ -163,12 +207,17 @@ class ChatService {
       this.client.write(`PRIVMSG #${channel} :${sanitized}\r\n`);
     }
   }
+
+  setLogger(logger: LogService) {
+    this.logger = logger;
+  }
 }
 
 const instance = new ChatService();
 
 export const startChat = () => instance.startChat();
 export const stopChat = () => instance.stopChat();
+export const setLogger = (logger: LogService) => instance.setLogger(logger);
 export const sendMessage = (msg: string) => instance.sendMessage(msg);
 export const registerMessageHandler = (handler: (msg: any) => Promise<void>) => instance.registerMessageHandler(handler);
 export const getLastEventTimestamp = () => instance.getLastEventTimestamp();

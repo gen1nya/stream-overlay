@@ -2,6 +2,8 @@ import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
 import {ActionType} from './ActionTypes';
 import {AppEvent} from "../messageParser";
+import {LogService} from "../logService";
+import Middleware from "./Middleware";
 
 export interface BotConfig {
   roulette: {
@@ -37,10 +39,16 @@ export interface BotConfig {
 
 export class MiddlewareProcessor {
   private applyAction: (action: { type: ActionType; payload: any }) => Promise<void>;
-  private middlewares = [new RouletteService(), new GreetingMiddleware()];
+  private logService: LogService;
+  private middlewares: Middleware[] = [];
 
-  constructor(applyAction: (action: { type: ActionType; payload: any }) => Promise<void>) {
+  constructor(applyAction: (action: { type: ActionType; payload: any }) => Promise<void>, logService: LogService) {
     this.applyAction = applyAction;
+    this.logService = logService;
+    this.middlewares = [
+      new RouletteService(this.logService),
+      new GreetingMiddleware(this.logService)
+    ];
   }
 
   async processMessage(message: AppEvent): Promise<AppEvent> {

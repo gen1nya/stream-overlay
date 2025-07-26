@@ -2,6 +2,7 @@ import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
 import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
 import {AppEvent} from "../messageParser";
+import {LogService} from "../logService";
 
 interface CompiledCommand {
   enabled: boolean;
@@ -12,6 +13,13 @@ interface CompiledCommand {
 }
 
 export default class GreetingMiddleware extends Middleware {
+  private logService: LogService;
+
+  constructor(logService: LogService) {
+    super();
+    this.logService = logService;
+  }
+
   private commands: CompiledCommand[] = [];
   private enabled = true;
 
@@ -43,6 +51,7 @@ export default class GreetingMiddleware extends Middleware {
       const matched = command.triggers.some(test => test(text));
       if (matched) {
         console.log('✅ Command matched:', command.name);
+        this.log(`Команда "${command.name}" запущена`, message.userId, message.userName);
         const response = this.pickRandom(
             command.responses,
             message.userName || 'user',
@@ -138,5 +147,15 @@ export default class GreetingMiddleware extends Middleware {
         .replace(/\$\{last_message\}/g, shortMessage)
 
     return applyRandomInt(result);
+  }
+
+  private log(message: string, userId?: string | null, userName?: string | null): void {
+    const logMessage = {
+      timestamp: new Date().toISOString(),
+      message,
+      userId: userId || null,
+      userName: userName || null
+    };
+    this.logService.log(logMessage);
   }
 }

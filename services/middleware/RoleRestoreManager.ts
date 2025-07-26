@@ -1,5 +1,6 @@
 import { addVip, removeVip, addModerator, removeModerator, UserRoles } from '../authorizedHelixApi';
 import {ChatRoles} from "../messageParser";
+import {LogService} from "../logService";
 
 interface StoredUser {
   username: string;
@@ -9,6 +10,12 @@ interface StoredUser {
 
 export default class RoleRestoreManager {
   private muted: Map<string, StoredUser> = new Map();
+  private logService: LogService;
+
+  constructor(logService: LogService) {
+    this.logService = logService;
+  }
+
 
   async prepareMute(
       userId: string,
@@ -37,7 +44,19 @@ export default class RoleRestoreManager {
     try {
       if (roles.isModerator) await addModerator(userId);
       if (roles.isVip) await addVip(userId);
+      this.logService.log({
+          timestamp: new Date().toISOString(),
+          message: `Роли пользователя восстановлены (mod: ${roles.isModerator}, vip: ${roles.isVip})`,
+          userId,
+          userName: data.username
+      });
     } catch (e) {
+      this.logService.log({
+        timestamp: new Date().toISOString(),
+        message: `Ошибка при восстановлении ролей пользователя. Было: mod: ${roles.isModerator}, vip: ${roles.isVip}`,
+        userId,
+        userName: data.username
+      });
       console.error('Failed to restore roles for', userId, (e as any).message);
     }
   }

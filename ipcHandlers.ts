@@ -9,6 +9,7 @@ import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
 import { createChatWindow, createPreviewWindow } from './windowsManager';
+import {LogService} from "./services/logService";
 
 export function registerIpcHandlers(
     store: Store,
@@ -17,7 +18,8 @@ export function registerIpcHandlers(
     appStartTime: number,
     getCurrentTheme: () => any,
     setCurrentTheme: (name: string, theme: any) => void,
-    messageCache: typeof import('./services/MessageCacheManager')
+    messageCache: typeof import('./services/MessageCacheManager'),
+    logService: LogService,
 ) {
   ipcMain.handle('auth:authorize', async () => authService.authorizeIfNeeded());
   ipcMain.handle('auth:getTokens', async () => authService.getTokens());
@@ -31,11 +33,19 @@ export function registerIpcHandlers(
   ipcMain.handle('auth:onAccountReady', async () => {
     await chatService.startChat();
     eventSubService.start();
-    messageParser.loadGlobalBadges();
-    messageParser.loadChannelBadges();
-    messageParser.load7tvGlobalEmotes();
-    messageParser.loadBTTVGlobalEmotes();
-    messageParser.loadCheerEmotes();
+    Promise.allSettled([
+      messageParser.loadGlobalBadges(logService),
+      messageParser.loadChannelBadges(logService),
+      messageParser.load7tvGlobalEmotes(logService),
+      messageParser.loadBTTVGlobalEmotes(logService),
+      messageParser.loadCheerEmotes(logService)
+    ]).then((results) => {
+      results.forEach((result, i) => {
+        if (result.status === 'rejected') {
+          console.warn(`❌ Ошибка при загрузке [${i}]:`, result.reason);
+        }
+      });
+    });
   });
   ipcMain.handle('chat:open-overlay', () => createChatWindow());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());

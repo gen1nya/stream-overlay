@@ -13,6 +13,7 @@ import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/esService";
 import {ChatEvent, createBotMessage} from "./services/messageParser";
+import { LogService } from "./services/logService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -62,6 +63,13 @@ const applyAction = async (action: { type: string; payload: any }) => {
       break;
     case ActionTypes.MUTE_USER:
       await timeoutUser(action.payload.userId, action.payload.duration, action.payload.reason);
+      const muteMessage = `Пользователь был замьючен на ${action.payload.duration} секунд`;
+      logService.log({
+        message: muteMessage,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
       break;
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
@@ -69,7 +77,14 @@ const applyAction = async (action: { type: string; payload: any }) => {
   }
 };
 
-const middlewareProcessor = new MiddlewareProcessor(applyAction);
+const logService = new LogService((logs) => {
+  broadcast('log:updated', { logs });
+}, 100);
+
+chatService.setLogger(logService);
+eventSubService.setLogger(logService);
+
+const middlewareProcessor = new MiddlewareProcessor(applyAction, logService);
 middlewareProcessor.onThemeUpdated(currentTheme.bot);
 
 const wss = new WebSocket.Server({ port: 42001 });
@@ -101,7 +116,8 @@ app.whenReady().then(() => {
           currentThemeName = name;
           currentTheme = theme;
       },
-      messageCache
+      messageCache,
+      logService
   );
 
   wss.on('connection', (ws) => {
@@ -115,6 +131,10 @@ app.whenReady().then(() => {
         case 'theme:get':
           broadcast('theme:update', currentTheme);
           break;
+        case 'log:get':
+            const logs = logService.getLogs();
+            broadcast('log:updated', { logs });
+            break;
         default:
           console.log('unknown channel', channel, payload);
       }

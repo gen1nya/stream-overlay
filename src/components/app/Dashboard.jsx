@@ -1,12 +1,17 @@
 import React, { useEffect, useRef, useState } from 'react';
-import styled, {createGlobalStyle} from 'styled-components';
+import styled from 'styled-components';
 import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from "react-fast-marquee";
 
 const Container = styled.div`
     display: flex;
-    width: 100%;
+    flex-direction: row;    
+`;
+
+const Content = styled.div`
+    display: flex;
+    width: calc(100% - 260px);
     box-sizing: border-box;
     padding-top: 36px;
     padding-left: 24px ;
@@ -101,6 +106,33 @@ const StatusBlock = styled.div`
     }
 `;
 
+const LogPanel = styled.div`
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 250px;
+    height: calc(100% - 40px);
+    background: #1a1a1a;
+    border-left: 1px solid #333;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    overflow-y: auto;
+    font-size: 12px;
+    color: #ccc;
+`;
+
+const LogLine = styled.div`
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    span.username {
+        color: #4ea1ff;
+        font-weight: bold;
+    }
+`;
+
 const StatLine = styled.span``;
 
 export default function Dashboard() {
@@ -108,6 +140,14 @@ export default function Dashboard() {
     const called = useRef(false);
     const [account, setAccount] = useState(null);
     const [stats, setStats] = useState({ startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now() });
+    const [logs, setLogs] = useState([]);
+    const logPanelRef = useRef(null);
+
+    useEffect(() => {
+        if (logPanelRef.current) {
+            logPanelRef.current.scrollTop = logPanelRef.current.scrollHeight;
+        }
+    }, [logs]);
 
     const handleLogout = async () => {
         await logout();
@@ -149,6 +189,26 @@ export default function Dashboard() {
         return () => clearInterval(interval);
     }, []);
 
+    useEffect(() => {
+        const ws = new WebSocket('ws://localhost:42001');
+        ws.onopen = () => {
+            console.log('🟢 WebSocket подключен');
+            ws.send(JSON.stringify({channel: 'log:get'}));
+        };
+        ws.onmessage = (event) => {
+            const {channel, payload} = JSON.parse(event.data);
+            switch (channel) {
+                case "log:updated":
+                    setLogs(payload.logs);
+                    break;
+                default:
+                    console.log('unknown channel', channel, payload);
+            }
+        };
+        ws.onclose = () => console.log('🔴 WebSocket отключен');
+        return () => ws.close();
+    }, []);
+
     const now = Date.now();
     const uptime = now - stats.startTime;
     const sinceEventSub = now - stats.lastEventSub;
@@ -173,47 +233,60 @@ export default function Dashboard() {
         <>
             <Wrapper>
                 <Container>
-                    <Section>
-                        <SectionTitle>Аккаунт</SectionTitle>
-                        {account ? (
-                            <AccountRow>
-                                <Avatar src={account.avatar} alt="avatar" />
-                                <div>
-                                    <div>{account.displayName || account.login}</div>
-                                    <div>Фолловеров: {account.followerCount}</div>
-                                </div>
-                            </AccountRow>
-                        ) : (
-                            <p>Загрузка информации об аккаунте...</p>
-                        )}
-                        <ButtonsRow>
-                            <button onClick={handleLogout}>Выйти из аккаунта</button>
-                        </ButtonsRow>
-                    </Section>
+                    <Content>
+                        <Section>
+                            <SectionTitle>Аккаунт</SectionTitle>
+                            {account ? (
+                                <AccountRow>
+                                    <Avatar src={account.avatar} alt="avatar" />
+                                    <div>
+                                        <div>{account.displayName || account.login}</div>
+                                        <div>Фолловеров: {account.followerCount}</div>
+                                    </div>
+                                </AccountRow>
+                            ) : (
+                                <p>Загрузка информации об аккаунте...</p>
+                            )}
+                            <ButtonsRow>
+                                <button onClick={handleLogout}>Выйти из аккаунта</button>
+                            </ButtonsRow>
+                        </Section>
 
-                    <Section>
-                        <SectionTitle>Оверлей</SectionTitle>
-                        <ButtonsRow>
-                            <button onClick={handleOpenOverlay}>Открыть чат в отдельном окне</button>
-                            <button onClick={handleCopyChatLink}>Скопировать ссылку на чат</button>
-                        </ButtonsRow>
-                    </Section>
+                        <Section>
+                            <SectionTitle>Оверлей</SectionTitle>
+                            <ButtonsRow>
+                                <button onClick={handleOpenOverlay}>Открыть чат в отдельном окне</button>
+                                <button onClick={handleCopyChatLink}>Скопировать ссылку на чат</button>
+                            </ButtonsRow>
+                        </Section>
 
-                    <Section>
-                        <SectionTitle>Быстрые действия со стримом</SectionTitle>
-                        <ButtonsRow>
-                            <button disabled>Изменить категорию</button>
-                            <button disabled>Изменить теги</button>
-                            <button disabled>Забанить пользователя</button>
-                        </ButtonsRow>
-                    </Section>
+                        <Section>
+                            <SectionTitle>Быстрые действия со стримом</SectionTitle>
+                            <ButtonsRow>
+                                <button disabled>Изменить категорию</button>
+                                <button disabled>Изменить теги</button>
+                                <button disabled>Забанить пользователя</button>
+                            </ButtonsRow>
+                        </Section>
 
-                    <Section>
-                        <ButtonsRow>
-                            <button onClick={handlerOpenSettings}>Настройки</button>
-                        </ButtonsRow>
-                    </Section>
+                        <Section>
+                            <ButtonsRow>
+                                <button onClick={handlerOpenSettings}>Настройки</button>
+                            </ButtonsRow>
+                        </Section>
+                    </Content>
+                    <LogPanel ref={logPanelRef}>
+                        {logs.map((log, index) => (
+                            <LogLine key={index}>
+                                [{new Date(log.timestamp).toLocaleTimeString()}]{' '}
+                                {log.userName ? <span className="username">{log.userName}</span> : null}
+                                {log.userName ? ': ' : ''}
+                                {log.message}
+                            </LogLine>
+                        ))}
+                    </LogPanel>
                 </Container>
+
                 <StatusBlock>
                     <StatLine style={{ color: '#b0b0b0' }}>Аптайм: {formatDuration(uptime)}</StatLine>
                     <StatLine style={{ color: eventSubColor }}>EventSub: {formatDuration(sinceEventSub)}</StatLine>
@@ -222,7 +295,7 @@ export default function Dashboard() {
                 </StatusBlock>
                 <Footer>
                     <Marquee>Бета-тест: ellis_leaf, kururun_chan, fox1k_ru</Marquee>
-                    <Version>v0.2.3-ts-beta</Version>
+                    <Version>v0.2.4-beta</Version>
                 </Footer>
             </Wrapper>
             </>

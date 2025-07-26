@@ -1,5 +1,6 @@
 import axios from 'axios';
 import * as authService from './authService';
+import {LogService} from "./logService";
 
 interface ChannelInfo {
   displayName: string;
@@ -28,7 +29,7 @@ interface Identity {
 }
 
 export interface ParsedIrcMessage extends Identity {
-  type: 'chat' | 'system';
+  type: 'chat' | 'system' | 'join' | 'part';
   color: string;
   rawMessage: string;
   htmlBadges: string;
@@ -56,10 +57,12 @@ export interface ParserRedeemMessage extends Identity {
 
 export type ChatEvent  = Envelope<'chat', ParsedIrcMessage>;
 export type SystemEvent  = Envelope<'system', ParsedIrcMessage>;
+export type JoinEvent  = Envelope<'join', ParsedIrcMessage>;
+export type PartEvent  = Envelope<'part', ParsedIrcMessage>;
 export type RedeemEvent  = Envelope<'redemption', ParserRedeemMessage>;
 export type FollowEvent  = Envelope<'follow', ParserFollowMessage>;
 
-export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent;
+export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | JoinEvent | PartEvent;
 
 export const emptyRoles: ChatRoles = {
     isModerator: false,
@@ -119,7 +122,7 @@ async function getChannelInfoByRoomId(roomId: string | null): Promise<ChannelInf
   }
 }
 
-export async function loadCheerEmotes(): Promise<void> {
+export async function loadCheerEmotes(logService: LogService): Promise<void> {
   try {
     const tokens = await authService.getTokens();
     if (!tokens) throw new Error('No tokens available');
@@ -129,12 +132,15 @@ export async function loadCheerEmotes(): Promise<void> {
     response.data.data.forEach((emote: any) => {
       cheerEmotes[emote.prefix] = emote.tiers;
     });
+    logLoadingMessage(logService, 'Загружены эмодзи cheers');
   } catch (error: any) {
     console.error('❌ Failed to load cheer emotes:', error.response?.data || error.message);
+    logLoadingMessage(logService, 'Ошибка при загрузке эмодзи cheers: ' + (error.response?.data || error.message));
+    throw error;
   }
 }
 
-export async function loadGlobalBadges(): Promise<void> {
+export async function loadGlobalBadges(logService: LogService): Promise<void> {
   try {
     const tokens = await authService.getTokens();
     if (!tokens) throw new Error('No tokens available');
@@ -142,12 +148,15 @@ export async function loadGlobalBadges(): Promise<void> {
       headers: { 'Client-ID': authService.CLIENT_ID, Authorization: `Bearer ${tokens.access_token}` },
     });
     globalBadges = processBadges(response.data.data);
+    logLoadingMessage(logService, 'Загружены глобальные бэджи');
   } catch (error: any) {
     console.error('❌ Failed to load global badges:', error.response?.data || error.message);
+    logLoadingMessage(logService, 'Ошибка при загрузке глобальных бэджей: ' + (error.response?.data || error.message));
+    throw error;
   }
 }
 
-export async function load7tvGlobalEmotes(): Promise<void> {
+export async function load7tvGlobalEmotes(logService: LogService): Promise<void> {
   try {
     const response = await axios.get('https://api.7tv.app/v3/emote-sets/global');
     _7tvGlobalEmotes = {};
@@ -158,33 +167,51 @@ export async function load7tvGlobalEmotes(): Promise<void> {
         urls: ['https:' + emote.data.host.url + '/' + emote.data.host.files[2].name],
       };
     });
+    logLoadingMessage(logService, 'Загружены глобальные 7TV эмодзи');
   } catch (error: any) {
     console.error('❌ Failed to load 7TV global emotes:', error.response?.data || error.message);
+    logLoadingMessage(logService, 'Ошибка при загрузке глобальных 7TV эмодзи: ' + (error.response?.data || error.message));
+    throw error;
   }
 }
 
-export async function loadBTTVGlobalEmotes(): Promise<void> {
+export async function loadBTTVGlobalEmotes(logService: LogService): Promise<void> {
   try {
     const response = await axios.get('https://api.betterttv.net/3/cached/emotes/global');
     response.data.forEach((emote: any) => {
       bttvGlobalEmotes[emote.id] = { code: emote.code, imageUrl: `https://cdn.betterttv.net/emote/${emote.id}/3x` };
     });
+    logLoadingMessage(logService, 'Загружены глобальные BTTV эмодзи');
   } catch (error: any) {
     console.error('❌ Failed to load BTTV global emotes:', error.response?.data || error.message);
+    logLoadingMessage(logService, 'Ошибка при загрузке глобальных BTTV эмодзи: ' + (error.response?.data || error.message));
+    throw error;
   }
 }
 
-export async function loadChannelBadges(): Promise<void> {
+export async function loadChannelBadges(logService: LogService): Promise<void> {
   try {
     const tokens = await authService.getTokens();
     if (!tokens) throw new Error('No tokens available');
     const response = await axios.get(`https://api.twitch.tv/helix/chat/badges?broadcaster_id=${tokens.user_id}`, {
       headers: { 'Client-ID': authService.CLIENT_ID, Authorization: `Bearer ${tokens.access_token}` },
     });
+    logLoadingMessage(logService, 'Загружены бэджи канала');
     channelBadges = processBadges(response.data.data);
   } catch (error: any) {
     console.error('❌ Failed to load channel badges:', error.response?.data || error.message);
+    logLoadingMessage(logService, 'Ошибка при загрузке бэджей канала: ' + (error.response?.data || error.message));
+    throw error;
   }
+}
+
+function logLoadingMessage(logService: LogService, message: string): void {
+  logService.log({
+    timestamp: new Date().toISOString(),
+    message,
+    userId: null,
+    userName: null,
+  });
 }
 
 function processBadges(badgesArray: any[]): Record<string, any> {
@@ -316,15 +343,25 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
       tags[key] = value;
     });
   }
-  const isPrivMsg = rawLine.includes('PRIVMSG');
+  const commandMatch = rawLine.match(/(?:^@[^ ]+ )?:[^ ]+![^ ]+@[^ ]+\.tmi\.twitch\.tv ([A-Z]+)/);
+  const command = commandMatch?.[1] || null;
+
   let messageContent = '';
-  let type = 'system';
-  if (isPrivMsg) {
+  let type: 'chat' | 'system' | 'join' | 'part' = 'system';
+
+  if (command === 'PRIVMSG') {
     const messageStart = rawLine.indexOf('PRIVMSG');
     messageContent = rawLine.substring(rawLine.indexOf(':', messageStart) + 1).trim();
     messageContent = cleanMessage(messageContent);
     type = 'chat';
   } else {
+    if (command === 'JOIN') {
+      type = 'join';
+    } else if (command === 'PART') {
+      type = 'part';
+    } else {
+      type = 'system';
+    }
     const parts = rawLine.split(':');
     if (parts.length > 1) {
       messageContent = parts.slice(1).join(':').trim();
@@ -346,7 +383,7 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
   const roles = extractRolesFromBadges(badgesTag);
 
   return {
-    type: type as 'chat' | 'system',
+    type: type as 'chat' | 'system' | 'join' | 'part',
     timestamp: Date.now(),
     userName: username,
     color: color,

@@ -3,6 +3,7 @@ import Middleware from './Middleware';
 import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
 import RoleRestoreManager from './RoleRestoreManager';
 import {AppEvent} from "../messageParser";
+import {LogService} from "../logService";
 
 export default class RouletteService extends Middleware {
   private commands: string[];
@@ -13,10 +14,12 @@ export default class RouletteService extends Middleware {
   private muteDuration: number;
   private enabled: boolean;
   private cooldowns: Map<string, number> = new Map();
-  private roleManager = new RoleRestoreManager();
+  private roleManager: RoleRestoreManager;
   private chance: number;
+  private logService: LogService;
 
   constructor(
+    logService: LogService,
     muteDuration = 2 * 60 * 1000,
     commandCooldown = 30 * 1000,
     deathMessages: string[] = [
@@ -46,6 +49,8 @@ export default class RouletteService extends Middleware {
     this.muteDuration = muteDuration;
     this.enabled = enabled;
     this.chance = 0.18;
+    this.logService = logService;
+    this.roleManager = new RoleRestoreManager(logService);
   }
 
     updateConfig(config: BotConfig) {
@@ -81,6 +86,7 @@ export default class RouletteService extends Middleware {
     const lastUsed = this.cooldowns.get(message.userId) || 0;
     if (now - lastUsed < this.commandCooldown) {
       const cooldownMsg = this.getRandomMessage(this.cooldownMessages, message.userName);
+      this.log(`Рулетка еще не остыла для пользователя`, message.userId, message.userName);
       return {
         accepted: false,
         message: { ...message },
@@ -115,11 +121,13 @@ export default class RouletteService extends Middleware {
       }
 
       const reason = this.getRandomMessage(this.deathMessages, message.userName);
+      this.log(`Пользователь выиграл в рулетку и будет замьючен`, message.userId, message.userName);
       actions.push(
         { type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } },
-        { type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000 } }
+        { type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000, userName: message.userName } }
       );
     } else {
+      this.log(`Пользователь проиграл в рулетку и не будет замьючен`, message.userId, message.userName);
       const reason = this.getRandomMessage(this.survivalMessages, message.userName);
       actions.push({ type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } });
     }
@@ -140,5 +148,15 @@ export default class RouletteService extends Middleware {
     let result = template.replace(/\$\{user\}/g, username)
 
     return applyRandomInt(result);
+  }
+
+  private log(message: string, userId?: string | null, userName?: string | null): void {
+    const logMessage = {
+      timestamp: new Date().toISOString(),
+      message,
+      userId: userId || null,
+      userName: userName || null
+    };
+    this.logService.log(logMessage);
   }
 }
