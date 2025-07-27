@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import {getLayeredBackgroundStyles, hexToRgba} from '../../utils';
+import {generateGradientCSS, getLayeredBackgroundStyles, hexToRgba} from '../../utils';
 
 const MessageContainer = styled.div`
     position: relative;
@@ -25,6 +25,7 @@ const MessageContainer = styled.div`
     }};
 
     ${({theme, $index = 0}) => getLayeredBackgroundStyles(theme.redeemMessage[$index])}
+    ${({ theme, $index = 0}) => generateGradientCSS(theme.redeemMessage[$index])}
 
     box-shadow: ${({theme, $index = 0}) => {
         const rm = theme.redeemMessage[$index];
@@ -49,7 +50,11 @@ const Content = styled.div`
 
     font-size: ${({theme, $index = 0}) => theme.redeemMessage[$index].fontSize}px;
     font-family: ${({theme, $index = 0}) => theme.redeemMessage[$index].messageFont.family};
-    color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
+    color: ${({theme, $index}) => {
+        const defaultColor = theme.allMessages?.textColor ?? '#fff'
+        const m = theme.redeemMessage[$index];
+        return hexToRgba(m.messageFont.color ?? defaultColor, m.messageFont.opacity ?? 1);
+    }};
 
     text-shadow: ${({theme}) => {
         const am = theme.allMessages;

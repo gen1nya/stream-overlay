@@ -17,6 +17,7 @@ import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorCom
 import { FiTrash2 } from 'react-icons/fi';
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
+import GradientEditor from "../../utils/GradientEditor";
 
 const BACKGROUND_MODE_ITEMS = [
     { key: 'color', text: 'цвет' },
@@ -61,6 +62,16 @@ export default function RedeemPointsBlock({
             ...msg,
             [key]: { ...msg[key], ...part },
         }));
+    const updateNestedArray = (key, index, part) =>
+        updateRedeemMessage(msg => {
+            const list = Array.isArray(msg[key]) ? msg[key] : [];
+            const updated = [...list];
+            updated[index] = { ...(list[index] || {}), ...part };
+            return {
+                ...msg,
+                [key]: updated,
+            };
+        });
 
     const {
         template = '🎉 {userName} потратил {cost} баллов на {title}',
@@ -151,7 +162,14 @@ export default function RedeemPointsBlock({
                             }}
                         />
                     }
-                    {backgroundMode === 'gradient' && <div style={{ height: 120 }} />}
+                    {backgroundMode === 'gradient' && (
+                        <GradientEditor
+                            value={message.backgroundGradients?.[0] || {}}
+                            onChange={(g) => {
+                                updateNestedArray('backgroundGradients', 0, g);
+                            }}
+                        />
+                    )}
 
                     {/* Тень */}
                     <Row>
@@ -162,6 +180,15 @@ export default function RedeemPointsBlock({
                             openColorPopup={openColorPopup}
                             onColorChange={({ color, alpha }) =>
                                 updateRedeemMessage({ shadowColor: color, shadowOpacity: alpha })
+                            }
+                        />
+                        <ColorSelectorButton
+                            title="Цвет текста:"
+                            hex={messageFont.color || '#ffffff'}
+                            alpha={messageFont.opacity || 1}
+                            openColorPopup={openColorPopup}
+                            onColorChange={({ color, alpha }) =>
+                                updateNested('messageFont', { color, opacity: alpha })
                             }
                         />
                         <Spacer />

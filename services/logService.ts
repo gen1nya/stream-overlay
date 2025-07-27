@@ -27,7 +27,6 @@ export class LogService {
         this.count = Math.min(this.count + 1, this.maxSize);
 
         this.onLogsUpdated(this.getLogs());
-        console.log(message);
     }
 
     getLogs(): LogMessage[] {

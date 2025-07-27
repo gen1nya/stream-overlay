@@ -1,11 +1,15 @@
 import React from 'react';
 import styled, {css} from 'styled-components';
-import {getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
+import {generateGradientCSS, getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
 
 const Text = styled.span`
     font-size: ${({theme, $index}) => theme.followMessage[$index].fontSize}px;
     font-family: ${({theme, $index}) => theme.followMessage[$index].messageFont.family};
-    color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
+    color: ${({theme, $index}) => {
+        const defaultColor = theme.allMessages?.textColor ?? '#fff'
+        const m = theme.followMessage[$index];
+        return hexToRgba(m.messageFont.color ?? defaultColor, m.messageFont.opacity ?? 1);
+    }};
     text-shadow: ${({theme}) => {
         if (!theme.allMessages) return 'none';
         const {
@@ -42,6 +46,7 @@ const MessageContainer = styled.div`
     }};
 
     ${({ theme, $index }) => getLayeredBackgroundStyles(theme.followMessage[$index])}
+    ${({ theme, $index = 0}) => generateGradientCSS(theme.followMessage[$index])}
 
     box-shadow: ${({theme, $index}) => {
         const m = theme.followMessage[$index];

@@ -1,4 +1,5 @@
 import { css } from 'styled-components';
+import {isEasingArray} from "framer-motion";
 
 export function hexToRgba(hex, opacity) {
     const cleanHex = hex.replace('#', '');
@@ -142,4 +143,28 @@ export function getLayeredBackgroundStyles(themeObject) {
         background-origin: border-box;
         background-clip: border-box;
     `;
+}
+
+export function generateGradientCSS(themeObject) {
+    if (!themeObject || themeObject.backgroundMode !== 'gradient') return '';
+    const { backgroundGradients = [] } = themeObject;
+    if (!backgroundGradients.length) return '';
+    const { type, angle, center, stops } = backgroundGradients[0];
+
+    const stopStrings = stops
+        .map(stop => `${hexToRgba(stop.color, stop.alpha)} ${stop.position}%`)
+        .join(', ');
+
+    console.log('Generating gradient CSS:', {
+        type, angle, center, stops, stopStrings
+    });
+    if (type === 'linear') {
+        return css`
+            background: linear-gradient(${angle}deg, ${stopStrings});
+        `;
+    } else {
+        return css`
+            background: radial-gradient(circle at ${center.x}% ${center.y}%, ${stopStrings});
+        `;
+    }
 }

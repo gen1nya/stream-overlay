@@ -16,6 +16,7 @@ import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import RadioGroup from '../../utils/TextRadioGroup';
 import { FiTrash2 } from 'react-icons/fi';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
+import GradientEditor from "../../utils/GradientEditor";
 
 const BACKGROUND_OPTIONS = [
     { key: 'color', text: 'цвет' },
@@ -51,6 +52,16 @@ export default function FollowSettingsBlock({
     const updateField = (key, value) => updateMessage((m) => ({ ...m, [key]: value }));
     const updateNested = (key, part) =>
         updateMessage((m) => ({ ...m, [key]: { ...m[key], ...part } }));
+    const updateNestedArray = (key, index, part) =>
+        updateMessage(msg => {
+            const list = Array.isArray(msg[key]) ? msg[key] : [];
+            const updated = [...list];
+            updated[index] = { ...(list[index] || {}), ...part };
+            return {
+                ...msg,
+                [key]: updated,
+            };
+        });
 
     const {
         template = '🎉 {userName} just followed!',
@@ -155,7 +166,14 @@ export default function FollowSettingsBlock({
                             }}
                         />
                     }
-                    {backgroundMode === 'gradient' && <div style={{ height: 120 }} />}
+                    {backgroundMode === 'gradient' && (
+                        <GradientEditor
+                            value={message.backgroundGradients?.[0] || {}}
+                            onChange={(g) => {
+                                updateNestedArray('backgroundGradients', 0, g);
+                            }}
+                        />
+                    )}
 
                     <Row>
                         <ColorSelectorButton
@@ -165,6 +183,15 @@ export default function FollowSettingsBlock({
                             openColorPopup={openColorPopup}
                             onColorChange={({ color, alpha }) =>
                                 updateMessage({ shadowColor: color, shadowOpacity: alpha })
+                            }
+                        />
+                        <ColorSelectorButton
+                            title="Цвет текста:"
+                            hex={messageFont.color || '#ffffff'}
+                            alpha={messageFont.opacity || 1}
+                            openColorPopup={openColorPopup}
+                            onColorChange={({ color, alpha }) =>
+                                updateNested('messageFont', { color, opacity: alpha })
                             }
                         />
                         <Spacer/>

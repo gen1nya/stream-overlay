@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import {AppEvent, ParsedIrcMessage} from "./messageParser";
+import {AppEvent, ParsedIrcMessage, SystemEvent} from "./messageParser";
 
 const messageCache: Map<string, AppEvent> = new Map();
 const timers: Map<string, NodeJS.Timeout> = new Map();
@@ -17,6 +17,9 @@ export function registerMessageHandler(
 export function addMessage(message: AppEvent): void {
   if (!message || typeof message !== 'object') {
     console.error('❌ Invalid message format:', message);
+    return;
+  }
+  if (message.type === 'system' || message.type === 'join' || message.type === 'part') {
     return;
   }
   if (TTL === 0) {

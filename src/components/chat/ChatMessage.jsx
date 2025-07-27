@@ -1,5 +1,5 @@
 import React from 'react';
-import {getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
+import {generateGradientCSS, getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
 import styled, { css } from 'styled-components';
 
 const MessageContainer = styled.div`
@@ -20,6 +20,7 @@ const MessageContainer = styled.div`
             hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity)};
 
     ${({ theme }) => getLayeredBackgroundStyles(theme.chatMessage)}
+    ${({ theme }) => generateGradientCSS(theme.chatMessage)}
 
     box-shadow: ${({ theme }) => {
         const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
@@ -109,7 +110,10 @@ const MessageText = styled.span`
         console.log(theme.allMessages);
         return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
     }};
-    color: ${({theme}) => theme.allMessages?.textColor ?? '#fff'};
+    color: ${({theme}) => {
+        const defaultColor = theme.allMessages?.textColor ?? '#fff';
+        return hexToRgba(theme.chatMessage.messageFont.color ?? defaultColor, theme.chatMessage.messageFont.opacity ?? 1);
+    }};
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
     img {
         height: 1em;

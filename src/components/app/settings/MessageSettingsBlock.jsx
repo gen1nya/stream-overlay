@@ -14,6 +14,7 @@ import RadioGroup from '../../utils/TextRadioGroup';
 import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorComponent';
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
+import GradientEditor from "../../utils/GradientEditor";
 
 const MESSAGE_DIRECTION_OPTIONS = [
     { value: 'row', label: 'слева' },
@@ -21,7 +22,6 @@ const MESSAGE_DIRECTION_OPTIONS = [
 ];
 
 export default function MessageSettingsBlock({ current: { chatMessage }, onChange, openColorPopup }) {
-    /** Универсальный апдейтер настроек сообщения */
     const updateChatMessage = useCallback(
         (updater) =>
             onChange((prev) => ({
@@ -34,7 +34,6 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
         [onChange],
     );
 
-    /* Сахарные обёртки */
     const updateField = (key, val) =>
         updateChatMessage((msg) => ({ ...msg, [key]: val }));
     const updateNested = (key, part) =>
@@ -42,6 +41,16 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
             ...msg,
             [key]: { ...msg[key], ...part },
         }));
+    const updateNestedArray = (key, index, part) =>
+        updateChatMessage(msg => {
+            const list = Array.isArray(msg[key]) ? msg[key] : [];
+            const updated = [...list];
+            updated[index] = { ...(list[index] || {}), ...part };
+            return {
+                ...msg,
+                [key]: updated,
+            };
+        });
 
     const {
         direction = 'row',
@@ -138,7 +147,14 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
                     }}
                 />
             }
-            {backgroundMode === 'gradient' && <div style={{ height: 120 }} />}
+            {backgroundMode === 'gradient' && (
+                <GradientEditor
+                    value={chatMessage.backgroundGradients?.[0] || {}}
+                    onChange={(g) => {
+                        updateNestedArray('backgroundGradients', 0, g);
+                    }}
+                />
+            )}
 
             <Row>
                 <ColorSelectorButton
@@ -150,6 +166,24 @@ export default function MessageSettingsBlock({ current: { chatMessage }, onChang
                         updateChatMessage({ shadowColor: color, shadowOpacity: alpha })
                     }
                 />
+                <ColorSelectorButton
+                    title="Цвет текста:"
+                    hex={messageFont.color || '#ffffff'}
+                    alpha={messageFont.opacity || 1}
+                    openColorPopup={openColorPopup}
+                    onColorChange={({ color, alpha }) =>
+                        updateNested('messageFont', { color, opacity: alpha })
+                    }
+                />
+                {/*<ColorSelectorButton
+                    title="Цвет заголовка:"
+                    hex={titleFont.color || '#ffffff'}
+                    alpha={titleFont.opacity || 1}
+                    openColorPopup={openColorPopup}
+                    onColorChange={({ color, alpha }) =>
+                        updateNested('titleFont', { color, opacity: alpha })
+                    }
+                />*/}
                 <Spacer />
                 <SeekbarComponent
                     title={`Радиус тени (${shadowRadius}):`}
