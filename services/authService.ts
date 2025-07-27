@@ -3,6 +3,7 @@ import axios from 'axios';
 import { shell, dialog } from 'electron';
 import { URLSearchParams } from 'url';
 import { EventEmitter } from 'events';
+import {getUser} from "./authorizedHelixApi";
 
 export interface Tokens {
   access_token: string;
@@ -103,10 +104,7 @@ async function refreshToken(refresh_token: string): Promise<Tokens> {
 
 async function fetchUserInfo(accessToken: string): Promise<any | null> {
   try {
-    const response = await axios.get('https://api.twitch.tv/helix/users', {
-      headers: { 'Client-ID': CLIENT_ID, Authorization: `Bearer ${accessToken}` },
-    });
-    return response.data.data[0];
+    return getUser(accessToken);
   } catch (err: any) {
     const status = err.response?.status;
     if (status === 401) {

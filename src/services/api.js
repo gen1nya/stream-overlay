@@ -78,3 +78,23 @@ export const saveImageBuffer = (buffer, name) => {
 export const getImageUrl = (fileName) => {
     return ipcRenderer?.invoke('utils:get_image_url', fileName);
 };
+
+export async function getUserById(userId) {
+    return ipcRenderer?.invoke('user:getById', {userId});
+}
+
+export async function getUserByLogin(login) {
+    return ipcRenderer?.invoke('user:getByLogin', {login});
+}
+
+export async function updateRoles(userId, roles) {
+    return ipcRenderer?.invoke('user:updateRoles', {userId, roles});
+}
+
+export async function muteUser(userId, reason, duration) {
+    return ipcRenderer?.invoke('user:mute', {userId, reason, duration});
+}
+
+export async function unbanUser(userId) {
+    return ipcRenderer?.invoke('user:unban', {userId});
+}

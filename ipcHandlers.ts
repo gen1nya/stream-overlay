@@ -10,6 +10,15 @@ import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
 import { createChatWindow, createPreviewWindow } from './windowsManager';
 import {LogService} from "./services/logService";
+import {
+  addModerator,
+  addVip,
+  getExtendedUser,
+  getUser,
+  removeModerator, removeTimeoutOrBan,
+  removeVip, timeoutUser
+} from "./services/authorizedHelixApi";
+import {updateRoles} from "./services/roleUpdater";
 
 export function registerIpcHandlers(
     store: Store,
@@ -21,6 +30,23 @@ export function registerIpcHandlers(
     messageCache: typeof import('./services/MessageCacheManager'),
     logService: LogService,
 ) {
+  ipcMain.handle('user:getById', async ( event, args) => {
+    return await getExtendedUser({ id: args.userId });
+  });
+  ipcMain.handle('user:getByLogin', async ( event, args) => {
+    return await getExtendedUser({ login: args.login });
+  });
+  ipcMain.handle('user:updateRoles', async (event, args) => {
+    const { userId, roles } = args;
+    return await updateRoles(userId, roles);
+  })
+  ipcMain.handle('user:mute', async (event, args) => {
+    const { userId, reason, duration  } = args;
+    return await timeoutUser(userId, duration, reason);
+  });
+  ipcMain.handle('user:unban', async (event, args) => {
+      return await removeTimeoutOrBan(args.userId)
+  });
   ipcMain.handle('auth:authorize', async () => authService.authorizeIfNeeded());
   ipcMain.handle('auth:getTokens', async () => authService.getTokens());
   ipcMain.handle('auth:getAccountInfo', async () => authService.getAccountInfo());

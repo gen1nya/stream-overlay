@@ -101,7 +101,6 @@ class ChatService {
       this.logger?.log({
         timestamp: new Date().toISOString(),
         message: 'Подключено к IRC',
-        userId: username,
         userName: username
       });
 
@@ -138,7 +137,6 @@ class ChatService {
             this.logger?.log({
               timestamp: new Date().toISOString(),
               message: `Зашел в чат`,
-              userId: parsed.userId,
               userName: parsed.userName
             });
           }
@@ -146,7 +144,6 @@ class ChatService {
             this.logger?.log({
               timestamp: new Date().toISOString(),
               message: `Покинул чат`,
-              userId: parsed.userId,
               userName: parsed.userName
             });
           }

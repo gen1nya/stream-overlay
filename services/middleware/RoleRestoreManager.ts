@@ -43,7 +43,7 @@ export default class RoleRestoreManager {
     const { roles } = data;
     try {
       if (roles.isModerator) await addModerator(userId);
-      if (roles.isVip) await addVip(userId);
+      //if (roles.isVip) await addVip(userId); // this role will be restored automatically by Twitch
       this.logService.log({
           timestamp: new Date().toISOString(),
           message: `Роли пользователя восстановлены (mod: ${roles.isModerator}, vip: ${roles.isVip})`,

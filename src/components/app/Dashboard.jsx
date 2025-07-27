@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from "react-fast-marquee";
+import UserInfoPopup from "./UserInfoPopup";
 
 const Container = styled.div`
     display: flex;
@@ -143,6 +144,15 @@ export default function Dashboard() {
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
 
+    const [userInfoPopup, setUserInfoPopup] = useState({
+        id: '',
+        open: false
+    });
+
+    const openUserInfoPopup = (userId, userName) => {
+        setUserInfoPopup({ id: userId, userName: userName, open: true });
+    }
+
     useEffect(() => {
         if (logPanelRef.current) {
             logPanelRef.current.scrollTop = logPanelRef.current.scrollHeight;
@@ -232,6 +242,13 @@ export default function Dashboard() {
     return (
         <>
             <Wrapper>
+                {userInfoPopup.open && (
+                    <UserInfoPopup
+                        userId={userInfoPopup.id}
+                        userName={userInfoPopup.userName}
+                        onClose={() => setUserInfoPopup({ id: '', open: false, userName: '' })}
+                    />
+                )}
                 <Container>
                     <Content>
                         <Section>
@@ -261,15 +278,6 @@ export default function Dashboard() {
                         </Section>
 
                         <Section>
-                            <SectionTitle>Быстрые действия со стримом</SectionTitle>
-                            <ButtonsRow>
-                                <button disabled>Изменить категорию</button>
-                                <button disabled>Изменить теги</button>
-                                <button disabled>Забанить пользователя</button>
-                            </ButtonsRow>
-                        </Section>
-
-                        <Section>
                             <ButtonsRow>
                                 <button onClick={handlerOpenSettings}>Настройки</button>
                             </ButtonsRow>
@@ -279,7 +287,11 @@ export default function Dashboard() {
                         {logs.map((log, index) => (
                             <LogLine key={index}>
                                 [{new Date(log.timestamp).toLocaleTimeString()}]{' '}
-                                {log.userName ? <span className="username">{log.userName}</span> : null}
+                                {log.userName ?
+                                    <span className="username" onClick={() => openUserInfoPopup(log.userId, log.userName)}>
+                                        {log.userName}
+                                    </span>
+                                    : null}
                                 {log.userName ? ': ' : ''}
                                 {log.message}
                             </LogLine>
