@@ -2,9 +2,8 @@ import path from "path";
 import fs from "fs";
 import { ipcMain, shell, app } from 'electron';
 import * as authService from './services/authService';
-import * as chatService from './services/chatService';
-import * as eventSubService from './services/esService';
 import * as messageParser from './services/messageParser';
+import { TwitchClient } from './services/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
@@ -12,7 +11,7 @@ import { createChatWindow, createPreviewWindow } from './windowsManager';
 import {LogService} from "./services/logService";
 import {
   addModerator,
-  addVip, getEditorsByBroadcasterId,
+  addVip,
   getExtendedUser,
   getUser,
   removeModerator, removeTimeoutOrBan,
@@ -30,6 +29,7 @@ export function registerIpcHandlers(
     setCurrentTheme: (name: string, theme: any) => void,
     messageCache: typeof import('./services/MessageCacheManager'),
     logService: LogService,
+    twitchClient: TwitchClient,
     onAccountReady: () => void,
     getEditors: () => UserData[],
 ) {
@@ -59,13 +59,11 @@ export function registerIpcHandlers(
   });
   ipcMain.handle('auth:logout', async () => {
     await authService.clearTokens();
-    eventSubService.stop();
-    chatService.stopChat();
+    await twitchClient.stop();
     return true;
   });
   ipcMain.handle('auth:onAccountReady', async () => {
-    await chatService.startChat();
-    eventSubService.start();
+    await twitchClient.start();
     Promise.allSettled([
       messageParser.loadGlobalBadges(logService),
       messageParser.loadChannelBadges(logService),
@@ -84,12 +82,9 @@ export function registerIpcHandlers(
   ipcMain.handle('chat:open-overlay', () => createChatWindow());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());
   ipcMain.handle('utils:open_url', async (_e, url) => { await shell.openExternal(url); });
-  ipcMain.handle('system:get-stats', () => ({ startTime: appStartTime, lastEventSub: eventSubService.getLastEventTimestamp(), lastIRC: chatService.getLastEventTimestamp() }));
+  ipcMain.handle('system:get-stats', () => ({ startTime: appStartTime, lastEventSub: twitchClient.getLastEventSubTimestamp(), lastIRC: twitchClient.getLastChatTimestamp() }));
   ipcMain.handle('system:reconnect', async () => {
-    eventSubService.stop({ setStopping: false, ignoreClose: true } as any);
-    chatService.stopChat();
-    eventSubService.start();
-    chatService.startChat();
+    await twitchClient.restart();
     return true;
   });
   ipcMain.handle('theme:create', async (_e, newThemeName) => {
