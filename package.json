@@ -1,7 +1,7 @@
 {
   "name": "twitch-watcher",
   "private": true,
-  "version": "0.3.1",
+  "version": "0.3.2",
   "main": "dist-backend/main.js",
   "scripts": {
     "lint": "eslint .",
