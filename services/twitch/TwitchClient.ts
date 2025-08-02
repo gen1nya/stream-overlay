@@ -3,7 +3,7 @@ import * as authService from './authService';
 import * as chatService from './chatService';
 import * as eventSubService from './esService';
 import { UserState } from './UserState';
-import { LogService } from './logService';
+import { LogService } from '../logService';
 import { UserData } from './types/UserData';
 import { AppEvent } from './messageParser';
 

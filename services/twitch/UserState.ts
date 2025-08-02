@@ -1,6 +1,6 @@
 import {UserData} from "./types/UserData";
 import {getEditorsByBroadcasterId} from "./authorizedHelixApi";
-import {LogService} from "./logService";
+import {LogService} from "../logService";
 
 export class UserState {
 

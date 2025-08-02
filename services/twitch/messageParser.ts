@@ -1,6 +1,6 @@
 import axios from 'axios';
 import * as authService from './authService';
-import {LogService} from "./logService";
+import {LogService} from "../logService";
 
 interface ChannelInfo {
   displayName: string;

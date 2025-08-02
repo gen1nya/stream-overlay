@@ -2,7 +2,7 @@ import net from 'net';
 import * as authService from './authService';
 import * as messageParser from './messageParser';
 import {AppEvent, ChatEvent} from "./messageParser";
-import {LogService} from "./logService";
+import {LogService} from "../logService";
 
 const HOST = 'irc.chat.twitch.tv';
 const PORT = 6667;

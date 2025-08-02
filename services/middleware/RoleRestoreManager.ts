@@ -1,5 +1,5 @@
-import { addVip, removeVip, addModerator, removeModerator, UserRoles } from '../authorizedHelixApi';
-import {ChatRoles} from "../messageParser";
+import { addVip, removeVip, addModerator, removeModerator, UserRoles } from '../twitch/authorizedHelixApi';
+import {ChatRoles} from "../twitch/messageParser";
 import {LogService} from "../logService";
 
 interface StoredUser {

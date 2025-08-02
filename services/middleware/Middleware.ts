@@ -1,5 +1,5 @@
 import {BotConfig} from "./MiddlewareProcessor";
-import {AppEvent} from "../messageParser";
+import {AppEvent} from "../twitch/messageParser";
 
 export default class Middleware {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

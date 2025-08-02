@@ -2,9 +2,9 @@ import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
 import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
 import RoleRestoreManager from './RoleRestoreManager';
-import {AppEvent} from "../messageParser";
+import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
-import {UserData} from "../types/UserData";
+import {UserData} from "../twitch/types/UserData";
 import {act} from "react";
 
 export default class RouletteService extends Middleware {

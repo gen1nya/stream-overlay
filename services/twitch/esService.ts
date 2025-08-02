@@ -1,9 +1,9 @@
 import WebSocket from 'ws';
 import axios from 'axios';
 import * as authService from './authService';
-import MESSAGE_TYPES from './eventSubMessageTypes';
+import MESSAGE_TYPES from './types/eventSubMessageTypes';
 import {AppEvent, FollowEvent, ParserRedeemMessage, RedeemEvent} from "./messageParser";
-import {LogService} from "./logService";
+import {LogService} from "../logService";
 
 const knownTypes = Object.values(MESSAGE_TYPES);
 const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';

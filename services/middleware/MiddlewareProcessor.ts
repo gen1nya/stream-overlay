@@ -1,10 +1,10 @@
 import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
 import {ActionType} from './ActionTypes';
-import {AppEvent} from "../messageParser";
+import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
 import Middleware from "./Middleware";
-import {UserData} from "../types/UserData";
+import {UserData} from "../twitch/types/UserData";
 
 export interface BotConfig {
   roulette: {

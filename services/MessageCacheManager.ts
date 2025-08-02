@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import {AppEvent, ParsedIrcMessage, SystemEvent} from "./messageParser";
+import {AppEvent, ParsedIrcMessage, SystemEvent} from "./twitch/messageParser";
 
 const messageCache: Map<string, AppEvent> = new Map();
 const timers: Map<string, NodeJS.Timeout> = new Map();

@@ -1,9 +1,9 @@
 import path from "path";
 import fs from "fs";
 import { ipcMain, shell, app } from 'electron';
-import * as authService from './services/authService';
-import * as messageParser from './services/messageParser';
-import { TwitchClient } from './services/TwitchClient';
+import * as authService from './services/twitch/authService';
+import * as messageParser from './services/twitch/messageParser';
+import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
@@ -16,9 +16,9 @@ import {
   getUser,
   removeModerator, removeTimeoutOrBan,
   removeVip, timeoutUser
-} from "./services/authorizedHelixApi";
-import {updateRoles} from "./services/roleUpdater";
-import {UserData} from "./services/types/UserData";
+} from "./services/twitch/authorizedHelixApi";
+import {updateRoles} from "./services/twitch/roleUpdater";
+import {UserData} from "./services/twitch/types/UserData";
 
 export function registerIpcHandlers(
     store: Store,
