@@ -125,6 +125,7 @@
   "bot": {
     "roulette": {
       "enabled": false,
+      "allowToBanEditors": false,
       "commands": [
         "!roulette", "!рулетка"
       ],
@@ -142,6 +143,9 @@
         "@${user}, Привет... Чем могу [PEKO]?",
         "@${user}, от факапа до факапа 30 секунд. ⏳",
         "WAAAAAAAAGH!!!!11!"
+      ],
+      "protectedUsersMessages": [
+        "@${user}, Редактор не участвует в фестивале"
       ],
       "muteDuration": 120000,
       "commandCooldown": 30000,

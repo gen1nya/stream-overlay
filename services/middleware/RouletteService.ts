@@ -4,19 +4,24 @@ import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
 import RoleRestoreManager from './RoleRestoreManager';
 import {AppEvent} from "../messageParser";
 import {LogService} from "../logService";
+import {UserData} from "../types/UserData";
+import {act} from "react";
 
 export default class RouletteService extends Middleware {
   private commands: string[];
   private commandCooldown: number;
   private survivalMessages: string[];
   private deathMessages: string[];
+  private protectedUsersMessages: string[] = [];
   private cooldownMessages: string[];
   private muteDuration: number;
   private enabled: boolean;
+  private allowToBanEditors: boolean = false;
   private cooldowns: Map<string, number> = new Map();
   private roleManager: RoleRestoreManager;
   private chance: number;
   private logService: LogService;
+  private editors: UserData[] = [];
 
   constructor(
     logService: LogService,
@@ -39,6 +44,7 @@ export default class RouletteService extends Middleware {
     ],
     commands: string[] = ['!roulette', '!рулетка'],
     enabled: boolean = false,
+    protectedUsersMessages: string[] = ['Редактор не учавствует в фестивале'],
   ) {
     super();
     this.commands = commands;
@@ -51,6 +57,7 @@ export default class RouletteService extends Middleware {
     this.chance = 0.18;
     this.logService = logService;
     this.roleManager = new RoleRestoreManager(logService);
+    this.protectedUsersMessages = protectedUsersMessages;
   }
 
     updateConfig(config: BotConfig) {
@@ -62,6 +69,8 @@ export default class RouletteService extends Middleware {
       this.muteDuration = config.roulette.muteDuration;
       this.enabled = config.roulette.enabled;
       this.chance = config.roulette.chance || 18;
+      this.allowToBanEditors = config.roulette.allowToBanEditors || false;
+      this.protectedUsersMessages = config.roulette.protectedUsersMessages;
       console.log('✅ RouletteService config updated:', config.roulette);
     }
 
@@ -120,18 +129,51 @@ export default class RouletteService extends Middleware {
         };
       }
 
-      const reason = this.getRandomMessage(this.deathMessages, message.userName);
-      this.log(`Пользователь выиграл в рулетку и будет замьючен`, message.userId, message.userName);
-      actions.push(
-        { type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } },
-        { type: ActionTypes.MUTE_USER, payload: { userId: message.userId, reason, duration: this.muteDuration / 1000, userName: message.userName } }
+      const isEditor = this.editors.some(editor => editor.user_id === message.userId);
+      const canBeMuted = !isEditor || this.allowToBanEditors;
+
+      const reason = this.getRandomMessage(
+          canBeMuted ? this.deathMessages : this.protectedUsersMessages,
+          message.userName
       );
+
+      const muteAction = {
+        type: ActionTypes.MUTE_USER,
+        payload: {
+          userId: message.userId,
+          reason,
+          duration: this.muteDuration / 1000,
+          userName: message.userName
+        }
+      };
+
+      const messageAction = {
+        type: ActionTypes.SEND_MESSAGE,
+        payload: {
+          message: reason,
+          forwardToUi: true
+        }
+      };
+
+      actions.push(messageAction);
+
+      if (canBeMuted) {
+        actions.push(muteAction);
+        this.log(`Пользователь выиграл в рулетку и будет замьючен`, message.userId, message.userName);
+      } else {
+        this.log(`Банить Редакторов запрещено в настройках`, message.userId, message.userName);
+      }
+
     } else {
       this.log(`Пользователь проиграл в рулетку и не будет замьючен`, message.userId, message.userName);
       const reason = this.getRandomMessage(this.survivalMessages, message.userName);
       actions.push({ type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } });
     }
     return { accepted: true, message: { ...message }, actions };
+  }
+
+  public setEditors(editors: UserData[]): void {
+    this.editors = editors;
   }
 
   private checkRouletteWin(): boolean {

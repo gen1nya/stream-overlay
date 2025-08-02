@@ -140,6 +140,7 @@ export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
     const [account, setAccount] = useState(null);
+    const [editors, setEditors] = useState(null);
     const [stats, setStats] = useState({ startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now() });
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
@@ -188,7 +189,12 @@ export default function Dashboard() {
         if (!called.current) {
             called.current = true;
             console.log('Called only once, even in Strict Mode');
-            getAccountInfo().then(info => setAccount(info));
+            getAccountInfo().then(info => {
+                const {accountInfo, editors} = info;
+                setAccount(accountInfo)
+                console.log(editors)
+                setEditors(editors)
+            });
         }
         const update = async () => {
             const s = await getStats();
@@ -307,7 +313,7 @@ export default function Dashboard() {
                 </StatusBlock>
                 <Footer>
                     <Marquee>Бета-тест: ellis_leaf, kururun_chan, fox1k_ru</Marquee>
-                    <Version>v0.3.0-beta</Version>
+                    <Version>v0.3.1-beta</Version>
                 </Footer>
             </Wrapper>
             </>

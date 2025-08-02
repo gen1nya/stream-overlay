@@ -4,6 +4,7 @@ import {ActionType} from './ActionTypes';
 import {AppEvent} from "../messageParser";
 import {LogService} from "../logService";
 import Middleware from "./Middleware";
+import {UserData} from "../types/UserData";
 
 export interface BotConfig {
   roulette: {
@@ -15,6 +16,8 @@ export interface BotConfig {
     muteDuration: number;
     commandCooldown: number;
     chance: number;
+    allowToBanEditors: boolean;
+    protectedUsersMessages: string[];
   };
 
   custom?: {
@@ -102,6 +105,8 @@ export class MiddlewareProcessor {
         Array.isArray(r?.survivalMessages) &&
         Array.isArray(r?.deathMessages) &&
         Array.isArray(r?.cooldownMessage) &&
+        Array.isArray(r?.protectedUsersMessages) &&
+        typeof r?.allowToBanEditors === 'boolean' ||
         typeof r?.muteDuration === 'number' &&
         typeof r?.commandCooldown === 'number' &&
         typeof r?.chance === 'number' &&
@@ -123,7 +128,14 @@ export class MiddlewareProcessor {
     } else {
       console.warn('❌ Невалидная конфигурация бота!', botConfig);
     }
+  }
 
+  setEditors(editors: UserData[]): void {
+    for (const middleware of this.middlewares) {
+      if (middleware instanceof RouletteService) {
+        middleware.setEditors(editors);
+      }
+    }
   }
 
 }

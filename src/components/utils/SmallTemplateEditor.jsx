@@ -25,11 +25,16 @@ export function SmallTemplateEditor({
                                         value,
                                         onChange,
                                         onDelete = () => {},
+                                        onBlur = () => {},
                                         hideDelete = false,
                                         width = "100%",                                    }) {
     return (
         <Wrapper maxWidth={width}>
-            <Input value={value} onChange={(e) => onChange(e.target.value)} />
+            <Input
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onBlur={(e) => onBlur(e.target.value)}
+            />
             {!hideDelete && (
                 <FiTrash2
                     size={"24px"}

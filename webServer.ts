@@ -32,7 +32,6 @@ function handleFontProxy(req: express.Request, res: express.Response) {
       fs.mkdirSync(FONT_CACHE_DIR, { recursive: true });
     }
 
-    // 3. Создаём временный файл и качаем туда из CDN.
     const tmpFile = fs.createWriteStream(tmpPath);
     https
         .get(cdnUrl, (response) => {

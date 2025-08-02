@@ -2,6 +2,7 @@ import {URLSearchParams} from 'url';
 import axios from 'axios';
 import * as authService from './authService';
 import {CLIENT_ID} from './authService';
+import {UsersResponse} from "./types/UserData";
 
 export async function timeoutUser(
   user_id: string,
@@ -263,4 +264,19 @@ export async function getExtendedUser(query: UserQuery): Promise<ExtendedTwitchU
     isBanned: banStatus.isBanned,
     banExpiresAt: banStatus.banExpiresAt
   };
+}
+
+export async function getEditorsByBroadcasterId(broadcaster_id: string): Promise<UsersResponse> {
+  const tokens = await authService.getTokens();
+  if (!tokens?.access_token) throw new Error('No access token');
+
+  const params = new URLSearchParams({ broadcaster_id });
+  const response = await axios.get<UsersResponse>(`https://api.twitch.tv/helix/channels/editors?${params.toString()}`, {
+    headers: {
+      Authorization: `Bearer ${tokens.access_token}`,
+      'Client-Id': authService.CLIENT_ID,
+    },
+  });
+
+  return response.data;
 }

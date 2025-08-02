@@ -12,13 +12,14 @@ import { createChatWindow, createPreviewWindow } from './windowsManager';
 import {LogService} from "./services/logService";
 import {
   addModerator,
-  addVip,
+  addVip, getEditorsByBroadcasterId,
   getExtendedUser,
   getUser,
   removeModerator, removeTimeoutOrBan,
   removeVip, timeoutUser
 } from "./services/authorizedHelixApi";
 import {updateRoles} from "./services/roleUpdater";
+import {UserData} from "./services/types/UserData";
 
 export function registerIpcHandlers(
     store: Store,
@@ -29,6 +30,8 @@ export function registerIpcHandlers(
     setCurrentTheme: (name: string, theme: any) => void,
     messageCache: typeof import('./services/MessageCacheManager'),
     logService: LogService,
+    onAccountReady: () => void,
+    getEditors: () => UserData[],
 ) {
   ipcMain.handle('user:getById', async ( event, args) => {
     return await getExtendedUser({ id: args.userId });
@@ -49,7 +52,11 @@ export function registerIpcHandlers(
   });
   ipcMain.handle('auth:authorize', async () => authService.authorizeIfNeeded());
   ipcMain.handle('auth:getTokens', async () => authService.getTokens());
-  ipcMain.handle('auth:getAccountInfo', async () => authService.getAccountInfo());
+  ipcMain.handle('auth:getAccountInfo', async () => {
+    const accountInfo = await authService.getAccountInfo()
+    const editors = getEditors();
+    return { accountInfo, editors };
+  });
   ipcMain.handle('auth:logout', async () => {
     await authService.clearTokens();
     eventSubService.stop();
@@ -72,6 +79,7 @@ export function registerIpcHandlers(
         }
       });
     });
+    onAccountReady();
   });
   ipcMain.handle('chat:open-overlay', () => createChatWindow());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());

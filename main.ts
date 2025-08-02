@@ -7,13 +7,16 @@ import * as eventSubService from './services/esService';
 import * as messageCache from './services/MessageCacheManager';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
 import { ActionTypes } from './services/middleware/ActionTypes';
-import { timeoutUser } from './services/authorizedHelixApi';
+import {getEditorsByBroadcasterId, timeoutUser} from './services/authorizedHelixApi';
 import { createMainWindow } from "./windowsManager";
 import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/esService";
 import {ChatEvent, createBotMessage} from "./services/messageParser";
 import { LogService } from "./services/logService";
+import * as authService from "./services/authService";
+import {UserState} from "./services/UserState";
+import {UserData} from "./services/types/UserData";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -98,6 +101,14 @@ function broadcast(channel: string, payload: any) {
   });
 }
 
+const userState = new UserState(
+    logService,
+    (editors: UserData[]) => {
+      middlewareProcessor.setEditors(editors);
+    },
+    null
+)
+
 app.whenReady().then(() => {
   const isDev = !app.isPackaged;
   if (isDev) {
@@ -117,7 +128,15 @@ app.whenReady().then(() => {
           currentTheme = theme;
       },
       messageCache,
-      logService
+      logService,
+      async () => {
+        const tokens = await authService.getTokens();
+        if (tokens && tokens.user_id) {
+          userState.setId(tokens.user_id);
+          userState.fetchEditors();
+        }
+      },
+        () => userState.getEditors(),
   );
 
   wss.on('connection', (ws) => {

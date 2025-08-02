@@ -2,7 +2,7 @@ export const defaultTheme = {
     chatMessage: {
         backgroundColor: "#422434",
         borderColor: "#0af0d5",
-        shadowColor: "#ffffff",
+        shadowColor: "#88aeb2",
         shadowOpacity: "1",
         shadowRadius: "5",
         direction: "column",
@@ -125,6 +125,7 @@ export const defaultTheme = {
     bot: {
         roulette: {
             enabled: false,
+            allowToBanEditors: false,
             commands: [
                 "!roulette", "!рулетка"
             ],
@@ -142,6 +143,9 @@ export const defaultTheme = {
                 '@${user}, Привет... Чем могу [PEKO]?',
                 '@${user}, от факапа до факапа 30 секунд. ⏳',
                 'WAAAAAAAAGH!!!!11!',
+            ],
+            protectedUsersMessages: [
+                "@${user}, Редактор не участвует в фестивале"
             ],
             muteDuration: 120000,
             commandCooldown: 30000,

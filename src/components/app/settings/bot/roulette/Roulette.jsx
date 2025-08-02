@@ -10,6 +10,8 @@ import Switch from "../../../../utils/Switch";
 import { mergeWithDefaults } from "../../../../utils/defaultBotConfig";
 import {SmallTemplateEditor} from "../../../../utils/SmallTemplateEditor";
 import styled from "styled-components";
+import ProtectedUsersMessagesComponent from "./ProtectedUsersMessagesComponent";
+import {TagInput} from "./TagInput";
 
 const SubTitle = styled.h3`
     margin: 0;
@@ -20,9 +22,22 @@ const SubTitle = styled.h3`
 export default function Roulette({ selectedTheme, apply }) {
     const config = mergeWithDefaults(selectedTheme);
     const [enabled, setEnabled] = useState(config.bot.roulette.enabled);
+    const [allowToBanEditors, setAllowToBanEditors] = useState(config.bot.roulette.allowToBanEditors);
 
     const [isOpen, setIsOpen] = useState(false);
     const toggleOpen = () => setIsOpen((prev) => !prev);
+
+    const [rawCommandsValue, setRawCommandsValue] = useState(
+        config.bot.roulette.commands.join(", ")
+    );
+
+    const parseCommands = (value) => {
+        if (!value || value.trim() === "") return [];
+        return value
+            .split(",")
+            .map(cmd => cmd.trim())
+            .filter(cmd => cmd.length > 0);
+    };
 
     useEffect(() => {
         setEnabled(config.bot.roulette.enabled);
@@ -144,15 +159,41 @@ export default function Roulette({ selectedTheme, apply }) {
                         />
 
                         <Spacer />
+
+                        <Row>
+                            <span>Мьютить Редакторов</span>
+                            <Switch
+                                checked={allowToBanEditors}
+                                onChange={(e) => {
+                                    const newState = e.target.checked;
+                                    setAllowToBanEditors(newState);
+                                    apply((prev) => {
+                                        const cfg = mergeWithDefaults(prev);
+                                        return {
+                                            ...cfg,
+                                            bot: {
+                                                ...cfg.bot,
+                                                roulette: {
+                                                    ...cfg.bot.roulette,
+                                                    allowToBanEditors: newState,
+                                                },
+                                            },
+                                        };
+                                    });
+                                }}
+                            />
+                        </Row>
                     </Row>
 
-                    <SubTitle>Команды, через зяпятую</SubTitle>
-                    <SmallTemplateEditor
-                        hideDelete={true}
+                    <SubTitle>Команды, через запятую</SubTitle>
+
+                    <TagInput
                         value={config.bot.roulette.commands.join(", ")}
                         onChange={(value) =>
+                            console.log("TagInput value changed:", value) ||
                             apply((prev) => {
                                 const cfg = mergeWithDefaults(prev);
+                                console.log("Updating commands with value:", prev.bot.roulette.commands, value);
                                 return {
                                     ...cfg,
                                     bot: {
@@ -171,6 +212,7 @@ export default function Roulette({ selectedTheme, apply }) {
                     <SurvivalMessagesComponent selectedTheme={selectedTheme} apply={apply} />
                     <WinnerMessagesComponent selectedTheme={selectedTheme} apply={apply} />
                     <CooldownMessagesComponent selectedTheme={selectedTheme} apply={apply} />
+                    <ProtectedUsersMessagesComponent selectedTheme={selectedTheme} apply={apply} />
                 </>
         )}
         </SettingsBlockFull>

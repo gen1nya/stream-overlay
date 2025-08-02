@@ -34,6 +34,7 @@ const SCOPES = [
   'channel:read:hype_train',
   'channel:read:goals',
   'channel:read:cheers',
+  'channel:read:editors',
   'user:read:follows',
   'moderator:read:followers',
   'moderator:manage:chat_messages',
