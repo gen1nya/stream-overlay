@@ -2,21 +2,18 @@ import { app } from 'electron';
 import WebSocket from 'ws';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
-import * as chatService from './services/chatService';
-import * as eventSubService from './services/esService';
 import * as messageCache from './services/MessageCacheManager';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
 import { ActionTypes } from './services/middleware/ActionTypes';
-import {getEditorsByBroadcasterId, timeoutUser} from './services/authorizedHelixApi';
+import { timeoutUser } from './services/authorizedHelixApi';
 import { createMainWindow } from "./windowsManager";
 import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/esService";
 import {ChatEvent, createBotMessage} from "./services/messageParser";
 import { LogService } from "./services/logService";
-import * as authService from "./services/authService";
-import {UserState} from "./services/UserState";
 import {UserData} from "./services/types/UserData";
+import { TwitchClient } from "./services/TwitchClient";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -55,7 +52,7 @@ const applyAction = async (action: { type: string; payload: any }) => {
   switch (action.type) {
     case ActionTypes.SEND_MESSAGE:
       if (action.payload.message) {
-        await chatService.sendMessage(action.payload.message);
+        await twitchClient.sendMessage(action.payload.message);
       }
       if (action.payload.forwardToUi) {
         setTimeout(async () => {
@@ -84,11 +81,12 @@ const logService = new LogService((logs) => {
   broadcast('log:updated', { logs });
 }, 100);
 
-chatService.setLogger(logService);
-eventSubService.setLogger(logService);
-
 const middlewareProcessor = new MiddlewareProcessor(applyAction, logService);
 middlewareProcessor.onThemeUpdated(currentTheme.bot);
+
+const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
+  middlewareProcessor.setEditors(editors);
+});
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -101,13 +99,22 @@ function broadcast(channel: string, payload: any) {
   });
 }
 
-const userState = new UserState(
-    logService,
-    (editors: UserData[]) => {
-      middlewareProcessor.setEditors(editors);
-    },
-    null
-)
+twitchClient.on('event', ({ destination, event }) => {
+  if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
+    messageCache.addMessage(event);
+  } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
+    messageCache.addMessage(event);
+  } else {
+    broadcast(destination, event);
+  }
+});
+
+twitchClient.on('chat', async (parsedMessage) => {
+  const result = await middlewareProcessor.processMessage(parsedMessage);
+  if (result) {
+    messageCache.addMessage(result);
+  }
+});
 
 app.whenReady().then(() => {
   const isDev = !app.isPackaged;
@@ -129,14 +136,9 @@ app.whenReady().then(() => {
       },
       messageCache,
       logService,
-      async () => {
-        const tokens = await authService.getTokens();
-        if (tokens && tokens.user_id) {
-          userState.setId(tokens.user_id);
-          userState.fetchEditors();
-        }
-      },
-        () => userState.getEditors(),
+      twitchClient,
+      () => twitchClient.refreshUser(),
+      () => twitchClient.getEditors(),
   );
 
   wss.on('connection', (ws) => {
@@ -158,23 +160,6 @@ app.whenReady().then(() => {
           console.log('unknown channel', channel, payload);
       }
     });
-  });
-
-  eventSubService.registerEventHandlers((destination, parsedEvent) => {
-    if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
-      messageCache.addMessage(parsedEvent);
-    } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
-      messageCache.addMessage(parsedEvent);
-    } else {
-      broadcast(destination, parsedEvent);
-    }
-  });
-
-  chatService.registerMessageHandler(async (parsedMessage) => {
-    const result = await middlewareProcessor.processMessage(parsedMessage);
-    if (result) {
-      messageCache.addMessage(result);
-    }
   });
 
   messageCache.registerMessageHandler(({ messages, showSourceChannel }) => {
