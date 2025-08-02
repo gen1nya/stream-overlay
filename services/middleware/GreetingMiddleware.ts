@@ -96,24 +96,29 @@ export default class GreetingMiddleware extends Middleware {
       type: "exact" | "start" | "contains"
   ): (msg: string) => boolean {
     if (trigger.type === "regex") {
-      const regex = new RegExp(trigger.value, trigger.flags);
+      try {
+        const regex = new RegExp(trigger.value, trigger.flags);
 
-      if (type === "exact") {
-        return (msg: string) => regex.test(msg.trim());
-      }
+        if (type === "exact") {
+          return (msg: string) => regex.test(msg.trim());
+        }
 
-      if (type === "start") {
-        return (msg: string) => {
-          const firstWord = msg.trim().split(/\s+/)[0];
-          return regex.test(firstWord);
-        };
-      }
+        if (type === "start") {
+          return (msg: string) => {
+            const firstWord = msg.trim().split(/\s+/)[0];
+            return regex.test(firstWord);
+          };
+        }
 
-      if (type === "contains") {
-        return (msg: string) => {
-          const words = msg.trim().split(/\s+/);
-          return words.some(word => regex.test(word));
-        };
+        if (type === "contains") {
+          return (msg: string) => {
+            const words = msg.trim().split(/\s+/);
+            return words.some(word => regex.test(word));
+          };
+        }
+      } catch (e) {
+        console.error(`❌ Invalid regex in trigger "${trigger.value}":`, e);
+        return () => false; // Return a no-op function if regex is invalid
       }
     }
 

@@ -197,9 +197,23 @@ class ChatService {
     return this.lastEventTimestamp;
   }
 
+  truncateToUtf8Bytes(str: string, maxBytes: number): string {
+    const encoder = new TextEncoder();
+    let result = '';
+    let bytes = 0;
+    for (const char of str) {
+      const encoded = encoder.encode(char);
+      if (bytes + encoded.length > maxBytes) break;
+      bytes += encoded.length;
+      result += char;
+    }
+    return result;
+  }
+
   async sendMessage(message: string): Promise<void> {
     if (this.client && !this.client.destroyed) {
-      const sanitized = message.replace(/[\r\n]+/g, ' ');
+      const sanitizedRaw = message.replace(/[\r\n]+/g, ' ');
+      const sanitized = this.truncateToUtf8Bytes(sanitizedRaw, 500);
       const channel = (await authService.getCurrentLogin())?.toLowerCase();
       this.client.write(`PRIVMSG #${channel} :${sanitized}\r\n`);
     }

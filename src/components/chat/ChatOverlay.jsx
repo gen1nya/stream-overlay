@@ -195,19 +195,27 @@ export default function ChatOverlay() {
                 case 'theme:update': {
                     setTheme(payload);
                     payload?.followMessage?.forEach((m, index) => {
-                        registerFontFace(m.messageFont.family, m.messageFont.url);
+                        if (m.messageFont?.family && m.messageFont?.url) {
+                            registerFontFace(m.messageFont.family, m.messageFont.url);
+                        }
                     })
                     payload?.redeemMessage?.forEach((m, index) => {
-                        registerFontFace(m.messageFont.family, m.messageFont.url);
+                        if (m.messageFont?.family && m.messageFont?.url) {
+                            registerFontFace(m.messageFont.family, m.messageFont.url);
+                        }
                     })
-                    registerFontFace(
-                        payload.chatMessage.titleFont.family,
-                        payload.chatMessage.titleFont.url
-                    );
-                    registerFontFace(
-                        payload.chatMessage.messageFont.family,
-                        payload.chatMessage.messageFont.url
-                    );
+                    if (payload?.chatMessage?.titleFont?.family && payload.chatMessage?.titleFont?.url) {
+                        registerFontFace(
+                            payload.chatMessage.titleFont.family,
+                            payload.chatMessage.titleFont.url
+                        );
+                    }
+                    if (payload?.chatMessage?.messageFont?.family && payload.chatMessage?.messageFont?.url) {
+                        registerFontFace(
+                            payload.chatMessage.messageFont.family,
+                            payload.chatMessage.messageFont.url
+                        );
+                    }
                     break;
                 }
                 default:
