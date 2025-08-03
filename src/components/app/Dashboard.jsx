@@ -192,6 +192,7 @@ export default function Dashboard() {
             getAccountInfo().then(info => {
                 const {accountInfo, editors} = info;
                 setAccount(accountInfo)
+                document.title = `Оверлеешная - ${accountInfo.displayName || accountInfo.login}`;
                 console.log(editors)
                 setEditors(editors)
             });

@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, {useState, useCallback} from 'react';
 import SeekbarComponent from '../../utils/SeekbarComponent';
-import { Row } from '../SettingsComponent';
-import { Spacer } from '../../utils/Separator';
-import { TemplateEditor } from '../../utils/TemplateEditor';
+import {Row} from '../SettingsComponent';
+import {Spacer} from '../../utils/Separator';
+import {TemplateEditor} from '../../utils/TemplateEditor';
 import {
     CollapsedPreview,
     RemoveButton,
-    SettingsBlockFull,
+    SettingsBlockFull, SettingsBlockSubTitle,
     SettingsBlockTitle,
     TitleRow,
     Triangle,
@@ -14,14 +14,16 @@ import {
 import ColorSelectorButton from './ColorSelectorButton';
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import RadioGroup from '../../utils/TextRadioGroup';
-import { FiTrash2 } from 'react-icons/fi';
+import {FiTrash2} from 'react-icons/fi';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
+import BackgroundColorEditorComponent from "../../utils/BackgroundColorEditorComponent";
+import {CanvasTab} from "../../utils/CanvasTab";
 
 const BACKGROUND_OPTIONS = [
-    { key: 'color', text: 'цвет' },
-    { key: 'image', text: 'картинки' },
-    { key: 'gradient', text: 'градиент' },
+    {key: 'color', text: 'цвет'},
+    {key: 'image', text: 'картинки'},
+    {key: 'gradient', text: 'градиент'},
 ];
 
 export default function FollowSettingsBlock({
@@ -40,23 +42,23 @@ export default function FollowSettingsBlock({
             onChange((prev) => {
                 const draft = prev.followMessage?.[index] ?? {};
                 const next =
-                    typeof updater === 'function' ? updater(draft) : { ...draft, ...updater };
+                    typeof updater === 'function' ? updater(draft) : {...draft, ...updater};
                 const arr = [...(prev.followMessage || [])];
                 arr[index] = next;
-                return { ...prev, followMessage: arr };
+                return {...prev, followMessage: arr};
             });
         },
         [onChange, index],
     );
 
-    const updateField = (key, value) => updateMessage((m) => ({ ...m, [key]: value }));
+    const updateField = (key, value) => updateMessage((m) => ({...m, [key]: value}));
     const updateNested = (key, part) =>
-        updateMessage((m) => ({ ...m, [key]: { ...m[key], ...part } }));
+        updateMessage((m) => ({...m, [key]: {...m[key], ...part}}));
     const updateNestedArray = (key, index, part) =>
         updateMessage(msg => {
             const list = Array.isArray(msg[key]) ? msg[key] : [];
             const updated = [...list];
-            updated[index] = { ...(list[index] || {}), ...part };
+            updated[index] = {...(list[index] || {}), ...part};
             return {
                 ...msg,
                 [key]: updated,
@@ -66,7 +68,7 @@ export default function FollowSettingsBlock({
     const {
         template = '🎉 {userName} just followed!',
         fontSize = 16,
-        messageFont = { family: 'Roboto' },
+        messageFont = {family: 'Roboto'},
         backgroundMode = 'color',
         backgroundColor = '#3e837c',
         backgroundOpacity = 1,
@@ -114,97 +116,101 @@ export default function FollowSettingsBlock({
                             placeholders={["userName"]}
                         />
                     </Row>
-
                     <Row>
-                        <RadioGroup
-                            defaultSelected={backgroundMode}
-                            items={BACKGROUND_OPTIONS}
-                            direction="horizontal"
-                            itemWidth="120px"
-                            onChange={(v) => updateField('backgroundMode', v)}
-                        />
-                        <Spacer/>
-                        <SeekbarComponent
-                            title={`Радиус скругления (${borderRadius}):`}
-                            min="0"
-                            max="20"
-                            step="1"
-                            width="150px"
-                            value={borderRadius}
-                            onChange={(v) => updateField('borderRadius', v)}
-                        />
-                    </Row>
-
-                    {backgroundMode === 'color' && (
-                        <Row>
-                            <ColorSelectorButton
-                                title="Цвет фона:"
-                                hex={backgroundColor}
-                                alpha={backgroundOpacity}
-                                openColorPopup={openColorPopup}
-                                onColorChange={({ color, alpha }) =>
-                                    updateMessage({ backgroundColor: color, backgroundOpacity: alpha })
-                                }
-                            />
-                            <ColorSelectorButton
-                                title="Цвет обводки:"
-                                hex={borderColor}
-                                alpha={borderOpacity}
-                                openColorPopup={openColorPopup}
-                                onColorChange={({ color, alpha }) =>
-                                    updateMessage({ borderColor: color, borderOpacity: alpha })
-                                }
-                            />
-                        </Row>
-                    )}
-
-                    {backgroundMode === 'image' &&
-                        <BackgroundImageEditorComponent
-                            message={message}
-                            onImageChanged={(image) => {
-                                updateNested('backgroundImages', image);
-                            }}
-                        />
-                    }
-                    {backgroundMode === 'gradient' && (
-                        <GradientEditor
-                            value={message.backgroundGradients?.[0] || {}}
-                            onChange={(g) => {
-                                updateNestedArray('backgroundGradients', 0, g);
-                            }}
-                        />
-                    )}
-
-                    <Row>
-                        <ColorSelectorButton
-                            title="Цвет тени:"
-                            hex={shadowColor}
-                            alpha={shadowOpacity}
-                            openColorPopup={openColorPopup}
-                            onColorChange={({ color, alpha }) =>
-                                updateMessage({ shadowColor: color, shadowOpacity: alpha })
-                            }
-                        />
                         <ColorSelectorButton
                             title="Цвет текста:"
                             hex={messageFont.color || '#ffffff'}
                             alpha={messageFont.opacity || 1}
                             openColorPopup={openColorPopup}
-                            onColorChange={({ color, alpha }) =>
-                                updateNested('messageFont', { color, opacity: alpha })
+                            onColorChange={({color, alpha}) =>
+                                updateNested('messageFont', {color, opacity: alpha})
                             }
                         />
                         <Spacer/>
+                        <ColorSelectorButton
+                            title={"Цвет тени текста:"}
+                            hex={messageFont?.shadowColor ?? "#000000"}
+                            alpha={messageFont?.shadowOpacity ?? 0}
+                            openColorPopup={openColorPopup}
+                            onColorChange={({color, alpha}) => {
+                                updateNested('messageFont', {shadowColor: color, shadowOpacity: alpha})
+                            }}
+                        />
                         <SeekbarComponent
-                            title={`Радиус тени (${shadowRadius}):`}
+                            title={`Радиус тени текста (${messageFont?.shadowRadius}):`}
                             min="0"
                             max="20"
                             step="1"
-                            width="150px"
-                            value={shadowRadius}
-                            onChange={(v) => updateField('shadowRadius', v)}
+                            width="160px"
+                            value={messageFont?.shadowRadius ?? 0}
+                            onChange={(v) => {
+                                updateNested("messageFont", {shadowRadius: v})
+                            }}
                         />
                     </Row>
+                    <CanvasTab>
+                        <SettingsBlockSubTitle
+                            style={{
+                                marginBottom: '12px',
+                                marginTop: '-8px',
+                                marginLeft: '0px',
+                                width: '60px',
+                            }}>
+                            Фон
+                        </SettingsBlockSubTitle>
+                        <Row>
+                            <RadioGroup
+                                defaultSelected={backgroundMode}
+                                items={BACKGROUND_OPTIONS}
+                                direction="horizontal"
+                                itemWidth="120px"
+                                onChange={(v) => updateField('backgroundMode', v)}
+                            />
+                            <Spacer/>
+                            <SeekbarComponent
+                                title={`Радиус скругления (${borderRadius}):`}
+                                min="0"
+                                max="20"
+                                step="1"
+                                width="150px"
+                                value={borderRadius}
+                                onChange={(v) => updateField('borderRadius', v)}
+                            />
+                        </Row>
+
+                        {backgroundMode === 'image' &&
+                            <BackgroundImageEditorComponent
+                                message={message}
+                                onImageChanged={(image) => {
+                                    updateNested('backgroundImages', image);
+                                }}
+                            />
+                        }
+                        {backgroundMode === 'gradient' && (
+                            <GradientEditor
+                                value={message.backgroundGradients?.[0] || {}}
+                                onChange={(g) => {
+                                    updateNestedArray('backgroundGradients', 0, g);
+                                }}
+                            />
+                        )}
+
+                        <BackgroundColorEditorComponent
+                            message={message}
+                            onBackgroundColorChange={({color, alpha}) =>
+                                updateMessage({
+                                    backgroundColor: color,
+                                    backgroundOpacity: alpha,
+                                })
+                            }
+                            onBorderColorChange={({color, alpha}) =>
+                                updateMessage({borderColor: color, borderOpacity: alpha})
+                            }
+                            openColorPopup={openColorPopup}
+                            onShadowColorChange={updateMessage}
+                            onShadowRadiusChange={updateField}
+                        />
+                    </CanvasTab>
 
                     <PaddingEditorComponent
                         message={message}
@@ -215,7 +221,7 @@ export default function FollowSettingsBlock({
                     />
 
                     <Row>
-                        <Spacer />
+                        <Spacer/>
                         <RemoveButton
                             onClick={() => onRemove?.(index)}
                             disabled={disableRemove}
@@ -223,7 +229,7 @@ export default function FollowSettingsBlock({
                                 disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить'
                             }
                         >
-                            <FiTrash2 size={24} />
+                            <FiTrash2 size={24}/>
                         </RemoveButton>
                     </Row>
                 </>

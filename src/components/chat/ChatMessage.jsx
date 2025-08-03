@@ -48,7 +48,7 @@ const Content = styled.div`
 
 const TitleContainer = styled.div`
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
-    font-family: ${({theme}) => theme.chatMessage.titleFont.family};
+    font-family: ${({theme}) => theme.chatMessage.titleFont.family ?? "sans-serif"};
     display: flex;
     align-items: center;
     flex-direction: row;
@@ -88,14 +88,17 @@ const Username = styled.span`
             textShadowXPosition,
             textShadowYPosition
         } = theme.allMessages;
-        console.log(theme.allMessages);
-        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+        const m = theme.chatMessage;
+        const shadowColor = m.messageFont?.shadowColor ?? textShadowColor ?? '#000';
+        const shadowOpacity = m.messageFont?.shadowOpacity ?? textShadowOpacity ?? 0;
+        const shadowRadius = m.messageFont?.shadowRadius ?? textShadowRadius ?? 0;
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
 `;
 
 const MessageText = styled.span`
     display: inline-block;
-    font-family: ${({theme}) => theme.chatMessage.messageFont.family};
+    font-family: ${({theme}) => theme.chatMessage.messageFont.family ?? "sans-serif"};
     text-shadow: ${({theme}) => {
         if (!theme.allMessages) {
             return 'none';
@@ -107,8 +110,11 @@ const MessageText = styled.span`
             textShadowXPosition, 
             textShadowYPosition
         } = theme.allMessages;
-        console.log(theme.allMessages);
-        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+        const m = theme.chatMessage;
+        const shadowColor = m.messageFont?.shadowColor ?? textShadowColor ?? '#000';
+        const shadowOpacity = m.messageFont?.shadowOpacity ?? textShadowOpacity ?? 0;
+        const shadowRadius = m.messageFont?.shadowRadius ?? textShadowRadius ?? 0;
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
     color: ${({theme}) => {
         const defaultColor = theme.allMessages?.textColor ?? '#fff';

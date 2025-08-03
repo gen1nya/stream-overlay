@@ -4,13 +4,13 @@ import {generateGradientCSS, getLayeredBackgroundStyles, hexToRgba} from "../../
 
 const Text = styled.span`
     font-size: ${({theme, $index}) => theme.followMessage[$index].fontSize}px;
-    font-family: ${({theme, $index}) => theme.followMessage[$index].messageFont.family};
+    font-family: ${({theme, $index}) => theme.followMessage[$index].messageFont.family ?? "sans-serif"};
     color: ${({theme, $index}) => {
         const defaultColor = theme.allMessages?.textColor ?? '#fff'
         const m = theme.followMessage[$index];
         return hexToRgba(m.messageFont.color ?? defaultColor, m.messageFont.opacity ?? 1);
     }};
-    text-shadow: ${({theme}) => {
+    text-shadow: ${({theme, $index}) => {
         if (!theme.allMessages) return 'none';
         const {
             textShadowColor,
@@ -19,7 +19,11 @@ const Text = styled.span`
             textShadowXPosition,
             textShadowYPosition
         } = theme.allMessages;
-        return `${textShadowXPosition}px ${textShadowYPosition}px ${textShadowRadius}px ${hexToRgba(textShadowColor, textShadowOpacity)}`;
+        const m = theme.followMessage[$index];
+        const shadowColor = m.messageFont?.shadowColor ?? textShadowColor ?? '#000';
+        const shadowOpacity = m.messageFont?.shadowOpacity ?? textShadowOpacity ?? 0;
+        const shadowRadius = m.messageFont?.shadowRadius ?? textShadowRadius ?? 0;
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
 `;
 
@@ -45,8 +49,8 @@ const MessageContainer = styled.div`
         return hexToRgba(m.backgroundColor, m.backgroundOpacity);
     }};
 
-    ${({ theme, $index }) => getLayeredBackgroundStyles(theme.followMessage[$index])}
-    ${({ theme, $index = 0}) => generateGradientCSS(theme.followMessage[$index])}
+    ${({theme, $index}) => getLayeredBackgroundStyles(theme.followMessage[$index])}
+    ${({theme, $index = 0}) => generateGradientCSS(theme.followMessage[$index])}
 
     box-shadow: ${({theme, $index}) => {
         const m = theme.followMessage[$index];

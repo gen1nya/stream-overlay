@@ -25,7 +25,7 @@ const MessageContainer = styled.div`
     }};
 
     ${({theme, $index = 0}) => getLayeredBackgroundStyles(theme.redeemMessage[$index])}
-    ${({ theme, $index = 0}) => generateGradientCSS(theme.redeemMessage[$index])}
+    ${({theme, $index = 0}) => generateGradientCSS(theme.redeemMessage[$index])}
 
     box-shadow: ${({theme, $index = 0}) => {
         const rm = theme.redeemMessage[$index];
@@ -49,17 +49,27 @@ const Content = styled.div`
     }};
 
     font-size: ${({theme, $index = 0}) => theme.redeemMessage[$index].fontSize}px;
-    font-family: ${({theme, $index = 0}) => theme.redeemMessage[$index].messageFont.family};
+    font-family: ${({theme, $index = 0}) => theme.redeemMessage[$index].messageFont.family ?? "sans-serif"};
     color: ${({theme, $index}) => {
         const defaultColor = theme.allMessages?.textColor ?? '#fff'
         const m = theme.redeemMessage[$index];
         return hexToRgba(m.messageFont.color ?? defaultColor, m.messageFont.opacity ?? 1);
     }};
 
-    text-shadow: ${({theme}) => {
-        const am = theme.allMessages;
-        if (!am) return 'none';
-        return `${am.textShadowXPosition}px ${am.textShadowYPosition}px ${am.textShadowRadius}px ${hexToRgba(am.textShadowColor, am.textShadowOpacity)}`;
+    text-shadow: ${({theme, $index}) => {
+        if (!theme.allMessages) return 'none';
+        const {
+            textShadowColor,
+            textShadowOpacity,
+            textShadowRadius,
+            textShadowXPosition,
+            textShadowYPosition
+        } = theme.allMessages;
+        const m = theme.redeemMessage[$index];
+        const shadowColor = m.messageFont?.shadowColor ?? textShadowColor ?? '#000';
+        const shadowOpacity = m.messageFont?.shadowOpacity ?? textShadowOpacity ?? 0;
+        const shadowRadius = m.messageFont?.shadowRadius ?? textShadowRadius ?? 0;
+        return `${textShadowXPosition}px ${textShadowYPosition}px ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
     }};
 `;
 

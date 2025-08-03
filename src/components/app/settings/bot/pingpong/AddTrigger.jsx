@@ -83,7 +83,7 @@ export default function AddTrigger({
             <Row>
                 <TitleRow>Добавить триггер:</TitleRow>
                 <RadioGroup
-                    defaultSelected="text"
+                    defaultSelected={type}
                     items={[
                         { key: 'text', text: 'текст' },
                         { key: 'regex', text: 'regex' },

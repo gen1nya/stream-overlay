@@ -91,6 +91,7 @@ const ConnectionLost = styled.div`
 export default function PreviewComponent() {
     const [theme, setTheme] = useState(defaultTheme);
 
+    document.title = `Предпросмотр темы`;
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
         onOpen: (_, socket) => {
             console.log('🟢 WebSocket подключен');

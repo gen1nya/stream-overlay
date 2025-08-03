@@ -2,6 +2,18 @@ import React, { useState, useRef, useEffect, Suspense } from 'react';
 import styled from 'styled-components';
 import * as AiIcons from "react-icons/ai";
 
+const Wrapper = styled.div`
+    display: flex;
+    flex-direction: column;
+`;
+
+const Title = styled.div`
+    color: #d9d9d9;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 4px;
+`;
+
 const Container = styled.div`
     display: flex;
     flex-direction: ${({ direction }) => direction === 'vertical' ? 'column' : 'row'};
@@ -52,6 +64,7 @@ const RadioGroup = ({
                         defaultSelected,
                         direction = 'horizontal',
                         itemWidth = '200px',
+                        title,
                     }) => {
     const getInitialKey = () => {
         const found = items.find((item) => item.key === defaultSelected);
@@ -103,7 +116,7 @@ const RadioGroup = ({
         return <IconComponent size={18} color={active ? 'white' : '#d9d9d9'} />;
     };
 
-    return (
+    const containerContent = (
         <Container ref={containerRef} direction={direction}>
             <Highlight {...highlightStyle} />
             {items.map((item) => {
@@ -121,6 +134,19 @@ const RadioGroup = ({
                 );
             })}
         </Container>
+    );
+
+    // Если заголовок не передан, возвращаем только контейнер
+    if (!title) {
+        return containerContent;
+    }
+
+    // Если заголовок передан, оборачиваем в Wrapper с заголовком
+    return (
+        <Wrapper>
+            <Title>{title}</Title>
+            {containerContent}
+        </Wrapper>
     );
 };
 

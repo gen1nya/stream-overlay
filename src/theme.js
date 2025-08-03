@@ -24,6 +24,9 @@ export const defaultTheme = {
             url: "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
             color: "#ffffff",
             alpha: "1",
+            shadowColor: "#000000",
+            shadowOpacity: "0",
+            shadowRadius: "0"
         }
     },
     followMessage: [
@@ -48,6 +51,9 @@ export const defaultTheme = {
                 url: "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
                 color: "#ffffff",
                 alpha: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
             }
         }
     ],
@@ -73,6 +79,9 @@ export const defaultTheme = {
                 url: "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
                 color: "#ffffff",
                 alpha: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
             }
         }
     ],

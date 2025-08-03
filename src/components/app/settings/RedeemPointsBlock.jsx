@@ -1,12 +1,12 @@
-import React, { useState, useCallback } from 'react';
+import React, {useState, useCallback} from 'react';
 import SeekbarComponent from '../../utils/SeekbarComponent';
-import { Row } from '../SettingsComponent';
-import { Spacer } from '../../utils/Separator';
-import { TemplateEditor } from '../../utils/TemplateEditor';
+import {Row} from '../SettingsComponent';
+import {Spacer} from '../../utils/Separator';
+import {TemplateEditor} from '../../utils/TemplateEditor';
 import {
     CollapsedPreview,
     RemoveButton,
-    SettingsBlockFull,
+    SettingsBlockFull, SettingsBlockSubTitle,
     SettingsBlockTitle,
     TitleRow,
     Triangle,
@@ -14,15 +14,16 @@ import {
 import ColorSelectorButton from './ColorSelectorButton';
 import RadioGroup from '../../utils/TextRadioGroup';
 import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorComponent';
-import { FiTrash2 } from 'react-icons/fi';
+import {FiTrash2} from 'react-icons/fi';
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
+import {CanvasTab} from "../../utils/CanvasTab";
 
 const BACKGROUND_MODE_ITEMS = [
-    { key: 'color', text: 'цвет' },
-    { key: 'image', text: 'картинки' },
-    { key: 'gradient', text: 'градиент' },
+    {key: 'color', text: 'цвет'},
+    {key: 'image', text: 'картинки'},
+    {key: 'gradient', text: 'градиент'},
 ];
 
 export default function RedeemPointsBlock({
@@ -42,7 +43,7 @@ export default function RedeemPointsBlock({
                 const updatedMsg =
                     typeof updater === 'function'
                         ? updater(prev.redeemMessage[index])
-                        : { ...prev.redeemMessage[index], ...updater };
+                        : {...prev.redeemMessage[index], ...updater};
 
                 const updatedArray = [...prev.redeemMessage];
                 updatedArray[index] = updatedMsg;
@@ -56,17 +57,17 @@ export default function RedeemPointsBlock({
     );
 
     const updateField = (key, val) =>
-        updateRedeemMessage((msg) => ({ ...msg, [key]: val }));
+        updateRedeemMessage((msg) => ({...msg, [key]: val}));
     const updateNested = (key, part) =>
         updateRedeemMessage((msg) => ({
             ...msg,
-            [key]: { ...msg[key], ...part },
+            [key]: {...msg[key], ...part},
         }));
     const updateNestedArray = (key, index, part) =>
         updateRedeemMessage(msg => {
             const list = Array.isArray(msg[key]) ? msg[key] : [];
             const updated = [...list];
-            updated[index] = { ...(list[index] || {}), ...part };
+            updated[index] = {...(list[index] || {}), ...part};
             return {
                 ...msg,
                 [key]: updated,
@@ -76,7 +77,7 @@ export default function RedeemPointsBlock({
     const {
         template = '🎉 {userName} потратил {cost} баллов на {title}',
         fontSize = 16,
-        messageFont = { family: 'Roboto' },
+        messageFont = {family: 'Roboto'},
         backgroundMode = 'color',
         borderRadius = 0,
         shadowColor = '#3e837c',
@@ -108,7 +109,7 @@ export default function RedeemPointsBlock({
                             fontSize={`${fontSize}px`}
                             onFontSizeChange={(v) => updateField('fontSize', v)}
                             currentFontFamily={messageFont.family}
-                            onFontSelected={({ family, files }) =>
+                            onFontSelected={({family, files}) =>
                                 updateNested('messageFont', {
                                     family,
                                     url: files.regular || Object.values(files)[0],
@@ -119,89 +120,103 @@ export default function RedeemPointsBlock({
                     </Row>
 
                     <Row>
-                        <RadioGroup
-                            defaultSelected={backgroundMode}
-                            items={BACKGROUND_MODE_ITEMS}
-                            direction="horizontal"
-                            itemWidth="120px"
-                            onChange={(v) => updateField('backgroundMode', v)}
-                        />
-                        <Spacer />
-                        <SeekbarComponent
-                            title={`Радиус скругления (${borderRadius}):`}
-                            min="0"
-                            max="20"
-                            step="1"
-                            width="150px"
-                            value={borderRadius}
-                            onChange={(v) => updateField('borderRadius', v)}
-                        />
-                    </Row>
-
-                    {backgroundMode === 'color' && (
-                        <BackgroundColorEditorComponent
-                            message={message}
-                            onBackgroundColorChange={({ color, alpha }) =>
-                                updateRedeemMessage({
-                                    backgroundColor: color,
-                                    backgroundOpacity: alpha,
-                                })
-                            }
-                            onBorderColorChange={({ color, alpha }) =>
-                                updateRedeemMessage({ borderColor: color, borderOpacity: alpha })
-                            }
-                            openColorPopup={openColorPopup}
-                        />
-                    )}
-
-                    {backgroundMode === 'image' &&
-                        <BackgroundImageEditorComponent
-                            message={message}
-                            onImageChanged={(image) => {
-                                updateNested('backgroundImages', image);
-                            }}
-                        />
-                    }
-                    {backgroundMode === 'gradient' && (
-                        <GradientEditor
-                            value={message.backgroundGradients?.[0] || {}}
-                            onChange={(g) => {
-                                updateNestedArray('backgroundGradients', 0, g);
-                            }}
-                        />
-                    )}
-
-                    {/* Тень */}
-                    <Row>
-                        <ColorSelectorButton
-                            title="Цвет тени:"
-                            hex={shadowColor}
-                            alpha={shadowOpacity}
-                            openColorPopup={openColorPopup}
-                            onColorChange={({ color, alpha }) =>
-                                updateRedeemMessage({ shadowColor: color, shadowOpacity: alpha })
-                            }
-                        />
                         <ColorSelectorButton
                             title="Цвет текста:"
                             hex={messageFont.color || '#ffffff'}
                             alpha={messageFont.opacity || 1}
                             openColorPopup={openColorPopup}
-                            onColorChange={({ color, alpha }) =>
-                                updateNested('messageFont', { color, opacity: alpha })
+                            onColorChange={({color, alpha}) =>
+                                updateNested('messageFont', {color, opacity: alpha})
                             }
                         />
-                        <Spacer />
+                        <Spacer/>
+                        <Spacer/>
+                        <ColorSelectorButton
+                            title={"Цвет тени текста:"}
+                            hex={messageFont?.shadowColor ?? "#000000"}
+                            alpha={messageFont?.shadowOpacity ?? 0}
+                            openColorPopup={openColorPopup}
+                            onColorChange={({color, alpha}) => {
+                                updateNested('messageFont', {shadowColor: color, shadowOpacity: alpha})
+                            }}
+                        />
                         <SeekbarComponent
-                            title={`Радиус тени (${shadowRadius}):`}
+                            title={`Радиус тени текста (${messageFont?.shadowRadius}):`}
                             min="0"
                             max="20"
                             step="1"
-                            width="150px"
-                            value={shadowRadius}
-                            onChange={(v) => updateField('shadowRadius', v)}
+                            width="160px"
+                            value={messageFont?.shadowRadius ?? 0}
+                            onChange={(v) => {
+                                updateNested("messageFont", {shadowRadius: v})
+                            }}
                         />
                     </Row>
+
+                    <CanvasTab>
+                        <SettingsBlockSubTitle
+                            style={{
+                                marginBottom: '12px',
+                                marginTop: '-8px',
+                                marginLeft: '0px',
+                                width: '60px',
+                            }}>
+                            Фон
+                        </SettingsBlockSubTitle>
+                        <Row>
+                            <RadioGroup
+                                defaultSelected={backgroundMode}
+                                items={BACKGROUND_MODE_ITEMS}
+                                direction="horizontal"
+                                itemWidth="120px"
+                                onChange={(v) => updateField('backgroundMode', v)}
+                            />
+                            <Spacer/>
+                            <SeekbarComponent
+                                title={`Радиус скругления (${borderRadius}):`}
+                                min="0"
+                                max="20"
+                                step="1"
+                                width="150px"
+                                value={borderRadius}
+                                onChange={(v) => updateField('borderRadius', v)}
+                            />
+                        </Row>
+
+                        {backgroundMode === 'image' &&
+                            <BackgroundImageEditorComponent
+                                message={message}
+                                onImageChanged={(image) => {
+                                    updateNested('backgroundImages', image);
+                                }}
+                            />
+                        }
+                        {backgroundMode === 'gradient' && (
+                            <GradientEditor
+                                value={message.backgroundGradients?.[0] || {}}
+                                onChange={(g) => {
+                                    updateNestedArray('backgroundGradients', 0, g);
+                                }}
+                            />
+                        )}
+
+                        <BackgroundColorEditorComponent
+                            message={message}
+                            onBackgroundColorChange={({color, alpha}) =>
+                                updateRedeemMessage({
+                                    backgroundColor: color,
+                                    backgroundOpacity: alpha,
+                                })
+                            }
+                            onBorderColorChange={({color, alpha}) =>
+                                updateRedeemMessage({borderColor: color, borderOpacity: alpha})
+                            }
+                            openColorPopup={openColorPopup}
+                            onShadowColorChange={updateRedeemMessage}
+                            onShadowRadiusChange={updateField}
+                        />
+
+                    </CanvasTab>
 
                     <PaddingEditorComponent
                         message={message}
@@ -212,13 +227,13 @@ export default function RedeemPointsBlock({
                     />
 
                     <Row>
-                        <Spacer />
+                        <Spacer/>
                         <RemoveButton
                             onClick={() => onRemove?.(index)}
                             disabled={disableRemove}
                             title={disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить'}
                         >
-                            <FiTrash2 size={24} />
+                            <FiTrash2 size={24}/>
                         </RemoveButton>
                     </Row>
                 </>

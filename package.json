@@ -27,6 +27,12 @@
     "npmRebuild": false,
     "directories": {
       "buildResources": "assets"
+    },
+    "win": {
+      "icon": "assets/icon.ico"
+    },
+    "linux": {
+      "icon": "assets/icon.png"
     }
   },
   "dependencies": {

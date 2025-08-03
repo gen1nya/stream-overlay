@@ -118,6 +118,7 @@ export default function GradientEditor({ value, onChange }) {
                 onSelect={setSelectedId}
                 onChange={updateStop}
                 onAdd={addStop}
+                onRemove={removeStop}
             />
 
             <Row>
@@ -138,18 +139,6 @@ export default function GradientEditor({ value, onChange }) {
                     }}
                     hideInput={false}
                 />
-
-                <SettingsElementWrapper>
-                    <Input
-                        type="number"
-                        min={0}
-                        max={100}
-                        value={selectedStop.position ?? 0}
-                        onChange={e => updateStop(selectedId, { position: Number(e.target.value) })}
-                    />
-
-                    <button onClick={() => removeStop(selectedId)}>✕</button>
-                </SettingsElementWrapper>
 
                 <SettingsElementWrapper>
                     <label>Type:</label>

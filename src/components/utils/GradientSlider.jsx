@@ -1,6 +1,7 @@
-import React, { useRef } from 'react';
+import React, {useRef} from 'react';
 import styled from 'styled-components';
 import {hexToRgba} from "../../utils";
+import {FiXCircle} from "react-icons/fi";
 
 const SliderWrapper = styled.div`
     position: relative;
@@ -8,7 +9,8 @@ const SliderWrapper = styled.div`
     width: auto;
     background: #333;
     border-radius: 4px;
-    margin-bottom: 16px;
+    margin-bottom: 24px;
+    margin-top: 10px;
     cursor: pointer;
 `;
 
@@ -21,21 +23,79 @@ const GradientBar = styled.div`
     border-radius: 4px;
 `;
 
-const StopHandle = styled.div`
+const StopContainer = styled.div`
     position: absolute;
-    top: -4px;
-    width: 10px;
-    height: 40px;
-    border-radius: 3px;
-    border: 2px solid #fff;
-    background-color: ${({ color }) => color};
+    top: 0;
     transform: translateX(-50%);
-    cursor: grab;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
     z-index: ${({ selected }) => (selected ? 2 : 1)};
-    box-shadow: ${({ selected }) => (selected ? '0 0 6px #fff' : 'none')};
 `;
 
-export default function GradientSlider({ stops, selectedId, onSelect, onChange, onAdd }) {
+const PositionLabel = styled.div`
+    position: absolute;
+    top: -24px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    
+    &::after {
+        content: '';
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        border: 4px solid transparent;
+        border-top-color: rgba(0, 0, 0, 0.8);
+    }
+`;
+
+const StopHandle = styled.div`
+    width: 10px;
+    height: 32px;
+    border-radius: 3px;
+    border: ${({selected}) => (selected ? '2px solid #fff' : '1px solid #999')};
+    background-color: ${({color}) => color};
+    cursor: grab;
+    box-shadow: ${({ selected }) => (selected ? '0 0 6px #fff' : 'none')};
+    
+    &:active {
+        cursor: grabbing;
+    }
+`;
+
+const RemoveButton = styled.button`
+    position: absolute;
+    top: 36px;
+    background: none;
+    border: none;
+    color: #ff7f7f;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+
+    &:hover {
+        color: #ff6666;
+        transform: scale(1.1);
+        background: rgba(255, 68, 68, 0.1);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
+`;
+
+export default function GradientSlider({ stops, selectedId, onSelect, onChange, onAdd, onRemove }) {
     const wrapperRef = useRef(null);
 
     const handleClick = e => {
@@ -51,7 +111,12 @@ export default function GradientSlider({ stops, selectedId, onSelect, onChange, 
         const x = e.clientX - rect.left;
         let percent = Math.round((x / rect.width) * 100);
         percent = Math.max(0, Math.min(100, percent));
-        onChange(stopId, { position: percent });
+        onChange(stopId, {position: percent});
+    };
+
+    const handleRemove = (e, stopId) => {
+        e.stopPropagation();
+        onRemove(stopId);
     };
 
     // Сортируем stops по position для корректного отображения градиента
@@ -65,27 +130,50 @@ export default function GradientSlider({ stops, selectedId, onSelect, onChange, 
         <SliderWrapper ref={wrapperRef} onClick={handleClick}>
             <GradientBar style={{ background: gradientCSS }} />
 
-            {stops.map((stop) => (
-                <StopHandle
-                    key={stop.id}
-                    color={stop.color}
-                    selected={stop.id === selectedId}
-                    style={{ left: `${stop.position}%` }}
-                    onMouseDown={e => {
-                        e.stopPropagation();
-                        onSelect(stop.id);
+            {stops.map((stop) => {
+                const isSelected = stop.id === selectedId;
 
-                        const onMove = evt => handleDrag(evt, stop.id);
-                        const onUp = () => {
-                            window.removeEventListener('mousemove', onMove);
-                            window.removeEventListener('mouseup', onUp);
-                        };
+                return (
+                    <StopContainer
+                        key={stop.id}
+                        selected={isSelected}
+                        style={{ left: `${stop.position}%` }}
+                    >
+                        {isSelected && (
+                            <PositionLabel>
+                                {stop.position}%
+                            </PositionLabel>
+                        )}
 
-                        window.addEventListener('mousemove', onMove);
-                        window.addEventListener('mouseup', onUp);
-                    }}
-                />
-            ))}
+                        <StopHandle
+                            color={stop.color}
+                            selected={isSelected}
+                            onMouseDown={e => {
+                                e.stopPropagation();
+                                onSelect(stop.id);
+
+                                const onMove = evt => handleDrag(evt, stop.id);
+                                const onUp = () => {
+                                    window.removeEventListener('mousemove', onMove);
+                                    window.removeEventListener('mouseup', onUp);
+                                };
+
+                                window.addEventListener('mousemove', onMove);
+                                window.addEventListener('mouseup', onUp);
+                            }}
+                        />
+
+                        {isSelected && (
+                            <RemoveButton
+                                onClick={(e) => handleRemove(e, stop.id)}
+                                title="Удалить точку"
+                            >
+                                <FiXCircle size={20} />
+                            </RemoveButton>
+                        )}
+                    </StopContainer>
+                );
+            })}
         </SliderWrapper>
     );
 }
