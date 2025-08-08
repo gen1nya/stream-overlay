@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, {useEffect, useRef, useState} from 'react';
 import styled from 'styled-components';
-import { logout, openOverlay, getAccountInfo, getStats, reconnect } from '../../services/api';
-import { useNavigate } from 'react-router-dom';
+import {logout, openOverlay, getAccountInfo, getStats, reconnect, openExternalLink} from '../../services/api';
+import {useNavigate} from 'react-router-dom';
 import Marquee from "react-fast-marquee";
 import UserInfoPopup from "./UserInfoPopup";
 
 const Container = styled.div`
     display: flex;
-    flex-direction: row;    
+    flex-direction: row;
 `;
 
 const Content = styled.div`
@@ -15,7 +15,7 @@ const Content = styled.div`
     width: calc(100% - 260px);
     box-sizing: border-box;
     padding-top: 36px;
-    padding-left: 24px ;
+    padding-left: 24px;
     padding-right: 24px;
     flex-direction: column;
     gap: 24px;
@@ -141,7 +141,7 @@ export default function Dashboard() {
     const called = useRef(false);
     const [account, setAccount] = useState(null);
     const [editors, setEditors] = useState(null);
-    const [stats, setStats] = useState({ startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now() });
+    const [stats, setStats] = useState({startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now()});
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
 
@@ -151,8 +151,21 @@ export default function Dashboard() {
     });
 
     const openUserInfoPopup = (userId, userName) => {
-        setUserInfoPopup({ id: userId, userName: userName, open: true });
+        setUserInfoPopup({id: userId, userName: userName, open: true});
     }
+
+    const streamers = [
+        'ellis_leaf',
+        'kururun_chan',
+        'fox1k_ru',
+        'sonamint',
+        'kigudi',
+        'kurosakissora'
+    ];
+
+    const openTwitchProfile = (username) => {
+        openExternalLink(`https://twitch.tv/${username}`);
+    };
 
     useEffect(() => {
         if (logPanelRef.current) {
@@ -162,7 +175,7 @@ export default function Dashboard() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/auth', { replace: true });
+        navigate('/auth', {replace: true});
     };
 
     const handleOpenOverlay = () => {
@@ -170,7 +183,7 @@ export default function Dashboard() {
     };
 
     const handlerOpenSettings = () => {
-        navigate('/settings', { replace: false });
+        navigate('/settings', {replace: false});
     };
 
     const handleCopyChatLink = () => {
@@ -253,7 +266,7 @@ export default function Dashboard() {
                     <UserInfoPopup
                         userId={userInfoPopup.id}
                         userName={userInfoPopup.userName}
-                        onClose={() => setUserInfoPopup({ id: '', open: false, userName: '' })}
+                        onClose={() => setUserInfoPopup({id: '', open: false, userName: ''})}
                     />
                 )}
                 <Container>
@@ -262,7 +275,7 @@ export default function Dashboard() {
                             <SectionTitle>Аккаунт</SectionTitle>
                             {account ? (
                                 <AccountRow>
-                                    <Avatar src={account.avatar} alt="avatar" />
+                                    <Avatar src={account.avatar} alt="avatar"/>
                                     <div>
                                         <div>{account.displayName || account.login}</div>
                                         <div>Фолловеров: {account.followerCount}</div>
@@ -295,7 +308,8 @@ export default function Dashboard() {
                             <LogLine key={index}>
                                 [{new Date(log.timestamp).toLocaleTimeString()}]{' '}
                                 {log.userName ?
-                                    <span className="username" onClick={() => openUserInfoPopup(log.userId, log.userName)}>
+                                    <span className="username"
+                                          onClick={() => openUserInfoPopup(log.userId, log.userName)}>
                                         {log.userName}
                                     </span>
                                     : null}
@@ -307,16 +321,38 @@ export default function Dashboard() {
                 </Container>
 
                 <StatusBlock>
-                    <StatLine style={{ color: '#b0b0b0' }}>Аптайм: {formatDuration(uptime)}</StatLine>
-                    <StatLine style={{ color: eventSubColor }}>EventSub: {formatDuration(sinceEventSub)}</StatLine>
-                    <StatLine style={{ color: ircColor }}>IRC: {formatDuration(sinceIRC)}</StatLine>
+                    <StatLine style={{color: '#b0b0b0'}}>Аптайм: {formatDuration(uptime)}</StatLine>
+                    <StatLine style={{color: eventSubColor}}>EventSub: {formatDuration(sinceEventSub)}</StatLine>
+                    <StatLine style={{color: ircColor}}>IRC: {formatDuration(sinceIRC)}</StatLine>
                     <button onClick={handleReconnect}>Reconnect</button>
                 </StatusBlock>
                 <Footer>
-                    <Marquee>Бета-тест: ellis_leaf, kururun_chan, fox1k_ru, sonamint</Marquee>
+                    <Marquee
+                        style={{
+                            fontSize: '14px',
+                        }}
+                    >
+                        Бета-тест:&nbsp;
+                        {streamers.map((name, index) => (
+                            <React.Fragment key={name}>
+                            <span
+                                onClick={() => openTwitchProfile(name)}
+                                style={{
+                                    cursor: 'pointer',
+                                    textDecoration: 'underline',
+                                    marginRight: '0.5em',
+                                    color: '#9147ff',
+                                }}
+                            >
+                            {name}
+                            </span>
+                                {index < streamers.length - 1 && ','}&nbsp;
+                            </React.Fragment>
+                        ))}
+                    </Marquee>
                     <Version>v0.3.4-beta</Version>
                 </Footer>
             </Wrapper>
-            </>
+        </>
     );
 }

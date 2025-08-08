@@ -13,7 +13,7 @@ const InputContainer = styled.div`
 
 const InputWrapper = styled.div`
     position: relative;
-    width: 100%;//calc(100% - 120px);
+    width: 100%;
 `;
 
 const InputField = styled.input`
