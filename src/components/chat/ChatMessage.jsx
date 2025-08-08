@@ -121,6 +121,7 @@ const MessageText = styled.span`
         return hexToRgba(theme.chatMessage.messageFont.color ?? defaultColor, theme.chatMessage.messageFont.opacity ?? 1);
     }};
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
+    overflow-wrap: anywhere;
     img {
         height: 1em;
     }
