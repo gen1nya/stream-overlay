@@ -22,6 +22,7 @@ export default function BackgroundImageEditorComponent({
         <Container>
             <SmallSubTitle>Шапка</SmallSubTitle>
             <ConfirmableInputField
+                key="topImage"
                 onConfirm={(data) => {
                     const imageUrl = data.value;
                     onImageChanged({ top: imageUrl });
@@ -57,6 +58,7 @@ export default function BackgroundImageEditorComponent({
                 />
             </Row>
             <ConfirmableInputField
+                key="middleImage"
                 onConfirm={(data) => {
                     const imageUrl = data.value;
                     onImageChanged({ middle: imageUrl });
@@ -76,6 +78,7 @@ export default function BackgroundImageEditorComponent({
             />
             <SmallSubTitle>Подвал</SmallSubTitle>
             <ConfirmableInputField
+                key="bottomImage"
                 onConfirm={(data) => {
                     const imageUrl = data.value;
                     onImageChanged({ bottom: imageUrl });

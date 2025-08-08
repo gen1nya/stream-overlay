@@ -109,6 +109,27 @@ const FFTBars = ({
         buildGradient(ctx, canvas.height);
     };
 
+    /*useEffect(() => {
+        const interval = setInterval(() => {
+            const values = current.current;
+            const blocks = "▁▂▃▄▅▆▇█";
+            const step = Math.ceil(values.length / 16);
+            const chars = [];
+
+            for (let i = 0; i < values.length; i += step) {
+                const slice = values.slice(i, i + step);
+                const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
+                const level = Math.min(blocks.length - 1, Math.floor(avg * blocks.length));
+                chars.push(blocks[level]);
+            }
+
+            const spectrumStr = chars.join("");
+
+            document.title = (spectrumStr);
+        }, 32);
+        return () => clearInterval(interval);
+    }, []);*/
+
     useEffect(() => {
         const canvas = canvasRef.current;
         const ctx    = canvas.getContext("2d");

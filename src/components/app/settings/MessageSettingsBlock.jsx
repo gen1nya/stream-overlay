@@ -190,6 +190,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                     <BackgroundImageEditorComponent
                         message={chatMessage}
                         onImageChanged={(image) => {
+                            console.log('image changed', image);
                             updateNested('backgroundImages', image);
                         }}
                     />

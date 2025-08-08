@@ -107,6 +107,8 @@ function validateInput(value) {
     return isFilePath(value) || isFileUrl(value);
 }
 
+let componentIdCounter = 0;
+
 export default function ConfirmableInputField({
                                                   onConfirm,
                                                   onSuccess,
@@ -119,6 +121,8 @@ export default function ConfirmableInputField({
     const [isValid, setIsValid] = useState(true);
     const [confirmed, setConfirmed] = useState(false);
     const fileInputRef = useRef(null);
+
+    const [componentId] = useState(() => `file-input-${++componentIdCounter}`);
 
     useEffect(() => {
         const valid = validateInput(initialValue);
@@ -218,7 +222,7 @@ export default function ConfirmableInputField({
                         isValid={isValid}
                         placeholder={placeholder}
                     />
-                    <AttachIcon htmlFor="file-input">
+                    <AttachIcon htmlFor={componentId}>
                         <AiFillFolderOpen size={24} />
                     </AttachIcon>
                     <ClearIcon onClick={() => {
@@ -230,7 +234,7 @@ export default function ConfirmableInputField({
                         <AiOutlineCloseCircle size={24} />
                     </ClearIcon>
                     <FileInput
-                        id="file-input"
+                        id={componentId}
                         type="file"
                         accept="image/*"
                         onChange={handleFileChange}

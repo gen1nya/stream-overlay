@@ -314,7 +314,7 @@ export default function Dashboard() {
                 </StatusBlock>
                 <Footer>
                     <Marquee>Бета-тест: ellis_leaf, kururun_chan, fox1k_ru, sonamint</Marquee>
-                    <Version>v0.3.2-beta</Version>
+                    <Version>v0.3.4-beta</Version>
                 </Footer>
             </Wrapper>
             </>
