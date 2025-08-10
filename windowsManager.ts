@@ -30,9 +30,19 @@ export function createChatWindow(): void {
       nodeIntegration: true,
       contextIsolation: false,
     },
-    icon: path.join(__dirname, 'assets', 'icon.png'),
+    titleBarStyle: 'hidden',
+    frame: false,
+    thickFrame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: true
   });
-  chatWindow.loadURL('http://localhost:5173/chat-overlay');
+
+  chatWindow.setMenuBarVisibility(false);
+  chatWindow.setTitle('');
+  chatWindow.loadURL('http://localhost:5173/chat-overlay?mode=window');
 }
 
 export function createPreviewWindow(): void {

@@ -4,7 +4,7 @@ import React, {
     useState,
     useEffect
 } from 'react';
-import styled, { createGlobalStyle, ThemeProvider } from 'styled-components';
+import styled, {createGlobalStyle, css, ThemeProvider} from 'styled-components';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
@@ -12,6 +12,11 @@ import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
 import { defaultTheme } from '../../theme';
 import {registerFontFace} from "../utils/fontsCache";
+import HorizontalSlider from "../utils/HorizontalSlider";
+import {Spacer} from "../utils/Separator";
+import {FiX} from "react-icons/fi";
+import { get, set } from 'idb-keyval';
+import {usePersistentOpacity} from "../../hooks/usePersistentOpacity";
 
 /* ---------- Global styles ---------- */
 const GlobalStyle = createGlobalStyle`
@@ -150,13 +155,105 @@ const ConnectionLost = styled.div`
     z-index: 10;
 `;
 
+export const draggable = css`
+    -webkit-app-region: drag;
+    user-select: none;
+`;
+
+export const noDrag = css`
+    -webkit-app-region: no-drag;
+    user-select: text;
+`;
+
+const Frame = styled.div`
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    border-radius: 12px;
+    box-sizing: border-box;
+    border: 1px solid rgba(155, 116, 255, 0.55);
+    background: ${({ $opacity }) => `rgba(20, 20, 20, ${$opacity / 100})`};
+`;
+
+const Toolbar = styled.div`
+    ${draggable};
+    width: 100%;
+    height: 48px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 0 0 0 24px;
+    background: rgba(155, 116, 255, 0.55);
+    border-radius: 12px 12px 0 0;
+`;
+
+const StyledHorizontalSlider = styled(HorizontalSlider)`
+    ${noDrag}
+`;
+
+const StyledCloseButton = styled(FiX)`
+    ${noDrag};
+    box-sizing: border-box;
+    width: 48px;
+    height: 48px;
+    padding: 12px;
+    &:hover {
+        color: #ff2e2e;
+        cursor: pointer;
+        transform: scale(1.5);
+    }
+
+    transition: all 0.2s ease-in-out;
+`;
+
+
+function useIsWindowMode() {
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode') === 'window';
+}
+
+
+export default function OverlayWidget(props) {
+    const [opacity, setOpacity] = usePersistentOpacity('ui.opacity', 100, 100);
+    const isWindow = useIsWindowMode();
+
+    const handleCloseClick = () => {
+        console.log('Closing overlay window');
+        window.close();
+    };
+
+    return isWindow ? <Frame $opacity={opacity}>
+        <Toolbar>
+            <StyledHorizontalSlider
+                style={{
+                    width: '200px'
+                }}
+                label=""
+                min={0}
+                max={100}
+                value={opacity}
+                onChange={(newOpacity) => setOpacity(newOpacity)}
+                throttleMs={10}
+            />
+            <Spacer/>
+            <StyledCloseButton size={24}
+                 onClick={handleCloseClick}
+            />
+        </Toolbar>
+        <ChatOverlayContent/>
+    </Frame> : <ChatOverlayContent/>;
+}
+
 /* ---------- Helper ---------- */
 const getFollowMax = (theme) =>
     Math.max(theme?.followMessage?.length ?? 0, 1);
 const getRedeemMax = (theme) =>
     Math.max(theme?.redeemMessage?.length ?? 0, 1);
 
-export default function ChatOverlay() {
+
+function ChatOverlayContent() {
     const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
     const [showSourceChannel, setShowSourceChannel] = useState([]);

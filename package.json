@@ -1,7 +1,7 @@
 {
   "name": "twitch-watcher",
   "private": true,
-  "version": "0.3.5",
+  "version": "0.3.6",
   "main": "dist-backend/main.js",
   "scripts": {
     "lint": "eslint .",
@@ -41,10 +41,12 @@
     "electron-store": "^8.2.0",
     "express": "^5.1.0",
     "framer-motion": "^12.15.0",
+    "idb-keyval": "^6.2.2",
     "keytar": "^7.9.0",
     "lodash": "^4.17.21",
     "lodash.merge": "^4.6.2",
     "lodash.throttle": "^4.1.1",
+    "open": "^10.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-fast-marquee": "^1.6.5",

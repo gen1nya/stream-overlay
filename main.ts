@@ -14,6 +14,7 @@ import {ChatEvent, createBotMessage} from "./services/twitch/messageParser";
 import { LogService } from "./services/logService";
 import {UserData} from "./services/twitch/types/UserData";
 import { TwitchClient } from "./services/twitch/TwitchClient";
+import {SimpleYouTubeController} from "./services/youtube/youtube-controller";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -87,6 +88,37 @@ middlewareProcessor.onThemeUpdated(currentTheme.bot);
 const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
   middlewareProcessor.setEditors(editors);
 });
+
+
+/*const ytController = new SimpleYouTubeController(
+    (message) => {
+      console.log('YouTube message received:', JSON.stringify(message, null, 2));
+
+      if (message.type === 'system' && message.event === 'consent_required') {
+        console.log('🍪 Consent required - Electron window should open automatically');
+        console.log('If automatic consent fails, please visit:', message.consentUrl);
+      }
+
+      if (message.type === 'system' && message.event === 'connected') {
+        console.log('✅', message.message);
+      }
+
+      if (message.type === 'chat') {
+        console.log(`💬 ${message.author}: ${message.text}`);
+      }
+    }
+);
+
+const videoId = SimpleYouTubeController.extractVideoId('https://www.youtube.com/watch?v=jfKfPfyJRdk');
+
+ytController.startChatReader(videoId).then(
+    () => {
+        console.log('YouTube client started successfully');
+    },
+    (error) => {
+        console.error('Failed to start YouTube client:', error);
+    }
+)*/
 
 const wss = new WebSocket.Server({ port: 42001 });
 
