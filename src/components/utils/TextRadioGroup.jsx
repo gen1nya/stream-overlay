@@ -42,12 +42,12 @@ const Option = styled.div`
 
 const Highlight = styled.div`
     position: absolute;
-    top: ${({ top }) => top}px;
-    left: ${({ left }) => left}px;
-    width: ${({ width }) => width}px;
-    height: ${({ height }) => height}px;
-    background: rgba(136, 83, 242, 0.29);
-    border: rgba(136, 83, 242, 0.64) 2px solid;
+    top: ${({top}) => top}px;
+    left: ${({left}) => left}px;
+    width: ${({width}) => width}px;
+    height: ${({height}) => height}px;
+    background: rgba(101, 65, 177, 0.29);
+    border: rgba(111, 70, 201, 0.64) 2px solid;
     border-radius: 8px;
     transition: all 0.3s ease;
     z-index: 0;
