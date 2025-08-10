@@ -87,6 +87,10 @@ export function registerIpcHandlers(
     await twitchClient.restart();
     return true;
   });
+  ipcMain.handle("themes:get-all", async (_e) => {
+    const themes = store.get('themes') as any;
+    return { themes, currentThemeName: store.get('currentTheme') };
+  });
   ipcMain.handle('theme:create', async (_e, newThemeName) => {
     const themes = store.get('themes') as any;
     themes[newThemeName] = defaultTheme;
@@ -105,6 +109,7 @@ export function registerIpcHandlers(
         lifetime: theme.allMessages?.lifetime ?? 60,
         maxCount: theme.allMessages?.maxCount ?? 6,
       });
+      broadcast('theme:update-by-name', { name: themeName, theme: theme });
       broadcast('theme:update', theme);
       broadcast('themes:get', { themes, currentThemeName: themeName });
     }

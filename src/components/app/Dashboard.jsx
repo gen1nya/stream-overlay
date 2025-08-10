@@ -1,46 +1,283 @@
-import React, {useEffect, useRef, useState} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
-import {logout, openOverlay, getAccountInfo, getStats, reconnect, openExternalLink} from '../../services/api';
-import {useNavigate} from 'react-router-dom';
-import Marquee from "react-fast-marquee";
-import UserInfoPopup from "./UserInfoPopup";
-
-const Container = styled.div`
-    display: flex;
-    flex-direction: row;
-`;
-
-const Content = styled.div`
-    display: flex;
-    width: calc(100% - 260px);
-    box-sizing: border-box;
-    padding-top: 36px;
-    padding-left: 24px;
-    padding-right: 24px;
-    flex-direction: column;
-    gap: 24px;
-`;
+import {
+    logout,
+    openOverlay,
+    getAccountInfo,
+    getStats,
+    reconnect,
+    openExternalLink,
+    getThemes // Добавляем новый импорт
+} from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import Marquee from 'react-fast-marquee';
+import UserInfoPopup from './UserInfoPopup';
+// Импорты иконок
+import { FiSettings, FiLogOut, FiExternalLink, FiCopy, FiMessageSquare } from 'react-icons/fi';
 
 const Wrapper = styled.div`
     position: relative;
     width: 100%;
     height: 100%;
+    display: flex;
+    flex-direction: column;
+`;
+
+const MainArea = styled.div`
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+`;
+
+const Content = styled.div`
+    flex: 1;
+    padding: 36px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+    overflow-y: auto;
+`;
+
+const Section = styled.section`
+    background: #2e2e2e;
+    border-radius: 10px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+`;
+
+const SectionTitle = styled.h3`
+    margin: 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #fff;
+    border-bottom: 1px solid #444;
+    padding-bottom: 6px;
+`;
+
+const ButtonsRow = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    button {
+        background: #444;
+        border: none;
+        color: #fff;
+        padding: 8px 14px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        
+        svg {
+            width: 16px;
+            height: 16px;
+        }
+    }
+    button:hover {
+        background: #555;
+    }
+`;
+
+// Новые стили для группы кнопка + селектор
+const LinkGroup = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #383838;
+    border-radius: 8px;
+    border: 1px solid #555;
+    
+    &::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 3px;
+        height: 100%;
+        background: #666;
+        border-radius: 1.5px;
+    }
+    
+    position: relative;
+    padding-left: 12px;
+`;
+
+const LinkButton = styled.button`
+    background: #4a4a4a !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    
+    &:hover {
+        background: #5a5a5a !important;
+    }
+    
+    svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+`;
+
+const ThemeSelector = styled.select`
+    background: #2a2a2a;
+    color: #fff;
+    border: 1px solid #555;
+    border-radius: 4px;
+    padding: 6px 8px;
+    font-size: 12px;
+    cursor: pointer;
+    min-width: 120px;
+    
+    &:hover {
+        background: #333;
+        border-color: #666;
+    }
+    
+    &:focus {
+        outline: none;
+        border-color: #777;
+        background: #333;
+    }
+    
+    option {
+        background: #2a2a2a;
+        color: #fff;
+    }
+`;
+
+const ThemeLabel = styled.span`
+    font-size: 11px;
+    color: #999;
+    white-space: nowrap;
+`;
+
+const AccountRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+`;
+
+const AccountInfo = styled.div`
+    flex: 1;
+`;
+
+const AccountActions = styled.div`
+    display: flex;
+    gap: 8px;
+`;
+
+const IconButton = styled.button`
+    background: #444 !important;
+    border: none !important;
+    color: #fff !important;
+    padding: 8px 14px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    transition: background 0.2s !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    font-size: 14px !important;
+
+    &:hover {
+        background: #555 !important;
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+`;
+
+const LogoutButton = styled(IconButton)`
+    background: #664444 !important;
+
+    &:hover {
+        background: #775555 !important;
+    }
+`;
+
+const Avatar = styled.img`
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+`;
+
+const LogPanel = styled.div`
+    width: 280px;
+    background: #1a1a1a;
+    border-left: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    font-size: 12px;
+    color: #ccc;
+`;
+
+const LogHeader = styled.div`
+    background: #222;
+    padding: 6px 10px;
+    font-weight: bold;
+    border-bottom: 1px solid #333;
+`;
+
+const LogContent = styled.div`
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+`;
+
+const LogLine = styled.div`
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    span.username {
+        color: #4ea1ff;
+        font-weight: bold;
+        cursor: pointer;
+    }
+`;
+
+const StatusBlock = styled.div`
+    position: absolute;
+    right: 12px;
+    bottom: 40px;
+    background: #2e2e2e;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border: 1px solid #444;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+    &:hover {
+        opacity: 1;
+    }
 `;
 
 const Footer = styled.div`
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 24px;
+    height: 28px;
     background: #1e1e1e;
     color: white;
     font-size: 12px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0px;
-    z-index: 999;
     overflow: hidden;
 `;
 
@@ -51,108 +288,26 @@ const Version = styled.span`
     color: #b0b0b0;
     white-space: nowrap;
     overflow: hidden;
+    padding-right: 6px;
 `;
-
-const Section = styled.section`
-    background: #2e2e2e;
-    border-radius: 8px;
-    padding: 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-`;
-
-const SectionTitle = styled.h3`
-    margin: 0 0 8px 0;
-`;
-
-const ButtonsRow = styled.div`
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-`;
-
-const AccountRow = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-`;
-
-const Avatar = styled.img`
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-`;
-
-const StatusBlock = styled.div`
-    position: absolute;
-    right: 8px;
-    bottom: 32px;
-    background: #2e2e2e;
-    border-radius: 8px;
-    padding: 8px;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    border: 1px solid #444;
-    box-shadow: -2px -2px 3px rgba(144, 144, 144, 0.2);
-    align-items: flex-end;
-
-    opacity: 0.3;
-    transition: opacity 0.2s ease;
-
-    &:hover {
-        opacity: 1;
-    }
-`;
-
-const LogPanel = styled.div`
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 250px;
-    height: calc(100% - 40px);
-    background: #1a1a1a;
-    border-left: 1px solid #333;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    overflow-y: auto;
-    font-size: 12px;
-    color: #ccc;
-`;
-
-const LogLine = styled.div`
-    white-space: pre-wrap;
-    word-break: break-word;
-
-    span.username {
-        color: #4ea1ff;
-        font-weight: bold;
-    }
-`;
-
-const StatLine = styled.span``;
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
     const [account, setAccount] = useState(null);
-    const [editors, setEditors] = useState(null);
-    const [stats, setStats] = useState({startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now()});
+    const [stats, setStats] = useState({ startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now() });
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
 
-    const [userInfoPopup, setUserInfoPopup] = useState({
-        id: '',
-        open: false
-    });
+    const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
+
+    // Новое состояние для тем
+    const [themes, setThemes] = useState({});
+    const [selectedTheme, setSelectedTheme] = useState('');
 
     const openUserInfoPopup = (userId, userName) => {
-        setUserInfoPopup({id: userId, userName: userName, open: true});
-    }
+        setUserInfoPopup({ id: userId, userName: userName, open: true });
+    };
 
     const streamers = [
         'ellis_leaf',
@@ -160,12 +315,9 @@ export default function Dashboard() {
         'fox1k_ru',
         'sonamint',
         'kigudi',
-        'kurosakissora'
+        'kurosakissora',
+        'qvik_l'
     ];
-
-    const openTwitchProfile = (username) => {
-        openExternalLink(`https://twitch.tv/${username}`);
-    };
 
     useEffect(() => {
         if (logPanelRef.current) {
@@ -175,7 +327,7 @@ export default function Dashboard() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/auth', {replace: true});
+        navigate('/auth', { replace: true });
     };
 
     const handleOpenOverlay = () => {
@@ -183,31 +335,44 @@ export default function Dashboard() {
     };
 
     const handlerOpenSettings = () => {
-        navigate('/settings', {replace: false});
+        navigate('/settings', { replace: false });
     };
 
     const handleCopyChatLink = () => {
-        const chatUrl = 'http://localhost:5173/chat-overlay';
+        let chatUrl = 'http://localhost:5173/chat-overlay';
 
-        navigator.clipboard.writeText(chatUrl)
-            .then(() => {
-                console.log('Ссылка скопирована!');
-            })
-            .catch((err) => {
-                console.error('Ошибка при копировании:', err);
-            });
+        // Добавляем параметр темы, если выбрана
+        if (selectedTheme) {
+            const encodedTheme = encodeURIComponent(selectedTheme);
+            chatUrl += `?theme=${encodedTheme}`;
+        }
+
+        navigator.clipboard.writeText(chatUrl).catch(console.error);
     };
 
     useEffect(() => {
         if (!called.current) {
             called.current = true;
-            console.log('Called only once, even in Strict Mode');
             getAccountInfo().then(info => {
-                const {accountInfo, editors} = info;
-                setAccount(accountInfo)
+                const { accountInfo } = info;
+                setAccount(accountInfo);
                 document.title = `Оверлеешная - ${accountInfo.displayName || accountInfo.login}`;
-                console.log(editors)
-                setEditors(editors)
+            });
+
+            // Загружаем темы
+            getThemes().then(response => {
+                const { themes, currentThemeName } = response;
+                // Проверяем, что themes - это объект
+                if (themes && typeof themes === 'object') {
+                    setThemes(themes);
+                } else {
+                    console.warn('Темы не являются объектом:', themes);
+                    setThemes({});
+                }
+                setSelectedTheme(currentThemeName || '');
+            }).catch(err => {
+                console.error('Ошибка загрузки тем:', err);
+                setThemes({}); // На случай ошибки устанавливаем пустой объект
             });
         }
         const update = async () => {
@@ -221,21 +386,11 @@ export default function Dashboard() {
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
-        ws.onopen = () => {
-            console.log('🟢 WebSocket подключен');
-            ws.send(JSON.stringify({channel: 'log:get'}));
-        };
+        ws.onopen = () => ws.send(JSON.stringify({ channel: 'log:get' }));
         ws.onmessage = (event) => {
-            const {channel, payload} = JSON.parse(event.data);
-            switch (channel) {
-                case "log:updated":
-                    setLogs(payload.logs);
-                    break;
-                default:
-                    console.log('unknown channel', channel, payload);
-            }
+            const { channel, payload } = JSON.parse(event.data);
+            if (channel === 'log:updated') setLogs(payload.logs);
         };
-        ws.onclose = () => console.log('🔴 WebSocket отключен');
         return () => ws.close();
     }, []);
 
@@ -255,104 +410,126 @@ export default function Dashboard() {
     const eventSubColor = sinceEventSub > 120000 ? 'red' : sinceEventSub > 30000 ? 'yellow' : '#b0b0b0';
     const ircColor = sinceIRC > 360000 ? 'red' : sinceIRC > 300000 ? 'yellow' : '#b0b0b0';
 
-    const handleReconnect = () => {
-        reconnect();
-    };
+    const handleReconnect = () => reconnect();
 
     return (
-        <>
-            <Wrapper>
-                {userInfoPopup.open && (
-                    <UserInfoPopup
-                        userId={userInfoPopup.id}
-                        userName={userInfoPopup.userName}
-                        onClose={() => setUserInfoPopup({id: '', open: false, userName: ''})}
-                    />
-                )}
-                <Container>
-                    <Content>
-                        <Section>
-                            <SectionTitle>Аккаунт</SectionTitle>
-                            {account ? (
-                                <AccountRow>
-                                    <Avatar src={account.avatar} alt="avatar"/>
-                                    <div>
-                                        <div>{account.displayName || account.login}</div>
-                                        <div>Фолловеров: {account.followerCount}</div>
-                                    </div>
-                                </AccountRow>
-                            ) : (
-                                <p>Загрузка информации об аккаунте...</p>
-                            )}
-                            <ButtonsRow>
-                                <button onClick={handleLogout}>Выйти из аккаунта</button>
-                            </ButtonsRow>
-                        </Section>
+        <Wrapper>
+            {userInfoPopup.open && (
+                <UserInfoPopup
+                    userId={userInfoPopup.id}
+                    userName={userInfoPopup.userName}
+                    onClose={() => setUserInfoPopup({ id: '', open: false, userName: '' })}
+                />
+            )}
+            <MainArea>
+                <Content>
+                    <Section>
+                        <SectionTitle>Аккаунт</SectionTitle>
+                        {account ? (
+                            <AccountRow>
+                                <Avatar src={account.avatar} alt="avatar" />
+                                <AccountInfo>
+                                    <div>{account.displayName || account.login}</div>
+                                    <div>Фолловеров: {account.followerCount}</div>
+                                </AccountInfo>
+                                <AccountActions>
+                                    <IconButton onClick={handlerOpenSettings}>
+                                        <FiSettings />
+                                        Настройки
+                                    </IconButton>
+                                    <LogoutButton onClick={handleLogout}>
+                                        <FiLogOut />
+                                        Выйти
+                                    </LogoutButton>
+                                </AccountActions>
+                            </AccountRow>
+                        ) : (
+                            <p>Загрузка информации...</p>
+                        )}
+                    </Section>
 
-                        <Section>
-                            <SectionTitle>Оверлей</SectionTitle>
-                            <ButtonsRow>
-                                <button onClick={handleOpenOverlay}>Открыть чат в отдельном окне</button>
-                                <button onClick={handleCopyChatLink}>Скопировать ссылку на чат</button>
-                            </ButtonsRow>
-                        </Section>
+                    <Section>
+                        <SectionTitle>Оверлей</SectionTitle>
+                        <ButtonsRow>
+                            <button onClick={handleOpenOverlay}>
+                                <FiExternalLink />
+                                Открыть чат
+                            </button>
+                            <LinkGroup>
+                                <LinkButton onClick={handleCopyChatLink}>
+                                    <FiCopy />
+                                    Скопировать ссылку
+                                </LinkButton>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                    <ThemeLabel>тема:</ThemeLabel>
+                                    <ThemeSelector
+                                        value={selectedTheme}
+                                        onChange={(e) => setSelectedTheme(e.target.value)}
+                                    >
+                                        <option value="">По умолчанию</option>
+                                        {themes && Object.keys(themes).map((themeName) => (
+                                            <option key={themeName} value={themeName}>
+                                                {themeName}
+                                            </option>
+                                        ))}
+                                    </ThemeSelector>
+                                </div>
+                            </LinkGroup>
+                        </ButtonsRow>
+                    </Section>
+                </Content>
 
-                        <Section>
-                            <ButtonsRow>
-                                <button onClick={handlerOpenSettings}>Настройки</button>
-                            </ButtonsRow>
-                        </Section>
-                    </Content>
-                    <LogPanel ref={logPanelRef}>
+                <LogPanel>
+                    <LogHeader>Логи</LogHeader>
+                    <LogContent ref={logPanelRef}>
                         {logs.map((log, index) => (
                             <LogLine key={index}>
                                 [{new Date(log.timestamp).toLocaleTimeString()}]{' '}
-                                {log.userName ?
-                                    <span className="username"
-                                          onClick={() => openUserInfoPopup(log.userId, log.userName)}>
+                                {log.userName && (
+                                    <span
+                                        className="username"
+                                        onClick={() => openUserInfoPopup(log.userId, log.userName)}
+                                    >
                                         {log.userName}
                                     </span>
-                                    : null}
+                                )}
                                 {log.userName ? ': ' : ''}
                                 {log.message}
                             </LogLine>
                         ))}
-                    </LogPanel>
-                </Container>
+                    </LogContent>
+                </LogPanel>
+            </MainArea>
 
-                <StatusBlock>
-                    <StatLine style={{color: '#b0b0b0'}}>Аптайм: {formatDuration(uptime)}</StatLine>
-                    <StatLine style={{color: eventSubColor}}>EventSub: {formatDuration(sinceEventSub)}</StatLine>
-                    <StatLine style={{color: ircColor}}>IRC: {formatDuration(sinceIRC)}</StatLine>
-                    <button onClick={handleReconnect}>Reconnect</button>
-                </StatusBlock>
-                <Footer>
-                    <Marquee
-                        style={{
-                            fontSize: '14px',
-                        }}
-                    >
-                        Бета-тест:&nbsp;
-                        {streamers.map((name, index) => (
-                            <React.Fragment key={name}>
+            <StatusBlock>
+                <span style={{ color: '#b0b0b0' }}>Аптайм: {formatDuration(uptime)}</span>
+                <span style={{ color: eventSubColor }}>EventSub: {formatDuration(sinceEventSub)}</span>
+                <span style={{ color: ircColor }}>IRC: {formatDuration(sinceIRC)}</span>
+                <button onClick={handleReconnect}>Reconnect</button>
+            </StatusBlock>
+
+            <Footer>
+                <Marquee style={{ fontSize: '14px' }}>
+                    Бета-тест:&nbsp;
+                    {streamers.map((name, index) => (
+                        <React.Fragment key={name}>
                             <span
-                                onClick={() => openTwitchProfile(name)}
+                                onClick={() => openExternalLink(`https://twitch.tv/${name}`)}
                                 style={{
                                     cursor: 'pointer',
                                     textDecoration: 'underline',
                                     marginRight: '0.5em',
-                                    color: '#9147ff',
+                                    color: '#9147ff'
                                 }}
                             >
-                            {name}
+                                {name}
                             </span>
-                                {index < streamers.length - 1 && ','}&nbsp;
-                            </React.Fragment>
-                        ))}
-                    </Marquee>
-                    <Version>v0.3.6-beta</Version>
-                </Footer>
-            </Wrapper>
-        </>
+                            {index < streamers.length - 1 && ','}&nbsp;
+                        </React.Fragment>
+                    ))}
+                </Marquee>
+                <Version>v0.3.6-beta</Version>
+            </Footer>
+        </Wrapper>
     );
 }

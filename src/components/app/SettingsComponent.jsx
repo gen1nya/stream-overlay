@@ -26,15 +26,8 @@ import ThemePopup from "./settings/ThemePopup";
 import ColorPickerPopup from "./settings/ColorPickerPopup";
 import AddNewStyleButton from "../utils/AddNewStyleButton";
 import {AiFillRobot} from "react-icons/ai";
-import {CommandList} from "./settings/bot/CommandList";
-import NumericEditorComponent from "../utils/NumericEditorComponent";
-import {Accordion} from "../utils/AccordionComponent";
-import {SmallTemplateEditor} from "../utils/SmallTemplateEditor";
 import Roulette from "./settings/bot/roulette/Roulette";
-import TextRadioGroup from "../utils/TextRadioGroup";
-import RadioGroup from "../utils/TextRadioGroup";
 import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
-import FontSelector from "../utils/FontSelector";
 import {useTheme} from "../../hooks/useTheme";
 
 const Panel = styled.div`
@@ -57,6 +50,7 @@ const Toolbar = styled.div`
     box-sizing: border-box;
     padding: 8px;
     display: flex;
+    align-items: center;
     gap: 8px;
     width: 100%;
     height: 60px;
@@ -226,8 +220,19 @@ export default function Settings() {
             <Toolbar>
                 <MediumSecondaryButton onClick={handleBackButton}>Назад</MediumSecondaryButton>
                 <MediumSecondaryButton onClick={handlePreviewButton}>Превью</MediumSecondaryButton>
-                <MediumSecondaryButton onClick={handleThemesButton}>Темы</MediumSecondaryButton>
-                <Separator/>
+                <MediumSecondaryButton onClick={handleThemesButton}>
+                    Темы
+                    <span
+                        style={{
+                            marginLeft: '8px',
+                            fontWeight: 'bold',
+                            fontSize: '0.8rem',
+                            color: '#bcbcbc',
+                        }}
+                    >({selectedThemeName})</span>
+                </MediumSecondaryButton>
+
+                <Spacer/>
             </Toolbar>
 
 

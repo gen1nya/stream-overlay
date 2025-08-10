@@ -98,3 +98,7 @@ export async function muteUser(userId, reason, duration) {
 export async function unbanUser(userId) {
     return ipcRenderer?.invoke('user:unban', {userId});
 }
+
+export async function getThemes() {
+    return ipcRenderer?.invoke('themes:get-all');
+}

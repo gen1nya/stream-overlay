@@ -214,6 +214,14 @@ function useIsWindowMode() {
     return params.get('mode') === 'window';
 }
 
+function getThemeFromUriParam() {
+    const params = new URLSearchParams(window.location.search);
+    const themeName = params.get('theme');
+    if (themeName) {
+        return themeName
+    }
+    return null;
+}
 
 export default function OverlayWidget(props) {
     const [opacity, setOpacity] = usePersistentOpacity('ui.opacity', 100, 100);
@@ -257,15 +265,16 @@ function ChatOverlayContent() {
     const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
     const [showSourceChannel, setShowSourceChannel] = useState([]);
-    const [theme, setTheme] = useState(defaultTheme);
+    const [currentTheme, setCurrentTheme] = useState(defaultTheme);
+    const [currentThemeName, setCurrentThemeName] = useState(getThemeFromUriParam());
 
     /* refs for follow index */
     const followIndexRef = useRef(0);
-    const followMaxRef = useRef(getFollowMax(theme));
+    const followMaxRef = useRef(getFollowMax(currentTheme));
     const followIndexByIdRef = useRef({});
     /* refs for redeem index */
     const redeemIndexRef = useRef(0);
-    const redeemMaxRef = useRef(getRedeemMax(theme));
+    const redeemMaxRef = useRef(getRedeemMax(currentTheme));
     const redeemIndexByIdRef = useRef({});
 
     /* message refs */
@@ -274,10 +283,44 @@ function ChatOverlayContent() {
     const animationTimeoutRef = useRef(null);
     const exitingMessagesRef = useRef(new Set()); // Track exiting messages
 
+    function applyTheme(theme) {
+        setCurrentTheme(theme);
+        theme?.followMessage?.forEach((m, index) => {
+            if (m.messageFont?.family && m.messageFont?.url) {
+                registerFontFace(m.messageFont.family, m.messageFont.url);
+            }
+        })
+        theme?.redeemMessage?.forEach((m, index) => {
+            if (m.messageFont?.family && m.messageFont?.url) {
+                registerFontFace(m.messageFont.family, m.messageFont.url);
+            }
+        })
+        if (theme?.chatMessage?.titleFont?.family && theme.chatMessage?.titleFont?.url) {
+            registerFontFace(
+                theme.chatMessage.titleFont.family,
+                theme.chatMessage.titleFont.url
+            );
+        }
+        if (theme?.chatMessage?.messageFont?.family && theme.chatMessage?.messageFont?.url) {
+            registerFontFace(
+                theme.chatMessage.messageFont.family,
+                theme.chatMessage.messageFont.url
+            );
+        }
+    }
+
+    function requestTheme(socket, themeName) {
+        if (themeName) {
+            socket.send(JSON.stringify({ channel: 'theme:get-by-name', payload: { name: themeName } }));
+        } else {
+            socket.send(JSON.stringify({ channel: 'theme:get' }));
+        }
+    }
+
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
         onOpen: (_, socket) => {
             console.log('🟢 WebSocket подключен');
-            socket.send(JSON.stringify({ channel: 'theme:get' }));
+            requestTheme(socket, currentThemeName);
         },
         onMessage: async (event) => {
             const { channel, payload } = JSON.parse(event.data);
@@ -289,30 +332,18 @@ function ChatOverlayContent() {
                     setShowSourceChannel(showSourceChannel);
                     break;
                 }
+                case 'theme:update-by-name': {
+                    const { name, theme } = payload;
+                    console.log('🔵 preparing for theme update:', payload);
+                    if (currentThemeName !== name) break; // Ignore if theme name doesn't match
+                    if (!theme) setCurrentThemeName(null); // Reset theme if not found
+                    console.log('🔵 Theme updated:', name);
+                    applyTheme(theme);
+                    break;
+                }
                 case 'theme:update': {
-                    setTheme(payload);
-                    payload?.followMessage?.forEach((m, index) => {
-                        if (m.messageFont?.family && m.messageFont?.url) {
-                            registerFontFace(m.messageFont.family, m.messageFont.url);
-                        }
-                    })
-                    payload?.redeemMessage?.forEach((m, index) => {
-                        if (m.messageFont?.family && m.messageFont?.url) {
-                            registerFontFace(m.messageFont.family, m.messageFont.url);
-                        }
-                    })
-                    if (payload?.chatMessage?.titleFont?.family && payload.chatMessage?.titleFont?.url) {
-                        registerFontFace(
-                            payload.chatMessage.titleFont.family,
-                            payload.chatMessage.titleFont.url
-                        );
-                    }
-                    if (payload?.chatMessage?.messageFont?.family && payload.chatMessage?.messageFont?.url) {
-                        registerFontFace(
-                            payload.chatMessage.messageFont.family,
-                            payload.chatMessage.messageFont.url
-                        );
-                    }
+                    if (currentThemeName) break;
+                    applyTheme(payload);
                     break;
                 }
                 default:
@@ -326,15 +357,15 @@ function ChatOverlayContent() {
 
     /* update followMax on theme change */
     useEffect(() => {
-        followMaxRef.current = getFollowMax(theme);
+        followMaxRef.current = getFollowMax(currentTheme);
         if (followIndexRef.current >= followMaxRef.current) {
             followIndexRef.current = 0;
         }
-        redeemMaxRef.current = getRedeemMax(theme);
+        redeemMaxRef.current = getRedeemMax(currentTheme);
         if (redeemIndexRef.current >= redeemMaxRef.current) {
             redeemIndexRef.current = 0;
         }
-    }, [theme]);
+    }, [currentTheme]);
 
     // Improved cleanup with delayed ref removal
     useEffect(() => {
@@ -446,7 +477,7 @@ function ChatOverlayContent() {
 
     /* ---------- Render ---------- */
     return (
-        <ThemeProvider theme={theme}>
+        <ThemeProvider theme={currentTheme}>
             <GlobalStyle />
             <>
                 <BackgroundContainer />
@@ -487,13 +518,13 @@ function ChatOverlayContent() {
                             } else if (msg.type === 'follow') {
                                 Content = <ChatFollow
                                     message={msg}
-                                    currentTheme={theme}
+                                    currentTheme={currentTheme}
                                     index={followIndex}
                                 />;
                             } else if (msg.type === 'redemption') {
                                 Content = <ChatRedemption
                                     message={msg}
-                                    currentTheme={theme}
+                                    currentTheme={currentTheme}
                                     index={redemptionIndex}
                                 />;
                             } else {

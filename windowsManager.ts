@@ -15,6 +15,7 @@ export function createMainWindow(url: string): void {
     },
     icon: path.join(__dirname, 'assets', 'icon.png'),
   });
+  mainWindow.setMenuBarVisibility(false);
   mainWindow.loadURL(url);
 }
 

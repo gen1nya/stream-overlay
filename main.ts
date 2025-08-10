@@ -181,6 +181,15 @@ app.whenReady().then(() => {
           const themes = store.get('themes');
           broadcast('themes:get', { themes, currentThemeName });
           break;
+        case 'theme:get-by-name':
+            const themeName = payload.name;
+            const theme = store.get('themes')[themeName];
+            if (theme) {
+                broadcast('theme:update-by-name', { name: themeName, theme: theme });
+            } else {
+                console.warn(`Theme "${themeName}" not found`);
+            }
+            break;
         case 'theme:get':
           broadcast('theme:update', currentTheme);
           break;
