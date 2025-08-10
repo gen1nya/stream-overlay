@@ -9,6 +9,7 @@ import {
     AiOutlineVerticalAlignMiddle,
     AiOutlineVerticalAlignBottom
 } from 'react-icons/ai';
+import {getImageUrl, saveImageBuffer} from "../../services/api";
 
 // Темы
 const lightTheme = {
@@ -429,7 +430,7 @@ const ThemeToggle = styled.button`
 `;
 
 // Компонент для загрузки изображений
-function ImageUploadField({
+export function ImageUploadField({
                               label,
                               value,
                               onChange,
@@ -448,13 +449,42 @@ function ImageUploadField({
 
         setIsLoading(true);
         try {
-            // Симуляция загрузки файла
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            const imageUrl = URL.createObjectURL(file);
-            onChange(imageUrl);
+            const reader = new FileReader();
+
+            reader.onload = async () => {
+                try {
+                    const arrayBuffer = reader.result;
+                    const storedFilePath = await saveImageBuffer(file.name, arrayBuffer);
+                    const storedFileUrl = await getImageUrl(file.name);
+
+                    // Проверяем, что изображение корректно загружается
+                    const img = new Image();
+                    img.src = storedFileUrl;
+
+                    img.onload = () => {
+                        // Передаем URL загруженного файла в onChange
+                        onChange(storedFileUrl);
+                        setIsLoading(false);
+                    };
+
+                    img.onerror = () => {
+                        console.error('Could not load image from server');
+                        setIsLoading(false);
+                    };
+                } catch (serverError) {
+                    console.error('Error saving file to server:', serverError);
+                    setIsLoading(false);
+                }
+            };
+
+            reader.onerror = () => {
+                console.error('Failed to read file');
+                setIsLoading(false);
+            };
+
+            reader.readAsArrayBuffer(file);
         } catch (error) {
             console.error('Error uploading file:', error);
-        } finally {
             setIsLoading(false);
         }
     };

@@ -1,24 +1,95 @@
 import React, {useState, useCallback} from 'react';
+import styled from 'styled-components';
 import SeekbarComponent from '../../utils/SeekbarComponent';
-import {Row} from '../SettingsComponent';
-import {Spacer} from '../../utils/Separator';
 import {TemplateEditor} from '../../utils/TemplateEditor';
-import {
-    CollapsedPreview,
-    RemoveButton,
-    SettingsBlockFull, SettingsBlockSubTitle,
-    SettingsBlockTitle,
-    TitleRow,
-    Triangle,
-} from './SettingBloks';
 import ColorSelectorButton from './ColorSelectorButton';
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import RadioGroup from '../../utils/TextRadioGroup';
-import {FiTrash2} from 'react-icons/fi';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
 import BackgroundColorEditorComponent from "../../utils/BackgroundColorEditorComponent";
-import {CanvasTab} from "../../utils/CanvasTab";
+import {FiHeart, FiType, FiImage, FiLayout, FiTrash2, FiChevronDown, FiChevronUp} from 'react-icons/fi';
+import {
+    CardContent,
+    CardHeader,
+    CardTitle,
+    ControlGroup,
+    Section,
+    SectionHeader,
+    SectionTitle,
+    SettingsCard,
+    ActionButton
+} from "./SharedSettingsStyles";
+import {Spacer} from "../../utils/Separator";
+import {Row} from "../SettingsComponent";
+
+// Специфичные стили для этого компонента
+const CollapsibleHeader = styled(CardHeader)`
+    cursor: pointer;
+    transition: all 0.2s ease;
+    
+    &:hover {
+        background: linear-gradient(135deg, #333 0%, #3a3a3a 100%);
+    }
+`;
+
+const CollapseToggle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #999;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+    
+    svg {
+        width: 18px;
+        height: 18px;
+        transition: transform 0.2s ease;
+    }
+    
+    ${CollapsibleHeader}:hover & {
+        color: #ccc;
+    }
+`;
+
+const CollapsedPreview = styled.div`
+    padding: 16px 24px;
+    color: #999;
+    font-style: italic;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background: rgba(30, 30, 30, 0.3);
+    
+    &:hover {
+        background: rgba(30, 30, 30, 0.5);
+        color: #ccc;
+    }
+`;
+
+const DeleteSection = styled.div`
+    padding: 16px 24px;
+    border-top: 1px solid #333;
+    background: rgba(220, 38, 38, 0.05);
+    display: flex;
+    justify-content: flex-end;
+`;
+
+const DeleteButton = styled(ActionButton)`
+    background: #dc2626;
+    border-color: #dc2626;
+    
+    &:hover:not(:disabled) {
+        background: #b91c1c;
+        border-color: #b91c1c;
+    }
+    
+    &:disabled {
+        opacity: 0.3;
+        cursor: not-allowed;
+        transform: none;
+    }
+`;
 
 const BACKGROUND_OPTIONS = [
     {key: 'color', text: 'цвет'},
@@ -83,157 +154,200 @@ export default function FollowSettingsBlock({
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
     return (
-        <SettingsBlockFull>
-            <SettingsBlockTitle as="div">
-                <TitleRow onClick={toggleOpen}>
-                    <span>Follow вариант #{index + 1}</span>
-                    <Triangle>{isOpen ? '▲' : '▼'}</Triangle>
-                </TitleRow>
-            </SettingsBlockTitle>
+        <SettingsCard>
+            <CollapsibleHeader onClick={toggleOpen}>
+                <CardTitle>
+                    <FiHeart />
+                    Follow вариант #{index + 1}
+                </CardTitle>
+                <CollapseToggle>
+                    {isOpen ? 'Свернуть' : 'Развернуть'}
+                    {isOpen ? <FiChevronUp /> : <FiChevronDown />}
+                </CollapseToggle>
+            </CollapsibleHeader>
 
             {/* Свернутый вариант */}
             {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>{template}</CollapsedPreview>
+                <CollapsedPreview onClick={toggleOpen}>
+                    {template}
+                </CollapsedPreview>
             )}
 
             {isOpen && (
                 <>
-                    <Row align="flex-start" gap="0.5rem">
-                        <TemplateEditor
-                            hint="Доступные плейсхолдеры: {userName}"
-                            label="Шаблон для новых фолловеров"
-                            value={template}
-                            onChange={(v) => updateField('template', v)}
-                            fontSize={`${fontSize}px`}
-                            onFontSizeChange={(v) => updateField('fontSize', v)}
-                            currentFontFamily={messageFont.family}
-                            onFontSelected={(font) =>
-                                updateNested('messageFont', {
-                                    family: font.family,
-                                    url: font.files.regular || Object.values(font.files)[0],
-                                })
-                            }
-                            placeholders={["userName"]}
-                        />
-                    </Row>
-                    <Row>
-                        <ColorSelectorButton
-                            title="Цвет текста:"
-                            hex={messageFont.color || '#ffffff'}
-                            alpha={messageFont.opacity || 1}
-                            openColorPopup={openColorPopup}
-                            onColorChange={({color, alpha}) =>
-                                updateNested('messageFont', {color, opacity: alpha})
-                            }
-                        />
-                        <Spacer/>
-                        <ColorSelectorButton
-                            title={"Цвет тени текста:"}
-                            hex={messageFont?.shadowColor ?? "#000000"}
-                            alpha={messageFont?.shadowOpacity ?? 0}
-                            openColorPopup={openColorPopup}
-                            onColorChange={({color, alpha}) => {
-                                updateNested('messageFont', {shadowColor: color, shadowOpacity: alpha})
-                            }}
-                        />
-                        <SeekbarComponent
-                            title={`Радиус тени текста (${messageFont?.shadowRadius}):`}
-                            min="0"
-                            max="20"
-                            step="1"
-                            width="160px"
-                            value={messageFont?.shadowRadius ?? 0}
-                            onChange={(v) => {
-                                updateNested("messageFont", {shadowRadius: v})
-                            }}
-                        />
-                    </Row>
-                    <CanvasTab>
-                        <SettingsBlockSubTitle
-                            style={{
-                                marginBottom: '12px',
-                                marginTop: '-8px',
-                                marginLeft: '0px',
-                                width: '60px',
-                            }}>
-                            Фон
-                        </SettingsBlockSubTitle>
-                        <Row>
-                            <RadioGroup
-                                defaultSelected={backgroundMode}
-                                items={BACKGROUND_OPTIONS}
-                                direction="horizontal"
-                                itemWidth="120px"
-                                onChange={(v) => updateField('backgroundMode', v)}
-                            />
-                            <Spacer/>
-                            <SeekbarComponent
-                                title={`Радиус скругления (${borderRadius}):`}
-                                min="0"
-                                max="20"
-                                step="1"
-                                width="150px"
-                                value={borderRadius}
-                                onChange={(v) => updateField('borderRadius', v)}
-                            />
-                        </Row>
+                    <CardContent>
+                        {/* Секция шаблона */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiType />
+                                    Шаблон сообщения
+                                </SectionTitle>
+                            </SectionHeader>
 
-                        {backgroundMode === 'image' &&
-                            <BackgroundImageEditorComponent
+                            <TemplateEditor
+                                hint="Доступные плейсхолдеры: {userName}"
+                                label="Шаблон для новых фолловеров"
+                                value={template}
+                                onChange={(v) => updateField('template', v)}
+                                fontSize={`${fontSize}px`}
+                                onFontSizeChange={(v) => updateField('fontSize', v)}
+                                currentFontFamily={messageFont.family}
+                                onFontSelected={(font) =>
+                                    updateNested('messageFont', {
+                                        family: font.family,
+                                        url: font.files.regular || Object.values(font.files)[0],
+                                    })
+                                }
+                                placeholders={["userName"]}
+                            />
+
+                            <Row gap="20px">
+                                <ControlGroup>
+                                    <ColorSelectorButton
+                                        title="Цвет текста:"
+                                        hex={messageFont.color || '#ffffff'}
+                                        alpha={messageFont.opacity || 1}
+                                        openColorPopup={openColorPopup}
+                                        onColorChange={({color, alpha}) =>
+                                            updateNested('messageFont', {color, opacity: alpha})
+                                        }
+                                    />
+                                </ControlGroup>
+
+                                <Spacer />
+
+                                <ControlGroup>
+                                    <ColorSelectorButton
+                                        title="Цвет тени текста:"
+                                        hex={messageFont?.shadowColor ?? "#000000"}
+                                        alpha={messageFont?.shadowOpacity ?? 0}
+                                        openColorPopup={openColorPopup}
+                                        onColorChange={({color, alpha}) => {
+                                            updateNested('messageFont', {shadowColor: color, shadowOpacity: alpha})
+                                        }}
+                                    />
+                                </ControlGroup>
+
+                                <ControlGroup flex="1 1 200px">
+                                    <SeekbarComponent
+                                        title={`Радиус тени: ${messageFont?.shadowRadius ?? 0}px`}
+                                        min="0"
+                                        max="20"
+                                        step="1"
+                                        width="200px"
+                                        value={messageFont?.shadowRadius ?? 0}
+                                        onChange={(v) => {
+                                            updateNested("messageFont", {shadowRadius: v})
+                                        }}
+                                    />
+                                </ControlGroup>
+                            </Row>
+                        </Section>
+
+                        {/* Секция фона */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiImage />
+                                    Настройки фона
+                                </SectionTitle>
+                            </SectionHeader>
+
+                            <Row gap="20px">
+                                <ControlGroup>
+                                    <RadioGroup
+                                        title="Тип фона:"
+                                        defaultSelected={backgroundMode}
+                                        items={BACKGROUND_OPTIONS}
+                                        direction="horizontal"
+                                        itemWidth="120px"
+                                        onChange={(v) => updateField('backgroundMode', v)}
+                                    />
+                                </ControlGroup>
+
+                                <Spacer />
+
+                                <ControlGroup flex="1 1 200px">
+                                    <SeekbarComponent
+                                        title={`Скругление углов: ${borderRadius}px`}
+                                        min="0"
+                                        max="20"
+                                        step="1"
+                                        width="200px"
+                                        value={borderRadius}
+                                        onChange={(v) => updateField('borderRadius', v)}
+                                    />
+                                </ControlGroup>
+                            </Row>
+
+                            {backgroundMode === 'image' && (
+                                <BackgroundImageEditorComponent
+                                    message={message}
+                                    onImageChanged={(image) => {
+                                        updateNested('backgroundImages', image);
+                                    }}
+                                />
+                            )}
+
+                            {backgroundMode === 'gradient' && (
+                                <GradientEditor
+                                    value={message.backgroundGradients?.[0] || {}}
+                                    onChange={(g) => {
+                                        updateNestedArray('backgroundGradients', 0, g);
+                                    }}
+                                />
+                            )}
+
+                            <BackgroundColorEditorComponent
                                 message={message}
-                                onImageChanged={(image) => {
-                                    updateNested('backgroundImages', image);
-                                }}
+                                onBackgroundColorChange={({color, alpha}) =>
+                                    updateMessage({
+                                        backgroundColor: color,
+                                        backgroundOpacity: alpha,
+                                    })
+                                }
+                                onBorderColorChange={({color, alpha}) =>
+                                    updateMessage({borderColor: color, borderOpacity: alpha})
+                                }
+                                openColorPopup={openColorPopup}
+                                onShadowColorChange={updateMessage}
+                                onShadowRadiusChange={updateField}
                             />
-                        }
-                        {backgroundMode === 'gradient' && (
-                            <GradientEditor
-                                value={message.backgroundGradients?.[0] || {}}
-                                onChange={(g) => {
-                                    updateNestedArray('backgroundGradients', 0, g);
-                                }}
+                        </Section>
+
+                        {/* Секция отступов */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiLayout />
+                                    Отступы и позиционирование
+                                </SectionTitle>
+                            </SectionHeader>
+
+                            <PaddingEditorComponent
+                                message={message}
+                                onHorizontalMarginChange={(v) => updateField('marginH', v)}
+                                onVerticalMarginChange={(v) => updateField('marginV', v)}
+                                onHorizontalPaddingChange={(v) => updateField('paddingH', v)}
+                                onVerticalPaddingChange={(v) => updateField('paddingV', v)}
                             />
-                        )}
+                        </Section>
+                    </CardContent>
 
-                        <BackgroundColorEditorComponent
-                            message={message}
-                            onBackgroundColorChange={({color, alpha}) =>
-                                updateMessage({
-                                    backgroundColor: color,
-                                    backgroundOpacity: alpha,
-                                })
-                            }
-                            onBorderColorChange={({color, alpha}) =>
-                                updateMessage({borderColor: color, borderOpacity: alpha})
-                            }
-                            openColorPopup={openColorPopup}
-                            onShadowColorChange={updateMessage}
-                            onShadowRadiusChange={updateField}
-                        />
-                    </CanvasTab>
-
-                    <PaddingEditorComponent
-                        message={message}
-                        onHorizontalMarginChange={(v) => updateField('marginH', v)}
-                        onVerticalMarginChange={(v) => updateField('marginV', v)}
-                        onHorizontalPaddingChange={(v) => updateField('paddingH', v)}
-                        onVerticalPaddingChange={(v) => updateField('paddingV', v)}
-                    />
-
-                    <Row>
-                        <Spacer/>
-                        <RemoveButton
+                    {/* Секция удаления */}
+                    <DeleteSection>
+                        <DeleteButton
                             onClick={() => onRemove?.(index)}
                             disabled={disableRemove}
-                            title={
-                                disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить'
-                            }
+                            title={disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить вариант'}
                         >
-                            <FiTrash2 size={24}/>
-                        </RemoveButton>
-                    </Row>
+                            <FiTrash2 />
+                            Удалить вариант
+                        </DeleteButton>
+                    </DeleteSection>
                 </>
             )}
-        </SettingsBlockFull>
+        </SettingsCard>
     );
 }

@@ -9,7 +9,7 @@ const ButtonBackground = styled.div`
     align-items: center;
     background: rgba(136, 83, 242, 0.11);
     border: #8853F2 2px dashed;
-    border-radius: 12px;
+    border-radius: 16px;
     padding: 0 12px;
     flex-direction: column;
     gap: 12px;
@@ -27,7 +27,7 @@ const Text = styled.div`
 export default function AddNewStyleButton({
                                               onClick = () => {},
                                               height = "100px",
-                                              margin = "12px 6px 0 6px",
+                                              margin = "12px 12px 0 12px",
                                               text = "+ Добавить еще",
                                           } = {}) {
     return (

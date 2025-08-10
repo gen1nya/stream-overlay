@@ -16,11 +16,8 @@ import FollowSettingsBlock from "./settings/FollowSettingsBlock";
 import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
 import {defaultTheme} from '../../theme';
 import RedeemPointsBlock from "./settings/RedeemPointsBlock";
-import OverlaySettingsComponent from "./settings/OverlaySettingsComponent";
-import AllMessagesSettings from "./settings/AllMessagesSettings";
-import Separator, {Spacer} from "../utils/Separator";
 import {Sidebar} from "../utils/Sidebar";
-import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings} from "react-icons/fi";
+import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings, FiArrowLeft, FiEye, FiLayers} from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
 import ColorPickerPopup from "./settings/ColorPickerPopup";
@@ -29,6 +26,7 @@ import {AiFillRobot} from "react-icons/ai";
 import Roulette from "./settings/bot/roulette/Roulette";
 import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
 import {useTheme} from "../../hooks/useTheme";
+import UnifiedSettingsComponent from "./settings/UnifiedSettingsComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -38,23 +36,119 @@ const Panel = styled.div`
     height: 100vh;
     padding: 0;
     margin: 0;
-    background: #171717;
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
     color: #f6f6f6;
-    box-shadow: -4px 0 8px #0002;
     display: flex;
     flex-direction: column;
     gap: 0;
 `;
 
-const Toolbar = styled.div`
+const Header = styled.div`
     box-sizing: border-box;
-    padding: 8px;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    background: rgba(26, 26, 26, 0.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid #333;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+`;
+
+const HeaderLeft = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 16px;
+`;
+
+const HeaderTitle = styled.h1`
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0;
+    background: linear-gradient(135deg, #646cff, #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+`;
+
+const HeaderActions = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+
+const ActionButton = styled.button`
+    background: #2a2a2a;
+    border: 1px solid #444;
+    color: #fff;
+    padding: 10px 16px;
+    border-radius: 8px;
+    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    width: 100%;
-    height: 60px;
-    background: #1a1a1a;
+    font-size: 14px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #333;
+        border-color: #555;
+        transform: translateY(-1px);
+    }
+
+    &.primary {
+        background: #646cff;
+        border-color: #646cff;
+
+        &:hover {
+            background: #5a5acf;
+            border-color: #5a5acf;
+        }
+    }
+
+    &.secondary {
+        background: #059669;
+        border-color: #059669;
+
+        &:hover {
+            background: #047857;
+            border-color: #047857;
+        }
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+`;
+
+const BackButton = styled(ActionButton)`
+    background: #444;
+    border-color: #555;
+
+    &:hover {
+        background: #555;
+        border-color: #666;
+    }
+`;
+
+const ThemeIndicator = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    font-size: 13px;
+    color: #ccc;
+
+    .theme-name {
+        font-weight: 600;
+        color: #fff;
+    }
 `;
 
 const ContentWrapper = styled.div`
@@ -63,7 +157,37 @@ const ContentWrapper = styled.div`
     flex: 1;
     min-height: 0;
     box-sizing: border-box;
-    padding-right: 8px;
+`;
+
+const MainContainer = styled.div`
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    background: #171717;
+    overflow: hidden;
+`;
+
+const ContentHeader = styled.div`
+    padding: 20px 24px 0;
+    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
+    border-bottom: 1px solid #333;
+`;
+
+const PageTitle = styled.h2`
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    svg {
+        width: 20px;
+        height: 20px;
+        color: #646cff;
+    }
 `;
 
 const Content = styled.div`
@@ -75,6 +199,27 @@ const Content = styled.div`
     align-content: flex-start;
     overflow-y: auto;
     min-height: 0;
+    padding: 12px;
+    gap: 20px;
+
+    /* Custom scrollbar */
+    &::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: #1a1a1a;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
 `;
 
 export const Row = styled.div`
@@ -84,6 +229,15 @@ export const Row = styled.div`
     justify-content: ${({justify = "flex-start"}) => justify};
     gap: ${({gap = "0.5rem"}) => gap};
 `;
+
+const PageInfo = {
+    general: { title: "Общие настройки", icon: <FiSettings /> },
+    chat: { title: "Настройки сообщений", icon: <FiMessageCircle /> },
+    follow: { title: "Настройки подписок", icon: <FiHeart /> },
+    channel_points: { title: "Настройки баллов канала", icon: <FiAward /> },
+    bot: { title: "Настройки бота", icon: <AiFillRobot /> },
+    players: { title: "Настройки плееров", icon: <FiMusic /> },
+};
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -191,6 +345,8 @@ export default function Settings() {
         setTheme(themeName);
     }
 
+    const currentPageInfo = PageInfo[activePage] || PageInfo.general;
+
     return (
         <Panel>
             {colorPopup.open && (
@@ -217,24 +373,32 @@ export default function Settings() {
                     }}
                 />
             )}
-            <Toolbar>
-                <MediumSecondaryButton onClick={handleBackButton}>Назад</MediumSecondaryButton>
-                <MediumSecondaryButton onClick={handlePreviewButton}>Превью</MediumSecondaryButton>
-                <MediumSecondaryButton onClick={handleThemesButton}>
-                    Темы
-                    <span
-                        style={{
-                            marginLeft: '8px',
-                            fontWeight: 'bold',
-                            fontSize: '0.8rem',
-                            color: '#bcbcbc',
-                        }}
-                    >({selectedThemeName})</span>
-                </MediumSecondaryButton>
 
-                <Spacer/>
-            </Toolbar>
+            <Header>
+                <HeaderLeft>
+                    <BackButton onClick={handleBackButton}>
+                        <FiArrowLeft />
+                        Назад
+                    </BackButton>
+                    <HeaderTitle>Настройки</HeaderTitle>
+                </HeaderLeft>
 
+                <HeaderActions>
+                    <ThemeIndicator>
+                        Тема: <span className="theme-name">{selectedThemeName}</span>
+                    </ThemeIndicator>
+
+                    <ActionButton className="secondary" onClick={handlePreviewButton}>
+                        <FiEye />
+                        Превью
+                    </ActionButton>
+
+                    <ActionButton className="primary" onClick={handleThemesButton}>
+                        <FiLayers />
+                        Управление темами
+                    </ActionButton>
+                </HeaderActions>
+            </Header>
 
             <ContentWrapper>
                 <Sidebar
@@ -250,12 +414,22 @@ export default function Settings() {
                         {key: "players", icon: <FiMusic/>, label: "Плееры"},
                     ]}
                 />
-                <MainContent
-                    page={activePage}
-                    apply={updaterOrTheme => apply(updaterOrTheme)}
-                    selectedTheme={selectedTheme}
-                    openColorPopup={openColorPopup}
-                />
+
+                <MainContainer>
+                    <ContentHeader>
+                        <PageTitle>
+                            {currentPageInfo.icon}
+                            {currentPageInfo.title}
+                        </PageTitle>
+                    </ContentHeader>
+
+                    <MainContent
+                        page={activePage}
+                        apply={updaterOrTheme => apply(updaterOrTheme)}
+                        selectedTheme={selectedTheme}
+                        openColorPopup={openColorPopup}
+                    />
+                </MainContainer>
             </ContentWrapper>
         </Panel>
     );
@@ -266,17 +440,12 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
         case "general":
             return (
                 <Content>
-                    <OverlaySettingsComponent
+                    <UnifiedSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}
                     />
 
-                    <AllMessagesSettings
-                        current={selectedTheme}
-                        onChange={updaterOrTheme => apply(updaterOrTheme)}
-                        openColorPopup={openColorPopup}
-                    />
                 </Content>
             );
 
@@ -381,9 +550,9 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                 </Content>
             );
         case "players":
-            { const openPlayer1 = () => {
-                openExternalLink('http://localhost:5173/audio-modern');
-            };
+        { const openPlayer1 = () => {
+            openExternalLink('http://localhost:5173/audio-modern');
+        };
 
             const openPlayer2 = () => {
                 openExternalLink('http://localhost:5173/audio');
