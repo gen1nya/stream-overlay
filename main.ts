@@ -10,15 +10,13 @@ import { createMainWindow } from "./windowsManager";
 import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
 import { EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION } from "./services/twitch/esService";
-import { ChatEvent, createBotMessage } from "./services/twitch/messageParser";
+import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
 import { LogService } from "./services/logService";
 import { UserData } from "./services/twitch/types/UserData";
 import { TwitchClient } from "./services/twitch/TwitchClient";
-import { SimpleYouTubeController } from "./services/youtube/youtube-controller";
 import { YouTubeLiveStreamsScraper } from "./services/youtube/YouTubeLiveStreamsScraper";
 import { AudiosessionManager } from "./audiosessionManager";
 import {BotConfig, StoreSchema, ThemeConfig} from "./services/store/StoreSchema";
-
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -117,61 +115,30 @@ const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
   middlewareProcessor.setEditors(editors);
 });
 
-
-/*const ytController = new SimpleYouTubeController(
-    (message) => {
-      console.log('YouTube message received:', JSON.stringify(message, null, 2));
-
-      if (message.type === 'system' && message.event === 'consent_required') {
-        console.log('🍪 Consent required - Electron window should open automatically');
-        console.log('If automatic consent fails, please visit:', message.consentUrl);
+const scraper = new YouTubeLiveStreamsScraper(
+    store,
+    message => {
+      if (!message || !message.type || message.type !== 'chat') {
+        return;
       }
-
-      if (message.type === 'system' && message.event === 'connected') {
-        console.log('✅', message.message);
-      }
-
-      if (message.type === 'chat') {
-        console.log(`💬 ${message.author}: ${message.text}`);
-      }
+      messageCache.addMessage({
+        type: 'chat',
+        userName: message.author,
+        color: '#ffffff',
+        rawMessage: message.text ?? "",
+        htmlMessage: message.text ?? "",
+        htmlBadges: "",
+        id: 'yt_' + crypto.randomUUID(),
+        roomId: null,
+        sourceRoomId: null,
+        userId: null,
+        sourceChannel: {displayName:null, login:null, avatarUrl:null},
+        roles: emptyRoles,
+        timestamp: Date.now(),
+      })
+      console.log('YouTube message received:\n', JSON.stringify(message, null, 2));
     }
 );
-
-const videoId = SimpleYouTubeController.extractVideoId('https://www.youtube.com/watch?v=jfKfPfyJRdk');
-
-ytController.startChatReader(videoId).then(
-    () => {
-        console.log('YouTube client started successfully');
-    },
-    (error) => {
-        console.error('Failed to start YouTube client:', error);
-    }
-)*/
-/*
-const scraper = new YouTubeLiveStreamsScraper();
-
-try {
-  console.log('Поиск трансляций...');
-  const streams = scraper.getLiveStreamsByChannelName('UCSJ4gkVC6NrvII8umztf0Ow');
-  streams.then((streams) => {
-    console.log(`Найдено ${streams.length} трансляций:`);
-
-    streams.forEach((stream, index) => {
-      console.log(`\n${index + 1}. ${stream.title}`);
-      console.log(`   URL: ${stream.url}`);
-      console.log(`   Статус: ${stream.isLive ? 'В эфире' : 'Запланирована'}`);
-      if (stream.viewerCount) {
-        console.log(`   Зрители: ${stream.viewerCount}`);
-      }
-      if (stream.scheduledStartTime) {
-        console.log(`   Время начала: ${new Date(stream.scheduledStartTime).toLocaleString()}`);
-      }
-    });
-
-  });
-} catch (error) {
-  console.error('Ошибка:', error);
-}*/
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -226,6 +193,7 @@ app.whenReady().then(() => {
       () => twitchClient.getEditors(),
   );
   audiosessionManager.registerIPCs();
+  scraper.setupIPCs();
 
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
@@ -265,13 +233,16 @@ app.whenReady().then(() => {
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  scraper.dispose()
   app.exit(1);
 });
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
+  scraper.dispose()
   app.exit(1);
 });
 app.on('window-all-closed', () => {
+  scraper.dispose()
   app.quit();
 });
 

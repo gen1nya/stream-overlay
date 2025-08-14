@@ -1,0 +1,12 @@
+{
+  "name": "fft-bridge",
+  "version": "0.1.0",
+  "gypfile": true,
+  "dependencies": {
+    "node-addon-api": "^7"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "rebuild:electron": "node-gyp rebuild --target=36.2.1 --arch=x64 --dist-url=https://electronjs.org/headers"
+  }
+}

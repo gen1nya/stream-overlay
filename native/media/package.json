@@ -1,0 +1,12 @@
+{
+  "name": "gsntc-bridge",
+  "version": "0.1.0",
+  "dependencies": {
+    "node-addon-api": "^8.5.0",
+    "node-gyp": "^11.3.0"
+  },
+  "scripts": {
+    "build": "node-gyp rebuild",
+    "rebuild:electron": "node-gyp rebuild --target=36.2.1 --arch=x64 --dist-url=https://electronjs.org/headers"
+  }
+}

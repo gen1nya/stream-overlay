@@ -4,7 +4,7 @@ import type { ChatMessage, YouTubeConfig, Message } from './types';
 
 export class YouTubeChatReader {
     private continuation: string | null = null;
-    private isRunning = false;
+    isRunning = false;
     private config: YouTubeConfig | null = null;
     private videoId: string | null = null;
     private consentCookies: string | null = null;

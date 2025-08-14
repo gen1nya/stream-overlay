@@ -1,3 +1,9 @@
+import {ipcMain} from "electron";
+import ElectronStore from "electron-store";
+import {StoreSchema} from "../store/StoreSchema";
+import {YouTubeChatReader} from "./chat-reader";
+import type {Message} from "./types";
+
 interface LiveStream {
     title: string;
     videoId: string;
@@ -42,10 +48,152 @@ interface YouTubeTab {
 
 class YouTubeLiveStreamsScraper {
     private readonly baseUrl = 'https://www.youtube.com';
-    private debugMode = false;
+    private channelId: string | null = null;
+    private liveStreams: LiveStream[] = [];
+    private chatReaders = new Map<string, YouTubeChatReader>();
+    private store: ElectronStore<StoreSchema>;
+    private updater: NodeJS.Timeout | null = null;
+    private isFetching = false;
+    private readonly pollingMs = 60_000;
+    private onMessage: (message: Message) => void;
 
-    constructor(debugMode = false) {
-        this.debugMode = debugMode;
+    constructor(
+        store: ElectronStore<StoreSchema>,
+        onMessage: (message: Message) => void
+    ) {
+        this.store = store;
+        this.channelId = this.store.get('youtube')?.channelId || null;
+
+        this.onMessage = onMessage;
+        // сразу один проход
+        this.fetchLiveStreams();
+
+        // периодический опрос
+        this.updater = setInterval(() => {
+            void this.fetchLiveStreams();
+        }, this.pollingMs);
+    }
+
+    setupIPCs() {
+        ipcMain.handle('youtube:setChannelName', async (_event, channelId: string) => {
+            this.channelId = channelId;
+            this.store.set('youtube.channelId', channelId);
+            console.log(`Канал установлен: ${channelId}`);
+            // триггернем обновление сразу
+            void this.fetchLiveStreams();
+            return true;
+        });
+
+        ipcMain.handle('youtube:getLiveStreams', async () => {
+            return this.liveStreams;
+        });
+
+        ipcMain.handle('youtube:enableScraper', async (_event, enable: boolean) => {
+            console.log(`YouTube scraper ${enable ? 'включен' : 'выключен'}`);
+            this.store.set('youtube.enabled', enable);
+            if (enable) {
+                if (!this.updater) {
+                    this.updater = setInterval(() => void this.fetchLiveStreams(), this.pollingMs);
+                }
+                void this.fetchLiveStreams();
+            } else {
+                this.dispose();
+            }
+            return true;
+        });
+
+        ipcMain.handle('youtube:getConfig', async () => {
+            return this.store.get('youtube');
+        });
+    }
+
+    dispose() {
+        if (this.updater) {
+            console.log('Остановка YouTube Live Streams Scraper');
+            clearInterval(this.updater);
+            this.updater = null;
+        }
+        this.stopAllChats();
+    }
+
+    private stopAllChats() {
+        for (const reader of this.chatReaders.values()) {
+            try {
+                reader.stop?.();
+            } catch (e) {
+                console.error('Ошибка при остановке чата:', e);
+            }
+        }
+        this.chatReaders.clear();
+    }
+
+    private async fetchLiveStreams() {
+        if (!this.channelId) {
+            console.warn('Канал не установлен, пропускаем обновление трансляций');
+            return;
+        }
+        if (!this.store.get('youtube.enabled')) return
+        if (this.isFetching) return; // анти-гонка
+        this.isFetching = true;
+        try {
+            console.log(`Обновление трансляций для канала: ${this.channelId}`);
+            const streams = await this.getLiveStreamsByChannelName(this.channelId);
+
+            if (!this.store.get('youtube.enabled')) return;
+
+            this.liveStreams = streams;
+            console.log(`Найдено ${streams.length} трансляций для канала "${this.channelId}"`);
+
+            // Берём только живые
+            const live = streams.filter(s => s.isLive);
+            const liveIds = new Set(live.map(s => s.videoId));
+
+            // 1) Запускаем новые/остановленные чаты
+            for (const stream of live) {
+                const id = stream.videoId;
+                const existing = this.chatReaders.get(id);
+
+                if (!existing) {
+                    console.log(`Создание нового чата для видео: ${id}`);
+                    const chatReader = new YouTubeChatReader((message) => {
+                        this.onMessage(message)
+                    });
+                    this.chatReaders.set(id, chatReader);
+                    try {
+                        chatReader.start(id)
+                            .then(() => console.log(`Обработка чата завершена для видео: ${id}`))
+                            .catch(err => {
+                                console.error(`Ошибка при запуске чата для видео ${id}:`, err);
+                                this.chatReaders.delete(id);
+                            });
+                    } catch (error) {
+                        console.error(`Ошибка при запуске чата для видео ${id}:`, error);
+                        // если не стартанул — выпиливаем, чтобы попробовать потом снова
+                        this.chatReaders.delete(id);
+                    }
+                } else {
+                    if (!existing.isRunning) {
+                        console.log(`Перезапуск чата для видео: ${id}`);
+                        existing.start(id).catch(e => console.error(e));
+                    } else {
+                         console.log(`Чат уже запущен для видео: ${id}`);
+                    }
+                }
+            }
+
+            const ids = Array.from(this.chatReaders.keys());
+            for (const id of ids) {
+                if (!liveIds.has(id)) {
+                    console.log(`Остановка чата: ${id} (стрим больше не live)`);
+                    try { this.chatReaders.get(id)?.stop?.(); } catch (e) { console.error(e); }
+                    this.chatReaders.delete(id);
+                }
+            }
+        } catch (error) {
+            console.error('Ошибка при обновлении трансляций:', error);
+        } finally {
+            this.isFetching = false;
+        }
     }
 
     /**
@@ -278,19 +426,10 @@ class YouTubeLiveStreamsScraper {
             let viewerCount: string | undefined = undefined;
             if (videoRenderer.viewCountText?.simpleText) {
                 const rawCount = videoRenderer.viewCountText.simpleText;
-                // Для активных трансляций показываем "N зрителей", для завершенных - общее количество просмотров
-                if (isLive && !rawCount.includes('προβολές') && !rawCount.includes('просмотров') && !rawCount.includes('views')) {
-                    viewerCount = `${rawCount} зрителей`;
-                } else {
-                    viewerCount = rawCount;
-                }
+                viewerCount = this.extractNumber(rawCount)?.toString() ?? "0"
             } else if (videoRenderer.viewCountText?.runs?.[0]?.text) {
                 const rawCount = videoRenderer.viewCountText.runs[0].text;
-                if (isLive && !rawCount.includes('προβολές') && !rawCount.includes('просмотров') && !rawCount.includes('views')) {
-                    viewerCount = `${rawCount} зрителей`;
-                } else {
-                    viewerCount = rawCount;
-                }
+                viewerCount = this.extractNumber(rawCount)?.toString() ?? "0"
             }
 
             // Получаем время начала для запланированных трансляций
@@ -399,47 +538,12 @@ class YouTubeLiveStreamsScraper {
             return false;
         }
     }
+
+    private extractNumber(str: string | null): number | null {
+        if (!str) return null;
+        const match = str.match(/\d+/);
+        return match ? Number(match[0]) : null;
+    }
 }
 
-// Пример использования
-/*async function main() {
-    // Включаем дебаг режим для диагностики
-    const scraper = new YouTubeLiveStreamsScraper(true);
-
-    try {
-        console.log('Поиск трансляций...');
-
-        // Способ 1: По имени канала
-        const streams = await scraper.getLiveStreamsByChannelName('LofiGirl');
-
-        console.log(`\n=== РЕЗУЛЬТАТЫ ===`);
-        console.log(`Найдено ${streams.length} трансляций:`);
-
-        const liveStreams = streams.filter(s => s.isLive);
-        const scheduledStreams = streams.filter(s => !s.isLive);
-
-        console.log(`\nАктивные трансляции (${liveStreams.length}):`);
-        liveStreams.forEach((stream, index) => {
-            console.log(`${index + 1}. ${stream.title}`);
-            console.log(`   URL: ${stream.url}`);
-            if (stream.viewerCount) {
-                console.log(`   Зрители: ${stream.viewerCount}`);
-            }
-        });
-
-        console.log(`\nЗапланированные/завершенные (${scheduledStreams.length}):`);
-        scheduledStreams.forEach((stream, index) => {
-            console.log(`${index + 1}. ${stream.title}`);
-            console.log(`   URL: ${stream.url}`);
-            if (stream.scheduledStartTime) {
-                console.log(`   Время начала: ${new Date(stream.scheduledStartTime).toLocaleString()}`);
-            }
-        });
-
-    } catch (error) {
-        console.error('Ошибка:', error);
-    }
-}*/
-
-// Экспортируем класс для использования
 export { YouTubeLiveStreamsScraper, LiveStream, ChannelInfo };

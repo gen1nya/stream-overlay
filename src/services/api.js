@@ -103,6 +103,8 @@ export async function getThemes() {
     return ipcRenderer?.invoke('themes:get-all');
 }
 
+
+// Audio API functions
 export async function getAudioDeviceList() {
     return ipcRenderer?.invoke('audio:getDevices');
 }
@@ -118,6 +120,39 @@ export async function getAudioDevice() {
 export async function enableFFT(enable) {
     return ipcRenderer?.invoke('audio:enableFFT', enable);
 }
+
 export async function getFFTconfig() {
     return ipcRenderer?.invoke('audio:getFFTConfig');
+}
+
+// YouTube API functions
+
+export async function enableYouTubeScraper(enable) {
+    return ipcRenderer?.invoke('youtube:enableScraper', enable);
+}
+
+export async function getYoutubeStreams() {
+    return ipcRenderer?.invoke('youtube:getLiveStreams');
+}
+
+export async function setChannelName(channelName) {
+    return ipcRenderer?.invoke('youtube:setChannelName', channelName);
+}
+
+export async function getYoutubeConfig() {
+    return ipcRenderer?.invoke('youtube:getConfig');
+}
+
+// socks proxy settings
+export async function getProxyConfig(){
+    return ipcRenderer?.invoke('proxy:getConfig');
+}
+export async function setProxyConfig(config) {
+    return ipcRenderer?.invoke('proxy:setConfig', config);
+}
+export async function enableProxy(enable){
+    return ipcRenderer?.invoke('proxy:enable', enable);
+}
+export async function testProxyConnection(config) {
+    return ipcRenderer?.invoke('proxy:testConnection', config);
 }

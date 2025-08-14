@@ -17,7 +17,17 @@ import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
 import {defaultTheme} from '../../theme';
 import RedeemPointsBlock from "./settings/RedeemPointsBlock";
 import {Sidebar} from "../utils/Sidebar";
-import {FiAward, FiHeart, FiMessageCircle, FiMusic, FiSettings, FiArrowLeft, FiEye, FiLayers} from "react-icons/fi";
+import {
+    FiAward,
+    FiHeart,
+    FiMessageCircle,
+    FiMusic,
+    FiSettings,
+    FiArrowLeft,
+    FiEye,
+    FiLayers,
+    FiYoutube
+} from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
 import ColorPickerPopup from "./settings/ColorPickerPopup";
@@ -28,6 +38,8 @@ import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
 import {useTheme} from "../../hooks/useTheme";
 import UnifiedSettingsComponent from "./settings/UnifiedSettingsComponent";
 import FFTControlComponent from "./settings/FFTControlComponent";
+import YouTubeScraperComponent from "./settings/YouTubeScraperComponent";
+import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -238,6 +250,8 @@ const PageInfo = {
     channel_points: { title: "Настройки баллов канала", icon: <FiAward /> },
     bot: { title: "Настройки бота", icon: <AiFillRobot /> },
     players: { title: "Настройки плееров", icon: <FiMusic /> },
+    youtube: { title: "Чат ютуба", icon: <FiYoutube /> },
+
 };
 
 export default function Settings() {
@@ -413,6 +427,7 @@ export default function Settings() {
                         {key: "channel_points", icon: <FiAward/>, label: "Баллы"},
                         {key: "bot", icon: <AiFillRobot/>, label: "Бот >_"},
                         {key: "players", icon: <FiMusic/>, label: "Плееры"},
+                        {key: "youtube", icon: <FiYoutube/>, label: "YouTube Чат"},
                     ]}
                 />
 
@@ -447,6 +462,14 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                         openColorPopup={openColorPopup}
                     />
 
+                </Content>
+            );
+
+        case "youtube":
+            return (
+                <Content>
+                    <Socks5ProxyComponent/>
+                    <YouTubeScraperComponent/>
                 </Content>
             );
 
