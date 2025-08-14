@@ -404,7 +404,7 @@ export default function AudioPlayerComponent() {
                     <Disk ref={diskRef} />
                     <AlbumArt
                         ref={albumRef}
-                        src={metadata ? `data:image/png;base64,${metadata.albumArtBase64}` : ""}
+                        src={metadata ? `${metadata.albumArtBase64}` : ""}
                         alt="Album Art"
                     />
                 </DiskContainer>

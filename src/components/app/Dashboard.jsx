@@ -334,6 +334,15 @@ export default function Dashboard() {
         openOverlay();
     };
 
+    const openPlayer1 = () => {
+        openExternalLink('http://localhost:5173/audio-modern');
+    };
+
+    const openPlayer2 = () => {
+        openExternalLink('http://localhost:5173/audio');
+    };
+
+
     const handlerOpenSettings = () => {
         navigate('/settings', { replace: false });
     };
@@ -477,12 +486,25 @@ export default function Dashboard() {
                             </LinkGroup>
                         </ButtonsRow>
                     </Section>
+                    <Section>
+                        <SectionTitle>Плееры</SectionTitle>
+                        <ButtonsRow>
+                            <button onClick={openPlayer1}>
+                                <FiExternalLink/>
+                                Открыть Плеер-карточку
+                            </button>
+                            <button onClick={openPlayer2}>
+                                <FiExternalLink/>
+                                Открыть плеер-пластинку
+                            </button>
+                        </ButtonsRow>
+                    </Section>
                 </Content>
 
                 <LogPanel>
                     <LogHeader>Логи</LogHeader>
                     <LogContent ref={logPanelRef}>
-                        {logs.map((log, index) => (
+                    {logs.map((log, index) => (
                             <LogLine key={index}>
                                 [{new Date(log.timestamp).toLocaleTimeString()}]{' '}
                                 {log.userName && (
@@ -528,7 +550,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.3.6-beta</Version>
+                <Version>v0.3.7-beta</Version>
             </Footer>
         </Wrapper>
     );

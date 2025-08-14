@@ -16,7 +16,7 @@ const Canvas = styled.canvas`
 const easeQuad = (x) => x * x;
 
 const FFTBars = ({
-                     wsUrl             = "ws://localhost:5001/ws",
+                     wsUrl             = "ws://localhost:5001",
                      barColor          = "#37ff00",
                      barGradient       = true,
                      backgroundColor   = "rgba(197,89,89,0.06)",

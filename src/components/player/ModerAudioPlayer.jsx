@@ -200,7 +200,7 @@ export default function ModernAudioPlayer() {
             <TopRow>
                 <Cover
                     ref={coverRef}
-                    src={metadata?.albumArtBase64 ? `data:image/png;base64,${metadata.albumArtBase64}` : undefined}
+                    src={metadata?.albumArtBase64 ? `${metadata.albumArtBase64}` : undefined}
                     alt="Album Art"
                     crossOrigin="anonymous"
                 />

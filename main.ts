@@ -9,22 +9,50 @@ import { timeoutUser } from './services/twitch/authorizedHelixApi';
 import { createMainWindow } from "./windowsManager";
 import { startHttpServer, startDevStaticServer } from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
-import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/twitch/esService";
-import {ChatEvent, createBotMessage} from "./services/twitch/messageParser";
+import { EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION } from "./services/twitch/esService";
+import { ChatEvent, createBotMessage } from "./services/twitch/messageParser";
 import { LogService } from "./services/logService";
-import {UserData} from "./services/twitch/types/UserData";
+import { UserData } from "./services/twitch/types/UserData";
 import { TwitchClient } from "./services/twitch/TwitchClient";
-import {SimpleYouTubeController} from "./services/youtube/youtube-controller";
+import { SimpleYouTubeController } from "./services/youtube/youtube-controller";
+import { YouTubeLiveStreamsScraper } from "./services/youtube/YouTubeLiveStreamsScraper";
+import { AudiosessionManager } from "./audiosessionManager";
+import {BotConfig, StoreSchema, ThemeConfig} from "./services/store/StoreSchema";
+
 
 const appStartTime = Date.now();
 let PORT = 5173;
 
-const store = new Store({
+const store = new Store<StoreSchema>({
   defaults: {
-    themes: { default: defaultTheme, theme1: defaultTheme },
+    themes: {
+      default: defaultTheme as ThemeConfig,
+      theme1: defaultTheme as ThemeConfig
+    },
+    bots: {  },
+    currentBot: null,
     currentTheme: 'default',
+    audio: {
+      fft: {
+        enabled: true,
+        device: null,
+        dbFloor: -70,
+        masterGain: 2,
+        tilt: 0.30,
+      },
+      gsm: {
+        enabled: true,
+      },
+    },
+    youtube: {
+        enabled: false,
+        channelId: '',
+        videoId: '',
+    }
   },
 });
+
+const audiosessionManager = new AudiosessionManager(store);
 
 /* Theme migration */
 let themes: any = store.get('themes');
@@ -119,6 +147,31 @@ ytController.startChatReader(videoId).then(
         console.error('Failed to start YouTube client:', error);
     }
 )*/
+/*
+const scraper = new YouTubeLiveStreamsScraper();
+
+try {
+  console.log('Поиск трансляций...');
+  const streams = scraper.getLiveStreamsByChannelName('UCSJ4gkVC6NrvII8umztf0Ow');
+  streams.then((streams) => {
+    console.log(`Найдено ${streams.length} трансляций:`);
+
+    streams.forEach((stream, index) => {
+      console.log(`\n${index + 1}. ${stream.title}`);
+      console.log(`   URL: ${stream.url}`);
+      console.log(`   Статус: ${stream.isLive ? 'В эфире' : 'Запланирована'}`);
+      if (stream.viewerCount) {
+        console.log(`   Зрители: ${stream.viewerCount}`);
+      }
+      if (stream.scheduledStartTime) {
+        console.log(`   Время начала: ${new Date(stream.scheduledStartTime).toLocaleString()}`);
+      }
+    });
+
+  });
+} catch (error) {
+  console.error('Ошибка:', error);
+}*/
 
 const wss = new WebSocket.Server({ port: 42001 });
 
@@ -172,6 +225,7 @@ app.whenReady().then(() => {
       () => twitchClient.refreshUser(),
       () => twitchClient.getEditors(),
   );
+  audiosessionManager.registerIPCs();
 
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {

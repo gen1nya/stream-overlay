@@ -17,7 +17,7 @@ export default function PaddingEditorComponent({
                 <SmallSubTitle>Отступы снаружи:</SmallSubTitle>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
-                        title={`По горизонтали (${message.marginH ?? 0}):`}
+                        title={`По горизонтали`}
                         min="0"
                         max="100"
                         width={"150px"}
@@ -27,7 +27,7 @@ export default function PaddingEditorComponent({
                     />
 
                     <SeekbarComponent
-                        title={`По вертикали (${message.marginV ?? 0}):`}
+                        title={`По вертикали`}
                         min="0"
                         max="50"
                         width={"150px"}
@@ -42,7 +42,7 @@ export default function PaddingEditorComponent({
                 <span>Отступы внутри:</span>
                 <Row>
                     <SeekbarComponent
-                        title={`По горизонтали (${message.paddingH ?? 0}):`}
+                        title={`По горизонтали`}
                         min="0"
                         max="100"
                         width={"150px"}
@@ -52,7 +52,7 @@ export default function PaddingEditorComponent({
                     />
 
                     <SeekbarComponent
-                        title={`По вертикали (${message.paddingV ?? 0}):`}
+                        title={`По вертикали`}
                         min="0"
                         max="50"
                         value={message.paddingV ?? 0}

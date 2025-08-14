@@ -42,7 +42,7 @@ export default function BackgroundColorEditorComponent({
                 }
             />
             <SeekbarComponent
-                title={`Радиус тени (${message?.shadowRadius}):`}
+                title={`Радиус тени`}
                 min="0"
                 max="20"
                 step="1"

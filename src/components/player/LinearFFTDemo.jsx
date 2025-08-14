@@ -1,5 +1,4 @@
 import styled from "styled-components";
-import FFTDonut from "./FFTDonut";
 import React from "react";
 import FFTBars from "./FFTBars";
 

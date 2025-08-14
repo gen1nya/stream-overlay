@@ -25,7 +25,7 @@ const toRad = (v, unit = "rad") => unit === "deg" ? (v * Math.PI) / 180 : v;
 
 const FFTDonut = ({
                       /* ---- WebSocket ---- */
-                      wsUrl             = "ws://localhost:5001/ws",
+                      wsUrl             = "ws://localhost:5001",
                       reconnectInterval = 2000,    // ms, socket reconnect interval
 
                       /* ---- полосы ---- */

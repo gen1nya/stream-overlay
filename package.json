@@ -1,17 +1,18 @@
 {
   "name": "twitch-watcher",
   "private": true,
-  "version": "0.3.6",
+  "version": "0.3.7",
   "main": "dist-backend/main.js",
   "scripts": {
     "lint": "eslint .",
     "preview": "vite preview",
     "dev": "concurrently \"npm:start-react\" \"npm:start-electron\"",
     "start-react": "vite",
-    "start-electron": "wait-on http://localhost:5173 && npm run build:ts && electron .",
+    "start-electron": "wait-on http://localhost:5173 && npm run build:ts && npm run postbuild && electron .",
     "build": "vite build",
-    "build-electron": "npm run build:ts && electron-builder",
-    "build:ts": "tsc"
+    "build-electron": "npm run build && npm run build:ts && npm run postbuild && electron-builder",
+    "build:ts": "tsc",
+    "postbuild": "node scripts/copy-native.js"
   },
   "build": {
     "appId": "com.twitch.watcher",
@@ -46,6 +47,7 @@
     "lodash": "^4.17.21",
     "lodash.merge": "^4.6.2",
     "lodash.throttle": "^4.1.1",
+    "node-gyp-build": "^4.8.4",
     "open": "^10.2.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

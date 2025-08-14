@@ -27,6 +27,7 @@ import Roulette from "./settings/bot/roulette/Roulette";
 import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
 import {useTheme} from "../../hooks/useTheme";
 import UnifiedSettingsComponent from "./settings/UnifiedSettingsComponent";
+import FFTControlComponent from "./settings/FFTControlComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -567,9 +568,11 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
             }
             return (
                 <Content>
+                    <FFTControlComponent/>
                     <PlayerSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
                     />
                     <SettingsBlockHalf>
                         <SettingsBlockTitle>Ссылки</SettingsBlockTitle>

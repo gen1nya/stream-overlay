@@ -102,3 +102,22 @@ export async function unbanUser(userId) {
 export async function getThemes() {
     return ipcRenderer?.invoke('themes:get-all');
 }
+
+export async function getAudioDeviceList() {
+    return ipcRenderer?.invoke('audio:getDevices');
+}
+
+export async function setAudioDevice(id, name, flow) {
+    return ipcRenderer?.invoke('audio:setDevice', {id, name, flow});
+}
+
+export async function getAudioDevice() {
+    return ipcRenderer?.invoke('audio:getCurrentDevice');
+}
+
+export async function enableFFT(enable) {
+    return ipcRenderer?.invoke('audio:enableFFT', enable);
+}
+export async function getFFTconfig() {
+    return ipcRenderer?.invoke('audio:getFFTConfig');
+}

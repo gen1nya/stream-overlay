@@ -231,7 +231,7 @@ export default function FollowSettingsBlock({
 
                                 <ControlGroup flex="1 1 200px">
                                     <SeekbarComponent
-                                        title={`Радиус тени: ${messageFont?.shadowRadius ?? 0}px`}
+                                        title={`Радиус тени`}
                                         min="0"
                                         max="20"
                                         step="1"
@@ -270,7 +270,7 @@ export default function FollowSettingsBlock({
 
                                 <ControlGroup flex="1 1 200px">
                                     <SeekbarComponent
-                                        title={`Скругление углов: ${borderRadius}px`}
+                                        title={`Скругление углов`}
                                         min="0"
                                         max="20"
                                         step="1"

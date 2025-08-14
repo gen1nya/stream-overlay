@@ -155,7 +155,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
 
                         <ControlGroup >
                             <SeekbarComponent
-                                title={`Радиус тени: ${messageFont?.shadowRadius ?? 0}px`}
+                                title={`Радиус тени`}
                                 min="0"
                                 max="20"
                                 step="1"
@@ -198,7 +198,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
 
                         <ControlGroup>
                             <SeekbarComponent
-                                title={`Скругление углов: ${borderRadius}px`}
+                                title={`Скругление углов`}
                                 min="0"
                                 max="20"
                                 step="1"

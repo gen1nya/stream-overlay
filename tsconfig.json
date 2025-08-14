@@ -16,6 +16,8 @@
     "services/**/*.ts",
     "windowsManager.ts",
     "ipcHandlers.ts",
-    "webServer.ts"
+    "webServer.ts",
+    "audiosessionManager.ts",
+    "native/**/*.ts",
   ]
 }

@@ -71,7 +71,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <Row gap="20px">
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Ширина (${overlay?.chatWidth ?? "auto"})`}
+                                    title={`Ширина ${overlay?.chatWidth ? "" : "[auto]"}`}
                                     min="100"
                                     max={widthMax}
                                     value={overlay?.chatWidth ?? 0}
@@ -93,7 +93,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Высота (${overlay?.chatHeight ?? "auto"})`}
+                                    title={`Высота ${overlay?.chatHeight ? "" : "[auto]"}`}
                                     min="100"
                                     max={heightMax}
                                     value={overlay?.chatHeight ?? 100}
@@ -115,7 +115,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup flex="1 1 300px">
                                 <SeekbarComponent
-                                    title={`Скругление углов: ${overlay?.borderRadius ?? 0}px`}
+                                    title={`Скругление углов`}
                                     min="0"
                                     max="64"
                                     width="320px"
@@ -137,7 +137,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <Row gap="20px">
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Отступ слева: ${overlay?.paddingLeft ?? 0}px`}
+                                    title={`Отступ слева`}
                                     min="0"
                                     max={widthMax}
                                     value={overlay?.paddingLeft ?? 0}
@@ -158,7 +158,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Отступ сверху: ${overlay?.paddingTop ?? 0}px`}
+                                    title={`Отступ сверху`}
                                     min="0"
                                     max={heightMax}
                                     width="180px"
@@ -278,7 +278,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                                 <Row gap="20px">
                                     <ControlGroup>
                                         <SeekbarComponent
-                                            title={`Ширина фона: ${overlay?.containerWidth ?? 500}px`}
+                                            title={`Ширина фона`}
                                             min="100"
                                             max="2000"
                                             value={overlay?.containerWidth ?? 500}
@@ -298,7 +298,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                                     <ControlGroup>
                                         <SeekbarComponent
-                                            title={`Прозрачность: ${Math.round((overlay?.backgroundOpacity ?? 1) * 100)}%`}
+                                            title={`Прозрачность`}
                                             min="0"
                                             max="1"
                                             value={overlay?.backgroundOpacity ?? 1}
@@ -384,7 +384,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup flex="1 1 300px">
                                 <SeekbarComponent
-                                    title={`Размытие фона: ${allMessages?.blurRadius ?? 0}px`}
+                                    title={`Размытие фона`}
                                     min="0"
                                     max="20"
                                     value={allMessages?.blurRadius ?? 0}
@@ -502,7 +502,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup flex="1 1 300px">
                                 <SeekbarComponent
-                                    title={`Радиус тени: ${allMessages?.textShadowRadius ?? 5}px`}
+                                    title={`Радиус тени`}
                                     min="0"
                                     max="20"
                                     value={allMessages?.textShadowRadius ?? 5}
