@@ -17,6 +17,7 @@ import { TwitchClient } from "./services/twitch/TwitchClient";
 import { YouTubeLiveStreamsScraper } from "./services/youtube/YouTubeLiveStreamsScraper";
 import { AudiosessionManager } from "./audiosessionManager";
 import {BotConfig, StoreSchema, ThemeConfig} from "./services/store/StoreSchema";
+import {ProxyService} from "./services/ProxyService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -51,6 +52,7 @@ const store = new Store<StoreSchema>({
 });
 
 const audiosessionManager = new AudiosessionManager(store);
+const proxy = new ProxyService();
 
 /* Theme migration */
 let themes: any = store.get('themes');
@@ -137,7 +139,8 @@ const scraper = new YouTubeLiveStreamsScraper(
         timestamp: Date.now(),
       })
       console.log('YouTube message received:\n', JSON.stringify(message, null, 2));
-    }
+    },
+    proxy
 );
 
 const wss = new WebSocket.Server({ port: 42001 });

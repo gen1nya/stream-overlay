@@ -1,5 +1,6 @@
 import { request } from 'node:https';
 import { setTimeout as sleep } from 'timers/promises';
+import { ProxyService } from '../ProxyService';
 import type { ChatMessage, YouTubeConfig, Message } from './types';
 
 export class YouTubeChatReader {
@@ -8,11 +9,15 @@ export class YouTubeChatReader {
     private config: YouTubeConfig | null = null;
     private videoId: string | null = null;
     private consentCookies: string | null = null;
+    private proxyService?: ProxyService;
 
     constructor(
         private onMessage: (message: Message) => void,
-        private ytCookie?: string
-    ) {}
+        private ytCookie?: string,
+        proxyService?: ProxyService
+    ) {
+        this.proxyService = proxyService;
+    }
 
     // Method to handle consent
     setConsentCookies(cookies: string): void {
@@ -292,7 +297,33 @@ export class YouTubeChatReader {
     }
 
     private async fetchText(url: string, options: any = {}, maxRedirects = 5): Promise<{ status: number; text: string; finalUrl?: string; isConsent?: boolean }> {
-        console.log(`[DEBUG] Fetching: ${url}`);
+        // Если у нас есть ProxyService, используем его
+        if (this.proxyService) {
+            console.log(`[CHAT-READER] Using ProxyService for: ${url}`);
+
+            // Добавляем cookies к options
+            const headers = { ...options.headers };
+
+            // Build cookie string
+            let cookieString = '';
+            if (this.consentCookies) {
+                cookieString = this.consentCookies;
+            }
+            if (this.ytCookie) {
+                cookieString = cookieString ? `${cookieString}; ${this.ytCookie}` : this.ytCookie;
+            }
+            if (cookieString) {
+                headers['cookie'] = cookieString;
+            }
+
+            return this.proxyService.fetchText(url, {
+                ...options,
+                headers
+            }, maxRedirects);
+        }
+
+        // Иначе используем оригинальную логику
+        console.log(`[CHAT-READER] Using direct connection for: ${url}`);
 
         return new Promise((resolve, reject) => {
             const makeRequest = (currentUrl: string, redirectCount: number) => {

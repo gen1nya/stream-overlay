@@ -10,6 +10,17 @@ export interface ChatMessage {
     badges: string[];
 }
 
+export type ProxyKind = 'socks5';
+
+export interface ProxyConfig {
+    enabled: boolean;
+    kind: ProxyKind;
+    host: string;
+    port: number;
+    username?: string;
+    password?: string;
+}
+
 export interface SystemMessage {
     type: 'system';
     event: 'connected' | 'disconnected' | 'error' | 'consent_required';

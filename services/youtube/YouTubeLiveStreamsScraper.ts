@@ -2,6 +2,7 @@ import {ipcMain} from "electron";
 import ElectronStore from "electron-store";
 import {StoreSchema} from "../store/StoreSchema";
 import {YouTubeChatReader} from "./chat-reader";
+import {ProxyService} from "../ProxyService";
 import type {Message} from "./types";
 
 interface LiveStream {
@@ -56,15 +57,18 @@ class YouTubeLiveStreamsScraper {
     private isFetching = false;
     private readonly pollingMs = 60_000;
     private onMessage: (message: Message) => void;
+    private proxyService: ProxyService;
 
     constructor(
         store: ElectronStore<StoreSchema>,
-        onMessage: (message: Message) => void
+        onMessage: (message: Message) => void,
+        proxyService: ProxyService
     ) {
         this.store = store;
         this.channelId = this.store.get('youtube')?.channelId || null;
-
         this.onMessage = onMessage;
+        this.proxyService = proxyService;
+
         // сразу один проход
         this.fetchLiveStreams();
 
@@ -155,9 +159,13 @@ class YouTubeLiveStreamsScraper {
 
                 if (!existing) {
                     console.log(`Создание нового чата для видео: ${id}`);
-                    const chatReader = new YouTubeChatReader((message) => {
-                        this.onMessage(message)
-                    });
+                    const chatReader = new YouTubeChatReader(
+                        (message) => {
+                            this.onMessage(message)
+                        },
+                        undefined, // ytCookie
+                        this.proxyService
+                    );
                     this.chatReaders.set(id, chatReader);
                     try {
                         chatReader.start(id)
@@ -176,7 +184,7 @@ class YouTubeLiveStreamsScraper {
                         console.log(`Перезапуск чата для видео: ${id}`);
                         existing.start(id).catch(e => console.error(e));
                     } else {
-                         console.log(`Чат уже запущен для видео: ${id}`);
+                        console.log(`Чат уже запущен для видео: ${id}`);
                     }
                 }
             }
@@ -222,7 +230,7 @@ class YouTubeLiveStreamsScraper {
         const searchUrl = `${this.baseUrl}/results?search_query=${encodeURIComponent(channelName)}&sp=EgIQAg%253D%253D`; // sp параметр фильтрует только каналы
 
         try {
-            const response = await fetch(searchUrl, {
+            const response = await this.proxyService.fetch(searchUrl, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
@@ -276,7 +284,7 @@ class YouTubeLiveStreamsScraper {
         const liveUrl = `${this.baseUrl}/channel/${channelId}/streams`;
 
         try {
-            const response = await fetch(liveUrl, {
+            const response = await this.proxyService.fetch(liveUrl, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
@@ -481,7 +489,7 @@ class YouTubeLiveStreamsScraper {
         const rssUrl = `${this.baseUrl}/feeds/videos.xml?channel_id=${channelId}`;
 
         try {
-            const response = await fetch(rssUrl);
+            const response = await this.proxyService.fetch(rssUrl);
             const xmlText = await response.text();
 
             // Простой парсер XML для извлечения видео
@@ -520,7 +528,7 @@ class YouTubeLiveStreamsScraper {
     private async checkIfVideoIsLive(videoId: string): Promise<boolean> {
         try {
             const videoUrl = `${this.baseUrl}/watch?v=${videoId}`;
-            const response = await fetch(videoUrl, {
+            const response = await this.proxyService.fetch(videoUrl, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }

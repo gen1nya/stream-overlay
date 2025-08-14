@@ -17,7 +17,8 @@ import {
 } from './SharedSettingsStyles';
 import Switch from '../../utils/Switch';
 import NumericEditorComponent from '../../utils/NumericEditorComponent';
-import {Row} from "../SettingsComponent";
+import { Row } from "../SettingsComponent";
+import { getProxyConfig, setProxyConfig, enableProxy, testProxyConnection } from '../../../services/api';
 
 // Специфичные стили для прокси компонента
 const StatusIndicator = styled.div`
@@ -26,39 +27,39 @@ const StatusIndicator = styled.div`
     gap: 8px;
     padding: 8px 12px;
     background: ${props => {
-    if (props.status === 'connected') return 'rgba(34, 197, 94, 0.1)';
-    if (props.status === 'error') return 'rgba(220, 38, 38, 0.1)';
-    if (props.status === 'testing') return 'rgba(59, 130, 246, 0.1)';
-    return 'rgba(107, 114, 128, 0.1)';
-}};
+        if (props.status === 'connected') return 'rgba(34, 197, 94, 0.1)';
+        if (props.status === 'error') return 'rgba(220, 38, 38, 0.1)';
+        if (props.status === 'testing') return 'rgba(59, 130, 246, 0.1)';
+        return 'rgba(107, 114, 128, 0.1)';
+    }};
     border: 1px solid ${props => {
-    if (props.status === 'connected') return 'rgba(34, 197, 94, 0.3)';
-    if (props.status === 'error') return 'rgba(220, 38, 38, 0.3)';
-    if (props.status === 'testing') return 'rgba(59, 130, 246, 0.3)';
-    return 'rgba(107, 114, 128, 0.3)';
-}};
+        if (props.status === 'connected') return 'rgba(34, 197, 94, 0.3)';
+        if (props.status === 'error') return 'rgba(220, 38, 38, 0.3)';
+        if (props.status === 'testing') return 'rgba(59, 130, 246, 0.3)';
+        return 'rgba(107, 114, 128, 0.3)';
+    }};
     border-radius: 8px;
     font-size: 0.85rem;
-    
+
     .status-icon {
         width: 16px;
         height: 16px;
         color: ${props => {
-    if (props.status === 'connected') return '#22c55e';
-    if (props.status === 'error') return '#dc2626';
-    if (props.status === 'testing') return '#3b82f6';
-    return '#6b7280';
-}};
+            if (props.status === 'connected') return '#22c55e';
+            if (props.status === 'error') return '#dc2626';
+            if (props.status === 'testing') return '#3b82f6';
+            return '#6b7280';
+        }};
     }
-    
+
     .status-text {
         font-weight: 500;
         color: ${props => {
-    if (props.status === 'connected') return '#22c55e';
-    if (props.status === 'error') return '#dc2626';
-    if (props.status === 'testing') return '#3b82f6';
-    return '#6b7280';
-}};
+            if (props.status === 'connected') return '#22c55e';
+            if (props.status === 'error') return '#dc2626';
+            if (props.status === 'testing') return '#3b82f6';
+            return '#6b7280';
+        }};
     }
 `;
 
@@ -71,23 +72,23 @@ const ProxyInput = styled.input`
     padding: 10px 12px;
     font-size: 0.9rem;
     transition: all 0.2s ease;
-    
+
     &:hover {
         background: #252525;
         border-color: #555;
     }
-    
+
     &:focus {
         outline: none;
         border-color: #646cff;
         background: #252525;
         box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
     }
-    
+
     &::placeholder {
         color: #666;
     }
-    
+
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -112,7 +113,7 @@ const ProxyGrid = styled.div`
     grid-template-columns: 2fr 1fr 120px 120px;
     gap: 12px;
     align-items: end;
-    
+
     @media (max-width: 768px) {
         grid-template-columns: 1fr;
         gap: 16px;
@@ -122,12 +123,12 @@ const ProxyGrid = styled.div`
 const TestButton = styled(ActionButton)`
     background: #3b82f6;
     border-color: #3b82f6;
-    
+
     &:hover:not(:disabled) {
         background: #2563eb;
         border-color: #2563eb;
     }
-    
+
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
@@ -136,7 +137,9 @@ const TestButton = styled(ActionButton)`
 
 export default function Socks5ProxyComponent() {
     const [proxyEnabled, setProxyEnabled] = useState(false);
-    const [proxyConfig, setProxyConfig] = useState({
+    const [proxyConfig, setProxyConfigState] = useState({
+        enabled: false,
+        kind: 'socks5',
         host: '',
         port: 1080,
         username: '',
@@ -147,13 +150,18 @@ export default function Socks5ProxyComponent() {
     const [error, setError] = useState('');
     const [connectionStatus, setConnectionStatus] = useState('disconnected'); // disconnected, connected, error, testing
 
-    // Загрузка конфигурации прокси (заглушка - нужно добавить API методы)
+    // Загрузка конфигурации прокси
     const loadProxyConfig = async () => {
         try {
-            // TODO: Добавить API метод getProxyConfig()
-            // const config = await getProxyConfig();
-            // setProxyEnabled(config.enabled);
-            // setProxyConfig(config);
+            const config = await getProxyConfig();
+            if (config) {
+                setProxyEnabled(config.enabled);
+                setProxyConfigState(config);
+                // Устанавливаем статус подключения на основе текущего состояния
+                if (config.enabled && config.host && config.port) {
+                    setConnectionStatus('connected');
+                }
+            }
             setError('');
         } catch (err) {
             console.error('Ошибка загрузки конфигурации прокси:', err);
@@ -164,8 +172,7 @@ export default function Socks5ProxyComponent() {
     // Сохранение конфигурации прокси
     const saveProxyConfig = async () => {
         try {
-            // TODO: Добавить API метод setProxyConfig()
-            // await setProxyConfig(proxyConfig);
+            await setProxyConfig(proxyConfig);
             setError('');
             console.log('Proxy config saved:', proxyConfig);
         } catch (err) {
@@ -186,22 +193,16 @@ export default function Socks5ProxyComponent() {
         setError('');
 
         try {
-            // TODO: Добавить API метод testProxyConnection()
-            // const result = await testProxyConnection(proxyConfig);
+            const result = await testProxyConnection(proxyConfig);
 
-            // Заглушка для демонстрации
-            await new Promise(resolve => setTimeout(resolve, 2000));
-
-            // Случайный результат для демонстрации
-            const success = Math.random() > 0.3;
-
-            if (success) {
+            if (result && result.success) {
                 setConnectionStatus('connected');
             } else {
                 setConnectionStatus('error');
-                setError('Не удалось подключиться к прокси-серверу');
+                setError(result?.error || 'Не удалось подключиться к прокси-серверу');
             }
         } catch (err) {
+            console.error('Ошибка при тестировании подключения:', err);
             setConnectionStatus('error');
             setError('Ошибка при тестировании подключения');
         } finally {
@@ -212,13 +213,19 @@ export default function Socks5ProxyComponent() {
     // Переключение прокси
     const handleProxyToggle = async (enabled) => {
         try {
-            // TODO: Добавить API метод enableProxy()
-            // await enableProxy(enabled);
+            await enableProxy(enabled);
             setProxyEnabled(enabled);
             setError('');
 
+            // Обновляем конфигурацию
+            const updatedConfig = { ...proxyConfig, enabled };
+            setProxyConfigState(updatedConfig);
+
             if (!enabled) {
                 setConnectionStatus('disconnected');
+            } else if (proxyConfig.host && proxyConfig.port) {
+                // Если включаем прокси и есть валидная конфигурация, проверяем соединение
+                setConnectionStatus('connected');
             }
         } catch (err) {
             console.error('Ошибка переключения прокси:', err);
@@ -228,7 +235,9 @@ export default function Socks5ProxyComponent() {
 
     // Обновление полей конфигурации
     const updateConfig = (field, value) => {
-        setProxyConfig(prev => ({ ...prev, [field]: value }));
+        const updatedConfig = { ...proxyConfig, [field]: value };
+        setProxyConfigState(updatedConfig);
+
         if (connectionStatus === 'connected') {
             setConnectionStatus('disconnected'); // Сбрасываем статус при изменении настроек
         }
@@ -369,7 +378,7 @@ export default function Socks5ProxyComponent() {
                             <FieldLabel>Логин (опционально)</FieldLabel>
                             <ProxyInput
                                 type="text"
-                                value={proxyConfig.username}
+                                value={proxyConfig.username || ''}
                                 onChange={(e) => updateConfig('username', e.target.value)}
                                 placeholder="username"
                                 disabled={!proxyEnabled}
@@ -380,7 +389,7 @@ export default function Socks5ProxyComponent() {
                             <FieldLabel>Пароль (опционально)</FieldLabel>
                             <ProxyInput
                                 type="password"
-                                value={proxyConfig.password}
+                                value={proxyConfig.password || ''}
                                 onChange={(e) => updateConfig('password', e.target.value)}
                                 placeholder="password"
                                 disabled={!proxyEnabled}
@@ -414,7 +423,7 @@ export default function Socks5ProxyComponent() {
 
                     {!proxyEnabled && (
                         <InfoBadge style={{ marginTop: '8px' }}>
-                            SOCKS5 прокси используется для обхода блокировок YouTube в некоторых регионах
+                            SOCKS5 прокси используется для обхода блокировок YouTube регионах, где надзорный орган<br/>в сферах связи, информационных технологий и массовых коммуникаций не уважает ваши права и свободы
                         </InfoBadge>
                     )}
                 </Section>
