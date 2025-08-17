@@ -126,10 +126,30 @@ export interface TwitchUsersResponse {
   data: TwitchUser[];
 }
 
-export async function getUser(
-    accessToken: string,
+export async function fetchFollowerCount(userId: string | null = null): Promise<number> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = userId || tokens.user_id;
+
+    const params = new URLSearchParams({ broadcaster_id: String(broadcaster_id) });
+    const response = await axios.get(`https://api.twitch.tv/helix/channels/followers?${params.toString()}`, {
+        headers: {
+        Authorization: `Bearer ${tokens.access_token}`,
+        'Client-Id': authService.CLIENT_ID,
+        },
+    });
+
+    return response.data.total ?? 0;
+}
+
+export async function fetchUser(
+    accessToken: string | null = null,
     args: any = {},
 ): Promise<TwitchUser> {
+  let token = accessToken || (await authService.getTokens())?.access_token;
+  if (!token) {
+    throw new Error('No access token provided');
+  }
   const url = new URL('https://api.twitch.tv/helix/users');
 
   if (args.id) {
@@ -141,7 +161,7 @@ export async function getUser(
   const response = await axios.get<TwitchUsersResponse>(url.toString(), {
     headers: {
       'Client-ID': CLIENT_ID,
-      Authorization: `Bearer ${accessToken}`,
+      Authorization: `Bearer ${token}`,
     },
   });
 
@@ -246,7 +266,7 @@ export async function getExtendedUser(query: UserQuery): Promise<ExtendedTwitchU
   const tokens = await authService.getTokens();
   if (!tokens?.access_token) throw new Error("No access token");
 
-  const user = await getUser(tokens.access_token, query); // уже обрабатывает id/login
+  const user = await fetchUser(tokens.access_token, query);
   const userId = user.id;
 
   const [followedAt, isMod, isVip, banStatus] = await Promise.all([

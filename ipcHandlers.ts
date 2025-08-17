@@ -13,12 +13,13 @@ import {
   addModerator,
   addVip,
   getExtendedUser,
-  getUser,
+  fetchUser,
   removeModerator, removeTimeoutOrBan,
   removeVip, timeoutUser
 } from "./services/twitch/authorizedHelixApi";
 import {updateRoles} from "./services/twitch/roleUpdater";
 import {UserData} from "./services/twitch/types/UserData";
+import {UserState} from "./services/twitch/UserStateHolder";
 
 export function registerIpcHandlers(
     store: Store,
@@ -31,7 +32,8 @@ export function registerIpcHandlers(
     logService: LogService,
     twitchClient: TwitchClient,
     onAccountReady: () => void,
-    getEditors: () => UserData[],
+    getEditors: () => Promise<UserData[]>,
+    getUser: () => Promise<UserState>
 ) {
   ipcMain.handle('user:getById', async ( event, args) => {
     return await getExtendedUser({ id: args.userId });
@@ -53,8 +55,8 @@ export function registerIpcHandlers(
   ipcMain.handle('auth:authorize', async () => authService.authorizeIfNeeded());
   ipcMain.handle('auth:getTokens', async () => authService.getTokens());
   ipcMain.handle('auth:getAccountInfo', async () => {
-    const accountInfo = await authService.getAccountInfo()
-    const editors = getEditors();
+    const accountInfo = await getUser()
+    const editors = await getEditors();
     return { accountInfo, editors };
   });
   ipcMain.handle('auth:logout', async () => {

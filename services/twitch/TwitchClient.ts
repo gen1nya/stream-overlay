@@ -2,20 +2,20 @@ import { EventEmitter } from 'events';
 import * as authService from './authService';
 import * as chatService from './chatService';
 import * as eventSubService from './esService';
-import { UserState } from './UserState';
+import {UserState, UserStateHolder} from './UserStateHolder';
 import { LogService } from '../logService';
 import { UserData } from './types/UserData';
 import { AppEvent } from './messageParser';
 
 export class TwitchClient extends EventEmitter {
-  private userState: UserState;
+  private userState: UserStateHolder;
 
   constructor(
     private logService: LogService,
     private onEditorsFetched: (editors: UserData[]) => void = () => {}
   ) {
     super();
-    this.userState = new UserState(
+    this.userState = new UserStateHolder(
       logService,
       (editors: UserData[]) => {
         this.onEditorsFetched(editors);
@@ -42,6 +42,7 @@ export class TwitchClient extends EventEmitter {
   }
 
   async stop(): Promise<void> {
+    this.invalidateUserCache()
     eventSubService.stop();
     chatService.stopChat();
   }
@@ -61,12 +62,19 @@ export class TwitchClient extends EventEmitter {
     const tokens = await authService.getTokens();
     if (tokens && tokens.user_id) {
       this.userState.setId(tokens.user_id);
-      this.userState.fetchEditors();
     }
   }
 
-  getEditors(): UserData[] {
+  getEditors(): Promise<UserData[]> {
     return this.userState.getEditors();
+  }
+
+  getUser(): Promise<UserState> {
+    return this.userState.getUser();
+  }
+
+  invalidateUserCache(): void {
+    this.userState.invalidateCache();
   }
 
   getLastEventSubTimestamp(): number | undefined {

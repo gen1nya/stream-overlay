@@ -3,7 +3,7 @@ import axios from 'axios';
 import { shell, dialog } from 'electron';
 import { URLSearchParams } from 'url';
 import { EventEmitter } from 'events';
-import {getUser} from "./authorizedHelixApi";
+import {fetchUser} from "./authorizedHelixApi";
 
 export interface Tokens {
   access_token: string;
@@ -103,58 +103,6 @@ async function refreshToken(refresh_token: string): Promise<Tokens> {
   return newTokens;
 }
 
-async function fetchUserInfo(accessToken: string): Promise<any | null> {
-  try {
-    return getUser(accessToken);
-  } catch (err: any) {
-    const status = err.response?.status;
-    if (status === 401) {
-      console.log('🔄 Access token expired, attempting refresh...');
-      const tokens = await getTokens();
-      if (tokens) {
-        return fetchUserInfo(tokens.access_token);
-      }
-    }
-    console.error('❌ Failed to fetch user info:', err.response?.data || err.message);
-    return null;
-  }
-}
-
-async function fetchFollowerCount(accessToken: string, userId: string): Promise<number | null> {
-  try {
-    const resp = await axios.get('https://api.twitch.tv/helix/channels/followers', {
-      params: { broadcaster_id: userId },
-      headers: { 'Client-ID': CLIENT_ID, Authorization: `Bearer ${accessToken}` },
-    });
-    return resp.data.total ?? 0;
-  } catch (err: any) {
-    const status = err.response?.status;
-    if (status === 401) {
-      const tokens = await getTokens();
-      if (tokens) {
-        return fetchFollowerCount(tokens.access_token, tokens.user_id!);
-      }
-    }
-    console.error('❌ Failed to fetch follower count:', err.response?.data || err.message);
-    return null;
-  }
-}
-
-export async function getAccountInfo(): Promise<any | null> {
-  const tokens = await getTokens();
-  if (!tokens) return null;
-  const user = await fetchUserInfo(tokens.access_token);
-  if (!user) return null;
-  const followers = await fetchFollowerCount(tokens.access_token, user.id);
-  return {
-    displayName: user.display_name,
-    login: user.login,
-    avatar: user.profile_image_url,
-    followerCount: followers,
-    userId: user.id,
-  };
-}
-
 async function requestDeviceCode(): Promise<DeviceCodeInfo> {
   const params = new URLSearchParams({ client_id: CLIENT_ID, scopes: SCOPES });
   const resp = await axios.post('https://id.twitch.tv/oauth2/device', params.toString(), {
@@ -209,7 +157,7 @@ export async function authorizeIfNeeded(): Promise<boolean> {
     shell.openExternal(verification_uri);
     dialog.showMessageBox({ type: 'info', message, buttons: ['OK'] });
     const newTokens = await pollForToken();
-    const userInfo = await fetchUserInfo(newTokens.access_token);
+    const userInfo = await fetchUser(newTokens.access_token);
     if (userInfo) {
       newTokens.user_id = userInfo.id;
       newTokens.login = userInfo.login;

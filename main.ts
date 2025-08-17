@@ -194,6 +194,7 @@ app.whenReady().then(() => {
       twitchClient,
       () => twitchClient.refreshUser(),
       () => twitchClient.getEditors(),
+      () => twitchClient.getUser()
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();
