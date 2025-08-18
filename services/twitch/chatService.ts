@@ -85,11 +85,13 @@ class ChatService {
       console.error('❌ No tokens found. Cannot connect to IRC.');
       this.isConnecting = false;
       return;
+    } else {
+      console.log('🔑 Using access token:', JSON.stringify(tokens, null, 2));
     }
 
     const accessToken = tokens.access_token;
-    const username = tokens.login!;
-    const channel = username.toLowerCase();
+    const username = tokens.login;
+    const channel = username?.toLowerCase() ?? "unknown";
     const socket = new net.Socket();
     this.client = socket;
 

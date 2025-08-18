@@ -41,9 +41,14 @@ export class TwitchClient extends EventEmitter {
     await chatService.startChat();
   }
 
-  async stop(): Promise<void> {
-    this.invalidateUserCache()
+  async logout(): Promise<void> {
+    this.userState.logout()
     eventSubService.stop();
+    chatService.stopChat();
+  }
+
+  stop(): void {
+    eventSubService.stop({ setStopping: true } as any);
     chatService.stopChat();
   }
 

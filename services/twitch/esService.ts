@@ -11,6 +11,9 @@ const DEFAULT_URL = 'wss://eventsub.wss.twitch.tv/ws';
 const HEALTH_CHECK_INTERVAL = 60 * 1000;
 const INACTIVITY_THRESHOLD = 6 * 60 * 1000;
 
+const DEDUP_TTL_MS = 5 * 60 * 1000; // 5 minutes for message-id dedup
+
+
 export const EVENT_CHANEL = "event";
 export const EVENT_FOLLOW = "follow";
 export const EVENT_REDEMPTION = "redemption";
@@ -29,6 +32,20 @@ class EventSubService {
   private healthCheckTimer: NodeJS.Timeout | null = null;
   private connectionId: string;
   private logger: LogService | null = null;
+  private seenMessageIds: Map<string, number> = new Map();
+
+  private isDuplicateMessage(id: string): boolean {
+    const now = Date.now();
+    // prune old ids
+    for (const [k, t] of this.seenMessageIds) {
+      if (now - t > DEDUP_TTL_MS) this.seenMessageIds.delete(k);
+    }
+    if (!id) return false;
+    if (this.seenMessageIds.has(id)) return true;
+    this.seenMessageIds.set(id, now);
+    return false;
+  }
+
 
   constructor() {
     if (globalLock) {
@@ -37,9 +54,6 @@ class EventSubService {
     globalLock = this;
     this.connectionId = this.generateConnectionId();
     console.log(`🔐 EventSub instance created with ID: ${this.connectionId}`);
-    process.on('exit', () => this.cleanup());
-    process.on('SIGINT', () => this.cleanup());
-    process.on('SIGTERM', () => this.cleanup());
     this.initializeService();
   }
 
@@ -136,6 +150,12 @@ class EventSubService {
       this.lastEventTimestamp = Date.now();
       const msg = JSON.parse(data.toString());
       const { metadata, payload } = msg;
+      // Deduplicate at-least-once deliveries using message_id
+      const messageId: string | undefined = metadata?.message_id;
+      if (this.isDuplicateMessage(messageId || '')) {
+        console.log(`↩️ [${this.connectionId}] Duplicate message ${messageId} ignored`);
+        return;
+      }
       if (metadata.message_type === MESSAGE_TYPES.NOTIFICATION) {
         const event = payload.event;
         if (payload.subscription.type === 'channel.follow') {
@@ -206,10 +226,10 @@ class EventSubService {
       this.isConnecting = false;
       console.log(`🔴 [${this.connectionId}] Connection closed`);
       this.logger?.log({
-          timestamp: new Date().toISOString(),
-          message: 'Соединение с EventSub закрыто',
-          userId: null,
-          userName: null
+        timestamp: new Date().toISOString(),
+        message: 'Соединение с EventSub закрыто',
+        userId: null,
+        userName: null
       });
       if (!this.ignoreClose && !this.isStopping && globalLock === this) {
         setTimeout(() => this.start(), 5000);
@@ -237,6 +257,28 @@ class EventSubService {
       this.stop();
       return;
     }
+    // Fetch existing subscriptions for this session to avoid duplicates
+    let existingKeys = new Set<string>();
+    try {
+      const existing = await axios.get(
+          'https://api.twitch.tv/helix/eventsub/subscriptions',
+          { headers: { 'Client-ID': CLIENT_ID, Authorization: `Bearer ${accessToken}` } }
+      );
+      const stable = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return JSON.stringify(obj);
+        const out: any = {};
+        for (const k of Object.keys(obj).sort()) out[k] = obj[k];
+        return JSON.stringify(out);
+      };
+      existingKeys = new Set(
+          (existing.data?.data || [])
+              .filter((s: any) => s.status === 'enabled' && s.transport?.session_id === sessionId)
+              .map((s: any) => `${s.type}|${stable(s.condition)}`)
+      );
+      console.log(`ℹ️ [${this.connectionId}] Existing subs for session ${sessionId}: ${existingKeys.size}`);
+    } catch (e: any) {
+      console.warn(`⚠️ [${this.connectionId}] Could not fetch existing subscriptions:`, e.response?.data || e.message);
+    }
     const subscriptions: Record<string, { version: string; condition: (id: string) => any }> = {
       'channel.raid': { version: '1', condition: (id) => ({ to_broadcaster_user_id: id }) },
       'channel.bits.use': { version: '1', condition: (id) => ({ broadcaster_user_id: id }) },
@@ -253,22 +295,34 @@ class EventSubService {
         continue;
       }
       const conditionData = sub.condition(broadcasterId!);
+      // Skip if already have this exact subscription for this session
+      const stable = (obj: any) => {
+        if (!obj || typeof obj !== 'object') return JSON.stringify(obj);
+        const out: any = {};
+        for (const k of Object.keys(obj).sort()) out[k] = obj[k];
+        return JSON.stringify(out);
+      };
+      const key = `${type}|${stable(conditionData)}`;
+      if (existingKeys.has(key)) {
+        console.log(`⏭️ [${this.connectionId}] Already subscribed to ${type} with same condition; skipping`);
+        continue;
+      }
       try {
         await axios.post(
-          'https://api.twitch.tv/helix/eventsub/subscriptions',
-          {
-            type,
-            version: sub.version,
-            condition: conditionData,
-            transport: { method: 'websocket', session_id: sessionId },
-          },
-          {
-            headers: {
-              'Client-ID': CLIENT_ID,
-              Authorization: `Bearer ${accessToken}`,
-              'Content-Type': 'application/json',
+            'https://api.twitch.tv/helix/eventsub/subscriptions',
+            {
+              type,
+              version: sub.version,
+              condition: conditionData,
+              transport: { method: 'websocket', session_id: sessionId },
             },
-          }
+            {
+              headers: {
+                'Client-ID': CLIENT_ID,
+                Authorization: `Bearer ${accessToken}`,
+                'Content-Type': 'application/json',
+              },
+            }
         );
         console.log(`✅ [${this.connectionId}] Subscribed to ${type}`);
         this.logger?.log({
@@ -297,10 +351,10 @@ class EventSubService {
           return;
         }
         this.logger?.log({
-            timestamp: new Date().toISOString(),
-            message: `Ошибка подписки на ${type}: ${error.message}`,
-            userId: null,
-            userName: null
+          timestamp: new Date().toISOString(),
+          message: `Ошибка подписки на ${type}: ${error.message}`,
+          userId: null,
+          userName: null
         });
         console.error(`❌ [${this.connectionId}] Failed to subscribe to ${type}:`, error.response?.data || error.message);
       }

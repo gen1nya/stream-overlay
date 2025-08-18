@@ -89,10 +89,8 @@ async function refreshToken(refresh_token: string): Promise<Tokens> {
   });
   const newTokens: Tokens = resp.data;
   try {
-    const userResp = await axios.get('https://api.twitch.tv/helix/users', {
-      headers: { 'Client-ID': CLIENT_ID, Authorization: `Bearer ${newTokens.access_token}` },
-    });
-    const userInfo = userResp.data.data[0];
+    const userInfo = await fetchUser(newTokens.access_token);
+    console.log('🔑 Fetched user info after token refresh:', userInfo);
     newTokens.user_id = userInfo.id;
     newTokens.login = userInfo.login;
   } catch (err: any) {

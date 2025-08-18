@@ -63,10 +63,17 @@ private:
   }
 
   void StopInternal() {
-    if (!running_) return;
-    running_ = false;
-    if (worker_.joinable()) worker_.join();
-    if (tsfn_) { tsfn_.Release(); tsfn_ = {}; }
+      if (!running_) return;
+      running_ = false;
+
+      if (worker_.joinable()) {
+          worker_.detach();
+      }
+
+      if (tsfn_) {
+          tsfn_.Release();
+          tsfn_ = {};
+      }
   }
 
   void Pump() {

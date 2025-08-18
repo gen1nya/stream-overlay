@@ -7,7 +7,7 @@ import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
 import { ActionTypes } from './services/middleware/ActionTypes';
 import { timeoutUser } from './services/twitch/authorizedHelixApi';
 import { createMainWindow } from "./windowsManager";
-import { startHttpServer, startDevStaticServer } from './webServer';
+import {startHttpServer, startDevStaticServer, stopAllServers} from './webServer';
 import { registerIpcHandlers } from './ipcHandlers';
 import { EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION } from "./services/twitch/esService";
 import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
@@ -237,17 +237,32 @@ app.whenReady().then(() => {
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
-  scraper.dispose()
   app.exit(1);
 });
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
-  scraper.dispose()
   app.exit(1);
 });
 app.on('window-all-closed', () => {
-  scraper.dispose()
   app.quit();
+});
+
+app.on('before-quit', async (event) => {
+  event.preventDefault();
+  scraper.dispose();
+  twitchClient.stop()
+  audiosessionManager.close();
+  wss.clients.forEach((client) => {
+    client.close();
+  });
+  wss.close();
+  await stopAllServers();
+
+  setTimeout(() => {
+    const remaining = (process as any)._getActiveHandles?.()?.length || 0;
+    console.log(`Final check: ${remaining} handles remaining`);
+    process.exit(0);
+  }, 500);
 });
 
 function migrateTheme(theme: any) {

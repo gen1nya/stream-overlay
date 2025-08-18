@@ -131,6 +131,37 @@ export class AudiosessionManager {
         });
     }
 
+    close() {
+        console.log("🛑 Stopping AudiosessionManager...");
+
+        this.mediaWss.close(() => {
+            console.log("✅ Media WebSocket server closed");
+        });
+
+        this.mediaWss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+                client.close();
+            }
+        });
+
+        try {
+            console.log("🛑 Stopping FFT bridge...");
+            this.fftbridge = null;
+            console.log("🛑 Stopping GSMTC bridge...");
+            this.gsmtcBridge.stop();
+            this.gsmtcBridge = null;
+
+            console.log("✅ Native bridges stopped");
+        } catch (error) {
+            console.error("❌ Error stopping native bridges:", error);
+        }
+
+        this.currentMediaMetadata = null;
+        this.currentFFTSpectrum = null;
+
+        console.log("✅ AudiosessionManager closed");
+    }
+
     getDevices(): AudioDevice[] {
         return this.fftbridge.listDevices();
     }

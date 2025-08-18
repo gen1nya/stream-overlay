@@ -28,7 +28,8 @@ public:
       InstanceMethod("setTilt", &Bridge::SetTilt),
       InstanceMethod("setLoopback", &Bridge::SetLoopback),
       InstanceMethod("enable", &Bridge::Enable),
-      InstanceMethod("onFft", &Bridge::OnFft)
+      InstanceMethod("onFft", &Bridge::OnFft),
+      InstanceMethod("stop", &Bridge::Stop),
     });
     exports.Set("FftBridge", ctor); return exports;
   }
@@ -49,6 +50,22 @@ Bridge(const Napi::CallbackInfo& info)
 private:
   // Helpers
   void EnsureCb(Napi::Env env){ if(cbRef_.IsEmpty()) Napi::Error::New(env, "callback not set").ThrowAsJavaScriptException(); }
+
+
+  Napi::Value Stop(const Napi::CallbackInfo& info){
+      try{
+          eng_.enable(false);
+          if (tsfn_) {
+              tsfn_.Abort();
+          }
+
+          if(!cbRef_.IsEmpty()) {
+              cbRef_.Unref();
+              cbRef_.Reset();
+          }
+      } catch(const std::exception& e){ }
+      return info.Env().Undefined();
+  }
 
   Napi::Value ListDevices(const Napi::CallbackInfo& info){
     try{

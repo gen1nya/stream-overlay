@@ -4,10 +4,13 @@ import fs from 'fs';
 import https from 'https';
 import crypto from 'crypto';
 import { app } from 'electron';
+import { Server } from 'http';
 
 const CDN_PREFIX   = 'https://fonts.gstatic.com/';
 const FONT_ROUTE   = '/font';
 const FONT_CACHE_DIR = path.join(app.getPath('userData'), 'fonts');
+
+const activeServers = new Set<Server>();
 
 function getCachedPaths(relPath: string) {
   const ext  = path.extname(relPath) || '.bin';
@@ -68,14 +71,14 @@ function handleFontProxy(req: express.Request, res: express.Response) {
   }
 }
 
-export function startHttpServer(port: number): void {
+export function startHttpServer(port: number): Server {
   const appServer   = express();
   const distPath    = path.join(app.getAppPath(), 'dist');
   const userDataPath = path.join(app.getPath('userData'), 'images');
 
   appServer.use(express.static(distPath));
   appServer.use('/images', express.static(userDataPath));
-  appServer.use(FONT_ROUTE, handleFontProxy);           // 👈
+  appServer.use(FONT_ROUTE, handleFontProxy);
 
   appServer.get('/', (_req, res) => {
     res.sendFile(path.join(distPath, 'index.html'));
@@ -84,22 +87,59 @@ export function startHttpServer(port: number): void {
     res.sendFile(path.join(distPath, 'index.html'));
   });
 
-  appServer.listen(port, () => {
+  const server = appServer.listen(port, () => {
     console.log(`🌐 HTTP server running on http://localhost:${port}`);
   });
+
+  activeServers.add(server);
+
+  server.on('close', () => {
+    activeServers.delete(server);
+    console.log(`🔴 HTTP server on port ${port} closed`);
+  });
+
+  return server;
 }
 
-export function startDevStaticServer(): void {
+export function startDevStaticServer(): Server {
   const devServer   = express();
   const distPath    = path.join(__dirname, 'dist');
   const userDataPath = path.join(app.getPath('userData'), 'images');
 
   devServer.use(express.static(distPath));
   devServer.use('/images', express.static(userDataPath));
-  devServer.use(FONT_ROUTE, handleFontProxy);           // 👈
+  devServer.use(FONT_ROUTE, handleFontProxy);
 
   const DEV_PORT = 5123;
-  devServer.listen(DEV_PORT, () => {
+  const server = devServer.listen(DEV_PORT, () => {
     console.log(`🌐 Dev HTTP server on http://localhost:${DEV_PORT}`);
   });
+
+  activeServers.add(server);
+  server.on('close', () => {
+    activeServers.delete(server);
+    console.log(`🔴 Dev HTTP server on port ${DEV_PORT} closed`);
+  });
+
+  return server;
+}
+
+export async function stopAllServers(): Promise<void> {
+  console.log(`🛑 Stopping ${activeServers.size} active servers...`);
+
+  const closePromises = Array.from(activeServers).map(server => {
+    return new Promise<void>((resolve) => {
+      server.close((err) => {
+        if (err) {
+          console.error('❌ Error closing server:', err);
+        }
+        resolve();
+      });
+    });
+  });
+
+  await Promise.all(closePromises);
+  activeServers.clear();
+
+  console.log('✅ All servers stopped');
 }

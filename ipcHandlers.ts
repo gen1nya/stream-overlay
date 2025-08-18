@@ -61,7 +61,7 @@ export function registerIpcHandlers(
   });
   ipcMain.handle('auth:logout', async () => {
     await authService.clearTokens();
-    await twitchClient.stop();
+    await twitchClient.logout();
     return true;
   });
   ipcMain.handle('auth:onAccountReady', async () => {

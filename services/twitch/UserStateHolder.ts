@@ -47,6 +47,17 @@ export class UserStateHolder {
         return this.editors;
     }
 
+    logout() {
+        this.user = null;
+        this.editors = null;
+        this.userId = null;
+        this.lastFetchTime = 0;
+        this.logger.log({
+            timestamp: new Date().toISOString(),
+            message: 'User state cleared',
+        });
+    }
+
     invalidateCache() {
         this.lastFetchTime = 0;
     }
