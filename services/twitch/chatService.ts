@@ -14,6 +14,10 @@ class ChatService {
   private isConnecting = false;
   private lastEventTimestamp = Date.now();
   private logger: LogService | null = null;
+  // Concurrency guards
+  private connectEpoch = 0;
+  private reconnecting = false;
+  private reconnectQueued = false;
 
   constructor() {
     authService.onTokenRefreshed(() => {
@@ -50,22 +54,45 @@ class ChatService {
       return;
     }
     console.log('🔄 Reconnecting to IRC with refreshed token...');
-    await this.reconnect();
+    await this.safeReconnect();
   }
 
   private async handleReconnect(): Promise<void> {
     console.log('🔁 IRC RECONNECT requested by server.');
-    await this.reconnect();
+    await this.safeReconnect();
   }
 
-  private async reconnect(): Promise<void> {
-    if (this.client) {
-      this.client.removeAllListeners();
-      this.client.destroy();
-      this.client = null;
+  async reconnect(): Promise<void> {
+    return this.safeReconnect();
+  }
+
+  private async safeReconnect(): Promise<void> {
+    // Coalesce concurrent reconnect requests
+    if (this.reconnecting) {
+      this.reconnectQueued = true;
+      return;
     }
-    if (!this.isStopping) {
-      await this.connect();
+    this.reconnecting = true;
+    try {
+      // Force-stop current socket if any
+      if (this.client) {
+        try { this.client.removeAllListeners(); } catch {}
+        try { this.client.destroy(); } catch {}
+        this.client = null;
+      }
+      // Very important: clear connecting flag so a fresh connect can proceed
+      this.isConnecting = false;
+      if (!this.isStopping) {
+        // small delay to let OS release the port/socket
+        await new Promise(res => setTimeout(res, 300));
+        await this.connect();
+      }
+    } finally {
+      this.reconnecting = false;
+      if (this.reconnectQueued) {
+        this.reconnectQueued = false;
+        await this.safeReconnect();
+      }
     }
   }
 
@@ -80,13 +107,14 @@ class ChatService {
     }
     this.isConnecting = true;
 
+    // Epoch for this connection attempt
+    const myEpoch = ++this.connectEpoch;
+
     const tokens = await authService.getTokens();
     if (!tokens) {
       console.error('❌ No tokens found. Cannot connect to IRC.');
       this.isConnecting = false;
       return;
-    } else {
-      console.log('🔑 Using access token:', JSON.stringify(tokens, null, 2));
     }
 
     const accessToken = tokens.access_token;
@@ -96,6 +124,7 @@ class ChatService {
     this.client = socket;
 
     socket.connect(PORT, HOST, () => {
+      if (myEpoch !== this.connectEpoch) { try { socket.destroy(); } catch {}; return; }
       this.isConnecting = false;
       this.lastEventTimestamp = Date.now();
       console.log('🟢 Connected to Twitch IRC');
@@ -113,6 +142,7 @@ class ChatService {
     });
 
     socket.on('data', async (data) => {
+      if (myEpoch !== this.connectEpoch) { return; }
       this.lastEventTimestamp = Date.now();
       const messages = data.toString().split('\r\n');
       for (const message of messages) {
@@ -157,6 +187,7 @@ class ChatService {
     });
 
     socket.on('close', () => {
+      if (myEpoch !== this.connectEpoch) { return; }
       this.isConnecting = false;
       this.logger?.log({
         timestamp: new Date().toISOString(),
@@ -168,12 +199,13 @@ class ChatService {
     });
 
     socket.on('error', (err) => {
+      if (myEpoch !== this.connectEpoch) { return; }
       this.isConnecting = false;
       this.logger?.log({
-          timestamp: new Date().toISOString(),
-          message: `Ошибка IRC: ${err.message}`,
-          userId: null,
-          userName: null
+        timestamp: new Date().toISOString(),
+        message: `Ошибка IRC: ${err.message}`,
+        userId: null,
+        userName: null
       });
       console.error('❌ IRC Error:', err.message);
     });
@@ -181,14 +213,14 @@ class ChatService {
 
   stopChat(): void {
     if (this.client) {
-      this.client.end();
+      try { this.client.end(); } catch {}; try { this.client.destroy(); } catch {};
       this.client = null;
       console.log('🛑 IRC Connection terminated.');
       this.logger?.log({
-          timestamp: new Date().toISOString(),
-          message: 'Соединение с IRC завершено',
-          userId: null,
-          userName: null
+        timestamp: new Date().toISOString(),
+        message: 'Соединение с IRC завершено',
+        userId: null,
+        userName: null
       });
     }
     this.isStopping = true;
@@ -234,3 +266,4 @@ export const setLogger = (logger: LogService) => instance.setLogger(logger);
 export const sendMessage = (msg: string) => instance.sendMessage(msg);
 export const registerMessageHandler = (handler: (msg: any) => Promise<void>) => instance.registerMessageHandler(handler);
 export const getLastEventTimestamp = () => instance.getLastEventTimestamp();
+export const reconnect = () => instance.reconnect();

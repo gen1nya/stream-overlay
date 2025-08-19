@@ -54,9 +54,8 @@ export class TwitchClient extends EventEmitter {
 
   async restart(): Promise<void> {
     eventSubService.stop({ setStopping: false, ignoreClose: true } as any);
-    chatService.stopChat();
     await eventSubService.start();
-    await chatService.startChat();
+    await chatService.reconnect();
   }
 
   async sendMessage(message: string): Promise<void> {

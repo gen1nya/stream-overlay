@@ -51,6 +51,48 @@ const ACCOUNT = 'tokens';
 const DEVICE_INFO_SERVICE = 'TwitchWatcherDevice';
 const DEVICE_INFO_ACCOUNT = 'device_code';
 
+let refreshTimeout: NodeJS.Timeout | null = null;
+
+function scheduleRefresh(tokens: Tokens) {
+  if (refreshTimeout) clearTimeout(refreshTimeout);
+
+  if (!tokens.expires_in || !tokens.obtained_at) return;
+
+  const SAFETY_MARGIN = 300 * 1000; // 5 min
+  const expireAt = tokens.obtained_at + tokens.expires_in * 1000;
+  const delay = Math.max(0, expireAt - Date.now() - SAFETY_MARGIN);
+
+  console.log(`⏳ Scheduling token refresh in ${Math.round(delay / 1000)}s`);
+  refreshTimeout = setTimeout(async () => {
+    try {
+      const newTokens = await refreshToken(tokens.refresh_token);
+      console.log('🔑 Tokens proactively refreshed');
+      await saveTokens(newTokens);
+      authEmitter.emit('tokens', newTokens);
+      scheduleRefresh(newTokens);
+    } catch (err: any) {
+      console.error('❌ Scheduled token refresh failed:', err.message);
+      refreshTimeout = setTimeout(() => scheduleRefresh(tokens), 60_000);
+    }
+  }, delay);
+}
+
+async function saveTokens(tokens: Tokens): Promise<void> {
+  tokens.obtained_at = Date.now();
+  await keytar.setPassword(SERVICE, ACCOUNT, JSON.stringify(tokens));
+  authEmitter.emit('tokens', tokens);
+  scheduleRefresh(tokens);
+}
+
+export async function clearTokens(): Promise<void> {
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = null;
+  }
+  await keytar.deletePassword(SERVICE, ACCOUNT);
+  authEmitter.emit('logout');
+}
+
 export async function getTokens(): Promise<Tokens | null> {
   const raw = await keytar.getPassword(SERVICE, ACCOUNT);
   if (!raw) return null;
@@ -64,18 +106,10 @@ export async function getTokens(): Promise<Tokens | null> {
       await clearTokens();
       return null;
     }
+  } else {
+    scheduleRefresh(tokens);
   }
   return tokens;
-}
-
-async function saveTokens(tokens: Tokens): Promise<void> {
-  tokens.obtained_at = Date.now();
-  await keytar.setPassword(SERVICE, ACCOUNT, JSON.stringify(tokens));
-}
-
-export async function clearTokens(): Promise<void> {
-  await keytar.deletePassword(SERVICE, ACCOUNT);
-  await keytar.deletePassword(DEVICE_INFO_SERVICE, DEVICE_INFO_ACCOUNT);
 }
 
 async function refreshToken(refresh_token: string): Promise<Tokens> {
