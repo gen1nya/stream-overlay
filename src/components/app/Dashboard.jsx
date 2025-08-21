@@ -550,7 +550,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.4.2-beta</Version>
+                <Version>v0.4.3-beta</Version>
             </Footer>
         </Wrapper>
     );
