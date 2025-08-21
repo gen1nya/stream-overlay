@@ -9,7 +9,7 @@ import {
     setTheme,
     importTheme,
     deleteTheme,
-    openExternalLink
+    openExternalLink,
 } from '../../services/api';
 import MessageSettingsBlock from "./settings/MessageSettingsBlock";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
@@ -26,7 +26,8 @@ import {
     FiArrowLeft,
     FiEye,
     FiLayers,
-    FiYoutube
+    FiYoutube,
+    FiAlertCircle
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -40,6 +41,9 @@ import UnifiedSettingsComponent from "./settings/UnifiedSettingsComponent";
 import FFTControlComponent from "./settings/FFTControlComponent";
 import YouTubeScraperComponent from "./settings/YouTubeScraperComponent";
 import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
+import {Spacer} from "../utils/Separator";
+import {getCurrentBot, updateBot} from "../../services/botsApi";
+import BotConfigPopup from "./settings/BotConfigPopup";
 
 const Panel = styled.div`
     position: fixed;
@@ -164,6 +168,37 @@ const ThemeIndicator = styled.div`
     }
 `;
 
+const BotConfigIndicator = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    margin: 0 0 0 0;
+    background: #2a2a2a;
+    border: 1px solid rgba(100, 108, 255, 0.72);
+    border-radius: 8px;
+    font-size: 13px;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: #333;
+        border-color: #646cff;
+    }
+
+    .config-name {
+        font-weight: 600;
+        color: #fff;
+    }
+
+    svg {
+        width: 14px;
+        height: 14px;
+        color: #646cff;
+    }
+`;
+
 const ContentWrapper = styled.div`
     display: flex;
     flex-direction: row;
@@ -182,15 +217,18 @@ const MainContainer = styled.div`
 `;
 
 const ContentHeader = styled.div`
-    padding: 20px 24px 0;
+    padding: 10px 24px 10px 24px;
     background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
     border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 `;
 
 const PageTitle = styled.h2`
     font-size: 1.3rem;
     font-weight: 600;
-    margin: 0 0 16px 0;
+    margin: 10px 0 10px 0;
     color: #fff;
     display: flex;
     align-items: center;
@@ -216,6 +254,7 @@ const Content = styled.div`
     gap: 20px;
 
     /* Custom scrollbar */
+
     &::-webkit-scrollbar {
         width: 8px;
     }
@@ -235,6 +274,39 @@ const Content = styled.div`
     }
 `;
 
+const NoConfigCard = styled.div`
+    width: 100%;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 12px;
+    padding: 32px;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+
+    svg {
+        width: 48px;
+        height: 48px;
+        color: #666;
+    }
+
+    h3 {
+        margin: 0;
+        color: #fff;
+        font-size: 1.2rem;
+        font-weight: 600;
+    }
+
+    p {
+        margin: 0;
+        color: #aaa;
+        font-size: 14px;
+        line-height: 1.5;
+    }
+`;
+
 export const Row = styled.div`
     display: flex;
     flex-direction: row;
@@ -243,15 +315,14 @@ export const Row = styled.div`
     gap: ${({gap = "0.5rem"}) => gap};
 `;
 
-const PageInfo = {
-    general: { title: "Общие настройки", icon: <FiSettings /> },
-    chat: { title: "Настройки сообщений", icon: <FiMessageCircle /> },
-    follow: { title: "Настройки подписок", icon: <FiHeart /> },
-    channel_points: { title: "Настройки баллов канала", icon: <FiAward /> },
-    bot: { title: "Настройки бота", icon: <AiFillRobot /> },
-    players: { title: "Настройки плееров", icon: <FiMusic /> },
-    youtube: { title: "Чат ютуба", icon: <FiYoutube /> },
-
+const PageInfoConfig = {
+    general: {title: "Общие настройки", icon: <FiSettings/>},
+    chat: {title: "Настройки сообщений", icon: <FiMessageCircle/>},
+    follow: {title: "Настройки подписок", icon: <FiHeart/>},
+    channel_points: {title: "Настройки баллов канала", icon: <FiAward/>},
+    bot: {title: "Настройки бота", icon: <AiFillRobot/>},
+    players: {title: "Настройки плееров", icon: <FiMusic/>},
+    youtube: {title: "Чат ютуба", icon: <FiYoutube/>},
 };
 
 export default function Settings() {
@@ -261,6 +332,11 @@ export default function Settings() {
     const [selectedTheme, setSelectedTheme] = useTheme(defaultTheme);
     const [selectedThemeName, setSelectedThemeName] = React.useState("default");
     const [themeList, setThemeList] = React.useState({});
+
+    // Bot config state
+    const [isBotConfigOpen, setIsBotConfigOpen] = useState(false);
+    const [botName, setBotName] = useState('');
+    const [botConfig, setBotConfig] = useState(null);
 
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
@@ -284,9 +360,38 @@ export default function Settings() {
         });
     };
 
+    const applyBotConfig = updateOrConfig => {
+        setBotConfig((prev) => {
+            const next =
+                typeof updateOrConfig === 'function'
+                    ? updateOrConfig(prev)
+                    : updateOrConfig;
+            console.log('Roulette config updated:', next);
+            updateBot(botName, next)
+            return next;
+        })
+    }
+
     const closeColorPopup = () => {
         setColorPopup(prev => ({...prev, open: false}));
     };
+
+    const loadBotConfig = async () => {
+        try {
+            const botData = await getCurrentBot();
+            setBotName(botData.name);
+            setBotConfig(botData.config);
+            console.log('Загружена конфигурация бота:', botData);
+        } catch (error) {
+            console.error('Ошибка загрузки конфигурации бота:', error);
+            setBotName('');
+            setBotConfig(null);
+        }
+    };
+
+    useEffect(() => {
+        loadBotConfig();
+    }, []);
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
@@ -332,6 +437,10 @@ export default function Settings() {
         setIsThemeSelectorOpen(true)
     };
 
+    const handleBotConfigClick = () => {
+        setIsBotConfigOpen(true);
+    };
+
     const handleExportTheme = (name) => {
         let theme;
         if (name === selectedThemeName) {
@@ -360,7 +469,7 @@ export default function Settings() {
         setTheme(themeName);
     }
 
-    const currentPageInfo = PageInfo[activePage] || PageInfo.general;
+    const currentPageInfo = PageInfoConfig[activePage] || PageInfoConfig.general;
 
     return (
         <Panel>
@@ -371,6 +480,15 @@ export default function Settings() {
                     initialAlpha={colorPopup.initialAlpha}
                     onColorChange={colorPopup.onChange}
                     onClose={closeColorPopup}
+                />
+            )}
+            {isBotConfigOpen && (
+                <BotConfigPopup
+                    onClose={() => setIsBotConfigOpen(false)}
+                    onBotChange={(name) => {
+                        setBotName(name);
+                        loadBotConfig();
+                    }}
                 />
             )}
             {isThemeSelectorOpen && (
@@ -392,7 +510,7 @@ export default function Settings() {
             <Header>
                 <HeaderLeft>
                     <BackButton onClick={handleBackButton}>
-                        <FiArrowLeft />
+                        <FiArrowLeft/>
                         Назад
                     </BackButton>
                     <HeaderTitle>Настройки</HeaderTitle>
@@ -404,12 +522,12 @@ export default function Settings() {
                     </ThemeIndicator>
 
                     <ActionButton className="secondary" onClick={handlePreviewButton}>
-                        <FiEye />
+                        <FiEye/>
                         Превью
                     </ActionButton>
 
                     <ActionButton className="primary" onClick={handleThemesButton}>
-                        <FiLayers />
+                        <FiLayers/>
                         Управление темами
                     </ActionButton>
                 </HeaderActions>
@@ -437,13 +555,23 @@ export default function Settings() {
                             {currentPageInfo.icon}
                             {currentPageInfo.title}
                         </PageTitle>
+
+                        {activePage === "bot" && botName && (
+                            <BotConfigIndicator onClick={handleBotConfigClick}>
+                                <AiFillRobot/>
+                                Конфиг: <span className="config-name">{botName}</span>
+                            </BotConfigIndicator>
+                        )}
                     </ContentHeader>
 
                     <MainContent
                         page={activePage}
                         apply={updaterOrTheme => apply(updaterOrTheme)}
                         selectedTheme={selectedTheme}
+                        botConfig={botConfig}
+                        botName={botName}
                         openColorPopup={openColorPopup}
+                        applyBotConfig={applyBotConfig}
                     />
                 </MainContainer>
             </ContentWrapper>
@@ -451,7 +579,7 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
+const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig}) => {
     switch (page) {
         case "general":
             return (
@@ -514,7 +642,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                                 const last = prev.followMessage[prev.followMessage.length - 1];
                                 return {
                                     ...prev,
-                                    followMessage: [...prev.followMessage, { ...last }],
+                                    followMessage: [...prev.followMessage, {...last}],
                                 };
                             });
                         }
@@ -551,7 +679,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                                 const last = prev.redeemMessage[prev.redeemMessage.length - 1];
                                 return {
                                     ...prev,
-                                    redeemMessage: [...prev.redeemMessage, { ...last }],
+                                    redeemMessage: [...prev.redeemMessage, {...last}],
                                 };
                             });
                         }
@@ -562,21 +690,35 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
         case "bot":
             return (
                 <Content>
-                    <PingPongComponent
-                        apply={ updaterOrTheme => apply(updaterOrTheme) }
-                        selectedTheme={ selectedTheme }
-                    />
+                    {botConfig ? (
+                        <>
+                            <PingPongComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                            />
 
-                    <Roulette
-                        apply={ updaterOrTheme => apply(updaterOrTheme) }
-                        selectedTheme={ selectedTheme }
-                    />
+                            <Roulette
+                                botConfig={botConfig}
+                                apply={applyBotConfig}
+                            />
+                        </>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>Конфигурация бота не найдена</h3>
+                            <p>
+                                Для настройки бота необходимо загрузить или создать конфигурацию.
+                                <br/>
+                                Чтото сломалось. Стучите в личку
+                            </p>
+                        </NoConfigCard>
+                    )}
                 </Content>
             );
-        case "players":
-        { const openPlayer1 = () => {
-            openExternalLink('http://localhost:5173/audio-modern');
-        };
+        case "players": {
+            const openPlayer1 = () => {
+                openExternalLink('http://localhost:5173/audio-modern');
+            };
 
             const openPlayer2 = () => {
                 openExternalLink('http://localhost:5173/audio');
@@ -605,7 +747,8 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup}) => {
                         <MediumSecondaryButton onClick={openDemoFFTRing}>Демо FFT (кольцо)</MediumSecondaryButton>
                     </SettingsBlockHalf>
                 </Content>
-            ); }
+            );
+        }
         default:
             return <div>Неизвестная страница</div>;
     }

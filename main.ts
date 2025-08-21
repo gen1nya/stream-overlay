@@ -1,23 +1,24 @@
-import { app } from 'electron';
+import {app} from 'electron';
 import WebSocket from 'ws';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import * as messageCache from './services/MessageCacheManager';
-import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import { ActionTypes } from './services/middleware/ActionTypes';
-import { timeoutUser } from './services/twitch/authorizedHelixApi';
-import { createMainWindow } from "./windowsManager";
-import {startHttpServer, startDevStaticServer, stopAllServers} from './webServer';
-import { registerIpcHandlers } from './ipcHandlers';
-import { EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION } from "./services/twitch/esService";
+import {MiddlewareProcessor} from './services/middleware/MiddlewareProcessor';
+import {ActionTypes} from './services/middleware/ActionTypes';
+import {timeoutUser} from './services/twitch/authorizedHelixApi';
+import {createMainWindow} from "./windowsManager";
+import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
+import {registerIpcHandlers} from './ipcHandlers';
+import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/twitch/esService";
 import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
-import { LogService } from "./services/logService";
-import { UserData } from "./services/twitch/types/UserData";
-import { TwitchClient } from "./services/twitch/TwitchClient";
-import { YouTubeLiveStreamsScraper } from "./services/youtube/YouTubeLiveStreamsScraper";
-import { AudiosessionManager } from "./audiosessionManager";
-import {BotConfig, StoreSchema, ThemeConfig} from "./services/store/StoreSchema";
+import {LogService} from "./services/logService";
+import {UserData} from "./services/twitch/types/UserData";
+import {TwitchClient} from "./services/twitch/TwitchClient";
+import {YouTubeLiveStreamsScraper} from "./services/youtube/YouTubeLiveStreamsScraper";
+import {AudiosessionManager} from "./audiosessionManager";
+import {BotConfig, PingPongCommandConfig, StoreSchema, ThemeConfig} from "./services/store/StoreSchema";
 import {ProxyService} from "./services/ProxyService";
+import {BotConfigService} from "./services/BotConfigService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -70,6 +71,15 @@ if (migrated) {
   console.log('Темы были мигрированы и сохранены');
 }
 let currentThemeName: string = (store.get('currentTheme') as string) || 'default';
+
+if (!store.has('bots') || Object.keys(store.get('bots')).length === 0) {
+  console.log('Боты не найдены, извлекаем из тем');
+  const bots = migrateBots(themes).bots;
+  store.set('bots', bots);
+  store.set('currentBot', currentThemeName);
+  console.log('Боты успешно сохранены в хранилище');
+}
+
 let currentTheme = themes[currentThemeName] || defaultTheme;
 messageCache.updateSettings({
   lifetime: currentTheme.allMessages?.lifetime ?? 60,
@@ -111,11 +121,17 @@ const logService = new LogService((logs) => {
 }, 100);
 
 const middlewareProcessor = new MiddlewareProcessor(applyAction, logService);
-middlewareProcessor.onThemeUpdated(currentTheme.bot);
 
 const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
   middlewareProcessor.setEditors(editors);
 });
+
+const botService = new BotConfigService(
+    store,
+    (newConfig: BotConfig) => {
+        middlewareProcessor.onThemeUpdated(newConfig);
+    }
+)
 
 const scraper = new YouTubeLiveStreamsScraper(
     store,
@@ -264,6 +280,42 @@ app.on('before-quit', async (event) => {
     process.exit(0);
   }, 500);
 });
+
+function migrateBots(themes: Record<string, any>): { bots: Record<string, BotConfig> } {
+  const bots: Record<string, BotConfig> = {};
+
+  for (const [key, theme] of Object.entries(themes)) {
+    bots[key] = {
+      roulette: {
+        enabled: theme.bot?.roulette?.enabled ?? false,
+        allowToBanEditors: theme.bot?.roulette?.allowToBanEditors ?? false,
+        commands: theme.bot?.roulette?.commands ?? [],
+        survivalMessages: theme.bot?.roulette?.survivalMessages ?? [],
+        deathMessages: theme.bot?.roulette?.deathMessages ?? [],
+        cooldownMessage: theme.bot?.roulette?.cooldownMessage ?? [],
+        protectedUsersMessages: theme.bot?.roulette?.protectedUsersMessages ?? [],
+        muteDuration: theme.bot?.roulette?.muteDuration ?? 60,
+        commandCooldown: theme.bot?.roulette?.commandCooldown ?? 60,
+        chance: theme.bot?.roulette?.chance ?? 0.5,
+      },
+      pingpong: {
+        enabled: theme.bot?.pingpong?.enabled ?? false,
+        commands: (theme.bot?.pingpong?.commands || []).map((cmd: PingPongCommandConfig) => ({
+          ...cmd,
+          triggers: cmd.triggers || [],
+          responses: cmd.responses || [],
+          triggerType: cmd.triggerType || 'exact',
+        })),
+      },
+      custom: {
+        enabled: theme.bot?.custom?.enabled ?? false,
+      },
+    };
+  }
+
+  return { bots };
+}
+
 
 function migrateTheme(theme: any) {
   if (!theme) return theme;

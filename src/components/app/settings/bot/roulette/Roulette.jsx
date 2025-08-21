@@ -55,32 +55,32 @@ const CollapseToggle = styled.div`
 `;
 
 
-
-export default function Roulette({ selectedTheme, apply }) {
-    const config = mergeWithDefaults(selectedTheme);
-    const [enabled, setEnabled] = useState(config.bot.roulette.enabled);
-    const [allowToBanEditors, setAllowToBanEditors] = useState(config.bot.roulette.allowToBanEditors);
+export default function Roulette({ botConfig, apply }) {
+    const [config, setConfig] = useState(botConfig);
+    const [enabled, setEnabled] = useState(config.roulette.enabled);
+    const [allowToBanEditors, setAllowToBanEditors] = useState(config.roulette.allowToBanEditors);
     const [isOpen, setIsOpen] = useState(false);
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
     useEffect(() => {
-        setEnabled(config.bot.roulette.enabled);
-        setAllowToBanEditors(config.bot.roulette.allowToBanEditors);
-    }, [config.bot.roulette.enabled, config.bot.roulette.allowToBanEditors]);
+        if (botConfig) {setConfig(botConfig);}
+    }, [botConfig]);
+
+    useEffect(() => {
+        setEnabled(config.roulette.enabled);
+        setAllowToBanEditors(config.roulette.allowToBanEditors);
+    }, [config]);
 
     const updateRouletteConfig = (updater) => {
         apply((prev) => {
-            const cfg = mergeWithDefaults(prev);
             return {
-                ...cfg,
-                bot: {
-                    ...cfg.bot,
-                    roulette: {
-                        ...cfg.bot.roulette,
-                        ...updater(cfg.bot.roulette),
-                    },
+                ...prev,
+                roulette: {
+                    ...prev.roulette,
+                    ...updater(prev.roulette),
                 },
+
             };
         });
     };
@@ -154,7 +154,7 @@ export default function Roulette({ selectedTheme, apply }) {
                                     </ParameterTitle>
                                     <NumericEditorComponent
                                         width="150px"
-                                        value={config.bot.roulette.muteDuration / 1000}
+                                        value={config.roulette.muteDuration / 1000}
                                         onChange={(value) =>
                                             updateRouletteConfig(() => ({ muteDuration: value * 1000 }))
                                         }
@@ -172,7 +172,7 @@ export default function Roulette({ selectedTheme, apply }) {
                                     </ParameterTitle>
                                     <NumericEditorComponent
                                         width="150px"
-                                        value={config.bot.roulette.commandCooldown / 1000}
+                                        value={config.roulette.commandCooldown / 1000}
                                         onChange={(value) =>
                                             updateRouletteConfig(() => ({ commandCooldown: value * 1000 }))
                                         }
@@ -190,7 +190,7 @@ export default function Roulette({ selectedTheme, apply }) {
                                     </ParameterTitle>
                                     <NumericEditorComponent
                                         width="150px"
-                                        value={config.bot.roulette.chance * 100}
+                                        value={config.roulette.chance * 100}
                                         onChange={(value) =>
                                             updateRouletteConfig(() => ({ chance: value / 100 }))
                                         }
@@ -228,7 +228,7 @@ export default function Roulette({ selectedTheme, apply }) {
                         </SectionHeader>
 
                         <TagInput
-                            value={config.bot.roulette.commands.join(", ")}
+                            value={config.roulette.commands.join(", ")}
                             onChange={(value) => {
                                 const commands = value.split(",").map((cmd) => cmd.trim()).filter(cmd => cmd);
                                 updateRouletteConfig(() => ({ commands }));
@@ -247,10 +247,10 @@ export default function Roulette({ selectedTheme, apply }) {
                         </SectionHeader>
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                            <SurvivalMessagesComponent selectedTheme={selectedTheme} apply={apply} />
-                            <WinnerMessagesComponent selectedTheme={selectedTheme} apply={apply} />
-                            <CooldownMessagesComponent selectedTheme={selectedTheme} apply={apply} />
-                            <ProtectedUsersMessagesComponent selectedTheme={selectedTheme} apply={apply} />
+                            <SurvivalMessagesComponent botConfig={botConfig} apply={apply} />
+                            <WinnerMessagesComponent botConfig={botConfig} apply={apply} />
+                            <CooldownMessagesComponent botConfig={botConfig} apply={apply} />
+                            <ProtectedUsersMessagesComponent botConfig={botConfig} apply={apply} />
                         </div>
                     </Section>
                 </CardContent>

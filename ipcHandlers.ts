@@ -106,7 +106,6 @@ export function registerIpcHandlers(
     if (theme) {
       setCurrentTheme(themeName, theme);
       store.set('currentTheme', themeName);
-      middlewareProcessor.onThemeUpdated(theme.bot);
       messageCache.updateSettings({
         lifetime: theme.allMessages?.lifetime ?? 60,
         maxCount: theme.allMessages?.maxCount ?? 6,
@@ -138,7 +137,6 @@ export function registerIpcHandlers(
       lifetime: theme.allMessages?.lifetime ?? 60,
       maxCount: theme.allMessages?.maxCount ?? 6,
     });
-    middlewareProcessor.onThemeUpdated(theme.bot);
     setCurrentTheme(name, theme);
     broadcast('theme:update', theme);
   });

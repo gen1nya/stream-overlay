@@ -1,6 +1,5 @@
 import React, {useState, useCallback, useEffect} from 'react';
 import styled from 'styled-components';
-import { mergeWithDefaults } from '../../../../utils/defaultBotConfig';
 import Switch from '../../../../utils/Switch';
 import PingPongActionEditorComponent from './PingPongActionEditorComponent';
 import {FiMessageCircle, FiPlus, FiSettings, FiChevronDown, FiChevronUp, FiInfo} from 'react-icons/fi';
@@ -49,32 +48,31 @@ const CollapseToggle = styled.div`
 `;
 
 
-
-
-export default function PingPongComponent({ selectedTheme, apply }) {
-    const config = mergeWithDefaults(selectedTheme);
+export default function PingPongComponent({ botConfig, apply }) {
+    const [config, setConfig] = useState(botConfig);
     const [isOpen, setIsOpen] = useState(false);
-    const [enabled, setEnabled] = useState(config.bot.pingpong.enabled);
+    const [enabled, setEnabled] = useState(config.pingpong.enabled);
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
     useEffect(() => {
-        setEnabled(config.bot.pingpong.enabled);
-    }, [config.bot.pingpong.enabled]);
+        setEnabled(config.pingpong.enabled);
+    }, [config.pingpong.enabled]);
+
+    useEffect(() => {
+        if (botConfig) {setConfig(botConfig);}
+    }, [botConfig]);
 
     const updatePingPongConfig = (updater) => {
         apply((prev) => {
-            const cfg = mergeWithDefaults(prev);
+            const cfg = prev;
             return {
                 ...cfg,
-                bot: {
-                    ...cfg.bot,
-                    pingpong: {
-                        ...cfg.bot.pingpong,
-                        ...updater(cfg.bot.pingpong),
-                    },
+                pingpong: {
+                    ...cfg.pingpong,
+                    ...updater(cfg.pingpong),
                 },
             };
         });
@@ -82,7 +80,7 @@ export default function PingPongComponent({ selectedTheme, apply }) {
 
     const addCommand = useCallback(() => {
         const trimmed = name.trim();
-        const commands = config.bot.pingpong.commands;
+        const commands = config.pingpong.commands;
 
         // Validate
         if (!trimmed) {
@@ -117,7 +115,7 @@ export default function PingPongComponent({ selectedTheme, apply }) {
                 },
             ],
         }));
-    }, [name, config.bot.pingpong.commands, updatePingPongConfig]);
+    }, [name, config.pingpong.commands, updatePingPongConfig]);
 
     const handleKeyPress = (e) => {
         if (e.key === 'Enter') {
@@ -236,7 +234,7 @@ export default function PingPongComponent({ selectedTheme, apply }) {
                         </SectionHeader>
 
                         <PingPongActionEditorComponent
-                            selectedTheme={selectedTheme}
+                            botConfig={botConfig}
                             apply={apply}
                         />
                     </Section>

@@ -1,13 +1,11 @@
-import { SmallTemplateEditor } from "../../../../utils/SmallTemplateEditor";
+import {SmallTemplateEditor} from "../../../../utils/SmallTemplateEditor";
 import AddNewStyleButton from "../../../../utils/AddNewStyleButton";
-import { Accordion } from "../../../../utils/AccordionComponent";
+import {Accordion} from "../../../../utils/AccordionComponent";
 import React from "react";
-import { mergeWithDefaults } from "../../../../utils/defaultBotConfig";
 import {CollapsedPreview} from "../../SettingBloks";
 
-export default function WinnerMessagesComponent({ selectedTheme, apply }) {
-    const config = mergeWithDefaults(selectedTheme);
-    const messages = config.bot.roulette.deathMessages;
+export default function WinnerMessagesComponent({ botConfig, apply }) {
+    const messages = botConfig.roulette.deathMessages;
 
     return (
         <Accordion title="Для победителей">
@@ -22,34 +20,29 @@ export default function WinnerMessagesComponent({ selectedTheme, apply }) {
                     value={msg}
                     onChange={(value) =>
                         apply((prev) => {
-                            const cfg = mergeWithDefaults(prev);
-                            const updated = cfg.bot.roulette.deathMessages.map((m, i) =>
+                            const cfg = prev;
+                            const updated = cfg.roulette.deathMessages.map((m, i) =>
                                 i === index ? value : m
                             );
                             return {
                                 ...cfg,
-                                bot: {
-                                    ...cfg.bot,
-                                    roulette: {
-                                        ...cfg.bot.roulette,
-                                        deathMessages: updated,
-                                    },
+                                roulette: {
+                                    ...cfg.roulette,
+                                    deathMessages: updated,
                                 },
+
                             };
                         })
                     }
                     onDelete={() =>
                         apply((prev) => {
-                            const cfg = mergeWithDefaults(prev);
-                            const updated = cfg.bot.roulette.deathMessages.filter((_, i) => i !== index);
+                            const cfg = prev;
+                            const updated = cfg.roulette.deathMessages.filter((_, i) => i !== index);
                             return {
                                 ...cfg,
-                                bot: {
-                                    ...cfg.bot,
-                                    roulette: {
-                                        ...cfg.bot.roulette,
-                                        deathMessages: updated,
-                                    },
+                                roulette: {
+                                    ...cfg.roulette,
+                                    deathMessages: updated,
                                 },
                             };
                         })
@@ -62,18 +55,16 @@ export default function WinnerMessagesComponent({ selectedTheme, apply }) {
                 margin={"8px 0 0 0"}
                 onClick={() =>
                     apply((prev) => {
-                        const cfg = mergeWithDefaults(prev);
+                        const cfg = prev;
                         return {
                             ...cfg,
-                            bot: {
-                                ...cfg.bot,
-                                roulette: {
-                                    ...cfg.bot.roulette,
-                                    deathMessages: [
-                                        ...cfg.bot.roulette.deathMessages,
-                                        "Ты победил, ${user}! 🎉",
-                                    ],
-                                },
+
+                            roulette: {
+                                ...cfg.roulette,
+                                deathMessages: [
+                                    ...cfg.roulette.deathMessages,
+                                    "Ты победил, ${user}! 🎉",
+                                ],
                             },
                         };
                     })

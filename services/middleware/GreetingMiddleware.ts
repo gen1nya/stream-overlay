@@ -1,8 +1,9 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
-import {applyRandomInt, BotConfig} from './MiddlewareProcessor';
+import {applyRandomInt} from './MiddlewareProcessor';
 import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
+import {BotConfig} from "../store/StoreSchema";
 
 interface CompiledCommand {
   enabled: boolean;

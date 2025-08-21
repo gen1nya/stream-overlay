@@ -5,40 +5,8 @@ import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
 import Middleware from "./Middleware";
 import {UserData} from "../twitch/types/UserData";
+import {BotConfig} from "../store/StoreSchema";
 
-export interface BotConfig {
-  roulette: {
-    enabled: boolean;
-    commands: string[];
-    survivalMessages: string[];
-    deathMessages: string[];
-    cooldownMessage: string[];
-    muteDuration: number;
-    commandCooldown: number;
-    chance: number;
-    allowToBanEditors: boolean;
-    protectedUsersMessages: string[];
-  };
-
-  custom?: {
-    enabled: boolean;
-  } | null;
-
-  pingpong: {
-    enabled: boolean;
-    commands: {
-      enabled: boolean;
-      name: string;
-      triggerType: "exact" | "start" | "contains";
-      triggers: {
-        type: "text" | "regex";
-        value: string;
-        flags?: string;
-      }[];
-      responses: string[];
-    }[];
-  };
-}
 
 export class MiddlewareProcessor {
   private applyAction: (action: { type: ActionType; payload: any }) => Promise<void>;

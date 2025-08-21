@@ -2,10 +2,9 @@ import { SmallTemplateEditor } from "../../../../utils/SmallTemplateEditor";
 import AddNewStyleButton from "../../../../utils/AddNewStyleButton";
 import { Accordion } from "../../../../utils/AccordionComponent";
 import React from "react";
-import { mergeWithDefaults } from "../../../../utils/defaultBotConfig";
 import {CollapsedPreview} from "../../SettingBloks";
 
-export default function CooldownMessagesComponent({ selectedTheme, apply }) {
+export default function CooldownMessagesComponent({ botConfig, apply }) {
     return (
         <Accordion title="Для КД">
             <CollapsedPreview>
@@ -13,40 +12,35 @@ export default function CooldownMessagesComponent({ selectedTheme, apply }) {
                       {'В сообщения можно вставлять переменную ${user}; В ответе будет видно имя чатерса'}
                   </span>
             </CollapsedPreview>
-            {mergeWithDefaults(selectedTheme).bot.roulette.cooldownMessage.map((msg, index) => (
+            {botConfig.roulette.cooldownMessage.map((msg, index) => (
                 <SmallTemplateEditor
                     key={index}
                     value={msg}
                     onChange={(value) =>
                         apply((prev) => {
-                            const config = mergeWithDefaults(prev);
-                            const updated = config.bot.roulette.cooldownMessage.map((m, i) =>
+                            const config = prev;
+                            const updated = config.roulette.cooldownMessage.map((m, i) =>
                                 i === index ? value : m
                             );
                             return {
                                 ...config,
-                                bot: {
-                                    ...config.bot,
-                                    roulette: {
-                                        ...config.bot.roulette,
-                                        cooldownMessage: updated,
-                                    },
+
+                                roulette: {
+                                    ...config.roulette,
+                                    cooldownMessage: updated,
                                 },
                             };
                         })
                     }
                     onDelete={() =>
                         apply((prev) => {
-                            const config = mergeWithDefaults(prev);
-                            const updated = config.bot.roulette.cooldownMessage.filter((_, i) => i !== index);
+                            const config = prev;
+                            const updated = config.roulette.cooldownMessage.filter((_, i) => i !== index);
                             return {
                                 ...config,
-                                bot: {
-                                    ...config.bot,
-                                    roulette: {
-                                        ...config.bot.roulette,
-                                        cooldownMessage: updated,
-                                    },
+                                roulette: {
+                                    ...config.roulette,
+                                    cooldownMessage: updated,
                                 },
                             };
                         })
@@ -59,18 +53,16 @@ export default function CooldownMessagesComponent({ selectedTheme, apply }) {
                 margin="8px 0 0 0"
                 onClick={() =>
                     apply((prev) => {
-                        const config = mergeWithDefaults(prev);
+                        const config = prev;
                         return {
                             ...config,
-                            bot: {
-                                ...config.bot,
-                                roulette: {
-                                    ...config.bot.roulette,
-                                    cooldownMessage: [
-                                        ...config.bot.roulette.cooldownMessage,
-                                        "Не так быстро, ${user}! 🎉",
-                                    ],
-                                },
+
+                            roulette: {
+                                ...config.roulette,
+                                cooldownMessage: [
+                                    ...config.roulette.cooldownMessage,
+                                    "Не так быстро, ${user}! 🎉",
+                                ],
                             },
                         };
                     })
