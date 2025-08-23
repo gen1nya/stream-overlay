@@ -14,6 +14,8 @@ import Marquee from 'react-fast-marquee';
 import UserInfoPopup from './UserInfoPopup';
 // Импорты иконок
 import { FiSettings, FiLogOut, FiExternalLink, FiCopy, FiMessageSquare } from 'react-icons/fi';
+import {Row} from "./SettingsComponent";
+import {Spacer} from "../utils/Separator";
 
 const Wrapper = styled.div`
     position: relative;
@@ -434,6 +436,7 @@ export default function Dashboard() {
                 <Content>
                     <Section>
                         <SectionTitle>Аккаунт</SectionTitle>
+                        <Row>
                         {account ? (
                             <AccountRow>
                                 <Avatar src={account.avatar} alt="avatar" />
@@ -441,20 +444,23 @@ export default function Dashboard() {
                                     <div>{account.displayName || account.login}</div>
                                     <div>Фолловеров: {account.followerCount}</div>
                                 </AccountInfo>
-                                <AccountActions>
-                                    <IconButton onClick={handlerOpenSettings}>
-                                        <FiSettings />
-                                        Настройки
-                                    </IconButton>
-                                    <LogoutButton onClick={handleLogout}>
-                                        <FiLogOut />
-                                        Выйти
-                                    </LogoutButton>
-                                </AccountActions>
                             </AccountRow>
                         ) : (
                             <p>Загрузка информации...</p>
                         )}
+                            <Spacer />
+                            <AccountActions>
+                                <IconButton onClick={handlerOpenSettings}>
+                                    <FiSettings />
+                                    Настройки
+                                </IconButton>
+                                <LogoutButton onClick={handleLogout}>
+                                    <FiLogOut />
+                                    Выйти
+                                </LogoutButton>
+                            </AccountActions>
+
+                        </Row>
                     </Section>
 
                     <Section>
@@ -550,7 +556,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.4.3-beta</Version>
+                <Version>v0.4.4-beta</Version>
             </Footer>
         </Wrapper>
     );

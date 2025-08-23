@@ -2,7 +2,7 @@ import {URLSearchParams} from 'url';
 import axios from 'axios';
 import * as authService from './authService';
 import {CLIENT_ID} from './authService';
-import {UsersResponse} from "./types/UserData";
+import {FollowerResponse, UsersResponse, VipsResponse} from "./types/UserData";
 
 export async function timeoutUser(
   user_id: string,
@@ -140,6 +140,75 @@ export async function fetchFollowerCount(userId: string | null = null): Promise<
     });
 
     return response.data.total ?? 0;
+}
+
+
+/*
+curl -X GET 'https://api.twitch.tv/helix/channels/followers?broadcaster_id=123456' \
+  -H 'Authorization: Bearer kpvy3cjboyptmiacwr0c19hotn5s' \
+  -H 'Client-Id: hof5gwx0su6owfn0nyan9c87zr6t'
+* */
+export async function fetchFollower(cursor: string | null): Promise<FollowerResponse> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = tokens.user_id;
+
+    const params = new URLSearchParams({
+        broadcaster_id: String(broadcaster_id),
+        first: '20',
+    });
+    if (cursor) {
+        params.append('after', cursor);
+    }
+    const response = await axios.get<FollowerResponse>(`https://api.twitch.tv/helix/channels/followers?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'Client-Id': authService.CLIENT_ID,
+        },
+    });
+
+    return response.data;
+}
+
+export async function fetchVips(cursor: string | null): Promise<VipsResponse> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = tokens.user_id;
+
+    const params = new URLSearchParams({
+        broadcaster_id: String(broadcaster_id),
+        first: '20',
+    });
+    if (cursor) {
+        params.append('after', cursor);
+    }
+    const response = await axios.get<VipsResponse>(`https://api.twitch.tv/helix/channels/vips?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'Client-Id': authService.CLIENT_ID,
+        },
+    });
+    return response.data;
+}
+
+export async function fetchModerators(cursor: string | null): Promise<UsersResponse> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = tokens.user_id;
+    const params = new URLSearchParams({
+        broadcaster_id: String(broadcaster_id),
+        first: '20',
+    });
+    if (cursor) {
+        params.append('after', cursor);
+    }
+    const response = await axios.get<UsersResponse>(`https://api.twitch.tv/helix/moderation/moderators?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'Client-Id': authService.CLIENT_ID,
+        },
+    });
+    return response.data;
 }
 
 export async function fetchUser(

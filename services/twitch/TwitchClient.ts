@@ -4,8 +4,9 @@ import * as chatService from './chatService';
 import * as eventSubService from './esService';
 import {UserState, UserStateHolder} from './UserStateHolder';
 import { LogService } from '../logService';
-import { UserData } from './types/UserData';
+import {Follower, UserData} from './types/UserData';
 import { AppEvent } from './messageParser';
+import {fetchFollower} from "./authorizedHelixApi";
 
 export class TwitchClient extends EventEmitter {
   private userState: UserStateHolder;
@@ -39,6 +40,16 @@ export class TwitchClient extends EventEmitter {
 
     await eventSubService.start();
     await chatService.startChat();
+
+    const followers: Follower[] = [];
+    let cursor: string | null = null;
+    do {
+      const response = await fetchFollower(cursor);
+      followers.push(...response.data);
+      cursor = response.pagination?.cursor || null;
+    } while (cursor);
+
+    console.log(`====================================================================================Fetched ${followers.length} followers`);
   }
 
   async logout(): Promise<void> {
