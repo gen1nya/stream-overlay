@@ -40,8 +40,9 @@ export class TwitchClient extends EventEmitter {
 
     await eventSubService.start();
     await chatService.startChat();
+    await this.refreshUser();
 
-    const followers: Follower[] = [];
+    /*const followers: Follower[] = [];
     let cursor: string | null = null;
     do {
       const response = await fetchFollower(cursor);
@@ -49,7 +50,7 @@ export class TwitchClient extends EventEmitter {
       cursor = response.pagination?.cursor || null;
     } while (cursor);
 
-    console.log(`====================================================================================Fetched ${followers.length} followers`);
+    console.log(`====================================================================================Fetched ${followers.length} followers`);*/
   }
 
   async logout(): Promise<void> {

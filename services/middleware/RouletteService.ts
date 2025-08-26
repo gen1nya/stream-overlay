@@ -72,7 +72,7 @@ export default class RouletteService extends Middleware {
       this.chance = config.roulette.chance || 18;
       this.allowToBanEditors = config.roulette.allowToBanEditors || false;
       this.protectedUsersMessages = config.roulette.protectedUsersMessages;
-      console.log('✅ RouletteService config updated:', config.roulette);
+      console.log('✅ RouletteService config updated');
     }
 
   async processMessage(message: AppEvent) {
@@ -81,7 +81,6 @@ export default class RouletteService extends Middleware {
       return { accepted: false, message: { ...message }, actions: [] };
     }
     if (message.type !== 'chat') {
-      console.warn('⏩ RouletteService only processes chat messages, skipping:', message.type);
       return { message, actions: [], accepted: false };
     }
     if (message.userId === null || message.userName === null) {
@@ -89,7 +88,6 @@ export default class RouletteService extends Middleware {
       return { accepted: false, message: { ...message }, actions: [] };
     }
     if (!this.commands.includes(message.htmlMessage)) {
-      console.warn(`⏩ Message is not a roulette command, skipping`);
       return { accepted: false, message: { ...message }, actions: [] };
     }
     const now = Date.now();

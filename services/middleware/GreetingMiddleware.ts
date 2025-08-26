@@ -16,6 +16,13 @@ interface CompiledCommand {
 export default class GreetingMiddleware extends Middleware {
   private logService: LogService;
 
+  /**
+   * Deadzone period to prevent command spamming (in milliseconds). Per user per command.
+   * */
+  private DEADZONE_MS = 5 * 1000; // 5 seconds
+  // userId -> (commandName -> lastUsedTimestamp)
+  private userCommandTimestamps: Map<string, Map<string, number>> = new Map();
+
   constructor(logService: LogService) {
     super();
     this.logService = logService;
@@ -26,11 +33,9 @@ export default class GreetingMiddleware extends Middleware {
 
   async processMessage(message: AppEvent) {
     if (!this.enabled) {
-      console.log('⏩ GreetingMiddleware is disabled, skipping message processing');
       return { message, actions: [], accepted: false };
     }
     if (message.type !== 'chat') {
-      console.warn('❌ GreetingMiddleware only processes chat messages, skipping:', message.type);
       return { message, actions: [], accepted: false };
     }
     const text = message.htmlMessage?.trim();
@@ -51,6 +56,22 @@ export default class GreetingMiddleware extends Middleware {
 
       const matched = command.triggers.some(test => test(text));
       if (matched) {
+        // check deadzone
+        const now = Date.now();
+        const userId = message.userId || 'unknown_user';
+        if (!this.userCommandTimestamps.has(userId)) {
+          this.userCommandTimestamps.set(userId, new Map());
+        }
+        const userTimestamps = this.userCommandTimestamps.get(userId)!;
+        const lastUsed = userTimestamps.get(command.name) || 0;
+        if (now - lastUsed < this.DEADZONE_MS) {
+          console.log(`🔥 Command "${command.name}" is in deadzone for user ${userId}, skipping`);
+          continue;
+        }
+
+        // set new timestamp
+        userTimestamps.set(command.name, now);
+
         console.log('✅ Command matched:', command.name);
         this.log(`Команда "${command.name}" запущена`, message.userId, message.userName);
         const response = this.pickRandom(

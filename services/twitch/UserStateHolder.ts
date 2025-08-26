@@ -1,5 +1,5 @@
 import {UserData} from "./types/UserData";
-import {fetchFollowerCount, getEditorsByBroadcasterId, fetchUser} from "./authorizedHelixApi";
+import {fetchFollowerCount, fetchEditors, fetchUser} from "./authorizedHelixApi";
 import {LogService} from "../logService";
 
 export interface UserState {
@@ -102,7 +102,7 @@ export class UserStateHolder {
             console.warn('User ID is not set, cannot fetch editors');
             throw new Error('User ID is not set');
         }
-        let editorsResponse = await getEditorsByBroadcasterId(this.userId);
+        let editorsResponse = await fetchEditors();
         this.onEditorsFetched(editorsResponse.data)
         this.logger.log({
             timestamp: new Date().toISOString(),
