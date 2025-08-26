@@ -15,6 +15,29 @@ export const defaultTheme = {
         paddingV: "7",
         fontSize: 24,
         titleFontSize: 20,
+        titleBackgroundMode: "none", // solid, none
+        titleBackgroundColorConfig: {
+            dark: {
+                color: "#000000",
+                opacity: "0.5",
+                borderColor: "#ffffff",
+                borderOpacity: "1",
+                borderRadius: "8",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            },
+            light: {
+                color: "#ffffff",
+                opacity: "0.5",
+                borderColor: "#ffffff",
+                borderOpacity: "1",
+                borderRadius: "8",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        },
         titleFont: {
             family: "Roboto",
             url: "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",

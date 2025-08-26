@@ -17,7 +17,6 @@ import {FiMusic, FiCornerUpLeft, FiType} from "react-icons/fi";
 import RadioGroup from "../../utils/TextRadioGroup";
 import ColorSelectorButton from "./ColorSelectorButton";
 import {RiColorFilterLine} from "react-icons/ri";
-import {Spacer} from "../../utils/Separator";
 import {Row} from "../SettingsComponent";
 
 const ColorGrid = styled.div`

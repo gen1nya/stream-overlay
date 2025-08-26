@@ -7,7 +7,7 @@ import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorCom
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
-import {FiMessageSquare, FiType, FiImage, FiLayout} from "react-icons/fi";
+import {FiMessageSquare, FiType, FiImage, FiLayout, FiAlignCenter} from "react-icons/fi";
 import {
     CardContent,
     CardHeader,
@@ -19,6 +19,7 @@ import {
 } from "./SharedSettingsStyles";
 import {Spacer} from "../../utils/Separator";
 import {Row} from "../SettingsComponent";
+import Switch from "../../utils/Switch";
 
 const MESSAGE_DIRECTION_OPT = [
     {key: 'row', text: 'слева', aiIcon: 'AiOutlineInsertRowLeft'},
@@ -84,7 +85,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                     <SectionHeader>
                         <SectionTitle>
                             <FiType />
-                            Настройки текста
+                            Настройки заголовка
                         </SectionTitle>
                     </SectionHeader>
 
@@ -99,19 +100,27 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                             />
                         </ControlGroup>
 
-                        <Spacer />
+                        <Spacer/>
 
                         <ControlGroup>
-                            <FontAndSizeEditor
-                                title="Шрифт сообщений:"
-                                fontSize={fontSize}
-                                fontFamily={messageFont.family}
-                                onFontChange={({family, url}) =>
-                                    updateNested('messageFont', {family, url})
-                                }
-                                onFontSizeChange={(v) => updateField('fontSize', v)}
-                            />
+                            <label
+                                style={{fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px'}}>
+                                Включить Фон Заголовка
+                            </label>
+                            <div style={{display: 'flex', gap: '8px'}}>
+                                <Switch
+                                    checked={chatMessage.titleBackgroundMode === 'solid'}
+                                    onChange={(e) => {
+                                        updateField('titleBackgroundMode', e.target.checked ? 'solid' : 'none')
+                                    }}
+                                />
+                                <span style={{fontSize: '0.85rem', color: '#999'}}>
+                                    {chatMessage.titleBackgroundMode === 'solid' ? 'Включен' : 'Выключен'}
+                                </span>
+                            </div>
                         </ControlGroup>
+
+                        <Spacer/>
 
                         <ControlGroup>
                             <FontAndSizeEditor
@@ -125,6 +134,15 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                             />
                         </ControlGroup>
                     </Row>
+                </Section>
+
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiAlignCenter  />
+                            Настройки текста сообщений
+                        </SectionTitle>
+                    </SectionHeader>
 
                     <Row gap="20px">
                         <ControlGroup>
@@ -142,6 +160,21 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                         <Spacer />
 
                         <ControlGroup>
+                            <FontAndSizeEditor
+                                title="Шрифт сообщений:"
+                                fontSize={fontSize}
+                                fontFamily={messageFont.family}
+                                onFontChange={({family, url}) =>
+                                    updateNested('messageFont', {family, url})
+                                }
+                                onFontSizeChange={(v) => updateField('fontSize', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
+
+                    <Row gap="20px">
+
+                        <ControlGroup>
                             <ColorSelectorButton
                                 title="Цвет тени текста:"
                                 hex={messageFont?.shadowColor ?? "#000000"}
@@ -152,7 +185,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                                 }}
                             />
                         </ControlGroup>
-
+                        <Spacer />
                         <ControlGroup >
                             <SeekbarComponent
                                 title={`Радиус тени`}

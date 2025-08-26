@@ -87,6 +87,26 @@ export interface BaseMessageConfig {
 export interface ChatMessageConfig extends BaseMessageConfig {
     titleFontSize: number;
     titleFont: FontConfig;
+    titleBackgroundMode: 'none' | 'solid' | undefined;
+    titleBackgroundColorConfig: TitleBackgroundColorConfig | undefined;
+}
+
+// Title background color configuration for dark and light themes
+export interface TitleBackgroundColorConfig {
+    dark: TitleBackgroundColorTheme;
+    light: TitleBackgroundColorTheme;
+}
+
+// Title background color theme configuration
+export interface TitleBackgroundColorTheme {
+    color: string;
+    opacity: string;
+    borderColor: string;
+    borderOpacity: string;
+    borderRadius: string;
+    shadowColor: string;
+    shadowOpacity: string;
+    shadowRadius: string;
 }
 
 // Follow message configuration (with template)

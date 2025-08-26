@@ -716,21 +716,6 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 </Content>
             );
         case "players": {
-            const openPlayer1 = () => {
-                openExternalLink('http://localhost:5173/audio-modern');
-            };
-
-            const openPlayer2 = () => {
-                openExternalLink('http://localhost:5173/audio');
-            };
-
-            const openDemoFFTColumns = () => {
-                openExternalLink('http://localhost:5173/audio-fft-linear-demo');
-            }
-
-            const openDemoFFTRing = () => {
-                openExternalLink('http://localhost:5173/audio-fft-round-demo');
-            }
             return (
                 <Content>
                     <FFTControlComponent/>
@@ -739,13 +724,6 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}
                     />
-                    <SettingsBlockHalf>
-                        <SettingsBlockTitle>Ссылки</SettingsBlockTitle>
-                        <MediumSecondaryButton onClick={openPlayer2}>Плеер №2 (пластинка)</MediumSecondaryButton>
-                        <MediumSecondaryButton onClick={openPlayer1}>Плеер №1</MediumSecondaryButton>
-                        <MediumSecondaryButton onClick={openDemoFFTColumns}>Демо FFT (столбцы)</MediumSecondaryButton>
-                        <MediumSecondaryButton onClick={openDemoFFTRing}>Демо FFT (кольцо)</MediumSecondaryButton>
-                    </SettingsBlockHalf>
                 </Content>
             );
         }
