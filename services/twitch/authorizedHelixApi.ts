@@ -2,7 +2,7 @@ import {URLSearchParams} from 'url';
 import axios from 'axios';
 import * as authService from './authService';
 import {CLIENT_ID} from './authService';
-import {FollowerResponse, UsersResponse, VipsResponse} from "./types/UserData";
+import {FollowerResponse, ModeratorResponse, UsersResponse, VipsResponse} from "./types/UserData";
 
 export async function timeoutUser(
     user_id: string,
@@ -155,7 +155,7 @@ export async function fetchFollower(cursor: string | null): Promise<FollowerResp
 
     const params = new URLSearchParams({
         broadcaster_id: String(broadcaster_id),
-        first: '20',
+        first: '100',
     });
     if (cursor) {
         params.append('after', cursor);
@@ -191,7 +191,7 @@ export async function fetchVips(cursor: string | null): Promise<VipsResponse> {
     return response.data;
 }
 
-export async function fetchModerators(cursor: string | null): Promise<UsersResponse> {
+export async function fetchModerators(cursor: string | null): Promise<ModeratorResponse> {
     const tokens = await authService.getTokens();
     if (!tokens?.access_token) throw new Error('No access token');
     const broadcaster_id = tokens.user_id;
@@ -202,7 +202,7 @@ export async function fetchModerators(cursor: string | null): Promise<UsersRespo
     if (cursor) {
         params.append('after', cursor);
     }
-    const response = await axios.get<UsersResponse>(`https://api.twitch.tv/helix/moderation/moderators?${params.toString()}`, {
+    const response = await axios.get<ModeratorResponse>(`https://api.twitch.tv/helix/moderation/moderators?${params.toString()}`, {
         headers: {
             Authorization: `Bearer ${tokens.access_token}`,
             'Client-Id': authService.CLIENT_ID,

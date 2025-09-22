@@ -11,6 +11,13 @@ export interface Follower {
     followed_at: string;
 }
 
+export interface ModeratorResponse {
+    data: UserData[];
+    pagination: {
+        cursor: string;
+    };
+}
+
 export interface UsersResponse {
     data: UserData[];
 }

@@ -40,7 +40,8 @@ export class DbRepository {
         is_editor INTEGER DEFAULT 0,
         is_mod INTEGER DEFAULT 0,
         last_seen INTEGER,
-        updated_at INTEGER
+        updated_at INTEGER,
+        followed_at TEXT
       )
     `).run();
 

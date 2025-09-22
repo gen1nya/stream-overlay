@@ -47,20 +47,16 @@ const Content = styled.div`
 
 
 const TitleContainer = styled.div`
-    font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
-    font-family: ${({theme}) => theme.chatMessage.titleFont.family ?? "sans-serif"};
-    background: ${({tColor, theme}) => {
-        if (theme.chatMessage.titleBackgroundMode === 'solid') {
-            return tColor
-        }
-        return 'transparent';
-    }};
+    font-size: ${({ theme }) => theme.chatMessage.titleFontSize}px;
+    font-family: ${({ theme }) => theme.chatMessage.titleFont.family ?? "sans-serif"};
+    background: ${({ $tcolor, theme }) =>
+            theme.chatMessage.titleBackgroundMode === "solid" ? $tcolor : "transparent"};
     border-radius: 8px;
     padding: 0 0 0 6px;
     display: flex;
     align-items: center;
     flex-direction: row;
-`
+`;
 
 const ChannelAvatar = styled.img`
     height: 1em;
@@ -152,7 +148,7 @@ export default function ChatMessage({ message, showSourceChannel }) {
     return (
         <MessageContainer>
             <Content>
-            <TitleContainer tColor={getBackgroundForTextColor(message.color)}>
+            <TitleContainer $tcolor={getBackgroundForTextColor(message.color)}>
                 {message.sourceChannel?.avatarUrl && showSourceChannel && (
                     <ChannelAvatar
                         src={message.sourceChannel.avatarUrl}

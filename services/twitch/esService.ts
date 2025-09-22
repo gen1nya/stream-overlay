@@ -182,6 +182,7 @@ class EventSubService {
             userLogin: event.user_login,
             userName: event.user_name,
             followedAt: event.followed_at,
+            userNameRaw: event.user_login
           };
           this.logger?.log({
             timestamp: new Date().toISOString(),
@@ -202,12 +203,13 @@ class EventSubService {
             userLogin: event.user_login,
             userName: event.user_name,
             reward: reward,
+            userNameRaw: event.user_login
           };
           this.logger?.log({
             timestamp: new Date().toISOString(),
             message: `Потрачены балы (${reward.cost}) на : ${reward.title}`,
             userId: event.user_id,
-            userName: event.user_name
+            userName: event.user_name,
           });
           this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_REDEMPTION}`, redeemEvent);
         }

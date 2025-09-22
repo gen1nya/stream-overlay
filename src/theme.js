@@ -108,6 +108,41 @@ export const defaultTheme = {
             }
         }
     ],
+    modernPlayer: {
+        mode: "compact", // compact, expanded
+        backgroundTint: "#000000",
+        backgroundTintOpacity: "0.3",
+        backgroundOpacity: "0.94",
+        borderOpacity: "1",
+        borderRadius: 16,
+        shadowOpacity: "0.26",
+        shadowRadius: 20,
+        widthCompact: 300,
+        widthExpanded: 400,
+        heightCompact: 64,
+        heightExpanded: 80,
+        text: {
+            textAlign: "left",
+            title: {
+                fontSize: 16,
+                family: "Roboto",
+                url: "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
+                color: "#ffffff",
+                fontWeight: "bold"
+            },
+            artist: {
+                fontSize: 14,
+                family: "Roboto",
+                url: "https://fonts.gstatic.com/s/roboto/v48/KFOMCnqEu92Fr1ME7kSn66aGLdTylUAMQXC89YmC2DPNWubEbWmTggvWl0Qn.ttf",
+                color: "#858585",
+                fontWeight: "normal"
+            }
+        },
+        image: {
+            position: "left", // right
+            size: 48
+        }
+    },
     player: {
         backgroundColor: "#4c243d",
         backgroundOpacity: "0.94",

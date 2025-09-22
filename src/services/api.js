@@ -156,3 +156,31 @@ export async function enableProxy(enable){
 export async function testProxyConnection(config) {
     return ipcRenderer?.invoke('proxy:testConnection', config);
 }
+
+// twitch users api
+export async function getTwitchUsers(offset, limit) {
+    try {
+        const result = await ipcRenderer.invoke('twitch:get-users', {offset, limit });
+        console.log('getTwitchUsers result:', result);
+        return {
+            users: result.data || [],
+            total: result.total || 0
+        };
+    } catch (error) {
+        console.error('Error getting twitch users:', error);
+        throw error;
+    }
+}
+
+export async function searchTwitchUsers(query, offset, limit) {
+    try {
+        const result = await ipcRenderer.invoke('twitch:search-users', {query, offset, limit});
+        return {
+            users: result.data || [],
+            total: result.total || 0
+        };
+    } catch (error) {
+        console.error('Error searching twitch users:', error);
+        throw error;
+    }
+}

@@ -26,6 +26,7 @@ type Envelope<K extends string, P> = {
 interface Identity {
   userId:    string | null;
   userName:  string | null;
+  userNameRaw: string | null;
 }
 
 export interface ParsedIrcMessage extends Identity {
@@ -95,6 +96,7 @@ export function createBotMessage(message: string): ChatEvent {
     sourceChannel: {displayName:null, login:null, avatarUrl:null},
     roles: emptyRoles,
     timestamp: Date.now(),
+    userNameRaw: 'bot',
   };
 }
 
@@ -372,6 +374,7 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
 
   const id = tags['id'] || crypto.randomUUID();
   const username = tags['display-name'] || extractUsername(rawLine) || 'unknown';
+  const usernameRaw = extractUsername(rawLine) || 'unknown';
   const color = tags['color'] || '#FFFFFF';
   const emotes = tags['emotes'] || '';
   const badgesTag = tags['badges'] || '';
@@ -399,7 +402,8 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
       login: channelInfo?.login,
       avatarUrl: channelInfo?.profileImageUrl,
     },
-    roles,
+    roles: roles,
+    userNameRaw: usernameRaw,
   };
 }
 

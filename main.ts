@@ -153,6 +153,7 @@ const scraper = new YouTubeLiveStreamsScraper(
         sourceChannel: {displayName:null, login:null, avatarUrl:null},
         roles: emptyRoles,
         timestamp: Date.now(),
+        userNameRaw: message.author,
       })
       console.log('YouTube message received:\n', JSON.stringify(message, null, 2));
     },
@@ -209,8 +210,6 @@ app.whenReady().then(() => {
       logService,
       twitchClient,
       () => twitchClient.refreshUser(),
-      () => twitchClient.getEditors(),
-      () => twitchClient.getUser()
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();

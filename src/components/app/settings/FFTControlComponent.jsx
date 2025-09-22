@@ -25,6 +25,8 @@ import Switch from '../../utils/Switch';
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import {openExternalLink} from "../../../services/api";
 import {Row} from "../SettingsComponent";
+import FFTBars from "../../player/FFTBars";
+import {Spacer} from "../../utils/Separator";
 
 // Специфичные стили для FFT компонента
 const StatusIndicator = styled.div`
@@ -131,6 +133,15 @@ const DemoButton = styled(ActionButton)`
         background: rgba(29, 78, 216, 0.62);
         border-color: #1d4ed8;
     }
+`;
+
+const FFTWrapper = styled.div`
+  width: 400px;
+  height: calc(74px);
+    margin-top: -20px;
+    margin-right: 20px;
+    margin-bottom: -17px;
+  background: transparent;
 `;
 
 export default function FFTControlComponent() {
@@ -266,6 +277,19 @@ export default function FFTControlComponent() {
                     <FiActivity className="status-icon" />
                     <span className="status-text">{getStatusText()}</span>
                 </StatusIndicator>
+                <Spacer/>
+                <FFTWrapper>
+                    <FFTBars
+                        bars={64}
+                        barWidth={4}
+                        peakThickness={1}
+                        peakColor={'rgba(100,108,255,0.8)'}
+                        barColor={'rgba(128,100,255,0.4)'}
+                        backgroundColor="transparent"
+                    />
+
+                </FFTWrapper>
+
             </CardHeader>
 
             <CardContent>

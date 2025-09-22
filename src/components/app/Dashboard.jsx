@@ -16,6 +16,7 @@ import UserInfoPopup from './UserInfoPopup';
 import { FiSettings, FiLogOut, FiExternalLink, FiCopy, FiMessageSquare } from 'react-icons/fi';
 import {Row} from "./SettingsComponent";
 import {Spacer} from "../utils/Separator";
+import TwitchUsersPopup from "./TwitchUsersPopup";
 
 const Wrapper = styled.div`
     position: relative;
@@ -302,6 +303,7 @@ export default function Dashboard() {
     const logPanelRef = useRef(null);
 
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
+    const [showUsersPopup, setShowUsersPopup] = useState(false);
 
     // Новое состояние для тем
     const [themes, setThemes] = useState({});
@@ -309,6 +311,14 @@ export default function Dashboard() {
 
     const openUserInfoPopup = (userId, userName) => {
         setUserInfoPopup({ id: userId, userName: userName, open: true });
+    };
+
+    const handleOpenUsersPopup = () => {
+        setShowUsersPopup(true);
+    };
+
+    const handleCloseUsersPopup = () => {
+        setShowUsersPopup(false);
     };
 
     const streamers = [
@@ -432,6 +442,11 @@ export default function Dashboard() {
                     onClose={() => setUserInfoPopup({ id: '', open: false, userName: '' })}
                 />
             )}
+            {showUsersPopup && (
+                <TwitchUsersPopup
+                    onClose={handleCloseUsersPopup}
+                />
+            )}
             <MainArea>
                 <Content>
                     <Section>
@@ -442,7 +457,7 @@ export default function Dashboard() {
                                 <Avatar src={account.avatar} alt="avatar" />
                                 <AccountInfo>
                                     <div>{account.displayName || account.login}</div>
-                                    <div>Фолловеров: {account.followerCount}</div>
+                                    <div onClick={handleOpenUsersPopup}>Фолловеров: {account.followerCount}</div>
                                 </AccountInfo>
                             </AccountRow>
                         ) : (
@@ -556,7 +571,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.4.4-beta</Version>
+                <Version>v0.4.5-beta</Version>
             </Footer>
         </Wrapper>
     );
