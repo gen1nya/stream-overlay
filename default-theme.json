@@ -38,8 +38,8 @@
         "shadowRadius": "0"
       }
     },
-    modernPlayer: {
-      "mode": "compact", // compact, expanded
+    "modernPlayer": {
+      "mode": "compact",
       "backgroundTint": "#000000",
       "backgroundTintOpacity": "0.3",
       "backgroundOpacity": "0.94",
@@ -70,6 +70,7 @@
         }
       },
       "image": {
+        "show": true,
         "position": "left",
         "compact": {
           "size": 48

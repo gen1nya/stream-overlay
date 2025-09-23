@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import {FiVolume2, FiSettings, FiRefreshCw, FiMic, FiActivity, FiExternalLink, FiEye} from 'react-icons/fi';
+import {FiVolume2, FiSettings, FiRefreshCw, FiMic, FiActivity, FiExternalLink, FiEye, FiChevronDown, FiChevronUp} from 'react-icons/fi';
 import {
     getAudioDeviceList,
     setAudioDevice,
@@ -136,15 +136,68 @@ const DemoButton = styled(ActionButton)`
 `;
 
 const FFTWrapper = styled.div`
-  width: 400px;
-  height: calc(74px);
+    width: 400px;
+    height: calc(74px);
     margin-top: -20px;
     margin-right: 20px;
     margin-bottom: -17px;
-  background: transparent;
+    background: transparent;
+`;
+
+const CollapsibleHeader = styled.div`
+    padding: 16px 20px;
+    border-bottom: 1px solid #333;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+`;
+
+const CollapsedPreview = styled.div`
+    padding: 16px 20px;
+    color: #999;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.02);
+    }
+    
+    .highlight {
+        color: #4a9eff;
+        font-weight: 500;
+    }
+`;
+
+const CollapseToggle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #FFF;
+    font-size: 1rem;
+    transition: color 0.2s ease;
+    
+    svg {
+        width: 18px;
+        height: 18px;
+        transition: transform 0.2s ease;
+    }
+    
+    ${CollapsibleHeader}:hover & {
+        color: #ccc;
+    }
+`;
+
+const LoadingHeader = styled(CardHeader)`
+    /* Для состояния загрузки используем обычный заголовок */
 `;
 
 export default function FFTControlComponent() {
+    const [isOpen, setIsOpen] = useState(false);
     const [fftConfig, setFftConfig] = useState({
         dbFloor: -60,
         masterGain: 1,
@@ -158,6 +211,8 @@ export default function FFTControlComponent() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
+
+    const toggleOpen = () => setIsOpen((prev) => !prev);
 
     const openDemoFFTColumns = () => {
         openExternalLink('http://localhost:5173/audio-fft-linear-demo');
@@ -255,197 +310,217 @@ export default function FFTControlComponent() {
     if (isLoading) {
         return (
             <SettingsCard>
-                <CardHeader>
+                <LoadingHeader>
                     <CardTitle>
                         <FiActivity />
                         FFT Анализатор
                     </CardTitle>
                     <InfoBadge>Загрузка...</InfoBadge>
-                </CardHeader>
+                </LoadingHeader>
             </SettingsCard>
         );
     }
 
     return (
         <SettingsCard>
-            <CardHeader>
-                <CardTitle>
-                    <FiActivity />
-                    FFT Анализатор
-                </CardTitle>
-                <StatusIndicator status={getStatus()}>
-                    <FiActivity className="status-icon" />
-                    <span className="status-text">{getStatusText()}</span>
-                </StatusIndicator>
-                <Spacer/>
-                <FFTWrapper>
-                    <FFTBars
-                        bars={64}
-                        barWidth={4}
-                        peakThickness={1}
-                        peakColor={'rgba(100,108,255,0.8)'}
-                        barColor={'rgba(128,100,255,0.4)'}
-                        backgroundColor="transparent"
-                    />
+            <CollapsibleHeader onClick={toggleOpen}>
+                <Row gap="12px">
+                    <CardTitle>
+                        <FiActivity />
+                        FFT Анализатор
+                    </CardTitle>
 
-                </FFTWrapper>
+                    <StatusIndicator status={getStatus()}>
+                        <FiActivity className="status-icon" />
+                        <span className="status-text">{getStatusText()}</span>
+                    </StatusIndicator>
 
-            </CardHeader>
+                    <Spacer/>
 
-            <CardContent>
-                {/* Основные настройки */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle>
-                            <FiSettings />
-                            Основные настройки
-                        </SectionTitle>
-                    </SectionHeader>
+                    {/* FFT визуализация показывается всегда в заголовке */}
+                    <FFTWrapper>
+                        <FFTBars
+                            bars={64}
+                            barWidth={4}
+                            peakThickness={1}
+                            peakColor={'rgba(100,108,255,0.8)'}
+                            barColor={'rgba(128,100,255,0.4)'}
+                            backgroundColor="transparent"
+                        />
+                    </FFTWrapper>
 
-                    <Row gap="16px">
-                        <ControlGroup>
-                            <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px' }}>
-                                Включить FFT анализ
-                            </label>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Switch
-                                    checked={fftConfig.enabled}
-                                    onChange={(e) => handleFFTToggle(e.target.checked)}
-                                />
-                                <span style={{ fontSize: '0.85rem', color: '#999' }}>
-                                    {fftConfig.enabled ? 'Включен' : 'Выключен'}
-                                </span>
-                            </div>
-                        </ControlGroup>
-                    </Row>
+                    <CollapseToggle>
+                        {isOpen ? 'Свернуть' : 'Настроить'}
+                        {isOpen ? <FiChevronUp /> : <FiSettings />}
+                    </CollapseToggle>
+                </Row>
+            </CollapsibleHeader>
 
-                    {error && (
-                        <WarningBadge style={{ marginTop: '8px' }}>
-                            {error}
-                        </WarningBadge>
-                    )}
-                </Section>
+            {/* Свернутое описание */}
+            {!isOpen && (
+                <CollapsedPreview onClick={toggleOpen}>
+                    Анализатор аудиочастот в реальном времени для создания визуальных эффектов. Захватывает звук с выбранного устройства и предоставляет данные FFT для визуализаций.
+                    <br /><br />
+                    <span className="highlight">Устройство:</span> {selectedDevice ? selectedDevice.name : 'Не выбрано'}<br />
+                </CollapsedPreview>
+            )}
 
-                {/* Выбор устройства */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle>
-                            <FiMic />
-                            Аудиоустройство
-                        </SectionTitle>
-                    </SectionHeader>
-
-                    <Row gap="12px">
-                        <DeviceSelector
-                            value={selectedDevice?.id || ''}
-                            onChange={handleDeviceChange}
-                            disabled={devices.length === 0}
-                        >
-                            <option value="">Выберите устройство</option>
-                            {devices.map((device) => (
-                                <option key={device.id} value={device.id}>
-                                    {device.name} ({device.flow})
-                                </option>
-                            ))}
-                        </DeviceSelector>
-
-                        <RefreshButton
-                            onClick={loadDevices}
-                            disabled={isRefreshing}
-                            title="Обновить список устройств"
-                        >
-                            <FiRefreshCw style={{
-                                animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
-                            }} />
-                        </RefreshButton>
-                    </Row>
-
-                    {selectedDevice && (
-                        <InfoBadge style={{ marginTop: '8px' }}>
-                            Выбрано: {selectedDevice.name}
-                        </InfoBadge>
-                    )}
-                </Section>
-
-                {/* Параметры FFT */}
-                {fftConfig.enabled && (
+            {isOpen && (
+                <CardContent>
+                    {/* Основные настройки */}
                     <Section>
                         <SectionHeader>
                             <SectionTitle>
-                                <FiVolume2 />
-                                Параметры анализа
+                                <FiSettings />
+                                Основные настройки
                             </SectionTitle>
                         </SectionHeader>
 
-                        <ParameterGrid>
-                            <SeekbarComponent
-                                title="Нижний порог (dB)"
-                                min={-100}
-                                max={-20}
-                                value={fftConfig.dbFloor}
-                                step={1}
-                                onChange={(value) => {
-                                    setFftConfig(prev => ({ ...prev, dbFloor: value }));
-                                    // TODO: отправить изменения на бекенд
-                                }}
-                                formatValue={(val) => `${val} dB`}
-                            />
+                        <Row gap="16px">
+                            <ControlGroup>
+                                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px' }}>
+                                    Включить FFT анализ
+                                </label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <Switch
+                                        checked={fftConfig.enabled}
+                                        onChange={(e) => handleFFTToggle(e.target.checked)}
+                                    />
+                                    <span style={{ fontSize: '0.85rem', color: '#999' }}>
+                                        {fftConfig.enabled ? 'Включен' : 'Выключен'}
+                                    </span>
+                                </div>
+                            </ControlGroup>
+                        </Row>
 
-                            <SeekbarComponent
-                                title="Основное усиление"
-                                min={0.1}
-                                max={5}
-                                value={fftConfig.masterGain}
-                                step={0.1}
-                                onChange={(value) => {
-                                    setFftConfig(prev => ({ ...prev, masterGain: value }));
-                                    // TODO: отправить изменения на бекенд
-                                }}
-                                formatValue={(val) => `×${val.toFixed(1)}`}
-                            />
-
-                            <SeekbarComponent
-                                title="Наклон частот"
-                                min={-10}
-                                max={10}
-                                value={fftConfig.tilt}
-                                step={0.1}
-                                onChange={(value) => {
-                                    setFftConfig(prev => ({ ...prev, tilt: value }));
-                                    // TODO: отправить изменения на бекенд
-                                }}
-                                formatValue={(val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}`}
-                            />
-                        </ParameterGrid>
+                        {error && (
+                            <WarningBadge style={{ marginTop: '8px' }}>
+                                {error}
+                            </WarningBadge>
+                        )}
                     </Section>
-                )}
 
-                {/* Демо-страницы */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle>
-                            <FiEye />
-                            Демонстрация FFT
-                        </SectionTitle>
-                    </SectionHeader>
+                    {/* Выбор устройства */}
+                    <Section>
+                        <SectionHeader>
+                            <SectionTitle>
+                                <FiMic />
+                                Аудиоустройство
+                            </SectionTitle>
+                        </SectionHeader>
 
-                    <Row gap="12px">
-                        <DemoButton onClick={openDemoFFTColumns}>
-                            <FiExternalLink />
-                            Демо FFT (столбцы)
-                        </DemoButton>
+                        <Row gap="12px">
+                            <DeviceSelector
+                                value={selectedDevice?.id || ''}
+                                onChange={handleDeviceChange}
+                                disabled={devices.length === 0}
+                            >
+                                <option value="">Выберите устройство</option>
+                                {devices.map((device) => (
+                                    <option key={device.id} value={device.id}>
+                                        {device.name} ({device.flow})
+                                    </option>
+                                ))}
+                            </DeviceSelector>
 
-                        <DemoButton onClick={openDemoFFTRing}>
-                            <FiExternalLink />
-                            Демо FFT (кольцо)
-                        </DemoButton>
-                    </Row>
+                            <RefreshButton
+                                onClick={loadDevices}
+                                disabled={isRefreshing}
+                                title="Обновить список устройств"
+                            >
+                                <FiRefreshCw style={{
+                                    animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
+                                }} />
+                            </RefreshButton>
+                        </Row>
 
-                    <InfoBadge style={{ marginTop: '8px' }}>
-                        Откроются в новом окне для тестирования визуализации
-                    </InfoBadge>
-                </Section>
-            </CardContent>
+                        {selectedDevice && (
+                            <InfoBadge style={{ marginTop: '8px' }}>
+                                Выбрано: {selectedDevice.name}
+                            </InfoBadge>
+                        )}
+                    </Section>
+
+                    {/* Параметры FFT */}
+                    {fftConfig.enabled && (
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiVolume2 />
+                                    Параметры анализатора
+                                </SectionTitle>
+                            </SectionHeader>
+
+                            <ParameterGrid>
+                                <SeekbarComponent
+                                    title="Нижний порог (dB)"
+                                    min={-100}
+                                    max={-20}
+                                    value={fftConfig.dbFloor}
+                                    step={1}
+                                    onChange={(value) => {
+                                        setFftConfig(prev => ({ ...prev, dbFloor: value }));
+                                        // TODO: отправить изменения на бекенд
+                                    }}
+                                    formatValue={(val) => `${val} dB`}
+                                />
+
+                                <SeekbarComponent
+                                    title="Основное усиление"
+                                    min={0.1}
+                                    max={5}
+                                    value={fftConfig.masterGain}
+                                    step={0.1}
+                                    onChange={(value) => {
+                                        setFftConfig(prev => ({ ...prev, masterGain: value }));
+                                        // TODO: отправить изменения на бекенд
+                                    }}
+                                    formatValue={(val) => `×${val.toFixed(1)}`}
+                                />
+
+                                <SeekbarComponent
+                                    title="Наклон частот"
+                                    min={-10}
+                                    max={10}
+                                    value={fftConfig.tilt}
+                                    step={0.1}
+                                    onChange={(value) => {
+                                        setFftConfig(prev => ({ ...prev, tilt: value }));
+                                        // TODO: отправить изменения на бекенд
+                                    }}
+                                    formatValue={(val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}`}
+                                />
+                            </ParameterGrid>
+                        </Section>
+                    )}
+
+                    {/* Демо-страницы */}
+                    <Section>
+                        <SectionHeader>
+                            <SectionTitle>
+                                <FiEye />
+                                Демонстрация FFT
+                            </SectionTitle>
+                        </SectionHeader>
+
+                        <Row gap="12px">
+                            <DemoButton onClick={openDemoFFTColumns}>
+                                <FiExternalLink />
+                                Демо FFT (столбцы)
+                            </DemoButton>
+
+                            <DemoButton onClick={openDemoFFTRing}>
+                                <FiExternalLink />
+                                Демо FFT (кольцо)
+                            </DemoButton>
+                        </Row>
+
+                        <InfoBadge style={{ marginTop: '8px' }}>
+                            Откроются в новом окне для тестирования визуализации
+                        </InfoBadge>
+                    </Section>
+                </CardContent>
+            )}
 
             <style jsx>{`
                 @keyframes spin {

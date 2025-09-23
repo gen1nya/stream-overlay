@@ -108,6 +108,7 @@ const TopRow = styled.div`
 `;
 
 const Cover = styled.img`
+    display: ${({theme}) => theme.modernPlayer?.image?.show === false ? 'none' : 'block'};
     width: ${({theme}) => {
         const mode = theme.modernPlayer?.mode || 'compact';
         if (mode === 'compact') {

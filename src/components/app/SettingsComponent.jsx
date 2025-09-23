@@ -720,12 +720,12 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     <FFTControlComponent/>
-                    <PlayerSettingsComponent
+                    <ModernPlayerSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}
                     />
-                    <ModernPlayerSettingsComponent
+                    <PlayerSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}

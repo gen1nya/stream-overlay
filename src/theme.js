@@ -141,6 +141,7 @@ export const defaultTheme = {
         },
         image: {
             position: "left", // right
+            show: true,
             compact: {
                 size: 48,
             },
