@@ -44,6 +44,7 @@ import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
 import {Spacer} from "../utils/Separator";
 import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
+import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -720,6 +721,11 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 <Content>
                     <FFTControlComponent/>
                     <PlayerSettingsComponent
+                        current={selectedTheme}
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
+                    />
+                    <ModernPlayerSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}

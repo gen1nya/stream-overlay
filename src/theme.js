@@ -116,6 +116,7 @@ export const defaultTheme = {
         borderOpacity: "1",
         borderRadius: 16,
         shadowOpacity: "0.26",
+        shadowColor: "#818181",
         shadowRadius: 20,
         widthCompact: 300,
         widthExpanded: 400,
@@ -140,7 +141,12 @@ export const defaultTheme = {
         },
         image: {
             position: "left", // right
-            size: 48
+            compact: {
+                size: 48,
+            },
+            extended: {
+                size: 120,
+            }
         }
     },
     player: {
