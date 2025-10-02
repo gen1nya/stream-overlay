@@ -400,12 +400,14 @@ function ModernAudioPlayer() {
                                 barColor={spectrumColor}
                                 peakColor={spectrumPeakColor}
                             />
-                            {/*
-                            <WaveForm
+
+                            {/*<WaveForm
                                 backgroundColor={"rgba(255,255,255,0.02)"}
                                 lineColor={spectrumPeakColor}
-                            />
-                            */}
+                                showCenterLine={false}
+                                showGrid={false}
+                            />*/}
+
                         </FFTWrapper>
                     </Info>
                 </TopRow>

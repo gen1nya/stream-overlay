@@ -3,7 +3,8 @@ import styled from "styled-components";
 import {downscaleSpectrumWeighted} from "../../utils";
 
 /*  ===============================
-    FFTBars — N‑channel spectrum visualizer with peaks
+    FFTBars – N‑channel spectrum visualizer with peaks
+    Updated for Uint8Array binary protocol
     =============================== */
 
 const Canvas = styled.canvas`
@@ -12,7 +13,6 @@ const Canvas = styled.canvas`
     display: block;
 `;
 
-/* квадратичный easing для падения пика */
 const easeQuad = (x) => x * x;
 
 const FFTBars = ({
@@ -20,15 +20,13 @@ const FFTBars = ({
                      barColor          = "#37ff00",
                      barGradient       = true,
                      backgroundColor   = "rgba(197,89,89,0.06)",
-                     smoothDuration    = 60,      // ms, smoothing duration
+                     smoothDuration    = 33,      // ms, smoothing duration
                      reconnectInterval = 2000,    // ms, socket reconnect interval
-                     /* ----- пики ----- */
-                     peakHold          = 10,     // ms, peak hold duration
+                     peakHold          = 10,      // ms, peak hold duration
                      peakFall          = 800,     // ms, peak fall duration
                      peakColor         = "#ce00ff",
                      peakThickness     = 2,       // px, thickness of peak line
-                     /* ----- количество полос ----- */
-                    bars              = 256,     // number of frequency bands
+                     bars              = 256,     // number of frequency bands
                  }) => {
     const BAR_COUNT = bars;
 
@@ -54,7 +52,7 @@ const FFTBars = ({
     const animStart  = useRef(performance.now());
     const lastDraw   = useRef(animStart.current);
     const frameRef   = useRef();
-    const runningRef = useRef(true);  // pause on visibility change (tab hidden)
+    const runningRef = useRef(true);
     const optsRef = useRef({
         barColor,
         barGradient,
@@ -90,12 +88,9 @@ const FFTBars = ({
 
     const handleResize = (ctx) => {
         const canvas = canvasRef.current;
-        //canvas.width  = canvas.clientWidth;
-        //canvas.height = canvas.clientHeight;
         const rect = canvas.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
-
 
         const W = canvas.width;
         const barW = W / BAR_COUNT;
@@ -108,27 +103,6 @@ const FFTBars = ({
 
         buildGradient(ctx, canvas.height);
     };
-
-    /*useEffect(() => {
-        const interval = setInterval(() => {
-            const values = current.current;
-            const blocks = "▁▂▃▄▅▆▇█";
-            const step = Math.ceil(values.length / 16);
-            const chars = [];
-
-            for (let i = 0; i < values.length; i += step) {
-                const slice = values.slice(i, i + step);
-                const avg = slice.reduce((a, b) => a + b, 0) / slice.length;
-                const level = Math.min(blocks.length - 1, Math.floor(avg * blocks.length));
-                chars.push(blocks[level]);
-            }
-
-            const spectrumStr = chars.join("");
-
-            document.title = (spectrumStr);
-        }, 32);
-        return () => clearInterval(interval);
-    }, []);*/
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -218,29 +192,40 @@ const FFTBars = ({
         const wsRef = { current: null };
         const timerRef = { current: null };
         const manualCloseRef = { current: false };
+
         const connect = () => {
             wsRef.current = new WebSocket(wsUrl);
-
+            wsRef.current.binaryType = 'arraybuffer';
             wsRef.current.onmessage = (e) => {
                 try {
-                    const { type, data } = JSON.parse(e.data);
-                    if (type !== "fft" || !Array.isArray(data)) return;
+                    if (e.data instanceof ArrayBuffer) {
+                        let normalizedData;
+                        // Binary mode: check message type
+                        const view = new DataView(e.data);
+                        const type = view.getUint16(0, true); // 2-byte header, little-endian
 
-                    const input = data.map(x => Math.min(1, Math.max(0, x)));
+                        if (type === 1) { // FFT spectrum
+                            const uint8Data = new Uint8Array(e.data, 2); // skip 2-byte header
+                            //console.log("Received FFT data (binary)", uint8Data);
+                            normalizedData = Array.from(uint8Data).map(x => x / 255.0);
+                        } else {
+                            return; // Not FFT data
+                        }
 
-                    let processed;
-                    if (input.length === bars) {
-                        processed = input;
-                    } else {
-                        processed = downscaleSpectrumWeighted(input, bars);
+                        let processed;
+                        if (normalizedData.length === bars) {
+                            processed = normalizedData;
+                        } else {
+                            processed = downscaleSpectrumWeighted(normalizedData, bars);
+                        }
+
+                        start.current.set(current.current);
+                        for (let i = 0; i < bars; i++) {
+                            target.current[i] = processed[i];
+                        }
+
+                        animStart.current = performance.now();
                     }
-
-                    start.current.set(current.current);
-                    for (let i = 0; i < bars; i++) {
-                        target.current[i] = processed[i];
-                    }
-
-                    animStart.current = performance.now();
                 } catch (err) {
                     console.error("WS parse error", err);
                 }
@@ -251,7 +236,12 @@ const FFTBars = ({
                     timerRef.current = setTimeout(connect, reconnectInterval);
                 }
             };
+
+            wsRef.current.onerror = (err) => {
+                console.error("WebSocket error:", err);
+            };
         };
+
         connect();
 
         /* ---- cleanup ---- */
@@ -274,19 +264,3 @@ const FFTBars = ({
 };
 
 export default FFTBars;
-
-
-/*
-function generateBands(count = 256, fStart = 20, fEnd = 20000, curve = 1) {
-    const bands = [];
-
-    for (let i = 0; i < count; i++) {
-        const x = i / (count - 1);
-        const powered = Math.pow(x, curve);
-        const freq = fStart * Math.pow(fEnd / fStart, powered);
-        bands.push(Math.round(freq));
-    }
-
-    return bands;
-}
-**/

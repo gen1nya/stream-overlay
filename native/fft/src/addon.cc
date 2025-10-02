@@ -144,16 +144,16 @@ Napi::Value OnFft(const Napi::CallbackInfo& info){
   cbRef_.Ref();
 
   // Перепривязываем колбэк движка к этому инстансу.
-  eng_.setCallback([this](const std::vector<float>& v){
+  eng_.setCallback([this](const std::vector<uint8_t>& v){
     // копируем спектр, чтобы избежать гонок, и держим его живым до завершения JS-вызова
-    auto payload = std::make_shared<std::vector<float>>(v);
+    auto payload = std::make_shared<std::vector<uint8_t>>(v);
     this->tsfn_.BlockingCall(
       payload.get(),
-      [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<float>* data){
+      [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<uint8_t>* data){
         Napi::HandleScope scope(env);
         if(!this->cbRef_.IsEmpty()){
-          auto arr = Napi::Float32Array::New(env, data->size());
-          std::memcpy(arr.Data(), data->data(), data->size()*sizeof(float));
+          auto arr = Napi::Uint8Array::New(env, data->size());
+          std::memcpy(arr.Data(), data->data(), data->size()); // sizeof(uint8_t) = 1, можно опустить
           this->cbRef_.Call({ arr });
         }
         // payload держится захватом до выхода из этой лямбды

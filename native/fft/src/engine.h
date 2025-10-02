@@ -19,8 +19,9 @@ struct DeviceInfo { std::wstring id; std::wstring name; enum class Flow{Render, 
 
 class WasapiEngine {
 public:
-  using FftCallback = std::function<void(const std::vector<float>&)>;
+  //using FftCallback = std::function<void(const std::vector<float>&)>;
   //using WaveCallback = std::function<void(const std::vector<float>&)>;
+  using FftCallback = std::function<void(const std::vector<uint8_t>&)>;
   using WaveCallback = std::function<void(const std::vector<int16_t>&)>;
 
   WasapiEngine();
@@ -63,7 +64,7 @@ private:
   BinMap binmap_{};
   int sampleRate_ = 0;
   FloatRingBuffer sampleBuf_{4096*4};
-  TripleBuffer<float> specBuf_{256};
+  TripleBuffer<uint8_t> specBuf_{256};
   FftCallback cb_;
   WaveCallback waveCb_;
 

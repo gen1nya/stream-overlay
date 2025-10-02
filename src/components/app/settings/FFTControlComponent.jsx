@@ -136,7 +136,7 @@ const DemoButton = styled(ActionButton)`
 `;
 
 const FFTWrapper = styled.div`
-    width: 400px;
+    width: 360px;
     height: calc(74px);
     margin-top: -20px;
     margin-right: 20px;
@@ -344,8 +344,7 @@ export default function FFTControlComponent() {
                     {/* FFT визуализация показывается всегда в заголовке */}
                     <FFTWrapper>
                         <FFTBars
-                            bars={64}
-                            barWidth={4}
+                            bars={60}
                             peakThickness={1}
                             peakColor={'rgba(100,108,255,0.8)'}
                             barColor={'rgba(128,100,255,0.4)'}

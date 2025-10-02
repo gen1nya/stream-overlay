@@ -1,10 +1,10 @@
 import {LogService} from "./services/logService";
-
-const {media, fft} = require('./native');
 import WebSocket from "ws";
 import ElectronStore from "electron-store";
 import {AudioConfig, AudioDevice, StoreSchema} from "./services/store/StoreSchema";
 import {ipcMain} from "electron";
+
+const {media, fft} = require('./native');
 
 interface MediaMetadata {
     title: string;
@@ -28,7 +28,6 @@ export class AudiosessionManager {
     // Кеш для текущего состояния медиасессии
     private currentMediaMetadata: MediaMetadata | null = null;
     private currentFFTSpectrum: number[] | null = null;
-    private currentWave: number[] | null = null;
 
     constructor(store: ElectronStore<StoreSchema>, logService: LogService) {
         this.appStorage = store;
@@ -95,7 +94,7 @@ export class AudiosessionManager {
         });
     }
 
-    createMessage(type: number, data: Int16Array | Float32Array): ArrayBuffer {
+    createMessage(type: number, data: Int16Array | Uint8Array): ArrayBuffer {
         const header = new Uint16Array([type]);
         const payload = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
 
@@ -109,10 +108,6 @@ export class AudiosessionManager {
     private setupMediaBridges() {
         const waveFormSource = new Promise((resolve) => {
             this.fftbridge.onWave((waveform: Int16Array) => {
-                const waveformValues = Object.values(waveform) as number[];
-                this.currentWave = waveformValues;
-
-                //const message = JSON.stringify({waveform, waveformValues});
                 this.mediaWss.clients.forEach((client) => {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(this.createMessage(0, waveform));
@@ -121,10 +116,15 @@ export class AudiosessionManager {
             })
         });
         const fftSource = new Promise((resolve) => {
-            this.fftbridge.onFft((spectrum: any) => {
+            this.fftbridge.onFft((spectrum: Uint8Array) => {
                 const spectrumValues = Object.values(spectrum) as number[];
                 this.currentFFTSpectrum = spectrumValues;
                 this.broadcastMedia('fft', spectrumValues);
+                this.mediaWss.clients.forEach((client) => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(this.createMessage(1, spectrum));
+                    }
+                });
             })
         });
 
@@ -201,7 +201,6 @@ export class AudiosessionManager {
 
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
-        this.currentWave = null;
 
         console.log("✅ AudiosessionManager closed");
     }
@@ -228,7 +227,6 @@ export class AudiosessionManager {
     clearMediaState() {
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
-        this.currentWave = null;
         this.broadcastMedia('clear', null);
     }
 

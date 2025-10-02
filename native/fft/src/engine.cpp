@@ -267,7 +267,8 @@ void WasapiEngine::computeFftAndPublish(const float* frame){
   }
 
   kiss_fftr(kiss_->cfg, kiss_->in.data(), kiss_->out.data());
-  auto& out = specBuf_.writeBuf(); out.resize(plan_.columns);
+
+  /* auto& out = specBuf_.writeBuf(); out.resize(plan_.columns);
   const float dbFloor = plan_.dbFloor;
   for(int b=0;b<plan_.columns;++b){
     double sum=0;
@@ -288,5 +289,33 @@ void WasapiEngine::computeFftAndPublish(const float* frame){
     if (clampUnit_) v = std::max(0.0f, std::min(1.0f, v));
     out[b] = v;
   }
-  specBuf_.publish(); if(cb_) cb_(specBuf_.readBuf());
+  specBuf_.publish(); if(cb_) cb_(specBuf_.readBuf()); */
+  auto& out = specBuf_.writeBuf();
+    out.resize(plan_.columns);
+    const float dbFloor = plan_.dbFloor;
+
+    for(int b=0;b<plan_.columns;++b){
+      double sum=0;
+      int cnt=0;
+      for(int j=binmap_.start[b]; j<binmap_.end[b]; ++j,++cnt){
+          double re = kiss_->out[j].r;
+          double im = kiss_->out[j].i;
+          const double ampScale = 2.0 / double(plan_.fftSize);
+          sum += std::sqrt(re*re + im*im) * ampScale;
+      }
+      double lin = cnt>0 ? sum/cnt : 0.0;
+      double db = 20.0*std::log10(lin + 1e-20);
+
+      double clamped = std::max(db, (double)dbFloor);
+      double norm = double(b+10)/double(plan_.columns+10);
+      double gain = std::pow(norm, (double)tiltExp_);
+      float v = float(((clamped - dbFloor)/-dbFloor) * gain * masterGain_);
+      if (clampUnit_) v = std::max(0.0f, std::min(1.0f, v));
+
+      // Конвертируем float [0..1] в uint8 [0..255]
+      out[b] = static_cast<uint8_t>(std::round(v * 255.0f));
+    }
+
+    specBuf_.publish();
+    if(cb_) cb_(specBuf_.readBuf());
 }

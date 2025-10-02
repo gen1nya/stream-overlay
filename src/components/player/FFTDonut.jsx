@@ -249,27 +249,35 @@ const FFTDonut = ({
         const manualCloseRef = { current: false };
         const connect = () => {
             wsRef.current = new WebSocket(wsUrl);
-
+            wsRef.current.binaryType = 'arraybuffer';
             wsRef.current.onmessage = (e) => {
                 try {
-                    const { type, data } = JSON.parse(e.data);
-                    if (type !== "fft" || !Array.isArray(data)) return;
+                    if (e.data instanceof ArrayBuffer) {
+                        let normalizedData;
+                        const view = new DataView(e.data);
+                        const type = view.getUint16(0, true); // 2-byte header, little-endian
 
-                    const input = data.map(x => Math.min(1, Math.max(0, x)));
+                        if (type === 1) { // FFT spectrum
+                            const uint8Data = new Uint8Array(e.data, 2);
+                            normalizedData = Array.from(uint8Data).map(x => x / 255.0);
+                        } else {
+                            return; // Not FFT data
+                        }
 
-                    let processed;
-                    if (input.length === bars) {
-                        processed = input;
-                    } else {
-                        processed = downscaleSpectrumWeighted(input, bars);
+                        let processed;
+                        if (normalizedData.length === bars) {
+                            processed = normalizedData;
+                        } else {
+                            processed = downscaleSpectrumWeighted(normalizedData, bars);
+                        }
+
+                        start.current.set(current.current);
+                        for (let i = 0; i < bars; i++) {
+                            target.current[i] = processed[i];
+                        }
+
+                        animStart.current = performance.now();
                     }
-
-                    start.current.set(current.current);
-                    for (let i = 0; i < bars; i++) {
-                        target.current[i] = processed[i];
-                    }
-
-                    animStart.current = performance.now();
                 } catch (err) {
                     console.error("WS parse error", err);
                 }
@@ -279,6 +287,10 @@ const FFTDonut = ({
                 if (!manualCloseRef.current && reconnectInterval > 0) {
                     timerRef.current = setTimeout(connect, reconnectInterval);
                 }
+            };
+
+            wsRef.current.onerror = (err) => {
+                console.error("WebSocket error:", err);
             };
         };
         connect();

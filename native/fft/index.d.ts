@@ -7,7 +7,8 @@ export interface FftBridge {
   setHopSize(hopSize: number): void
   setColumns(columns: number): void
   enable(on: boolean): void
-  onFft(cb: (spectrum: Float32Array)=>void): void
+  //onFft(cb: (spectrum: Float32Array)=>void): void
+  onFft(cb: (spectrum: Uint8Array) => void): void
   onWave(cb: (waveform: Int16Array )=>void): void
 }
 export const FftBridge: { new(): FftBridge }
