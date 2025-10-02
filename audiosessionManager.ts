@@ -95,12 +95,29 @@ export class AudiosessionManager {
         });
     }
 
+    createMessage(type: number, data: Int16Array | Float32Array): ArrayBuffer {
+        const header = new Uint16Array([type]);
+        const payload = new Uint8Array(data.buffer, data.byteOffset, data.byteLength);
+
+        const combined = new Uint8Array(header.byteLength + payload.length);
+        combined.set(new Uint8Array(header.buffer), 0);
+        combined.set(payload, header.byteLength);
+
+        return combined.buffer;
+    }
+
     private setupMediaBridges() {
         const waveFormSource = new Promise((resolve) => {
-            this.fftbridge.onWave((waveform: any) => {
+            this.fftbridge.onWave((waveform: Int16Array) => {
                 const waveformValues = Object.values(waveform) as number[];
                 this.currentWave = waveformValues;
-                this.broadcastMedia('waveform', waveformValues);
+
+                //const message = JSON.stringify({waveform, waveformValues});
+                this.mediaWss.clients.forEach((client) => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(this.createMessage(0, waveform));
+                    }
+                });
             })
         });
         const fftSource = new Promise((resolve) => {

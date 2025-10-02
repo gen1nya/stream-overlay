@@ -106,15 +106,15 @@ private:
       waveRef_ = Napi::Persistent(info[0].As<Napi::Function>());
       waveRef_.Ref();
 
-      eng_.setWaveCallback([this](const std::vector<float>& v){
-        auto payload = std::make_shared<std::vector<float>>(v);
+      eng_.setWaveCallback([this](const std::vector<int16_t>& v){
+        auto payload = std::make_shared<std::vector<int16_t>>(v);
         this->tsfn_.BlockingCall(
           payload.get(),
-          [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<float>* data){
+          [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<int16_t>* data){
             Napi::HandleScope scope(env);
             if(!this->waveRef_.IsEmpty()){
-              auto arr = Napi::Float32Array::New(env, data->size());
-              std::memcpy(arr.Data(), data->data(), data->size()*sizeof(float));
+              auto arr = Napi::Int16Array::New(env, data->size());
+              std::memcpy(arr.Data(), data->data(), data->size()*sizeof(int16_t));
               this->waveRef_.Call({ arr });
             }
           }
@@ -122,7 +122,7 @@ private:
       });
 
       return info.Env().Undefined();
-}
+    }
 
   Napi::Value SetBufferSize(const Napi::CallbackInfo& info){ try{ eng_.setFftSize(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
   Napi::Value SetHopSize(const Napi::CallbackInfo& info){ try{ eng_.setHopSize(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }

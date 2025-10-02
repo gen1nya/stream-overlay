@@ -20,7 +20,9 @@ struct DeviceInfo { std::wstring id; std::wstring name; enum class Flow{Render, 
 class WasapiEngine {
 public:
   using FftCallback = std::function<void(const std::vector<float>&)>;
-  using WaveCallback = std::function<void(const std::vector<float>&)>;
+  //using WaveCallback = std::function<void(const std::vector<float>&)>;
+  using WaveCallback = std::function<void(const std::vector<int16_t>&)>;
+
   WasapiEngine();
   ~WasapiEngine();
 
@@ -45,6 +47,7 @@ private:
   void stop();
   void workerLoop();
   void computeFftAndPublish(const float* frame);
+  void publishWaveform();
 
   // COM
   Microsoft::WRL::ComPtr<IMMDeviceEnumerator> enumr_;
@@ -76,4 +79,7 @@ private:
   // kissfft state
   struct Kiss;
   Kiss* kiss_ = nullptr; // forward-declared PIMPL
+
+  std::vector<float> waveformBuf_;
+  std::mutex waveformMutex_;
 };

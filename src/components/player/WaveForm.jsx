@@ -2,7 +2,8 @@ import React, { useEffect, useRef } from "react";
 import styled from "styled-components";
 
 /*  ===============================
-    WaveForm — Oscilloscope-style waveform visualizer
+    WaveForm – Oscilloscope-style waveform visualizer
+    Updated for Int16Array data (1024 samples at 60Hz)
     =============================== */
 
 const Canvas = styled.canvas`
@@ -20,10 +21,11 @@ const WaveForm = ({
                       centerLineColor   = "rgba(255,255,255,0.3)",
                       showGrid          = true,
                       showCenterLine    = true,
-                      smoothDuration    = 30,      // ms, smoothing duration (shorter for waveform)
+                      smoothDuration    = 16,      // ms, smoothing duration (matches 60Hz update rate)
                       reconnectInterval = 2000,    // ms, socket reconnect interval
-                      amplitude         = 1,     // vertical scale factor (0-1)
-                      samples           = 4096,    // expected number of samples
+                      amplitude         = 2,       // vertical scale factor (0-1)
+                      samples           = 1024,    // expected number of samples (downsampled from 2048)
+                      useBinary         = true,   // set to true for binary WebSocket (more efficient)
                   }) => {
 
     /* ========= utils ========= */
@@ -208,24 +210,41 @@ const WaveForm = ({
         const connect = () => {
             wsRef.current = new WebSocket(wsUrl);
 
+            // Set binary mode if enabled
+            if (useBinary) {
+                wsRef.current.binaryType = 'arraybuffer';
+            }
+
             wsRef.current.onmessage = (e) => {
                 try {
-                    const { type, data } = JSON.parse(e.data);
-                    if (type !== "waveform" || !Array.isArray(data)) return;
+                    let normalizedData;
 
-                    // Clamp values to reasonable range for audio waveform
-                    const input = data.map(x => Math.min(2, Math.max(-2, x*2)));
+                    if (useBinary && e.data instanceof ArrayBuffer) {
+                        const view = new DataView(e.data);
+                        const type = view.getUint16(0, true); // little-endian
+                        if (type === 0) {
+                            const int16Data = new Int16Array(e.data, 2); // offset = 2 байта
+                            normalizedData = Array.from(int16Data).map(x => x / 32768.0);
+                        }
+                    } else {
+                        // JSON mode: parse and normalize
+                        const { type, data } = JSON.parse(e.data);
+                        if (type !== "waveform" || !Array.isArray(data)) return;
+
+                        // Normalize int16 values to float range
+                        normalizedData = data.map(x => x / 32768.0);
+                    }
 
                     // Resize arrays if needed
-                    if (input.length !== current.current.length) {
-                        current.current = new Float32Array(input.length);
-                        start.current = new Float32Array(input.length);
-                        target.current = new Float32Array(input.length);
+                    if (normalizedData.length !== current.current.length) {
+                        current.current = new Float32Array(normalizedData.length);
+                        start.current = new Float32Array(normalizedData.length);
+                        target.current = new Float32Array(normalizedData.length);
                     }
 
                     // Setup smooth transition
                     start.current.set(current.current);
-                    target.current.set(input);
+                    target.current.set(normalizedData);
 
                     animStart.current = performance.now();
                 } catch (err) {
@@ -260,6 +279,7 @@ const WaveForm = ({
         reconnectInterval,
         samples,
         smoothDuration,
+        useBinary,
     ]);
 
     return <Canvas ref={canvasRef} />;
