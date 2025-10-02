@@ -30,6 +30,7 @@ public:
       InstanceMethod("enable", &Bridge::Enable),
       InstanceMethod("onFft", &Bridge::OnFft),
       InstanceMethod("stop", &Bridge::Stop),
+      InstanceMethod("onWave", &Bridge::OnWave),
     });
     exports.Set("FftBridge", ctor); return exports;
   }
@@ -95,6 +96,34 @@ private:
     } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); return info.Env().Undefined(); }
   }
 
+    Napi::Value OnWave(const Napi::CallbackInfo& info){
+      if(!info[0].IsFunction()){
+        Napi::TypeError::New(info.Env(), "callback required").ThrowAsJavaScriptException();
+        return info.Env().Undefined();
+      }
+
+      if(!waveRef_.IsEmpty()) waveRef_.Unref();
+      waveRef_ = Napi::Persistent(info[0].As<Napi::Function>());
+      waveRef_.Ref();
+
+      eng_.setWaveCallback([this](const std::vector<float>& v){
+        auto payload = std::make_shared<std::vector<float>>(v);
+        this->tsfn_.BlockingCall(
+          payload.get(),
+          [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<float>* data){
+            Napi::HandleScope scope(env);
+            if(!this->waveRef_.IsEmpty()){
+              auto arr = Napi::Float32Array::New(env, data->size());
+              std::memcpy(arr.Data(), data->data(), data->size()*sizeof(float));
+              this->waveRef_.Call({ arr });
+            }
+          }
+        );
+      });
+
+      return info.Env().Undefined();
+}
+
   Napi::Value SetBufferSize(const Napi::CallbackInfo& info){ try{ eng_.setFftSize(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
   Napi::Value SetHopSize(const Napi::CallbackInfo& info){ try{ eng_.setHopSize(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
   Napi::Value SetColumns(const Napi::CallbackInfo& info){ try{ eng_.setColumns(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
@@ -138,6 +167,7 @@ Napi::Value OnFft(const Napi::CallbackInfo& info){
   WasapiEngine eng_;
   Napi::ThreadSafeFunction tsfn_;
   Napi::FunctionReference cbRef_;
+  Napi::FunctionReference waveRef_;
 };
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports){ return Bridge::Init(env, exports); }

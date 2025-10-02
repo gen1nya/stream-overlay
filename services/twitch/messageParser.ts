@@ -56,14 +56,19 @@ export interface ParserRedeemMessage extends Identity {
   reward: any;
 }
 
+export interface ParsedBroadcastStatus extends Identity  {
+  isOnline: boolean;
+}
+
 export type ChatEvent  = Envelope<'chat', ParsedIrcMessage>;
 export type SystemEvent  = Envelope<'system', ParsedIrcMessage>;
 export type JoinEvent  = Envelope<'join', ParsedIrcMessage>;
 export type PartEvent  = Envelope<'part', ParsedIrcMessage>;
 export type RedeemEvent  = Envelope<'redemption', ParserRedeemMessage>;
 export type FollowEvent  = Envelope<'follow', ParserFollowMessage>;
+export type BroadcastEvent  = Envelope<'broadcast', ParsedBroadcastStatus>;
 
-export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | JoinEvent | PartEvent;
+export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | JoinEvent | PartEvent | BroadcastEvent;
 
 export const emptyRoles: ChatRoles = {
     isModerator: false,

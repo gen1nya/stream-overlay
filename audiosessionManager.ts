@@ -1,3 +1,5 @@
+import {LogService} from "./services/logService";
+
 const {media, fft} = require('./native');
 import WebSocket from "ws";
 import ElectronStore from "electron-store";
@@ -26,8 +28,9 @@ export class AudiosessionManager {
     // Кеш для текущего состояния медиасессии
     private currentMediaMetadata: MediaMetadata | null = null;
     private currentFFTSpectrum: number[] | null = null;
+    private currentWave: number[] | null = null;
 
-    constructor(store: ElectronStore<StoreSchema>) {
+    constructor(store: ElectronStore<StoreSchema>, logService: LogService) {
         this.appStorage = store;
         this.config = this.appStorage.get("audio")
 
@@ -37,14 +40,24 @@ export class AudiosessionManager {
 
         const device = this.config.fft.device;
         if (device) {
-            if (this.fftbridge.setDevice(device.id)) {
+            const devices = this.fftbridge.listDevices()
+            const validDevice = devices.find(d => d.id === device.id);
+            if (validDevice) {
+                logService.logMessage(`Restoring saved audio device: ${device.name}`);
+            } else {
+                logService.logMessage(`Saved audio device not found: ${device.name}; Reset`);
+                this.appStorage.set("audio.fft.device", null);
+            }
+            if (validDevice && this.fftbridge.setDevice(device.id)) {
                 this.fftbridge.setLoopback(device.flow === 'render');
                 console.log(`Audio device set to: ${device.name}`);
+                logService.logMessage(`Audio device set to: ${device.name}`);
                 if (this.config.fft.enabled) {
                     this.fftbridge.enable(true);
                     console.log("FFT enabled");
                 }
             } else {
+                logService.logMessage(`Failed to set audio device: ${device.name}`);
                 console.error(`Failed to set audio device: ${device.name}`);
             }
         }
@@ -83,6 +96,13 @@ export class AudiosessionManager {
     }
 
     private setupMediaBridges() {
+        const waveFormSource = new Promise((resolve) => {
+            this.fftbridge.onWave((waveform: any) => {
+                const waveformValues = Object.values(waveform) as number[];
+                this.currentWave = waveformValues;
+                this.broadcastMedia('waveform', waveformValues);
+            })
+        });
         const fftSource = new Promise((resolve) => {
             this.fftbridge.onFft((spectrum: any) => {
                 const spectrumValues = Object.values(spectrum) as number[];
@@ -129,6 +149,12 @@ export class AudiosessionManager {
         }).catch((err) => {
             console.error("Error starting FftBridge:", err);
         });
+
+        waveFormSource.then(() => {
+            console.log("Waveform source finished successfully");
+        }).catch((err) => {
+            console.error("Error in waveform source:", err);
+        });
     }
 
     close() {
@@ -158,6 +184,7 @@ export class AudiosessionManager {
 
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
+        this.currentWave = null;
 
         console.log("✅ AudiosessionManager closed");
     }
@@ -184,6 +211,7 @@ export class AudiosessionManager {
     clearMediaState() {
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
+        this.currentWave = null;
         this.broadcastMedia('clear', null);
     }
 

@@ -18,6 +18,33 @@ export function lightenColor([r, g, b], amount = 0.4) {
     ];
 }
 
+export const parseRgbaToHexAndAlpha = (rgba) => {
+    if (!rgba || typeof rgba !== 'string') {
+        return { hex: '#000000', alpha: 1 };
+    }
+
+    if (rgba.startsWith('#')) {
+        return { hex: rgba, alpha: 1 };
+    }
+
+    const match = rgba.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)/);
+    if (!match) {
+        return { hex: '#000000', alpha: 1 };
+    }
+
+    const r = parseInt(match[1]);
+    const g = parseInt(match[2]);
+    const b = parseInt(match[3]);
+    const a = match[4] ? parseFloat(match[4]) : 1;
+
+    const hex = '#' + [r, g, b].map(x => {
+        const hex = x.toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+    }).join('');
+
+    return { hex, alpha: a };
+};
+
 export function downscaleSpectrumWeighted(input, targetSize) {
     const inputSize = input.length;
     const output = new Array(targetSize);

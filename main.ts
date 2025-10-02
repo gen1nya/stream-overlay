@@ -52,7 +52,13 @@ const store = new Store<StoreSchema>({
   },
 });
 
-const audiosessionManager = new AudiosessionManager(store);
+const wss = new WebSocket.Server({ port: 42001 });
+
+const logService = new LogService((logs) => {
+  broadcast('log:updated', { logs });
+}, 100);
+
+const audiosessionManager = new AudiosessionManager(store, logService);
 const proxy = new ProxyService();
 
 /* Theme migration */
@@ -115,11 +121,6 @@ const applyAction = async (action: { type: string; payload: any }) => {
       break;
   }
 };
-
-const logService = new LogService((logs) => {
-  broadcast('log:updated', { logs });
-}, 100);
-
 const middlewareProcessor = new MiddlewareProcessor(applyAction, logService);
 
 const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
@@ -159,8 +160,6 @@ const scraper = new YouTubeLiveStreamsScraper(
     },
     proxy
 );
-
-const wss = new WebSocket.Server({ port: 42001 });
 
 function broadcast(channel: string, payload: any) {
   const message = JSON.stringify({ channel, payload });
@@ -233,6 +232,12 @@ app.whenReady().then(() => {
             break;
         case 'theme:get':
           broadcast('theme:update', currentTheme);
+          break;
+        case 'status:get_broadcasting':
+          twitchClient.checkBroadcastingStatus().then(isLive => {});
+          break;
+        case 'event:get-new-followers-count':
+          twitchClient.broadcastNewFollowersPerStream()
           break;
         case 'log:get':
             const logs = logService.getLogs();

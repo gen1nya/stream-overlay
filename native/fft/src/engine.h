@@ -20,6 +20,7 @@ struct DeviceInfo { std::wstring id; std::wstring name; enum class Flow{Render, 
 class WasapiEngine {
 public:
   using FftCallback = std::function<void(const std::vector<float>&)>;
+  using WaveCallback = std::function<void(const std::vector<float>&)>;
   WasapiEngine();
   ~WasapiEngine();
 
@@ -36,6 +37,8 @@ public:
   void setLoopback(bool on);   // toggle loopback for render devices
   void enable(bool on);
   void setCallback(FftCallback cb);
+  void setWaveCallback(WaveCallback cb);
+
 
 private:
   void start();
@@ -59,6 +62,7 @@ private:
   FloatRingBuffer sampleBuf_{4096*4};
   TripleBuffer<float> specBuf_{256};
   FftCallback cb_;
+  WaveCallback waveCb_;
 
   // device props
   EDataFlow dataflow_ = eRender; // render or capture

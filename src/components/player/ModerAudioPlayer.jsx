@@ -4,6 +4,7 @@ import {hexToRgba, lightenColor} from "../../utils.js"
 import FFTBars from "./FFTBars";
 import useReconnectingWebSocket from "../../hooks/useReconnectingWebSocket";
 import ColorThief from "colorthief";
+import WaveForm from "./WaveForm";
 
 const ensureRgba = (color, opacity = 1) => {
     if (color.includes('rgba')) return color;
@@ -399,6 +400,12 @@ function ModernAudioPlayer() {
                                 barColor={spectrumColor}
                                 peakColor={spectrumPeakColor}
                             />
+                            {/*
+                            <WaveForm
+                                backgroundColor={"rgba(255,255,255,0.02)"}
+                                lineColor={spectrumPeakColor}
+                            />
+                            */}
                         </FFTWrapper>
                     </Info>
                 </TopRow>

@@ -29,6 +29,15 @@ export class LogService {
         this.onLogsUpdated(this.getLogs());
     }
 
+    logMessage(message: string): void {
+        this.log({
+            timestamp: new Date().toISOString(),
+            message,
+            userId: null,
+            userName: null
+        });
+    }
+
     getLogs(): LogMessage[] {
         const logs: LogMessage[] = [];
         for (let i = 0; i < this.count; i++) {

@@ -6,13 +6,15 @@ import {UserState, UserStateHolder} from './UserStateHolder';
 import { LogService } from '../logService';
 import {Follower, UserData} from './types/UserData';
 import { AppEvent } from './messageParser';
-import {fetchFollower, fetchModerators, fetchVips} from "./authorizedHelixApi";
+import {fetchFollower, fetchModerators, fetchStreams, fetchVips} from "./authorizedHelixApi";
 import {DbRepository} from "../db/DbRepository";
 import {ipcMain} from "electron";
+import {EVENT_BROADCASTING} from "./esService";
 
 export class TwitchClient extends EventEmitter {
   private userState: UserStateHolder;
   private dbRepository: DbRepository | null = null;
+  private newFollowers: Set<string> = new Set();
 
   constructor(
     private logService: LogService,
@@ -37,6 +39,18 @@ export class TwitchClient extends EventEmitter {
     eventSubService.registerEventHandlers((destination, parsedEvent: AppEvent) => {
         console.log('event', destination, parsedEvent);
         this.emit('event', { destination, event: parsedEvent });
+        if (parsedEvent.type === "broadcast") {
+            this.userState.setIsBroadcasting(parsedEvent.isOnline);
+            if (!parsedEvent.isOnline) {
+                this.newFollowers.clear();
+                this.broadcastNewFollowersPerStream();
+            }
+        }
+        if (parsedEvent.type === "follow" && parsedEvent.userId) {
+          console.log('New follower:', parsedEvent.userNameRaw);
+          this.newFollowers.add(parsedEvent.userId);
+          this.broadcastNewFollowersPerStream()
+        }
         if (parsedEvent.userId) {
             this.dbRepository?.users.updateLastSeen(parsedEvent.userId, parsedEvent.timestamp);
         }
@@ -55,6 +69,8 @@ export class TwitchClient extends EventEmitter {
     await eventSubService.start();
     await chatService.startChat();
     await this.refreshUser();
+    await this.checkBroadcastingStatus();
+
     this.dbRepository = DbRepository.getInstance(this.userState.getUserId() || 'default');
 
     let vips: UserData[] = [];
@@ -149,6 +165,20 @@ export class TwitchClient extends EventEmitter {
 
   getLastChatTimestamp(): number | undefined {
     return chatService.getLastEventTimestamp();
+  }
+
+  async checkBroadcastingStatus() {
+      const isBroadcasting = await this.userState.getIsBroadcasting();
+      const destination = `status:${EVENT_BROADCASTING}`
+      const payload =  { isOnline: isBroadcasting };
+      this.emit('event', { destination: destination, event: payload });
+  }
+
+  broadcastNewFollowersPerStream() {
+    const count = this.newFollowers.size;
+    console.log('New followers this stream:', this.newFollowers);
+    this.emit('event', { destination: "event:new_followers_count", event: count });
+    return count;
   }
 
   private registerIpcHandlers() {

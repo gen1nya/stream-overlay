@@ -1,60 +1,276 @@
 import WebSocket from 'ws';
-import axios from 'axios';
+import axios, { AxiosError } from 'axios';
 import * as authService from './authService';
+import { Tokens } from './authService';
 import MESSAGE_TYPES from './types/eventSubMessageTypes';
-import {AppEvent, FollowEvent, ParserRedeemMessage, RedeemEvent} from "./messageParser";
-import {LogService} from "../logService";
+import { AppEvent, FollowEvent, RedeemEvent } from './messageParser';
+import { LogService } from '../logService';
 
-const knownTypes = Object.values(MESSAGE_TYPES);
-const CLIENT_ID = '1khb6hwbhh9qftsry0gnkm2eeayipc';
-const DEFAULT_URL = 'wss://eventsub.wss.twitch.tv/ws';
-const HEALTH_CHECK_INTERVAL = 60 * 1000;
-const INACTIVITY_THRESHOLD = 6 * 60 * 1000;
-const DEDUP_TTL_MS = 5 * 60 * 1000; // 5 minutes TTL for dedup
+// ============================================================================
+// Configuration
+// ============================================================================
+const CONFIG = {
+  CLIENT_ID: process.env.TWITCH_CLIENT_ID || '1khb6hwbhh9qftsry0gnkm2eeayipc',
+  WS_URL: process.env.EVENTSUB_WS_URL || 'wss://eventsub.wss.twitch.tv/ws',
+  API_BASE_URL: 'https://api.twitch.tv/helix',
+  HEALTH_CHECK_INTERVAL: 60_000,
+  INACTIVITY_THRESHOLD: 360_000,
+  DEDUP_TTL_MS: 300_000,
+  RECONNECT_DELAY: 5000,
+  RESTART_DELAY: 1000,
+  MAX_DEDUP_SIZE: 5000,
+  DEDUP_CLEANUP_SIZE: 4000,
+} as const;
 
-export const EVENT_CHANEL = "event";
-export const EVENT_FOLLOW = "follow";
-export const EVENT_REDEMPTION = "redemption";
+// ============================================================================
+// Types
+// ============================================================================
+type MessageType = typeof MESSAGE_TYPES[keyof typeof MESSAGE_TYPES];
 
-let globalLock: EventSubService | null = null;
+interface SubscriptionConfig {
+  version: string;
+  condition: (broadcasterId: string) => Record<string, string>;
+}
+
+interface SubscriptionDefinitions {
+  [key: string]: SubscriptionConfig;
+}
+
+interface TwitchMessage {
+  metadata: {
+    message_id?: string;
+    message_type: string;
+  };
+  payload: {
+    session?: {
+      id: string;
+      reconnect_url?: string;
+    };
+    subscription?: {
+      type: string;
+    };
+    event?: any;
+  };
+}
+
+interface TwitchSubscription {
+  type: string;
+  status: string;
+  condition: Record<string, any>;
+  transport: {
+    session_id?: string;
+  };
+}
+
+interface StopOptions {
+  setStopping?: boolean;
+  ignoreClose?: boolean;
+}
+
+// ============================================================================
+// Constants
+// ============================================================================
+export const EVENT_CHANEL = 'event';
+export const EVENT_FOLLOW = 'follow';
+export const EVENT_REDEMPTION = 'redemption';
+export const EVENT_BROADCASTING = 'broadcasting';
+
+const KNOWN_MESSAGE_TYPES = Object.values(MESSAGE_TYPES);
+
+// ============================================================================
+// Utility Functions
+// ============================================================================
+function generateConnectionId(): string {
+  return `eventsub_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+}
+
+function createStableKey(obj: any): string {
+  if (!obj || typeof obj !== 'object') {
+    return JSON.stringify(obj);
+  }
+  const sorted: Record<string, any> = {};
+  for (const key of Object.keys(obj).sort()) {
+    sorted[key] = obj[key];
+  }
+  return JSON.stringify(sorted);
+}
+
+function formatFollowEvent(event: any): FollowEvent {
+  return {
+    timestamp: Date.now(),
+    id: `follow_${Date.now()}_${event.user_id}`,
+    type: 'follow',
+    userId: event.user_id,
+    userLogin: event.user_login,
+    userName: event.user_name,
+    followedAt: event.followed_at,
+    userNameRaw: event.user_login,
+  };
+}
+
+function formatRedeemEvent(event: any): RedeemEvent {
+  return {
+    timestamp: Date.now(),
+    id: `redemption_${Date.now()}_${event.user_id}_${event.reward.id}`,
+    type: 'redemption',
+    userId: event.user_id,
+    userLogin: event.user_login,
+    userName: event.user_name,
+    reward: event.reward,
+    userNameRaw: event.user_login,
+  };
+}
+
+// ============================================================================
+// Subscription Definitions
+// ============================================================================
+const SUBSCRIPTION_DEFINITIONS: SubscriptionDefinitions = {
+  'channel.raid': {
+    version: '1',
+    condition: (id) => ({ to_broadcaster_user_id: id }),
+  },
+  'channel.bits.use': {
+    version: '1',
+    condition: (id) => ({ broadcaster_user_id: id }),
+  },
+  'channel.subscribe': {
+    version: '1',
+    condition: (id) => ({ broadcaster_user_id: id }),
+  },
+  'channel.channel_points_custom_reward_redemption.add': {
+    version: '1',
+    condition: (id) => ({ broadcaster_user_id: id }),
+  },
+  'channel.follow': {
+    version: '2',
+    condition: (id) => ({
+      broadcaster_user_id: id,
+      moderator_user_id: id,
+    }),
+  },
+  'stream.online': {
+    version: '1',
+    condition: (id) => ({ broadcaster_user_id: id }),
+  },
+  'stream.offline': {
+    version: '1',
+    condition: (id) => ({ broadcaster_user_id: id }),
+  },
+};
+
+// ============================================================================
+// EventSubService Class
+// ============================================================================
+let globalInstance: EventSubService | null = null;
 
 class EventSubService {
   private ws: WebSocket | null = null;
   private eventHandler: ((dest: string, payload: any) => void) | null = null;
-  private isStopping = false;
-  private isConnecting = false;
-  private connectUrl = DEFAULT_URL;
-  private skipSubscribe = false;
-  private ignoreClose = false;
-  private lastEventTimestamp = Date.now();
-  private healthCheckTimer: NodeJS.Timeout | null = null;
-  private connectionId: string;
   private logger: LogService | null = null;
 
-  // Epoch-based concurrency guard & restart coalescing
+  private isStopping = false;
+  private isConnecting = false;
+  private ignoreClose = false;
+
+  private connectUrl = CONFIG.WS_URL;
+  private skipSubscribe = false;
+  private lastEventTimestamp = Date.now();
+  private connectionId: string;
+
+  private healthCheckTimer: NodeJS.Timeout | null = null;
   private connectEpoch = 0;
   private restarting = false;
   private restartQueued = false;
 
-  // Deduplication of at-least-once deliveries
-  private seenMessageIds: Map<string, number> = new Map();
-
+  private seenMessageIds = new Map<string, number>();
 
   constructor() {
-    if (globalLock) {
+    if (globalInstance) {
       throw new Error('EventSubService already started!');
     }
-    globalLock = this;
-    this.connectionId = this.generateConnectionId();
-    console.log(`🔐 EventSub instance created with ID: ${this.connectionId}`);
-    process.on('exit', () => this.cleanup());
-    process.on('SIGINT', () => this.cleanup());
-    process.on('SIGTERM', () => this.cleanup());
+    globalInstance = this;
+    this.connectionId = generateConnectionId();
+    console.log(`🔷 EventSub instance created with ID: ${this.connectionId}`);
+
+    this.setupProcessHandlers();
     this.initializeService();
   }
 
-  private generateConnectionId(): string {
-    return `eventsub_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  // --------------------------------------------------------------------------
+  // Public Methods
+  // --------------------------------------------------------------------------
+
+  registerEventHandlers(handler: (dest: string, payload: any) => void): void {
+    this.eventHandler = handler;
+  }
+
+  setLogger(logger: LogService): void {
+    this.logger = logger;
+  }
+
+  async start(url = CONFIG.WS_URL, skipSub = false): Promise<void> {
+    this.validateInstance();
+
+    this.isStopping = false;
+    this.connectUrl = url;
+    this.skipSubscribe = skipSub;
+
+    if (this.isWebSocketActive()) {
+      console.log(`ℹ️ [${this.connectionId}] WebSocket already connected.`);
+      return;
+    }
+
+    if (this.isConnecting) {
+      console.log(`⏳ [${this.connectionId}] Connection already in progress.`);
+      return;
+    }
+
+    await this.establishConnection();
+  }
+
+  stop(options: StopOptions = {}): void {
+    const { setStopping = true, ignoreClose = false } = options;
+    console.log(`🛑 [${this.connectionId}] Stopping EventSub...`);
+
+    if (this.ws) {
+      this.ignoreClose = ignoreClose;
+      this.ws.close();
+      this.ws = null;
+    }
+
+    if (setStopping) {
+      this.isStopping = true;
+    }
+
+    this.isConnecting = false;
+    this.clearHealthCheck();
+  }
+
+  getLastEventTimestamp(): number {
+    return this.lastEventTimestamp;
+  }
+
+  getConnectionId(): string {
+    return this.connectionId;
+  }
+
+  static getInstance(): EventSubService | null {
+    return globalInstance;
+  }
+
+  static hasActiveInstance(): boolean {
+    return globalInstance !== null;
+  }
+
+  // --------------------------------------------------------------------------
+  // Private Methods - Initialization
+  // --------------------------------------------------------------------------
+
+  private setupProcessHandlers(): void {
+    const cleanup = () => this.cleanup();
+    process.on('exit', cleanup);
+    process.on('SIGINT', cleanup);
+    process.on('SIGTERM', cleanup);
   }
 
   private initializeService(): void {
@@ -67,385 +283,540 @@ class EventSubService {
     this.startHealthCheck();
   }
 
-  private startHealthCheck(): void {
-    if (this.healthCheckTimer) clearInterval(this.healthCheckTimer);
-    this.healthCheckTimer = setInterval(() => {
-      if (globalLock !== this) {
-        console.error(`❌ [${this.connectionId}] Another instance detected! Stopping.`);
-        this.stop();
-        return;
-      }
-      const inactivity = Date.now() - this.lastEventTimestamp;
-      if (inactivity > INACTIVITY_THRESHOLD && !this.isConnecting && !this.isStopping) {
-        console.warn(`⚠️ [${this.connectionId}] No activity detected, restarting...`);
-        this.safeRestart();
-      }
-    }, HEALTH_CHECK_INTERVAL);
+  private validateInstance(): void {
+    if (globalInstance !== this) {
+      throw new Error(`Attempt to start inactive instance ${this.connectionId}`);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Private Methods - Connection Management
+  // --------------------------------------------------------------------------
+
+  private async establishConnection(): Promise<void> {
+    this.isConnecting = true;
+    const myEpoch = ++this.connectEpoch;
+
+    const tokens = await this.getValidTokens();
+    if (!tokens) {
+      this.isConnecting = false;
+      return;
+    }
+
+    const ws = new WebSocket(this.connectUrl);
+    this.ws = ws;
+
+    this.setupWebSocketHandlers(ws, myEpoch);
+  }
+
+  private setupWebSocketHandlers(ws: WebSocket, epoch: number): void {
+    ws.on('open', () => this.handleOpen(ws, epoch));
+    ws.on('ping', () => this.handlePing(ws));
+    ws.on('message', (data) => this.handleMessage(data, epoch));
+    ws.on('close', () => this.handleClose(epoch));
+    ws.on('error', (err) => this.handleError(err));
+  }
+
+  private isWebSocketActive(): boolean {
+    return (
+        this.ws !== null &&
+        (this.ws.readyState === WebSocket.OPEN ||
+            this.ws.readyState === WebSocket.CONNECTING)
+    );
   }
 
   private async safeRestart(): Promise<void> {
-    // Coalesce concurrent restarts
     if (this.restarting) {
       this.restartQueued = true;
       return;
     }
+
     this.restarting = true;
     console.log(`🔄 [${this.connectionId}] Safe restart...`);
+
     const oldIgnoreClose = this.ignoreClose;
     this.ignoreClose = true;
+
     if (this.ws) {
-      try { this.ws.close(); } catch {}
+      try {
+        this.ws.close();
+      } catch {}
       this.ws = null;
     }
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+
+    await this.delay(CONFIG.RESTART_DELAY);
+
     this.ignoreClose = oldIgnoreClose;
     this.isStopping = false;
     this.isConnecting = false;
+
     try {
       await this.start(this.connectUrl, this.skipSubscribe);
     } finally {
       this.restarting = false;
       if (this.restartQueued) {
         this.restartQueued = false;
-        // run one more restart cycle
         await this.safeRestart();
       }
     }
   }
 
-  registerEventHandlers(handler: (dest: string, payload: any) => void): void {
-    this.eventHandler = handler;
+  // --------------------------------------------------------------------------
+  // Private Methods - WebSocket Event Handlers
+  // --------------------------------------------------------------------------
+
+  private handleOpen(ws: WebSocket, epoch: number): void {
+    if (!this.isCurrentEpoch(epoch)) {
+      try {
+        ws.close();
+      } catch {}
+      return;
+    }
+
+    this.isConnecting = false;
+    this.lastEventTimestamp = Date.now();
+    console.log(`🟢 [${this.connectionId}] Connected to Twitch EventSub`);
+
+    this.log('Соединение с EventSub установлено');
   }
 
-  async start(url = DEFAULT_URL, skipSub = false): Promise<void> {
-    if (globalLock !== this) {
-      throw new Error(`Attempt to start inactive instance ${this.connectionId}`);
+  private handlePing(ws: WebSocket): void {
+    if (ws.readyState === WebSocket.OPEN) {
+      ws.pong();
     }
-    this.isStopping = false;
-    this.connectUrl = url;
-    this.skipSubscribe = skipSub;
-    if (this.ws && (this.ws.readyState === WebSocket.OPEN || this.ws.readyState === WebSocket.CONNECTING)) {
-      console.log(`ℹ️ [${this.connectionId}] WebSocket already connected.`);
-      return;
-    }
-    if (this.isConnecting) {
-      console.log(`⏳ [${this.connectionId}] Connection already in progress.`);
-      return;
-    }
-    this.isConnecting = true;
-    // increase epoch for this connection attempt
-    const myEpoch = ++this.connectEpoch;
-    const tokens = await authService.getTokens();
-    if (!tokens) {
-      console.error(`❌ [${this.connectionId}] No tokens found.`);
-      this.isConnecting = false;
-      return;
-    }
-    const ws = new WebSocket(this.connectUrl);
-    this.ws = ws;
-    ws.on('open', () => {
-      // Ignore events from stale sockets
-      if (myEpoch !== this.connectEpoch) { try { ws.close(); } catch {} return; }
-      this.isConnecting = false;
-      this.lastEventTimestamp = Date.now();
-      console.log(`🟢 [${this.connectionId}] Connected to Twitch EventSub`);
-      this.logger?.log({
-        timestamp: new Date().toISOString(),
-        message: 'Соединение с EventSub установлено',
-        userId: null,
-        userName: null
-      });
-    });
-    ws.on('ping', function () {
-      if (this.readyState === WebSocket.OPEN) {
-        this.pong();
-      }
-    });
-    ws.on('message', async (data) => {
-      // Ignore messages from stale sockets
-      if (myEpoch !== this.connectEpoch) { return; }
-      this.lastEventTimestamp = Date.now();
-      const msg = JSON.parse(data.toString());
-      const { metadata, payload } = msg;
-      // Deduplicate at-least-once deliveries
-      const _mid = metadata?.message_id as string | undefined;
-      if (this.isDuplicateMessage(_mid)) { console.log(`↩️ [${this.connectionId}] Duplicate message ${_mid} ignored`); return; }
-      if (metadata.message_type === MESSAGE_TYPES.NOTIFICATION) {
-        const event = payload.event;
-        if (payload.subscription.type === 'channel.follow') {
-          console.log(`🎉 [${this.connectionId}] Новый фолловер: ${event.user_name}`);
-          const followEvent: FollowEvent = {
-            timestamp: Date.now(),
-            id: `follow_${Date.now()}_${event.user_id}`,
-            type: 'follow',
-            userId: event.user_id,
-            userLogin: event.user_login,
-            userName: event.user_name,
-            followedAt: event.followed_at,
-            userNameRaw: event.user_login
-          };
-          this.logger?.log({
-            timestamp: new Date().toISOString(),
-            message: `Новый фолловер`,
-            userId: event.user_id,
-            userName: event.user_name
-          });
-          this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_FOLLOW}`, followEvent);
-        }
-        if (payload.subscription.type === 'channel.channel_points_custom_reward_redemption.add') {
-          const reward = payload.event.reward;
-          console.log(`🎉 [${this.connectionId}] потрачены балы: ${reward.title}`);
-          const redeemEvent: RedeemEvent = {
-            timestamp: Date.now(),
-            id: `redemption_${Date.now()}_${event.user_id}_${event.reward.id}`,
-            type: 'redemption',
-            userId: event.user_id,
-            userLogin: event.user_login,
-            userName: event.user_name,
-            reward: reward,
-            userNameRaw: event.user_login
-          };
-          this.logger?.log({
-            timestamp: new Date().toISOString(),
-            message: `Потрачены балы (${reward.cost}) на : ${reward.title}`,
-            userId: event.user_id,
-            userName: event.user_name,
-          });
-          this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_REDEMPTION}`, redeemEvent);
-        }
-      }
-      if (metadata.message_type === MESSAGE_TYPES.SESSION_WELCOME) {
-        const sessionId = payload.session.id;
-        console.log(`📡 [${this.connectionId}] Session started, ID:`, sessionId);
-        if (!this.skipSubscribe) {
-          await this.subscribeToEvents(sessionId);
-        }
-        this.skipSubscribe = false;
-      }
-      if (metadata.message_type === MESSAGE_TYPES.SESSION_KEEPALIVE) {
-        console.log(`💓 [${this.connectionId}] Keep-alive received`);
-      }
-      if (metadata.message_type === MESSAGE_TYPES.SESSION_RECONNECT) {
-        const newUrl = payload.session.reconnect_url;
-        console.log(`🔄 [${this.connectionId}] Reconnect requested:`, newUrl);
-        this.stop({ setStopping: false, ignoreClose: true });
-        this.start(newUrl, true);
-      }
-      if (metadata.message_type === MESSAGE_TYPES.REVOCATION) {
-        console.warn(`⚠️ [${this.connectionId}] Subscription revoked:`, payload);
-      }
-      if (!knownTypes.includes(metadata.message_type)) {
-        console.log(`❓ [${this.connectionId}] Unknown message type:`, metadata.message_type);
-      }
-    });
-    ws.on('close', () => {
-      // Ignore close from stale sockets
-      if (myEpoch !== this.connectEpoch) { return; }
-      this.isConnecting = false;
-      console.log(`🔴 [${this.connectionId}] Connection closed`);
-      this.logger?.log({
-        timestamp: new Date().toISOString(),
-        message: 'Соединение с EventSub закрыто',
-        userId: null,
-        userName: null
-      });
-      if (!this.ignoreClose && !this.isStopping && globalLock === this) {
-        setTimeout(() => this.start(), 5000);
-      }
-      this.ignoreClose = false;
-    });
-    ws.on('error', (err) => {
-      this.isConnecting = false;
-      this.logger?.log({
-        timestamp: new Date().toISOString(),
-        message: `Ошибка WebSocket: ${err.message}`,
-        userId: null,
-        userName: null
-      });
-      console.error(`❌ [${this.connectionId}] WebSocket Error:`, err);
-    });
   }
+
+  private async handleMessage(data: WebSocket.Data, epoch: number): Promise<void> {
+    if (!this.isCurrentEpoch(epoch)) {
+      return;
+    }
+
+    this.lastEventTimestamp = Date.now();
+
+    try {
+      const message: TwitchMessage = JSON.parse(data.toString());
+      const { metadata, payload } = message;
+
+      if (this.isDuplicateMessage(metadata.message_id)) {
+        console.log(`↩️ [${this.connectionId}] Duplicate message ${metadata.message_id} ignored`);
+        return;
+      }
+
+      await this.processMessage(metadata.message_type as MessageType, payload);
+    } catch (error) {
+      console.error(`❌ [${this.connectionId}] Error processing message:`, error);
+    }
+  }
+
+  private handleClose(epoch: number): void {
+    if (!this.isCurrentEpoch(epoch)) {
+      return;
+    }
+
+    this.isConnecting = false;
+    console.log(`🔴 [${this.connectionId}] Connection closed`);
+    this.log('Соединение с EventSub закрыто');
+
+    if (!this.ignoreClose && !this.isStopping && globalInstance === this) {
+      setTimeout(() => this.start(), CONFIG.RECONNECT_DELAY);
+    }
+
+    this.ignoreClose = false;
+  }
+
+  private handleError(err: Error): void {
+    this.isConnecting = false;
+    this.log(`Ошибка WebSocket: ${err.message}`);
+    console.error(`❌ [${this.connectionId}] WebSocket Error:`, err);
+  }
+
+  // --------------------------------------------------------------------------
+  // Private Methods - Message Processing
+  // --------------------------------------------------------------------------
+
+  private async processMessage(messageType: MessageType, payload: any): Promise<void> {
+    switch (messageType) {
+      case MESSAGE_TYPES.NOTIFICATION:
+        this.handleNotification(payload);
+        break;
+
+      case MESSAGE_TYPES.SESSION_WELCOME:
+        await this.handleSessionWelcome(payload);
+        break;
+
+      case MESSAGE_TYPES.SESSION_KEEPALIVE:
+        console.log(`💓 [${this.connectionId}] Keep-alive received`);
+        break;
+
+      case MESSAGE_TYPES.SESSION_RECONNECT:
+        await this.handleReconnect(payload);
+        break;
+
+      case MESSAGE_TYPES.REVOCATION:
+        console.warn(`⚠️ [${this.connectionId}] Subscription revoked:`, payload);
+        break;
+
+      default:
+        if (!KNOWN_MESSAGE_TYPES.includes(messageType)) {
+          console.log(`❓ [${this.connectionId}] Unknown message type:`, messageType);
+        }
+    }
+  }
+
+  private handleNotification(payload: any): void {
+    const { subscription, event } = payload;
+
+    switch (subscription.type) {
+      case 'channel.follow':
+        this.handleFollowEvent(event);
+        break;
+
+      case 'channel.channel_points_custom_reward_redemption.add':
+        this.handleRedemptionEvent(event);
+        break;
+
+      case 'stream.online':
+        this.handleOnlineEvent(event);
+        break;
+
+      case 'stream.offline':
+        this.handleOfflineEvent(event);
+        break;
+
+      default:
+        console.warn(`⚠️ [${this.connectionId}] Unhandled subscription type: ${subscription.type}, event:`, event);
+        break;
+    }
+  }
+
+  private handleFollowEvent(event: any): void {
+    console.log(`🎉 [${this.connectionId}] Новый фолловер: ${event.user_name}`);
+
+    const followEvent = formatFollowEvent(event);
+    this.log('Новый фолловер', event.user_id, event.user_name);
+    this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_FOLLOW}`, followEvent);
+  }
+
+  private handleRedemptionEvent(event: any): void {
+    const { reward } = event;
+    console.log(`🎉 [${this.connectionId}] Потрачены балы: ${reward.title}`);
+
+    const redeemEvent = formatRedeemEvent(event);
+    this.log(
+        `Потрачены балы (${reward.cost}) на: ${reward.title}`,
+        event.user_id,
+        event.user_name
+    );
+    this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_REDEMPTION}`, redeemEvent);
+  }
+
+  private handleOnlineEvent(event: any): void {
+    console.log(`📡 [${this.connectionId}] Stream is live: ${event.broadcaster_user_name}`);
+    this.log(
+        `Стрим начался: ${event.broadcaster_user_name}`,
+        event.user_id,
+        event.user_name
+    );
+    this.eventHandler?.(`status:${EVENT_BROADCASTING}`, { type: "broadcast", isOnline: true });
+  }
+
+  private handleOfflineEvent(event: any): void {
+    console.log(`📴 [${this.connectionId}] Stream has ended: ${event.broadcaster_user_name}`);
+    this.log(
+        `Стрим окончен: ${event.broadcaster_user_name}`,
+        event.user_id,
+        event.user_name
+    );
+    this.eventHandler?.(`status:${EVENT_BROADCASTING}`, { type: "broadcast", isOnline: false });
+  }
+
+  private async handleSessionWelcome(payload: any): Promise<void> {
+    const sessionId = payload.session.id;
+    console.log(`📡 [${this.connectionId}] Session started, ID:`, sessionId);
+
+    if (!this.skipSubscribe) {
+      await this.subscribeToEvents(sessionId);
+    }
+    this.skipSubscribe = false;
+  }
+
+  private async handleReconnect(payload: any): Promise<void> {
+    const newUrl = payload.session.reconnect_url;
+    console.log(`🔄 [${this.connectionId}] Reconnect requested:`, newUrl);
+    this.stop({ setStopping: false, ignoreClose: true });
+    await this.start(newUrl, true);
+  }
+
+  // --------------------------------------------------------------------------
+  // Private Methods - Subscription Management
+  // --------------------------------------------------------------------------
 
   private async subscribeToEvents(sessionId: string): Promise<void> {
-    const tokens = await authService.getTokens();
-    const broadcasterId = tokens ? tokens.user_id : null;
-    const accessToken = tokens ? tokens.access_token : null;
-    if (!accessToken || !broadcasterId) {
-      console.error(`❌ [${this.connectionId}] Tokens unavailable.`);
+    const tokens = await this.getValidTokens();
+    if (!tokens) {
       this.stop();
       return;
     }
 
-// Fetch existing subscriptions bound to this session to avoid duplicates
-    let existingKeys = new Set<string>();
+    const existingKeys = await this.fetchExistingSubscriptions(sessionId, tokens.access_token);
+
+    for (const [type, config] of Object.entries(SUBSCRIPTION_DEFINITIONS)) {
+      await this.subscribeToEvent(type, config, sessionId, tokens, existingKeys);
+    }
+  }
+
+  private async fetchExistingSubscriptions(
+      sessionId: string,
+      accessToken: string
+  ): Promise<Set<string>> {
     try {
-      const resp = await axios.get('https://api.twitch.tv/helix/eventsub/subscriptions', {
-        headers: { 'Client-ID': CLIENT_ID, Authorization: `Bearer ${accessToken}` }
-      });
-      const stable = (o: any) => {
-        if (!o || typeof o !== 'object') return JSON.stringify(o);
-        const out: any = {}; for (const k of Object.keys(o).sort()) out[k] = o[k];
-        return JSON.stringify(out);
-      };
-      existingKeys = new Set(
-          (resp.data?.data || [])
-              .filter((s: any) => s.status === 'enabled' && s.transport?.session_id === sessionId)
-              .map((s: any) => `${s.type}|${stable(s.condition)}`)
-      );
-      console.log(`ℹ️ [${this.connectionId}] Existing subs for session ${sessionId}: ${existingKeys.size}`);
-    } catch (e: any) {
-      console.warn(`⚠️ [${this.connectionId}] Could not fetch existing subscriptions:`, e?.response?.data || e?.message);
-    }
-
-    const subscriptions: Record<string, { version: string; condition: (id: string) => any }> = {
-      'channel.raid': { version: '1', condition: (id) => ({ to_broadcaster_user_id: id }) },
-      'channel.bits.use': { version: '1', condition: (id) => ({ broadcaster_user_id: id }) },
-      'channel.subscribe': { version: '1', condition: (id) => ({ broadcaster_user_id: id }) },
-      'channel.channel_points_custom_reward_redemption.add': { version: '1', condition: (id) => ({ broadcaster_user_id: id }) },
-      'channel.follow': {
-        version: '2',
-        condition: (id) => ({ broadcaster_user_id: id, moderator_user_id: id }),
-      },
-    };
-    for (const [type, sub] of Object.entries(subscriptions)) {
-      if (!sub || typeof sub.condition !== 'function' || !sub.version) {
-        console.warn(`⚠️ [${this.connectionId}] Invalid subscription config for ${type}`);
-        continue;
-      }
-
-      const conditionData = sub.condition(broadcasterId!);
-// Build a stable key for comparison
-      const stable = (o: any) => {
-        if (!o || typeof o !== 'object') return JSON.stringify(o);
-        const out: any = {}; for (const k of Object.keys(o).sort()) out[k] = o[k];
-        return JSON.stringify(out);
-      };
-      const key = `${type}|${stable(conditionData)}`;
-      if (existingKeys.has(key)) {
-        console.log(`⏭️ [${this.connectionId}] Already subscribed to ${type} with same condition; skipping`);
-        continue;
-      }
-
-      try {
-        await axios.post(
-            'https://api.twitch.tv/helix/eventsub/subscriptions',
-            {
-              type,
-              version: sub.version,
-              condition: conditionData,
-              transport: { method: 'websocket', session_id: sessionId },
+      const response = await axios.get<{ data: TwitchSubscription[] }>(
+          `${CONFIG.API_BASE_URL}/eventsub/subscriptions`,
+          {
+            headers: {
+              'Client-ID': CONFIG.CLIENT_ID,
+              Authorization: `Bearer ${accessToken}`,
             },
-            {
-              headers: {
-                'Client-ID': CLIENT_ID,
-                Authorization: `Bearer ${accessToken}`,
-                'Content-Type': 'application/json',
-              },
-            }
-        );
-        console.log(`✅ [${this.connectionId}] Subscribed to ${type}`);
-        this.logger?.log({
-          timestamp: new Date().toISOString(),
-          message: `Отслеживание события ${type} запущено`,
-          userId: null,
-          userName: null
-        });
-      } catch (error: any) {
-        const status = error.response?.status;
-        if (status === 401 && !this.isStopping) {
-          console.warn(`⚠️ [${this.connectionId}] Unauthorized, refreshing...`);
-          const refreshed = await authService.getTokens();
-          if (!refreshed) {
-            this.logger?.log({
-              timestamp: new Date().toISOString(),
-              message: `Ошибка обновления токенов при подписке на ${type}`,
-              userId: null,
-              userName: null
-            });
-            console.error(`❌ [${this.connectionId}] Token refresh failed.`);
-            this.stop();
-            return;
           }
-          await this.subscribeToEvents(sessionId);
-          return;
+      );
+
+      const subscriptions = response.data?.data || [];
+      const keys = subscriptions
+          .filter((s) => s.status === 'enabled' && s.transport?.session_id === sessionId)
+          .map((s) => `${s.type}|${createStableKey(s.condition)}`);
+
+      const existingKeys = new Set(keys);
+      console.log(
+          `ℹ️ [${this.connectionId}] Existing subs for session ${sessionId}: ${existingKeys.size}`
+      );
+
+      return existingKeys;
+    } catch (error: any) {
+      console.warn(
+          `⚠️ [${this.connectionId}] Could not fetch existing subscriptions:`,
+          error?.response?.data || error?.message
+      );
+      return new Set();
+    }
+  }
+
+  private async subscribeToEvent(
+      type: string,
+      config: SubscriptionConfig,
+      sessionId: string,
+      tokens: Tokens,
+      existingKeys: Set<string>
+  ): Promise<void> {
+    if (!config?.condition || typeof config.condition !== 'function' || !config.version) {
+      console.warn(`⚠️ [${this.connectionId}] Invalid subscription config for ${type}`);
+      return;
+    }
+
+    if (!tokens.user_id) {
+      console.error(`❌ [${this.connectionId}] User ID not found in tokens`);
+      return;
+    }
+
+    const conditionData = config.condition(tokens.user_id);
+    const key = `${type}|${createStableKey(conditionData)}`;
+
+    if (existingKeys.has(key)) {
+      console.log(
+          `⭐️ [${this.connectionId}] Already subscribed to ${type} with same condition; skipping`
+      );
+      return;
+    }
+
+    try {
+      await this.createSubscription(type, config.version, conditionData, sessionId, tokens.access_token);
+      console.log(`✅ [${this.connectionId}] Subscribed to ${type}`);
+      this.log(`Отслеживание события ${type} запущено`);
+    } catch (error) {
+      await this.handleSubscriptionError(error, type, sessionId);
+    }
+  }
+
+  private async createSubscription(
+      type: string,
+      version: string,
+      condition: Record<string, string>,
+      sessionId: string,
+      accessToken: string
+  ): Promise<void> {
+    await axios.post(
+        `${CONFIG.API_BASE_URL}/eventsub/subscriptions`,
+        {
+          type,
+          version,
+          condition,
+          transport: {
+            method: 'websocket',
+            session_id: sessionId,
+          },
+        },
+        {
+          headers: {
+            'Client-ID': CONFIG.CLIENT_ID,
+            Authorization: `Bearer ${accessToken}`,
+            'Content-Type': 'application/json',
+          },
         }
-        this.logger?.log({
-          timestamp: new Date().toISOString(),
-          message: `Ошибка подписки на ${type}: ${error.message}`,
-          userId: null,
-          userName: null
-        });
-        console.error(`❌ [${this.connectionId}] Failed to subscribe to ${type}:`, error.response?.data || error.message);
+    );
+  }
+
+  private async handleSubscriptionError(
+      error: unknown,
+      type: string,
+      sessionId: string
+  ): Promise<void> {
+    const axiosError = error as AxiosError;
+    const status = axiosError.response?.status;
+
+    if (status === 401 && !this.isStopping) {
+      console.warn(`⚠️ [${this.connectionId}] Unauthorized, refreshing...`);
+      const refreshed = await authService.getTokens();
+
+      if (!refreshed) {
+        this.log(`Ошибка обновления токенов при подписке на ${type}`);
+        console.error(`❌ [${this.connectionId}] Token refresh failed.`);
+        this.stop();
+        return;
       }
+
+      await this.subscribeToEvents(sessionId);
+      return;
     }
+
+    const message = axiosError.message || 'Unknown error';
+    this.log(`Ошибка подписки на ${type}: ${message}`);
+    console.error(
+        `❌ [${this.connectionId}] Failed to subscribe to ${type}:`,
+        axiosError.response?.data || message
+    );
   }
 
+  // --------------------------------------------------------------------------
+  // Private Methods - Health Check
+  // --------------------------------------------------------------------------
 
-  private isDuplicateMessage(id?: string): boolean {
-    if (!id) return false;
-    const now = Date.now();
-    // simple TTL cleanup
-    for (const [k, t] of this.seenMessageIds) {
-      if (now - t > DEDUP_TTL_MS) this.seenMessageIds.delete(k);
-    }
-    if (this.seenMessageIds.has(id)) return true;
-    this.seenMessageIds.set(id, now);
-    // cap the map to a reasonable size
-    if (this.seenMessageIds.size > 5000) {
-      // remove oldest entries
-      const entries = Array.from(this.seenMessageIds.entries()).sort((a,b)=>a[1]-b[1]);
-      for (let i=0; i<entries.length-4000; i++) this.seenMessageIds.delete(entries[i][0]);
-    }
-    return false;
+  private startHealthCheck(): void {
+    this.clearHealthCheck();
+
+    this.healthCheckTimer = setInterval(() => {
+      if (globalInstance !== this) {
+        console.error(`❌ [${this.connectionId}] Another instance detected! Stopping.`);
+        this.stop();
+        return;
+      }
+
+      const inactivity = Date.now() - this.lastEventTimestamp;
+      if (
+          inactivity > CONFIG.INACTIVITY_THRESHOLD &&
+          !this.isConnecting &&
+          !this.isStopping
+      ) {
+        console.warn(`⚠️ [${this.connectionId}] No activity detected, restarting...`);
+        this.safeRestart();
+      }
+    }, CONFIG.HEALTH_CHECK_INTERVAL);
   }
 
-  stop(options: { setStopping?: boolean; ignoreClose?: boolean } = {}): void {
-    const { setStopping = true, ignoreClose = false } = options;
-    console.log(`🛑 [${this.connectionId}] Stopping EventSub...`);
-    if (this.ws) {
-      this.ignoreClose = ignoreClose;
-      this.ws.close();
-      this.ws = null;
-    }
-    if (setStopping) {
-      this.isStopping = true;
-    }
-    this.isConnecting = false;
+  private clearHealthCheck(): void {
     if (this.healthCheckTimer) {
       clearInterval(this.healthCheckTimer);
       this.healthCheckTimer = null;
     }
   }
 
-  private cleanup(): void {
-    console.log(`🧹 [${this.connectionId}] Cleaning up...`);
-    this.stop();
-    if (globalLock === this) {
-      globalLock = null;
+  // --------------------------------------------------------------------------
+  // Private Methods - Deduplication
+  // --------------------------------------------------------------------------
+
+  private isDuplicateMessage(id?: string): boolean {
+    if (!id) {
+      return false;
+    }
+
+    const now = Date.now();
+    this.cleanupOldMessages(now);
+
+    if (this.seenMessageIds.has(id)) {
+      return true;
+    }
+
+    this.seenMessageIds.set(id, now);
+    this.capMessageMapSize();
+
+    return false;
+  }
+
+  private cleanupOldMessages(now: number): void {
+    for (const [id, timestamp] of this.seenMessageIds) {
+      if (now - timestamp > CONFIG.DEDUP_TTL_MS) {
+        this.seenMessageIds.delete(id);
+      }
     }
   }
 
-  getLastEventTimestamp(): number {
-    return this.lastEventTimestamp;
+  private capMessageMapSize(): void {
+    if (this.seenMessageIds.size > CONFIG.MAX_DEDUP_SIZE) {
+      const entries = Array.from(this.seenMessageIds.entries()).sort(
+          (a, b) => a[1] - b[1]
+      );
+      const toRemove = entries.length - CONFIG.DEDUP_CLEANUP_SIZE;
+
+      for (let i = 0; i < toRemove; i++) {
+        this.seenMessageIds.delete(entries[i][0]);
+      }
+    }
   }
 
-  getConnectionId(): string {
-    return this.connectionId;
+  // --------------------------------------------------------------------------
+  // Private Methods - Utilities
+  // --------------------------------------------------------------------------
+
+  private async getValidTokens(): Promise<Tokens | null> {
+    const tokens = await authService.getTokens();
+    if (!tokens) {
+      console.error(`❌ [${this.connectionId}] No tokens found.`);
+      return null;
+    }
+    if (!tokens.user_id) {
+      console.error(`❌ [${this.connectionId}] User ID not found in tokens.`);
+      return null;
+    }
+    return tokens;
   }
 
-  static getInstance(): EventSubService | null {
-    return globalLock;
+  private isCurrentEpoch(epoch: number): boolean {
+    return epoch === this.connectEpoch;
   }
 
-  static hasActiveInstance(): boolean {
-    return globalLock !== null;
+  private log(message: string, userId: string | null = null, userName: string | null = null): void {
+    this.logger?.log({
+      timestamp: new Date().toISOString(),
+      message,
+      userId,
+      userName,
+    });
   }
 
-  setLogger(logger: LogService): void {
-    this.logger = logger;
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private cleanup(): void {
+    console.log(`🧹 [${this.connectionId}] Cleaning up...`);
+    this.stop();
+    if (globalInstance === this) {
+      globalInstance = null;
+    }
   }
 }
 
+// ============================================================================
+// Module Instance Management
+// ============================================================================
 let instance: EventSubService | null = null;
 
 function createInstance(): EventSubService | null {
@@ -453,6 +824,7 @@ function createInstance(): EventSubService | null {
     console.warn('⚠️ Попытка создать второй инстанс EventSub. Используется существующий.');
     return instance;
   }
+
   try {
     instance = new EventSubService();
     return instance;
@@ -466,9 +838,13 @@ if (!instance) {
   instance = createInstance();
 }
 
+// ============================================================================
+// Module Exports
+// ============================================================================
 export const start = (...args: any[]) => instance?.start(...args);
 export const stop = (...args: any[]) => instance?.stop(...args);
-export const registerEventHandlers = (handler: (dest: string, payload: AppEvent) => void) => instance?.registerEventHandlers(handler);
+export const registerEventHandlers = (handler: (dest: string, payload: AppEvent) => void) =>
+    instance?.registerEventHandlers(handler);
 export const getLastEventTimestamp = () => instance?.getLastEventTimestamp();
 export const setLogger = (logger: LogService) => instance?.setLogger(logger);
 export const getConnectionId = () => instance?.getConnectionId();

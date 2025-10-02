@@ -26,7 +26,7 @@ export function createChatWindow(): void {
   }
   chatWindow = new BrowserWindow({
     width: 400,
-    height: 600,
+    height: 640,
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,

@@ -1,5 +1,5 @@
 import {UserData} from "./types/UserData";
-import {fetchFollowerCount, fetchEditors, fetchUser} from "./authorizedHelixApi";
+import {fetchEditors, fetchFollowerCount, fetchStreams, fetchUser} from "./authorizedHelixApi";
 import {LogService} from "../logService";
 
 export interface UserState {
@@ -13,13 +13,17 @@ export interface UserState {
 export class UserStateHolder {
 
     private static TTL = 1000 * 60 * 5; // 5 minutes
+    private static BROADCASTING_TTL = 1000 * 60 * 2; // 2 minutes
 
     private userId: string | null = null;
 
     private user: UserState | null = null;
     private editors: UserData[] | null = null;
 
+    private isBroadcasting = false;
+
     private lastFetchTime = 0;
+    private lastBroadcastingFetchTime = 0;
 
     private logger: LogService;
 
@@ -118,6 +122,28 @@ export class UserStateHolder {
 
     setId(user_id: string) {
         this.userId = user_id;
+    }
+
+    async getIsBroadcasting(): Promise<boolean> {
+        if (this.lastBroadcastingFetchTime + UserStateHolder.BROADCASTING_TTL < Date.now()) {
+            try {
+                const streams = await fetchStreams();
+                this.lastBroadcastingFetchTime = Date.now();
+                console.log('Fetched streams', streams);
+                return Promise.resolve(streams.data.length > 0);
+            } catch (e) {
+                console.error('Failed to fetch streams, logging out', e);
+                return Promise.resolve(false);
+            }
+        } else {
+            console.log('Returning cached isBroadcasting value', this.isBroadcasting);
+            return Promise.resolve(this.isBroadcasting);
+        }
+    }
+
+    setIsBroadcasting(isBroadcasting: boolean) {
+        this.isBroadcasting = isBroadcasting;
+        this.lastBroadcastingFetchTime = Date.now();
     }
 
 }

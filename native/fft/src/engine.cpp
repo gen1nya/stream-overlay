@@ -1,4 +1,5 @@
 #include "engine.h"
+#include <iostream>
 #define _USE_MATH_DEFINES
 #include <stdexcept>
 constexpr double kPI = 3.14159265358979323846; // avoid M_PI dependency
@@ -64,6 +65,7 @@ void WasapiEngine::setMasterGain(float g){ masterGain_ = g; }
 void WasapiEngine::setTilt(float exp){ tiltExp_ = exp; }
 void WasapiEngine::setLoopback(bool on){ loopback_ = on; }
 void WasapiEngine::setCallback(FftCallback cb){ cb_ = std::move(cb); }
+void WasapiEngine::setWaveCallback(WaveCallback cb) { waveCb_ = std::move(cb); }
 
 void WasapiEngine::enable(bool on){ if(on){ start(); } else { stop(); } }
 
@@ -104,20 +106,77 @@ void WasapiEngine::start(){
       check(audioClient_->Start(), "Start");
       BYTE* data=nullptr; UINT32 frames=0; DWORD flags=0; UINT64 pos=0; UINT64 qpc=0;
       std::vector<float> hop(plan_.hopSize);
+      size_t hopFill = 0;
       while(running_){
         WaitForSingleObject(evt, 2000);
         UINT32 p=0; audioClient_->GetCurrentPadding(&p);
         for(;;){
           HRESULT hr = cap_->GetBuffer(&data, &frames, &flags, &pos, &qpc);
-          if(hr==AUDCLNT_S_BUFFER_EMPTY) break; if(FAILED(hr)) break;
-          // Convert to float mono: take first channel
+          if(hr==AUDCLNT_S_BUFFER_EMPTY) break;
+          if(FAILED(hr)) break;
+
+          const bool silent = (flags & AUDCLNT_BUFFERFLAGS_SILENT) != 0;
+
           if(isFloat){
             const float* f = reinterpret_cast<const float*>(data);
-            for(UINT32 i=0;i<frames;++i){ hop[i%plan_.hopSize]= f[i*nChannels]; if(((i+1)%plan_.hopSize)==0){ sampleBuf_.write(hop.data(), plan_.hopSize); if(sampleBuf_.count()>= (size_t)plan_.fftSize){ std::vector<float> frame(plan_.fftSize); sampleBuf_.readLatest(frame.data(), frame.size()); computeFftAndPublish(frame.data()); } } }
+            UINT32 i = 0;
+            while(i < frames){
+              // сколько можем положить в hop прямо сейчас
+              size_t toCopy = std::min<size_t>(plan_.hopSize - hopFill, frames - i);
+
+              if(silent){
+                // тишина — просто заполняем нулями
+                std::fill(hop.begin() + hopFill, hop.begin() + hopFill + toCopy, 0.0f);
+              }else{
+                // берём только 1-й канал (моно)
+                for(size_t k = 0; k < toCopy; ++k){
+                  hop[hopFill + k] = f[(i + (UINT32)k) * nChannels];
+                }
+              }
+
+              hopFill += toCopy;
+              i += (UINT32)toCopy;
+
+              if(hopFill == (size_t)plan_.hopSize){
+                // собрали полный hop — отправляем в кольцевой буфер
+                sampleBuf_.write(hop.data(), plan_.hopSize);
+                hopFill = 0; // начинаем новый hop
+
+                // как и раньше: когда накопили fftSize, читаем «последние» и считаем FFT
+                if(sampleBuf_.count() >= (size_t)plan_.fftSize){
+                  std::vector<float> frame(plan_.fftSize);
+                  sampleBuf_.readLatest(frame.data(), frame.size());
+                  computeFftAndPublish(frame.data());
+                }
+              }
+            }
           } else {
             const int16_t* s = reinterpret_cast<const int16_t*>(data);
-            for(UINT32 i=0;i<frames;++i){ hop[i%plan_.hopSize]= s[i*nChannels] / 32768.0f; if(((i+1)%plan_.hopSize)==0){ sampleBuf_.write(hop.data(), plan_.hopSize); if(sampleBuf_.count()>= (size_t)plan_.fftSize){ std::vector<float> frame(plan_.fftSize); sampleBuf_.readLatest(frame.data(), frame.size()); computeFftAndPublish(frame.data()); } } }
+            UINT32 i = 0;
+            while(i < frames){
+              size_t toCopy = std::min<size_t>(plan_.hopSize - hopFill, frames - i);
+              if(silent){
+                std::fill(hop.begin() + hopFill, hop.begin() + hopFill + toCopy, 0.0f);
+              }else{
+                for(size_t k = 0; k < toCopy; ++k){
+                  hop[hopFill + k] = s[(i + (UINT32)k) * nChannels] / 32768.0f;
+                }
+              }
+              hopFill += toCopy;
+              i += (UINT32)toCopy;
+
+              if(hopFill == (size_t)plan_.hopSize){
+                sampleBuf_.write(hop.data(), plan_.hopSize);
+                hopFill = 0;
+                if(sampleBuf_.count() >= (size_t)plan_.fftSize){
+                  std::vector<float> frame(plan_.fftSize);
+                  sampleBuf_.readLatest(frame.data(), frame.size());
+                  computeFftAndPublish(frame.data());
+                }
+              }
+            }
           }
+
           cap_->ReleaseBuffer(frames);
         }
       }
@@ -132,6 +191,11 @@ void WasapiEngine::start(){
 void WasapiEngine::stop(){ if(!running_) return; running_=false; if(th_.joinable()) th_.join(); if(kiss_){ kiss_fft_free(kiss_->cfg); delete kiss_; kiss_=nullptr;} if(wfx_){ CoTaskMemFree(wfx_); wfx_=nullptr;} cap_.Reset(); audioClient_.Reset(); }
 
 void WasapiEngine::computeFftAndPublish(const float* frame){
+  if(waveCb_) {
+    std::vector<float> waveFrame(frame, frame + plan_.fftSize);
+    waveCb_(waveFrame);
+  }
+
   // Hamming window + FFT
   for(int i=0;i<plan_.fftSize;++i){ 
     float w = 0.54f - 0.46f * std::cos(2.0*kPI*i/(plan_.fftSize-1)); 

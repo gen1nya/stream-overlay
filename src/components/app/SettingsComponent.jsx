@@ -27,7 +27,7 @@ import {
     FiEye,
     FiLayers,
     FiYoutube,
-    FiAlertCircle
+    FiAlertCircle, FiTarget
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -45,6 +45,7 @@ import {Spacer} from "../utils/Separator";
 import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
+import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -324,6 +325,7 @@ const PageInfoConfig = {
     bot: {title: "Настройки бота", icon: <AiFillRobot/>},
     players: {title: "Настройки плееров", icon: <FiMusic/>},
     youtube: {title: "Чат ютуба", icon: <FiYoutube/>},
+    followers_goal: {title: "Прогресс фоловеров", icon: <FiTarget/>},
 };
 
 export default function Settings() {
@@ -547,6 +549,7 @@ export default function Settings() {
                         {key: "bot", icon: <AiFillRobot/>, label: "Бот >_"},
                         {key: "players", icon: <FiMusic/>, label: "Плееры"},
                         {key: "youtube", icon: <FiYoutube/>, label: "YouTube Чат"},
+                        {key: "followers_goal", icon: <FiTarget/>, label: "Прогресс"},
                     ]}
                 />
 
@@ -733,6 +736,16 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 </Content>
             );
         }
+        case "followers_goal":
+            return (
+                <Content>
+                    <FollowersGoalSettingsComponent
+                        current={selectedTheme}
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
+                    />
+                </Content>
+            );
         default:
             return <div>Неизвестная страница</div>;
     }

@@ -12,11 +12,11 @@ import {
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
 import UserInfoPopup from './UserInfoPopup';
-// Импорты иконок
 import { FiSettings, FiLogOut, FiExternalLink, FiCopy, FiMessageSquare } from 'react-icons/fi';
 import {Row} from "./SettingsComponent";
 import {Spacer} from "../utils/Separator";
 import TwitchUsersPopup from "./TwitchUsersPopup";
+import {OnlineIndicator} from "../utils/OnlineIndicator";
 
 const Wrapper = styled.div`
     position: relative;
@@ -52,12 +52,15 @@ const Section = styled.section`
 `;
 
 const SectionTitle = styled.h3`
+    align-items: center;
     margin: 0;
     font-size: 1.2rem;
     font-weight: 600;
     color: #fff;
     border-bottom: 1px solid #444;
     padding-bottom: 6px;
+    display: flex;
+    gap: 10px;
 `;
 
 const ButtonsRow = styled.div`
@@ -301,6 +304,7 @@ export default function Dashboard() {
     const [stats, setStats] = useState({ startTime: Date.now(), lastEventSub: Date.now(), lastIRC: Date.now() });
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
+    const [isOnline, setIsOnline] = useState(false);
 
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
@@ -407,10 +411,25 @@ export default function Dashboard() {
 
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
-        ws.onopen = () => ws.send(JSON.stringify({ channel: 'log:get' }));
+        ws.onopen = () => {
+            ws.send(JSON.stringify({ channel: 'log:get' }));
+            ws.send(JSON.stringify({ channel: 'status:get_broadcasting' }));
+        }
         ws.onmessage = (event) => {
             const { channel, payload } = JSON.parse(event.data);
-            if (channel === 'log:updated') setLogs(payload.logs);
+            console.log('WS message:', channel, payload);
+            switch (channel) {
+                case 'status:broadcasting':
+                    const { isOnline } = payload;
+                    console.log('Broadcasting status:', isOnline);
+                    setIsOnline(isOnline);
+                    break;
+                case 'log:updated':
+                    setLogs(payload.logs);
+                    break;
+                default:
+                    break;
+            }
         };
         return () => ws.close();
     }, []);
@@ -450,7 +469,15 @@ export default function Dashboard() {
             <MainArea>
                 <Content>
                     <Section>
-                        <SectionTitle>Аккаунт</SectionTitle>
+                        <SectionTitle>
+                            Аккаунт
+                            <OnlineIndicator
+                                $isOnline={isOnline}
+                                title={isOnline ? "Трансляция идёт в прямом эфире" : "Трансляция не ведётся"}
+                            >
+                                <span className="live-name">LIVE</span>
+                            </OnlineIndicator>
+                        </SectionTitle>
                         <Row>
                         {account ? (
                             <AccountRow>
@@ -567,11 +594,11 @@ export default function Dashboard() {
                             >
                                 {name}
                             </span>
-                            {index < streamers.length - 1 && ','}&nbsp;
+                            {index < streamers.length - 1 && '•'}&nbsp;
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.4.5-beta</Version>
+                <Version>v0.5.0-beta</Version>
             </Footer>
         </Wrapper>
     );

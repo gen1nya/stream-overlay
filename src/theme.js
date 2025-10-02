@@ -121,7 +121,7 @@ export const defaultTheme = {
         widthCompact: 300,
         widthExpanded: 400,
         heightCompact: 64,
-        heightExpanded: 80,
+        heightExpanded: 151,
         text: {
             textAlign: "left",
             title: {
@@ -195,6 +195,75 @@ export const defaultTheme = {
         backgroundType: "none",
         backgroundColor: null,
         backgroundImage: null
+    },
+    followersGoal: {
+        // Основные настройки
+        target: 1000,
+        title: 'Цель по фоловерам',
+        completedMessage: '🎉 Цель достигнута!',
+        goalText: null, // null = автоматически "Осталось: X"
+
+        // Размеры и отступы
+        width: 400,
+        padding: 16,
+        spacing: 12,
+        borderRadius: 12,
+        borderWidth: 2,
+        borderColor: 'rgba(155, 116, 255, 0.55)',
+        backgroundColor: 'rgba(0, 0, 0, 0.7)',
+
+        // Прогресс-бар
+        barHeight: 24,
+        barBorderRadius: 12,
+        barBackground: 'rgba(255, 255, 255, 0.1)',
+        barBorderColor: 'rgba(255, 255, 255, 0.2)',
+        barGradient: 'linear-gradient(90deg, #9b74ff 0%, #7c4dff 100%)',
+        completedGradient: 'linear-gradient(90deg, #00ff88 0%, #00cc6a 100%)',
+        barGlow: true,
+        animateOnComplete: true,
+
+        // Шрифты и цвета
+        titleFont: {
+            family: 'Arial',
+            size: 18,
+            weight: 700,
+            url: null
+        },
+        titleColor: '#fff',
+        titleGlow: true,
+
+        counterFont: {
+            family: 'Arial',
+            size: 20,
+            weight: 700,
+            url: null
+        },
+        counterColor: '#9b74ff',
+
+        percentageFont: {
+            family: 'Arial',
+            size: 14,
+            weight: 600,
+            url: null
+        },
+        percentageColor: '#fff',
+
+        goalFont: {
+            family: 'Arial',
+            size: 14,
+            weight: 400,
+            url: null
+        },
+        goalColor: 'rgba(255, 255, 255, 0.7)',
+        goalTextMargin: 4,
+
+        completedFont: {
+            family: 'Arial',
+            size: 16,
+            weight: 700,
+            url: null
+        },
+        completedColor: '#00ff88'
     },
     bot: {
         roulette: {

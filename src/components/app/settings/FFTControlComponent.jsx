@@ -222,6 +222,10 @@ export default function FFTControlComponent() {
         openExternalLink('http://localhost:5173/audio-fft-round-demo');
     }
 
+    const openDemoWaveform = () => {
+        openExternalLink('http://localhost:5173/audio-waveform-demo');
+    }
+
     // Загрузка конфигурации FFT
     const loadFFTConfig = async () => {
         try {
@@ -512,6 +516,11 @@ export default function FFTControlComponent() {
                             <DemoButton onClick={openDemoFFTRing}>
                                 <FiExternalLink />
                                 Демо FFT (кольцо)
+                            </DemoButton>
+
+                            <DemoButton onClick={openDemoWaveform}>
+                                <FiExternalLink />
+                                Демо волна
                             </DemoButton>
                         </Row>
 
