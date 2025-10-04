@@ -7,7 +7,7 @@ import {
     getStats,
     reconnect,
     openExternalLink,
-    getThemes, importTheme, createNewTheme, deleteTheme, setTheme // Добавляем новый импорт
+    getThemes, importTheme, createNewTheme, deleteTheme, setTheme
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
@@ -34,6 +34,7 @@ import {defaultTheme} from "../../theme";
 import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
+import {useWebSocket} from "../../context/WebSocketContext";
 
 const Wrapper = styled.div`
     position: relative;
@@ -110,7 +111,6 @@ const ButtonsRow = styled.div`
     }
 `;
 
-// Новые стили для группы кнопка + селектор
 const LinkGroup = styled.div`
     display: flex;
     align-items: center;
@@ -237,6 +237,7 @@ const Avatar = styled.img`
     height: 56px;
     border-radius: 50%;
 `;
+
 const SmallAvatar = styled.img`
     width: 32px;
     height: 32px;
@@ -344,6 +345,8 @@ export default function Dashboard() {
     const [selectedThemeName, setSelectedThemeName] = useState('');
     const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
 
+    // Используем WebSocket из контекста
+    const { send, subscribe, isConnected } = useWebSocket();
 
     const loadBotConfig = async () => {
         try {
@@ -367,7 +370,7 @@ export default function Dashboard() {
         if (name === selectedThemeName) {
             theme = selectedTheme;
         } else {
-            theme = themeList[name];
+            theme = themes[name];
         }
         if (!theme) return;
         const data = JSON.stringify({[name]: theme}, null, 2);
@@ -450,7 +453,6 @@ export default function Dashboard() {
     const handleCopyChatLink = () => {
         let chatUrl = 'http://localhost:5173/chat-overlay';
 
-        // Добавляем параметр темы, если выбрана
         if (selectedThemeName) {
             const encodedTheme = encodeURIComponent(selectedThemeName);
             chatUrl += `?theme=${encodedTheme}`;
@@ -468,10 +470,9 @@ export default function Dashboard() {
                 document.title = `Оверлеешная - ${accountInfo.displayName || accountInfo.login}`;
             });
 
-            // Загружаем темы
+            // Загружаем темы через API
             getThemes().then(response => {
                 const { themes, currentThemeName } = response;
-                // Проверяем, что themes - это объект
                 if (themes && typeof themes === 'object') {
                     setThemes(themes);
                 } else {
@@ -481,7 +482,7 @@ export default function Dashboard() {
                 setSelectedThemeName(currentThemeName || '');
             }).catch(err => {
                 console.error('Ошибка загрузки тем:', err);
-                setThemes({}); // На случай ошибки устанавливаем пустой объект
+                setThemes({});
             });
         }
         const update = async () => {
@@ -493,38 +494,41 @@ export default function Dashboard() {
         return () => clearInterval(interval);
     }, []);
 
+    // Подключаемся к WebSocket и подписываемся на каналы
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:42001');
-        ws.onopen = () => {
-            ws.send(JSON.stringify({channel: 'theme:get-all'}));
-            ws.send(JSON.stringify({ channel: 'log:get' }));
-            ws.send(JSON.stringify({ channel: 'status:get_broadcasting' }));
+        if (isConnected) {
+            send({channel: 'theme:get-all'});
+            send({channel: 'log:get'});
+            send({channel: 'status:get_broadcasting'});
         }
-        ws.onmessage = (event) => {
-            const { channel, payload } = JSON.parse(event.data);
-            console.log('WS message:', channel, payload);
-            switch (channel) {
-                case 'status:broadcasting':
-                    const { isOnline } = payload;
-                    console.log('Broadcasting status:', isOnline);
-                    setIsOnline(isOnline);
-                    break;
-                case 'log:updated':
-                    setLogs(payload.logs);
-                    break;
-                case "themes:get":
-                    const {themes, currentThemeName} = payload;
-                    console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
-                    setThemes(themes);
-                    setSelectedThemeName(currentThemeName);
-                    setSelectedTheme(themes[currentThemeName] || defaultTheme);
-                    break;
-                default:
-                    break;
-            }
+
+        // Подписка на статус трансляции
+        const unsubscribeBroadcasting = subscribe('status:broadcasting', (payload) => {
+            const { isOnline } = payload;
+            console.log('Broadcasting status:', isOnline);
+            setIsOnline(isOnline);
+        });
+
+        // Подписка на логи
+        const unsubscribeLogs = subscribe('log:updated', (payload) => {
+            setLogs(payload.logs);
+        });
+
+        // Подписка на темы
+        const unsubscribeThemes = subscribe('themes:get', (payload) => {
+            const {themes, currentThemeName} = payload;
+            console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
+            setThemes(themes);
+            setSelectedThemeName(currentThemeName);
+            setSelectedTheme(themes[currentThemeName] || defaultTheme);
+        });
+
+        return () => {
+            unsubscribeBroadcasting();
+            unsubscribeLogs();
+            unsubscribeThemes();
         };
-        return () => ws.close();
-    }, []);
+    }, [isConnected, send, subscribe, setSelectedTheme]);
 
     const now = Date.now();
     const uptime = now - stats.startTime;
@@ -600,7 +604,7 @@ export default function Dashboard() {
                                 Бот: <span className="theme-name">{botName}</span>
                             </ThemeIndicator>
 
-                            <ActionButton  onClick={handlerOpenSettings}>
+                            <ActionButton onClick={handlerOpenSettings}>
                                 <FiSettings/>
                                 Настройки
                             </ActionButton>
@@ -687,7 +691,7 @@ export default function Dashboard() {
                 <LogPanel>
                     <LogHeader>Логи</LogHeader>
                     <LogContent ref={logPanelRef}>
-                    {logs.map((log, index) => (
+                        {logs.map((log, index) => (
                             <LogLine key={index}>
                                 [{new Date(log.timestamp).toLocaleTimeString()}]{' '}
                                 {log.userName && (

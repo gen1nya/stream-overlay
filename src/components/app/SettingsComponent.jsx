@@ -48,6 +48,7 @@ import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsCompon
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
 import {LuFileStack} from "react-icons/lu";
 import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import {useWebSocket} from "../../context/WebSocketContext";
 
 const Panel = styled.div`
     position: fixed;
@@ -217,6 +218,9 @@ export default function Settings() {
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
 
+    // Используем WebSocket из контекста
+    const { send, subscribe, isConnected } = useWebSocket();
+
     const [colorPopup, setColorPopup] = useState({
         open: false,
         initialColor: '#ffffff',
@@ -269,29 +273,26 @@ export default function Settings() {
         loadBotConfig();
     }, []);
 
+    // Подключаемся к WebSocket и подписываемся на каналы
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:42001');
-        ws.onopen = () => {
+        if (isConnected) {
             console.log('🟢 WebSocket подключен');
-            ws.send(JSON.stringify({channel: 'theme:get-all'}));
+            send({channel: 'theme:get-all'});
+        }
+
+        const unsubscribe = subscribe('themes:get', (payload) => {
+            const {themes, currentThemeName} = payload;
+            console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
+            setThemeList(themes);
+            setSelectedThemeName(currentThemeName);
+            setSelectedTheme(themes[currentThemeName] || defaultTheme);
+        });
+
+        return () => {
+            console.log('🔴 WebSocket отписка');
+            unsubscribe();
         };
-        ws.onmessage = (event) => {
-            const {channel, payload} = JSON.parse(event.data);
-            switch (channel) {
-                case "themes:get":
-                    const {themes, currentThemeName} = payload;
-                    console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
-                    setThemeList(themes);
-                    setSelectedThemeName(currentThemeName);
-                    setSelectedTheme(themes[currentThemeName] || defaultTheme);
-                    break;
-                default:
-                    console.log('unknown channel', channel, payload);
-            }
-        };
-        ws.onclose = () => console.log('🔴 WebSocket отключен');
-        return () => ws.close();
-    }, []);
+    }, [isConnected, send, subscribe, setSelectedTheme]);
 
     /** Единая «точка входа» для всех изменений темы */
     const apply = updaterOrTheme => {

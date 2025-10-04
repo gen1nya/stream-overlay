@@ -16,6 +16,7 @@ import {preloadAllFonts} from "./components/utils/fontsCache";
 import fonts from './components/utils/cyrillic_fonts_minimal.json';
 import WaveformDemo from "./components/player/WaveformDemo";
 import FollowersGoalWidget from "./components/followers/FollowersGoalWidget";
+import {WebSocketProvider} from "./context/WebSocketContext";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -37,23 +38,25 @@ export default function App() {
     return (
         <>
             <GlobalStyle/>
-            <BrowserRouter>
-                <Routes>
-                    <Route path="/audio-fft-round-demo" element={<RoundFFTDemo/>} />
-                    <Route path="/audio-fft-linear-demo" element={<LinearFFTDemo/>} />
-                    <Route path="/audio-waveform-demo" element={<WaveformDemo/>} />
-                    <Route path="/audio" element={<AudioPlayerComponent/>} />
-                    <Route path="/audio-modern" element={<ModernAudioPlayer/>} />
-                    <Route path="/preview" element={<PreviewComponent/>}/>
-                    <Route path="/loading" element={<LoadingComponent/>} />
-                    <Route path="/settings" element={<Settings/>} />
-                    <Route path="/chat-overlay" element={<ChatOverlay/>} />
-                    <Route path="/new-followers-overlay" element={<FollowersGoalWidget/>} />
-                    <Route path="/dashboard" element={<Dashboard/>} />
-                    <Route path="/auth" element={<AuthScreen/>} />
-                    <Route path="*" element={ <WrongPageComponent/> }/>
-                </Routes>
-            </BrowserRouter>
+            <WebSocketProvider url="ws://localhost:42001">
+                <BrowserRouter>
+                    <Routes>
+                        <Route path="/audio-fft-round-demo" element={<RoundFFTDemo/>} />
+                        <Route path="/audio-fft-linear-demo" element={<LinearFFTDemo/>} />
+                        <Route path="/audio-waveform-demo" element={<WaveformDemo/>} />
+                        <Route path="/audio" element={<AudioPlayerComponent/>} />
+                        <Route path="/audio-modern" element={<ModernAudioPlayer/>} />
+                        <Route path="/preview" element={<PreviewComponent/>}/>
+                        <Route path="/loading" element={<LoadingComponent/>} />
+                        <Route path="/settings" element={<Settings/>} />
+                        <Route path="/chat-overlay" element={<ChatOverlay/>} />
+                        <Route path="/new-followers-overlay" element={<FollowersGoalWidget/>} />
+                        <Route path="/dashboard" element={<Dashboard/>} />
+                        <Route path="/auth" element={<AuthScreen/>} />
+                        <Route path="*" element={ <WrongPageComponent/> }/>
+                    </Routes>
+                </BrowserRouter>
+            </WebSocketProvider>
         </>
     );
 }
