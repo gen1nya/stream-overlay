@@ -40,15 +40,12 @@ import UnifiedSettingsComponent from "./settings/UnifiedSettingsComponent";
 import FFTControlComponent from "./settings/FFTControlComponent";
 import YouTubeScraperComponent from "./settings/YouTubeScraperComponent";
 import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
-import {Spacer} from "../utils/Separator";
-import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
-import {LuFileStack} from "react-icons/lu";
 import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
-import {useWebSocket} from "../../context/WebSocketContext";
 import {useThemeManager} from "../../hooks/useThemeManager";
+import {useBotConfig} from "../../hooks/useBotConfig";
 
 const Panel = styled.div`
     position: fixed;
@@ -205,14 +202,13 @@ const PageInfoConfig = {
 export default function Settings() {
     const navigate = useNavigate();
 
-    // Используем менеджер тем
     const {
         themes,
         selectedTheme,
         selectedThemeName,
         setSelectedThemeName,
-        isThemeSelectorOpen,
         setSelectedTheme,
+        isThemeSelectorOpen,
         openThemeSelector,
         closeThemeSelector,
         handleExportTheme,
@@ -222,10 +218,15 @@ export default function Settings() {
         handleCreateTheme,
     } = useThemeManager();
 
-    // Bot config state
-    const [isBotConfigOpen, setIsBotConfigOpen] = useState(false);
-    const [botName, setBotName] = useState('');
-    const [botConfig, setBotConfig] = useState(null);
+    const {
+        isBotConfigOpen,
+        botName,
+        botConfig,
+        openBotConfig,
+        closeBotConfig,
+        handleBotChange,
+        applyBotConfig,
+    } = useBotConfig();
 
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
@@ -253,35 +254,6 @@ export default function Settings() {
         setColorPopup(prev => ({...prev, open: false}));
     };
 
-    const applyBotConfig = updateOrConfig => {
-        setBotConfig((prev) => {
-            const next =
-                typeof updateOrConfig === 'function'
-                    ? updateOrConfig(prev)
-                    : updateOrConfig;
-            console.log('Roulette config updated:', next);
-            updateBot(botName, next)
-            return next;
-        })
-    }
-
-    const loadBotConfig = async () => {
-        try {
-            const botData = await getCurrentBot();
-            setBotName(botData.name);
-            setBotConfig(botData.config);
-            console.log('Загружена конфигурация бота:', botData);
-        } catch (error) {
-            console.error('Ошибка загрузки конфигурации бота:', error);
-            setBotName('');
-            setBotConfig(null);
-        }
-    };
-
-    useEffect(() => {
-        loadBotConfig();
-    }, []);
-
     /** Единая «точка входа» для всех изменений темы */
     const apply = updaterOrTheme => {
         setSelectedTheme((prev) => {
@@ -299,10 +271,6 @@ export default function Settings() {
         await openPreview()
     };
 
-    const handleBotConfigClick = () => {
-        setIsBotConfigOpen(true);
-    };
-
     const currentPageInfo = PageInfoConfig[activePage] || PageInfoConfig.general;
 
     return (
@@ -318,11 +286,8 @@ export default function Settings() {
             )}
             {isBotConfigOpen && (
                 <BotConfigPopup
-                    onClose={() => setIsBotConfigOpen(false)}
-                    onBotChange={(name) => {
-                        setBotName(name);
-                        loadBotConfig();
-                    }}
+                    onClose={closeBotConfig}
+                    onBotChange={handleBotChange}
                 />
             )}
             {isThemeSelectorOpen && (
@@ -353,7 +318,7 @@ export default function Settings() {
                         Тема: <span className="theme-name">{selectedThemeName}</span>
                     </ThemeIndicator>
 
-                    <ThemeIndicator onClick={handleBotConfigClick}>
+                    <ThemeIndicator onClick={openBotConfig}>
                         <AiFillRobot/>
                         Бот: <span className="theme-name">{botName}</span>
                     </ThemeIndicator>

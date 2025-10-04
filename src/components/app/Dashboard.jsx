@@ -29,11 +29,11 @@ import {OnlineIndicator} from "../utils/OnlineIndicator";
 import {Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton} from "./settings/SharedSettingsStyles";
-import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
 import {useWebSocket} from "../../context/WebSocketContext";
 import {useThemeManager} from "../../hooks/useThemeManager";
+import {useBotConfig} from "../../hooks/useBotConfig";
 
 const Wrapper = styled.div`
     position: relative;
@@ -330,11 +330,6 @@ export default function Dashboard() {
     const logPanelRef = useRef(null);
     const [isOnline, setIsOnline] = useState(false);
 
-    // Bot config state
-    const [isBotConfigOpen, setIsBotConfigOpen] = useState(false);
-    const [botName, setBotName] = useState('');
-    const [botConfig, setBotConfig] = useState(null);
-
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
 
@@ -356,22 +351,14 @@ export default function Dashboard() {
         handleCreateTheme,
     } = useThemeManager();
 
-    const loadBotConfig = async () => {
-        try {
-            const botData = await getCurrentBot();
-            setBotName(botData.name);
-            setBotConfig(botData.config);
-            console.log('Загружена конфигурация бота:', botData);
-        } catch (error) {
-            console.error('Ошибка загрузки конфигурации бота:', error);
-            setBotName('');
-            setBotConfig(null);
-        }
-    };
-
-    useEffect(() => {
-        loadBotConfig();
-    }, []);
+    // Используем менеджер конфигурации бота
+    const {
+        isBotConfigOpen,
+        botName,
+        openBotConfig,
+        closeBotConfig,
+        handleBotChange,
+    } = useBotConfig();
 
     const openUserInfoPopup = (userId, userName) => {
         setUserInfoPopup({ id: userId, userName: userName, open: true });
@@ -420,10 +407,6 @@ export default function Dashboard() {
 
     const handlerOpenSettings = () => {
         navigate('/settings', { replace: false });
-    };
-
-    const handleBotConfigClick = () => {
-        setIsBotConfigOpen(true);
     };
 
     const handleCopyChatLink = () => {
@@ -514,11 +497,8 @@ export default function Dashboard() {
             )}
             {isBotConfigOpen && (
                 <BotConfigPopup
-                    onClose={() => setIsBotConfigOpen(false)}
-                    onBotChange={(name) => {
-                        setBotName(name);
-                        loadBotConfig();
-                    }}
+                    onClose={closeBotConfig}
+                    onBotChange={handleBotChange}
                 />
             )}
             {isThemeSelectorOpen && (
@@ -546,7 +526,7 @@ export default function Dashboard() {
                                 Тема: <span className="theme-name">{selectedThemeName}</span>
                             </ThemeIndicator>
 
-                            <ThemeIndicator onClick={handleBotConfigClick}>
+                            <ThemeIndicator onClick={openBotConfig}>
                                 <AiFillRobot/>
                                 Бот: <span className="theme-name">{botName}</span>
                             </ThemeIndicator>
@@ -569,17 +549,17 @@ export default function Dashboard() {
                             </OnlineIndicator>
                         </SectionTitle>
                         <Row>
-                        {account ? (
-                            <AccountRow>
-                                <Avatar src={account.avatar} alt="avatar" />
-                                <AccountInfo>
-                                    <div>{account.displayName || account.login}</div>
-                                    <div onClick={handleOpenUsersPopup}>Фолловеров: {account.followerCount}</div>
-                                </AccountInfo>
-                            </AccountRow>
-                        ) : (
-                            <p>Загрузка информации...</p>
-                        )}
+                            {account ? (
+                                <AccountRow>
+                                    <Avatar src={account.avatar} alt="avatar" />
+                                    <AccountInfo>
+                                        <div>{account.displayName || account.login}</div>
+                                        <div onClick={handleOpenUsersPopup}>Фолловеров: {account.followerCount}</div>
+                                    </AccountInfo>
+                                </AccountRow>
+                            ) : (
+                                <p>Загрузка информации...</p>
+                            )}
                             <Spacer />
                             <AccountActions>
                                 <LogoutButton onClick={handleLogout}>
