@@ -46,6 +46,8 @@ import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
+import {LuFileStack} from "react-icons/lu";
+import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 
 const Panel = styled.div`
     position: fixed;
@@ -62,87 +64,6 @@ const Panel = styled.div`
     gap: 0;
 `;
 
-const Header = styled.div`
-    box-sizing: border-box;
-    padding: 16px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 100%;
-    background: rgba(26, 26, 26, 0.95);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid #333;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-`;
-
-const HeaderLeft = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 16px;
-`;
-
-const HeaderTitle = styled.h1`
-    font-size: 1.5rem;
-    font-weight: 600;
-    margin: 0;
-    background: linear-gradient(135deg, #646cff, #7c3aed);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-`;
-
-const HeaderActions = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-`;
-
-const ActionButton = styled.button`
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #fff;
-    padding: 10px 16px;
-    border-radius: 8px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #333;
-        border-color: #555;
-        transform: translateY(-1px);
-    }
-
-    &.primary {
-        background: #646cff;
-        border-color: #646cff;
-
-        &:hover {
-            background: #5a5acf;
-            border-color: #5a5acf;
-        }
-    }
-
-    &.secondary {
-        background: #059669;
-        border-color: #059669;
-
-        &:hover {
-            background: #047857;
-            border-color: #047857;
-        }
-    }
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
-`;
-
 const BackButton = styled(ActionButton)`
     background: #444;
     border-color: #555;
@@ -150,54 +71,6 @@ const BackButton = styled(ActionButton)`
     &:hover {
         background: #555;
         border-color: #666;
-    }
-`;
-
-const ThemeIndicator = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 8px;
-    font-size: 13px;
-    color: #ccc;
-
-    .theme-name {
-        font-weight: 600;
-        color: #fff;
-    }
-`;
-
-const BotConfigIndicator = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    margin: 0 0 0 0;
-    background: #2a2a2a;
-    border: 1px solid rgba(100, 108, 255, 0.72);
-    border-radius: 8px;
-    font-size: 13px;
-    color: #ccc;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #333;
-        border-color: #646cff;
-    }
-
-    .config-name {
-        font-weight: 600;
-        color: #fff;
-    }
-
-    svg {
-        width: 14px;
-        height: 14px;
-        color: #646cff;
     }
 `;
 
@@ -363,6 +236,10 @@ export default function Settings() {
         });
     };
 
+    const closeColorPopup = () => {
+        setColorPopup(prev => ({...prev, open: false}));
+    };
+
     const applyBotConfig = updateOrConfig => {
         setBotConfig((prev) => {
             const next =
@@ -374,10 +251,6 @@ export default function Settings() {
             return next;
         })
     }
-
-    const closeColorPopup = () => {
-        setColorPopup(prev => ({...prev, open: false}));
-    };
 
     const loadBotConfig = async () => {
         try {
@@ -520,8 +393,14 @@ export default function Settings() {
                 </HeaderLeft>
 
                 <HeaderActions>
-                    <ThemeIndicator>
+                    <ThemeIndicator onClick={handleThemesButton}>
+                        <FiLayers/>
                         Тема: <span className="theme-name">{selectedThemeName}</span>
+                    </ThemeIndicator>
+
+                    <ThemeIndicator onClick={handleBotConfigClick}>
+                        <AiFillRobot/>
+                        Бот: <span className="theme-name">{botName}</span>
                     </ThemeIndicator>
 
                     <ActionButton className="secondary" onClick={handlePreviewButton}>
@@ -529,10 +408,6 @@ export default function Settings() {
                         Превью
                     </ActionButton>
 
-                    <ActionButton className="primary" onClick={handleThemesButton}>
-                        <FiLayers/>
-                        Управление темами
-                    </ActionButton>
                 </HeaderActions>
             </Header>
 
@@ -559,13 +434,6 @@ export default function Settings() {
                             {currentPageInfo.icon}
                             {currentPageInfo.title}
                         </PageTitle>
-
-                        {activePage === "bot" && botName && (
-                            <BotConfigIndicator onClick={handleBotConfigClick}>
-                                <AiFillRobot/>
-                                Конфиг: <span className="config-name">{botName}</span>
-                            </BotConfigIndicator>
-                        )}
                     </ContentHeader>
 
                     <MainContent

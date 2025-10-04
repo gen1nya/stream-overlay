@@ -7,16 +7,33 @@ import {
     getStats,
     reconnect,
     openExternalLink,
-    getThemes // Добавляем новый импорт
+    getThemes, importTheme, createNewTheme, deleteTheme, setTheme // Добавляем новый импорт
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
 import UserInfoPopup from './UserInfoPopup';
-import { FiSettings, FiLogOut, FiExternalLink, FiCopy, FiMessageSquare } from 'react-icons/fi';
+import {
+    FiSettings,
+    FiLogOut,
+    FiExternalLink,
+    FiCopy,
+    FiMessageSquare,
+    FiLayers,
+    FiArrowLeft,
+    FiEye
+} from 'react-icons/fi';
 import {Row} from "./SettingsComponent";
 import {Spacer} from "../utils/Separator";
 import TwitchUsersPopup from "./TwitchUsersPopup";
 import {OnlineIndicator} from "../utils/OnlineIndicator";
+import {Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import {AiFillRobot} from "react-icons/ai";
+import {ActionButton} from "./settings/SharedSettingsStyles";
+import {useTheme} from "../../hooks/useTheme";
+import {defaultTheme} from "../../theme";
+import {getCurrentBot, updateBot} from "../../services/botsApi";
+import BotConfigPopup from "./settings/BotConfigPopup";
+import ThemePopup from "./settings/ThemePopup";
 
 const Wrapper = styled.div`
     position: relative;
@@ -34,7 +51,7 @@ const MainArea = styled.div`
 
 const Content = styled.div`
     flex: 1;
-    padding: 36px 24px;
+    padding: 0 0 36px 0;
     display: flex;
     flex-direction: column;
     gap: 24px;
@@ -44,7 +61,9 @@ const Content = styled.div`
 const Section = styled.section`
     background: #2e2e2e;
     border-radius: 10px;
-    padding: 20px;
+    padding: 16px 20px 20px 20px;
+    margin-left: 24px;
+    margin-right: 24px;
     display: flex;
     flex-direction: column;
     gap: 16px;
@@ -218,6 +237,11 @@ const Avatar = styled.img`
     height: 56px;
     border-radius: 50%;
 `;
+const SmallAvatar = styled.img`
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+`;
 
 const LogPanel = styled.div`
     width: 280px;
@@ -306,12 +330,65 @@ export default function Dashboard() {
     const logPanelRef = useRef(null);
     const [isOnline, setIsOnline] = useState(false);
 
+    // Bot config state
+    const [isBotConfigOpen, setIsBotConfigOpen] = useState(false);
+    const [botName, setBotName] = useState('');
+    const [botConfig, setBotConfig] = useState(null);
+
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
 
     // Новое состояние для тем
     const [themes, setThemes] = useState({});
-    const [selectedTheme, setSelectedTheme] = useState('');
+    const [selectedTheme, setSelectedTheme] = useTheme(defaultTheme);
+    const [selectedThemeName, setSelectedThemeName] = useState('');
+    const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
+
+
+    const loadBotConfig = async () => {
+        try {
+            const botData = await getCurrentBot();
+            setBotName(botData.name);
+            setBotConfig(botData.config);
+            console.log('Загружена конфигурация бота:', botData);
+        } catch (error) {
+            console.error('Ошибка загрузки конфигурации бота:', error);
+            setBotName('');
+            setBotConfig(null);
+        }
+    };
+
+    useEffect(() => {
+        loadBotConfig();
+    }, []);
+
+    const handleExportTheme = (name) => {
+        let theme;
+        if (name === selectedThemeName) {
+            theme = selectedTheme;
+        } else {
+            theme = themeList[name];
+        }
+        if (!theme) return;
+        const data = JSON.stringify({[name]: theme}, null, 2);
+        const blob = new Blob([data], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${name}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+
+    const handleDeleteTheme = (name) => {
+        if (window.confirm(`Delete theme "${name}"?`)) {
+            deleteTheme(name);
+        }
+    };
+
+    const handleThemeChange = (themeName) => {
+        setTheme(themeName);
+    }
 
     const openUserInfoPopup = (userId, userName) => {
         setUserInfoPopup({ id: userId, userName: userName, open: true });
@@ -358,17 +435,24 @@ export default function Dashboard() {
         openExternalLink('http://localhost:5173/audio');
     };
 
-
     const handlerOpenSettings = () => {
         navigate('/settings', { replace: false });
+    };
+
+    const handleThemesButton = () => {
+        setIsThemeSelectorOpen(true)
+    };
+
+    const handleBotConfigClick = () => {
+        setIsBotConfigOpen(true);
     };
 
     const handleCopyChatLink = () => {
         let chatUrl = 'http://localhost:5173/chat-overlay';
 
         // Добавляем параметр темы, если выбрана
-        if (selectedTheme) {
-            const encodedTheme = encodeURIComponent(selectedTheme);
+        if (selectedThemeName) {
+            const encodedTheme = encodeURIComponent(selectedThemeName);
             chatUrl += `?theme=${encodedTheme}`;
         }
 
@@ -394,7 +478,7 @@ export default function Dashboard() {
                     console.warn('Темы не являются объектом:', themes);
                     setThemes({});
                 }
-                setSelectedTheme(currentThemeName || '');
+                setSelectedThemeName(currentThemeName || '');
             }).catch(err => {
                 console.error('Ошибка загрузки тем:', err);
                 setThemes({}); // На случай ошибки устанавливаем пустой объект
@@ -412,6 +496,7 @@ export default function Dashboard() {
     useEffect(() => {
         const ws = new WebSocket('ws://localhost:42001');
         ws.onopen = () => {
+            ws.send(JSON.stringify({channel: 'theme:get-all'}));
             ws.send(JSON.stringify({ channel: 'log:get' }));
             ws.send(JSON.stringify({ channel: 'status:get_broadcasting' }));
         }
@@ -426,6 +511,13 @@ export default function Dashboard() {
                     break;
                 case 'log:updated':
                     setLogs(payload.logs);
+                    break;
+                case "themes:get":
+                    const {themes, currentThemeName} = payload;
+                    console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
+                    setThemes(themes);
+                    setSelectedThemeName(currentThemeName);
+                    setSelectedTheme(themes[currentThemeName] || defaultTheme);
                     break;
                 default:
                     break;
@@ -466,8 +558,55 @@ export default function Dashboard() {
                     onClose={handleCloseUsersPopup}
                 />
             )}
+            {isBotConfigOpen && (
+                <BotConfigPopup
+                    onClose={() => setIsBotConfigOpen(false)}
+                    onBotChange={(name) => {
+                        setBotName(name);
+                        loadBotConfig();
+                    }}
+                />
+            )}
+            {isThemeSelectorOpen && (
+                <ThemePopup
+                    onClose={() => setIsThemeSelectorOpen(false)}
+                    themeList={themes}
+                    selectedThemeName={selectedThemeName}
+                    onChangeTheme={handleThemeChange}
+                    onDeleteTheme={handleDeleteTheme}
+                    onExportTheme={handleExportTheme}
+                    onImportTheme={importTheme}
+                    onCreateTheme={(name) => {
+                        createNewTheme(name);
+                        console.log("Создание новой темы:", name);
+                    }}
+                />
+            )}
             <MainArea>
                 <Content>
+                    <Header>
+                        <HeaderLeft>
+                            <HeaderTitle>Ну шо?</HeaderTitle>
+                        </HeaderLeft>
+
+                        <HeaderActions>
+                            <ThemeIndicator onClick={handleThemesButton}>
+                                <FiLayers/>
+                                Тема: <span className="theme-name">{selectedThemeName}</span>
+                            </ThemeIndicator>
+
+                            <ThemeIndicator onClick={handleBotConfigClick}>
+                                <AiFillRobot/>
+                                Бот: <span className="theme-name">{botName}</span>
+                            </ThemeIndicator>
+
+                            <ActionButton  onClick={handlerOpenSettings}>
+                                <FiSettings/>
+                                Настройки
+                            </ActionButton>
+
+                        </HeaderActions>
+                    </Header>
                     <Section>
                         <SectionTitle>
                             Аккаунт
@@ -492,10 +631,6 @@ export default function Dashboard() {
                         )}
                             <Spacer />
                             <AccountActions>
-                                <IconButton onClick={handlerOpenSettings}>
-                                    <FiSettings />
-                                    Настройки
-                                </IconButton>
                                 <LogoutButton onClick={handleLogout}>
                                     <FiLogOut />
                                     Выйти
@@ -520,8 +655,8 @@ export default function Dashboard() {
                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                     <ThemeLabel>тема:</ThemeLabel>
                                     <ThemeSelector
-                                        value={selectedTheme}
-                                        onChange={(e) => setSelectedTheme(e.target.value)}
+                                        value={selectedThemeName}
+                                        onChange={(e) => setSelectedThemeName(e.target.value)}
                                     >
                                         <option value="">По умолчанию</option>
                                         {themes && Object.keys(themes).map((themeName) => (

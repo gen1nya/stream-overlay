@@ -171,6 +171,7 @@ export class TwitchClient extends EventEmitter {
       const isBroadcasting = await this.userState.getIsBroadcasting();
       const destination = `status:${EVENT_BROADCASTING}`
       const payload =  { isOnline: isBroadcasting };
+      this.userState.setIsBroadcasting(isBroadcasting);
       this.emit('event', { destination: destination, event: payload });
   }
 
