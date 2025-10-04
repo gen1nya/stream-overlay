@@ -186,7 +186,7 @@ twitchClient.on('chat', async (parsedMessage) => {
     messageCache.addMessage(result);
   }
 });
-
+app.commandLine.appendSwitch('lang', 'en-US');
 app.whenReady().then(() => {
   const isDev = !app.isPackaged;
   if (isDev) {

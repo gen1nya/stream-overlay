@@ -28,7 +28,7 @@ import TwitchUsersPopup from "./TwitchUsersPopup";
 import {OnlineIndicator} from "../utils/OnlineIndicator";
 import {Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 import {AiFillRobot} from "react-icons/ai";
-import {ActionButton} from "./settings/SharedSettingsStyles";
+import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./settings/SharedSettingsStyles";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
 import {useWebSocket} from "../../context/WebSocketContext";
@@ -54,32 +54,8 @@ const Content = styled.div`
     padding: 0 0 36px 0;
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 6px;
     overflow-y: auto;
-`;
-
-const Section = styled.section`
-    background: #2e2e2e;
-    border-radius: 10px;
-    padding: 16px 20px 20px 20px;
-    margin-left: 24px;
-    margin-right: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.3);
-`;
-
-const SectionTitle = styled.h3`
-    align-items: center;
-    margin: 0;
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: #fff;
-    border-bottom: 1px solid #444;
-    padding-bottom: 6px;
-    display: flex;
-    gap: 10px;
 `;
 
 const ButtonsRow = styled.div`
@@ -237,11 +213,15 @@ const Avatar = styled.img`
     border-radius: 50%;
 `;
 
-const SmallAvatar = styled.img`
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
+const DashboardCard = styled(SettingsCard)`
+    width: calc(100% - 42px);
+    margin-right: 20px;
+    margin-left: 20px;
 `;
+
+const DashboardCardHeader = styled(CardHeader)`
+    padding: 12px 20px;
+`
 
 const LogPanel = styled.div`
     width: 280px;
@@ -321,6 +301,48 @@ const Version = styled.span`
     padding-right: 6px;
 `;
 
+const AccountName = styled.div`
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+`;
+
+const FollowersCounter = styled.div`
+    color: #a580ff;
+    cursor: pointer;
+    font-size: 14px;
+    transition: color 0.2s;
+
+    &:hover {
+        color: #8553f2;
+    }
+`;
+
+const headerTexts = [
+    'Ну шо?',
+    '\"Боты + в чат\"',
+    'Кто здесь?!',
+    'Срочно! Поправь монитор!',
+    '[ПЕКО]',
+    'Привет... чем могу помочь?',
+    'Молочный UwU\'н',
+    'Emotional Damage!',
+    'Опять забыл настроить?',
+    'ФЫР-ФЫР-ФЫР',
+    '!roulette',
+    'Вращайте барабан',
+    'Я Олег, мне 42 года',
+    'Мы тыкаем палочками',
+    'Когда ДРГ?',
+    'Good luck, have fun!',
+    'Ну, удачной охоты, сталкер!',
+    'Хорошего стрима ;)',
+    'Хихи-Хаха',
+    '…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ',
+    'Ты рыбак?',
+    'undefined',
+];
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
@@ -329,6 +351,7 @@ export default function Dashboard() {
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
     const [isOnline, setIsOnline] = useState(false);
+    const [headerText] = useState(() => headerTexts[Math.floor(Math.random() * headerTexts.length)]);
 
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
@@ -403,6 +426,10 @@ export default function Dashboard() {
 
     const openPlayer2 = () => {
         openExternalLink('http://localhost:5173/audio');
+    };
+
+    const openFollowersCounter = () => {
+        openExternalLink('http://localhost:5173/new-followers-overlay');
     };
 
     const handlerOpenSettings = () => {
@@ -517,7 +544,7 @@ export default function Dashboard() {
                 <Content>
                     <Header>
                         <HeaderLeft>
-                            <HeaderTitle>Ну шо?</HeaderTitle>
+                            <HeaderTitle>{headerText}</HeaderTitle>
                         </HeaderLeft>
 
                         <HeaderActions>
@@ -538,81 +565,101 @@ export default function Dashboard() {
 
                         </HeaderActions>
                     </Header>
-                    <Section>
-                        <SectionTitle>
-                            Аккаунт
-                            <OnlineIndicator
-                                $isOnline={isOnline}
-                                title={isOnline ? "Трансляция идёт в прямом эфире" : "Трансляция не ведётся"}
-                            >
-                                <span className="live-name">LIVE</span>
-                            </OnlineIndicator>
-                        </SectionTitle>
-                        <Row>
-                            {account ? (
-                                <AccountRow>
-                                    <Avatar src={account.avatar} alt="avatar" />
-                                    <AccountInfo>
-                                        <div>{account.displayName || account.login}</div>
-                                        <div onClick={handleOpenUsersPopup}>Фолловеров: {account.followerCount}</div>
-                                    </AccountInfo>
-                                </AccountRow>
-                            ) : (
-                                <p>Загрузка информации...</p>
-                            )}
-                            <Spacer />
-                            <AccountActions>
-                                <LogoutButton onClick={handleLogout}>
-                                    <FiLogOut />
-                                    Выйти
-                                </LogoutButton>
-                            </AccountActions>
+                    <DashboardCard>
+                        <DashboardCardHeader>
+                            <CardTitle>
+                                Аккаунт
+                                <OnlineIndicator
+                                    $isOnline={isOnline}
+                                    title={isOnline ? "Трансляция идёт в прямом эфире" : "Трансляция не ведётся"}
+                                >
+                                    <span className="live-name">LIVE</span>
+                                </OnlineIndicator>
+                            </CardTitle>
+                        </DashboardCardHeader>
+                        <CardContent>
+                            <Row>
+                                {account ? (
+                                    <AccountRow>
+                                        <Avatar src={account.avatar} alt="avatar" />
+                                        <AccountInfo>
+                                            <AccountName>{account.displayName || account.login}</AccountName>
+                                            <FollowersCounter onClick={handleOpenUsersPopup}>Фолловеров: {account.followerCount}</FollowersCounter>
+                                        </AccountInfo>
+                                    </AccountRow>
+                                ) : (
+                                    <p>Загрузка информации...</p>
+                                )}
+                                <Spacer />
+                                <AccountActions>
+                                    <LogoutButton onClick={handleLogout}>
+                                        <FiLogOut />
+                                        Выйти
+                                    </LogoutButton>
+                                </AccountActions>
 
-                        </Row>
-                    </Section>
+                            </Row>
+                        </CardContent>
+                    </DashboardCard>
 
-                    <Section>
-                        <SectionTitle>Оверлей</SectionTitle>
-                        <ButtonsRow>
-                            <button onClick={handleOpenOverlay}>
-                                <FiExternalLink />
-                                Открыть чат
-                            </button>
-                            <LinkGroup>
-                                <LinkButton onClick={handleCopyChatLink}>
-                                    <FiCopy />
-                                    Скопировать ссылку
-                                </LinkButton>
-                                <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                    <ThemeLabel>тема:</ThemeLabel>
-                                    <ThemeSelector
-                                        value={selectedThemeName}
-                                        onChange={(e) => setSelectedThemeName(e.target.value)}
-                                    >
-                                        <option value="">По умолчанию</option>
-                                        {themes && Object.keys(themes).map((themeName) => (
-                                            <option key={themeName} value={themeName}>
-                                                {themeName}
-                                            </option>
-                                        ))}
-                                    </ThemeSelector>
-                                </div>
-                            </LinkGroup>
-                        </ButtonsRow>
-                    </Section>
-                    <Section>
-                        <SectionTitle>Плееры</SectionTitle>
-                        <ButtonsRow>
-                            <button onClick={openPlayer1}>
-                                <FiExternalLink/>
-                                Открыть Плеер-карточку
-                            </button>
-                            <button onClick={openPlayer2}>
-                                <FiExternalLink/>
-                                Открыть плеер-пластинку
-                            </button>
-                        </ButtonsRow>
-                    </Section>
+                    <DashboardCard>
+                        <DashboardCardHeader>
+                            <CardTitle>
+                                Чат-оверлей
+                            </CardTitle>
+                        </DashboardCardHeader>
+                        <CardContent>
+                            <ButtonsRow>
+                                <button onClick={handleOpenOverlay}>
+                                    <FiExternalLink />
+                                    Открыть чат
+                                </button>
+                                <LinkGroup>
+                                    <LinkButton onClick={handleCopyChatLink}>
+                                        <FiCopy />
+                                        Скопировать ссылку
+                                    </LinkButton>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                        <ThemeLabel>тема:</ThemeLabel>
+                                        <ThemeSelector
+                                            value={selectedThemeName}
+                                            onChange={(e) => setSelectedThemeName(e.target.value)}
+                                        >
+                                            <option value="">По умолчанию</option>
+                                            {themes && Object.keys(themes).map((themeName) => (
+                                                <option key={themeName} value={themeName}>
+                                                    {themeName}
+                                                </option>
+                                            ))}
+                                        </ThemeSelector>
+                                    </div>
+                                </LinkGroup>
+                            </ButtonsRow>
+                        </CardContent>
+                    </DashboardCard>
+                    <DashboardCard>
+                        <DashboardCardHeader>
+                            <CardTitle>
+                            Виджеты
+                            </CardTitle>
+                        </DashboardCardHeader>
+                        <CardContent>
+                            <ButtonsRow>
+                                <button onClick={openPlayer1}>
+                                    <FiExternalLink/>
+                                    Плеер-карточка
+                                </button>
+                                <button onClick={openPlayer2}>
+                                    <FiExternalLink/>
+                                    Плеер-пластинка
+                                </button>
+                                <button onClick={openFollowersCounter}>
+                                    <FiExternalLink/>
+                                    Цель фолловеров/стрим
+                                </button>
+                            </ButtonsRow>
+                        </CardContent>
+                    </DashboardCard>
                 </Content>
 
                 <LogPanel>
@@ -664,7 +711,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.5.1-beta</Version>
+                <Version>v0.5.2-beta</Version>
             </Footer>
         </Wrapper>
     );
