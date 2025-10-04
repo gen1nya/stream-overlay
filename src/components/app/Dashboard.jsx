@@ -318,31 +318,6 @@ const FollowersCounter = styled.div`
     }
 `;
 
-const headerTexts = [
-    'Ну шо?',
-    '\"Боты + в чат\"',
-    'Кто здесь?!',
-    'Срочно! Поправь монитор!',
-    '[ПЕКО]',
-    'Привет... чем могу помочь?',
-    'Молочный UwU\'н',
-    'Emotional Damage!',
-    'Опять забыл настроить?',
-    'ФЫР-ФЫР-ФЫР',
-    '!roulette',
-    'Вращайте барабан',
-    'Я Олег, мне 42 года',
-    'Мы тыкаем палочками',
-    'Когда ДРГ?',
-    'Good luck, have fun!',
-    'Ну, удачной охоты, сталкер!',
-    'Хорошего стрима ;)',
-    'Хихи-Хаха',
-    '…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ',
-    'Ты рыбак?',
-    'undefined',
-];
-
 export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
@@ -351,7 +326,6 @@ export default function Dashboard() {
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
     const [isOnline, setIsOnline] = useState(false);
-    const [headerText] = useState(() => headerTexts[Math.floor(Math.random() * headerTexts.length)]);
 
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
@@ -404,6 +378,64 @@ export default function Dashboard() {
         'kurosakissora',
         'qvik_l'
     ];
+
+    const ExternalLink = ({ href, children }) => (
+        <span
+            onClick={() => openExternalLink(href)}
+            style={{
+                color: '#9147ff',
+                textDecoration: 'underline',
+                cursor: 'pointer'
+            }}
+        >
+        {children}
+    </span>
+    );
+
+    const headerTexts = [
+        'Ну шо?',
+        '\"Боты + в чат\"',
+        'Кто здесь?!',
+        'Срочно! Поправь монитор!',
+        '[ПЕКО]',
+        'Привет... чем могу помочь?',
+        'Молочный UwU\'н',
+        'Emotional Damage!',
+        'Опять забыл настроить?',
+        'ФЫР-ФЫР-ФЫР',
+        '!roulette',
+        'Вращайте барабан',
+        'Я Олег, мне 42 года',
+        'Мы тыкаем палочками',
+        'Когда ДРГ?',
+        'Good luck, have fun!',
+        'Ну, удачной охоты, сталкер!',
+        'Хорошего стрима ;)',
+        'Хихи-Хаха',
+        '…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ',
+        'Ты рыбак?',
+        'undefined',
+        'Евготаро Пекорский',
+        'Гоу ту хорни джейл',
+        'Кuwuwuн',
+        '[ДАННЫЕ УДАЛЕНЫ]',
+        '[Здесь могла быть ваша паста]',
+        'Лисонад',
+        'Silly-cat натрия',
+        'Пуэра в горшок мне!',
+        '\<Удалено модератором\>',
+        'Киси-киси мяу-мяу',
+        'Пуэра в горшок мне!',
+        'ЛисDuke Nukem',
+        'TheIlluminati',
+        'Ррррыба!',
+        'Вставай самурай - стрим упал',
+        <span>also try <ExternalLink href='https://streamiverse.io'>streamiverse.io</ExternalLink></span>,
+        <ExternalLink href='https://tools.rus.ebatel.online/'>Ebatel.online</ExternalLink>,
+        'Здорова солнышки!',
+    ];
+
+    const [headerText] = useState(() => headerTexts[Math.floor(Math.random() * headerTexts.length)]);
 
     useEffect(() => {
         if (logPanelRef.current) {
