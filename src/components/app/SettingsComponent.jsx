@@ -36,7 +36,6 @@ import AddNewStyleButton from "../utils/AddNewStyleButton";
 import {AiFillRobot} from "react-icons/ai";
 import Roulette from "./settings/bot/roulette/Roulette";
 import PingPongComponent from "./settings/bot/pingpong/PingPongComponent";
-import {useTheme} from "../../hooks/useTheme";
 import UnifiedSettingsComponent from "./settings/UnifiedSettingsComponent";
 import FFTControlComponent from "./settings/FFTControlComponent";
 import YouTubeScraperComponent from "./settings/YouTubeScraperComponent";
@@ -49,6 +48,7 @@ import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComp
 import {LuFileStack} from "react-icons/lu";
 import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 import {useWebSocket} from "../../context/WebSocketContext";
+import {useThemeManager} from "../../hooks/useThemeManager";
 
 const Panel = styled.div`
     position: fixed;
@@ -205,10 +205,22 @@ const PageInfoConfig = {
 export default function Settings() {
     const navigate = useNavigate();
 
-    const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
-    const [selectedTheme, setSelectedTheme] = useTheme(defaultTheme);
-    const [selectedThemeName, setSelectedThemeName] = React.useState("default");
-    const [themeList, setThemeList] = React.useState({});
+    // Используем менеджер тем
+    const {
+        themes,
+        selectedTheme,
+        selectedThemeName,
+        setSelectedThemeName,
+        isThemeSelectorOpen,
+        setSelectedTheme,
+        openThemeSelector,
+        closeThemeSelector,
+        handleExportTheme,
+        handleDeleteTheme,
+        handleThemeChange,
+        handleImportTheme,
+        handleCreateTheme,
+    } = useThemeManager();
 
     // Bot config state
     const [isBotConfigOpen, setIsBotConfigOpen] = useState(false);
@@ -217,9 +229,6 @@ export default function Settings() {
 
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
-
-    // Используем WebSocket из контекста
-    const { send, subscribe, isConnected } = useWebSocket();
 
     const [colorPopup, setColorPopup] = useState({
         open: false,
@@ -273,27 +282,6 @@ export default function Settings() {
         loadBotConfig();
     }, []);
 
-    // Подключаемся к WebSocket и подписываемся на каналы
-    useEffect(() => {
-        if (isConnected) {
-            console.log('🟢 WebSocket подключен');
-            send({channel: 'theme:get-all'});
-        }
-
-        const unsubscribe = subscribe('themes:get', (payload) => {
-            const {themes, currentThemeName} = payload;
-            console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
-            setThemeList(themes);
-            setSelectedThemeName(currentThemeName);
-            setSelectedTheme(themes[currentThemeName] || defaultTheme);
-        });
-
-        return () => {
-            console.log('🔴 WebSocket отписка');
-            unsubscribe();
-        };
-    }, [isConnected, send, subscribe, setSelectedTheme]);
-
     /** Единая «точка входа» для всех изменений темы */
     const apply = updaterOrTheme => {
         setSelectedTheme((prev) => {
@@ -310,41 +298,10 @@ export default function Settings() {
     const handlePreviewButton = async () => {
         await openPreview()
     };
-    const handleThemesButton = () => {
-        setIsThemeSelectorOpen(true)
-    };
 
     const handleBotConfigClick = () => {
         setIsBotConfigOpen(true);
     };
-
-    const handleExportTheme = (name) => {
-        let theme;
-        if (name === selectedThemeName) {
-            theme = selectedTheme;
-        } else {
-            theme = themeList[name];
-        }
-        if (!theme) return;
-        const data = JSON.stringify({[name]: theme}, null, 2);
-        const blob = new Blob([data], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${name}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    const handleDeleteTheme = (name) => {
-        if (window.confirm(`Delete theme "${name}"?`)) {
-            deleteTheme(name);
-        }
-    };
-
-    const handleThemeChange = (themeName) => {
-        setTheme(themeName);
-    }
 
     const currentPageInfo = PageInfoConfig[activePage] || PageInfoConfig.general;
 
@@ -370,17 +327,14 @@ export default function Settings() {
             )}
             {isThemeSelectorOpen && (
                 <ThemePopup
-                    onClose={() => setIsThemeSelectorOpen(false)}
-                    themeList={themeList}
+                    onClose={closeThemeSelector}
+                    themeList={themes}
                     selectedThemeName={selectedThemeName}
                     onChangeTheme={handleThemeChange}
                     onDeleteTheme={handleDeleteTheme}
                     onExportTheme={handleExportTheme}
-                    onImportTheme={importTheme}
-                    onCreateTheme={(name) => {
-                        createNewTheme(name);
-                        console.log("Создание новой темы:", name);
-                    }}
+                    onImportTheme={handleImportTheme}
+                    onCreateTheme={handleCreateTheme}
                 />
             )}
 
@@ -394,7 +348,7 @@ export default function Settings() {
                 </HeaderLeft>
 
                 <HeaderActions>
-                    <ThemeIndicator onClick={handleThemesButton}>
+                    <ThemeIndicator onClick={openThemeSelector}>
                         <FiLayers/>
                         Тема: <span className="theme-name">{selectedThemeName}</span>
                     </ThemeIndicator>

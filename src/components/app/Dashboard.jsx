@@ -29,12 +29,11 @@ import {OnlineIndicator} from "../utils/OnlineIndicator";
 import {Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton} from "./settings/SharedSettingsStyles";
-import {useTheme} from "../../hooks/useTheme";
-import {defaultTheme} from "../../theme";
 import {getCurrentBot, updateBot} from "../../services/botsApi";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
 import {useWebSocket} from "../../context/WebSocketContext";
+import {useThemeManager} from "../../hooks/useThemeManager";
 
 const Wrapper = styled.div`
     position: relative;
@@ -100,7 +99,7 @@ const ButtonsRow = styled.div`
         align-items: center;
         gap: 6px;
         font-size: 14px;
-        
+
         svg {
             width: 16px;
             height: 16px;
@@ -119,7 +118,7 @@ const LinkGroup = styled.div`
     background: #383838;
     border-radius: 8px;
     border: 1px solid #555;
-    
+
     &::before {
         content: '';
         position: absolute;
@@ -131,7 +130,7 @@ const LinkGroup = styled.div`
         background: #666;
         border-radius: 1.5px;
     }
-    
+
     position: relative;
     padding-left: 12px;
 `;
@@ -142,11 +141,11 @@ const LinkButton = styled.button`
     display: flex !important;
     align-items: center !important;
     gap: 6px !important;
-    
+
     &:hover {
         background: #5a5a5a !important;
     }
-    
+
     svg {
         width: 16px !important;
         height: 16px !important;
@@ -162,18 +161,18 @@ const ThemeSelector = styled.select`
     font-size: 12px;
     cursor: pointer;
     min-width: 120px;
-    
+
     &:hover {
         background: #333;
         border-color: #666;
     }
-    
+
     &:focus {
         outline: none;
         border-color: #777;
         background: #333;
     }
-    
+
     option {
         background: #2a2a2a;
         color: #fff;
@@ -339,14 +338,23 @@ export default function Dashboard() {
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
 
-    // Новое состояние для тем
-    const [themes, setThemes] = useState({});
-    const [selectedTheme, setSelectedTheme] = useTheme(defaultTheme);
-    const [selectedThemeName, setSelectedThemeName] = useState('');
-    const [isThemeSelectorOpen, setIsThemeSelectorOpen] = React.useState(false);
-
     // Используем WebSocket из контекста
     const { send, subscribe, isConnected } = useWebSocket();
+
+    // Используем менеджер тем
+    const {
+        themes,
+        selectedThemeName,
+        setSelectedThemeName,
+        isThemeSelectorOpen,
+        openThemeSelector,
+        closeThemeSelector,
+        handleExportTheme,
+        handleDeleteTheme,
+        handleThemeChange,
+        handleImportTheme,
+        handleCreateTheme,
+    } = useThemeManager();
 
     const loadBotConfig = async () => {
         try {
@@ -364,34 +372,6 @@ export default function Dashboard() {
     useEffect(() => {
         loadBotConfig();
     }, []);
-
-    const handleExportTheme = (name) => {
-        let theme;
-        if (name === selectedThemeName) {
-            theme = selectedTheme;
-        } else {
-            theme = themes[name];
-        }
-        if (!theme) return;
-        const data = JSON.stringify({[name]: theme}, null, 2);
-        const blob = new Blob([data], {type: 'application/json'});
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${name}.json`;
-        a.click();
-        URL.revokeObjectURL(url);
-    };
-
-    const handleDeleteTheme = (name) => {
-        if (window.confirm(`Delete theme "${name}"?`)) {
-            deleteTheme(name);
-        }
-    };
-
-    const handleThemeChange = (themeName) => {
-        setTheme(themeName);
-    }
 
     const openUserInfoPopup = (userId, userName) => {
         setUserInfoPopup({ id: userId, userName: userName, open: true });
@@ -442,10 +422,6 @@ export default function Dashboard() {
         navigate('/settings', { replace: false });
     };
 
-    const handleThemesButton = () => {
-        setIsThemeSelectorOpen(true)
-    };
-
     const handleBotConfigClick = () => {
         setIsBotConfigOpen(true);
     };
@@ -469,21 +445,6 @@ export default function Dashboard() {
                 setAccount(accountInfo);
                 document.title = `Оверлеешная - ${accountInfo.displayName || accountInfo.login}`;
             });
-
-            // Загружаем темы через API
-            getThemes().then(response => {
-                const { themes, currentThemeName } = response;
-                if (themes && typeof themes === 'object') {
-                    setThemes(themes);
-                } else {
-                    console.warn('Темы не являются объектом:', themes);
-                    setThemes({});
-                }
-                setSelectedThemeName(currentThemeName || '');
-            }).catch(err => {
-                console.error('Ошибка загрузки тем:', err);
-                setThemes({});
-            });
         }
         const update = async () => {
             const s = await getStats();
@@ -494,10 +455,9 @@ export default function Dashboard() {
         return () => clearInterval(interval);
     }, []);
 
-    // Подключаемся к WebSocket и подписываемся на каналы
+    // Подключаемся к WebSocket и подписываемся на каналы (кроме тем - они в useThemeManager)
     useEffect(() => {
         if (isConnected) {
-            send({channel: 'theme:get-all'});
             send({channel: 'log:get'});
             send({channel: 'status:get_broadcasting'});
         }
@@ -514,21 +474,11 @@ export default function Dashboard() {
             setLogs(payload.logs);
         });
 
-        // Подписка на темы
-        const unsubscribeThemes = subscribe('themes:get', (payload) => {
-            const {themes, currentThemeName} = payload;
-            console.log('Получены темы:', themes, 'Текущая тема:', currentThemeName);
-            setThemes(themes);
-            setSelectedThemeName(currentThemeName);
-            setSelectedTheme(themes[currentThemeName] || defaultTheme);
-        });
-
         return () => {
             unsubscribeBroadcasting();
             unsubscribeLogs();
-            unsubscribeThemes();
         };
-    }, [isConnected, send, subscribe, setSelectedTheme]);
+    }, [isConnected, send, subscribe]);
 
     const now = Date.now();
     const uptime = now - stats.startTime;
@@ -573,17 +523,14 @@ export default function Dashboard() {
             )}
             {isThemeSelectorOpen && (
                 <ThemePopup
-                    onClose={() => setIsThemeSelectorOpen(false)}
+                    onClose={closeThemeSelector}
                     themeList={themes}
                     selectedThemeName={selectedThemeName}
                     onChangeTheme={handleThemeChange}
                     onDeleteTheme={handleDeleteTheme}
                     onExportTheme={handleExportTheme}
-                    onImportTheme={importTheme}
-                    onCreateTheme={(name) => {
-                        createNewTheme(name);
-                        console.log("Создание новой темы:", name);
-                    }}
+                    onImportTheme={handleImportTheme}
+                    onCreateTheme={handleCreateTheme}
                 />
             )}
             <MainArea>
@@ -594,7 +541,7 @@ export default function Dashboard() {
                         </HeaderLeft>
 
                         <HeaderActions>
-                            <ThemeIndicator onClick={handleThemesButton}>
+                            <ThemeIndicator onClick={openThemeSelector}>
                                 <FiLayers/>
                                 Тема: <span className="theme-name">{selectedThemeName}</span>
                             </ThemeIndicator>
