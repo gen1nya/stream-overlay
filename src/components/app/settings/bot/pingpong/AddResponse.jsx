@@ -22,14 +22,15 @@ export default function AddResponse({
 
         apply((prev) =>
             updateConfig(prev, (cfg) => {
-                const commands = cfg.bot.pingpong.commands.map((cmd, i) =>
+                console.log(cfg);
+                const commands = cfg.pingpong.commands.map((cmd, i) =>
                     i === commandIndex
                         ? { ...cmd, responses: [...cmd.responses, trimmed] }
                         : cmd,
                 );
                 return {
                     ...cfg,
-                    bot: { ...cfg.bot, pingpong: { ...cfg.bot.pingpong, commands } },
+                    pingpong: { ...cfg.pingpong, commands },
                 };
             }),
         );

@@ -433,6 +433,7 @@ export default function Dashboard() {
         <span>also try <ExternalLink href='https://streamiverse.io'>streamiverse.io</ExternalLink></span>,
         <ExternalLink href='https://tools.rus.ebatel.online/'>Ebatel.online</ExternalLink>,
         'Здорова солнышки!',
+        'Ты сейсо или хорни?',
     ];
 
     const [headerText] = useState(() => headerTexts[Math.floor(Math.random() * headerTexts.length)]);
@@ -743,7 +744,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.5.2-beta</Version>
+                <Version>v0.5.3-beta</Version>
             </Footer>
         </Wrapper>
     );
