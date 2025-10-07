@@ -25,7 +25,6 @@ const WaveForm = ({
                       reconnectInterval = 2000,    // ms, socket reconnect interval
                       amplitude         = 1,       // vertical scale factor (0-1)
                       samples           = 1024,    // expected number of samples (downsampled from 2048)
-                      useBinary         = true,   // set to true for binary WebSocket (more efficient)
                   }) => {
 
     /* ========= utils ========= */
@@ -35,6 +34,7 @@ const WaveForm = ({
     const current  = useRef(makeF32(0));
     const start    = useRef(makeF32(0));
     const target   = useRef(makeF32(0));
+    const useBinary         = true;
 
     /* ========= canvas and animations ========= */
     const canvasRef  = useRef(null);
@@ -93,7 +93,7 @@ const WaveForm = ({
         }
 
         // Vertical grid lines
-        const vLines = 10;
+        const vLines = 16;
         for (let i = 0; i <= vLines; i++) {
             const x = (width / vLines) * i;
             ctx.beginPath();
