@@ -46,6 +46,7 @@ import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComp
 import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
+import GachaComponent from "./settings/bot/gacha/GachaComponent";
 
 const Panel = styled.div`
     position: fixed;
@@ -492,6 +493,10 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                             <Roulette
                                 botConfig={botConfig}
                                 apply={applyBotConfig}
+                            />
+                            <GachaComponent
+                                apply={applyBotConfig}
+                                gachaConfig={botConfig.gacha}
                             />
                         </>
                     ) : (

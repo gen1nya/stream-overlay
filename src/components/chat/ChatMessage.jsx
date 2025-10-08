@@ -81,7 +81,7 @@ const Username = styled.span`
     margin-right: 6px;
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
     color: ${props => props.color || '#fff'};
-    text-shadow: ${({theme}) => {
+   /* text-shadow: ${({theme}) => {
         if (!theme.allMessages) {
             return 'none';
         }
@@ -97,7 +97,7 @@ const Username = styled.span`
         const shadowOpacity = m.messageFont?.shadowOpacity ?? textShadowOpacity ?? 0;
         const shadowRadius = m.messageFont?.shadowRadius ?? textShadowRadius ?? 0;
         return `${textShadowXPosition}px ${textShadowYPosition}px ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
-    }};
+    }};*/
 `;
 
 const MessageText = styled.span`
@@ -132,16 +132,26 @@ const MessageText = styled.span`
 `;
 
 export function getBackgroundForTextColor(hex) {
-    if (!hex) { return "#000000"; }
+    if (!hex) return "#000000";
+
     const cleanHex = hex.replace("#", "");
-    const r = parseInt(cleanHex.substring(0, 2), 16);
-    const g = parseInt(cleanHex.substring(2, 4), 16);
-    const b = parseInt(cleanHex.substring(4, 6), 16);
+    const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+    const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+    const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
 
-    // формула относительной яркости (per ITU-R BT.601)
-    const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+    // Гамма-коррекция (sRGB -> линейное)
+    const linear = (v) =>
+        v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
 
-    return brightness > 128 ? "#000000" : "#FFFFFF";
+    const R = linear(r);
+    const G = linear(g);
+    const B = linear(b);
+
+    // Относительная яркость по WCAG
+    const luminance = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+
+    // Порог 0.179 — это рекомендация WCAG
+    return luminance > 0.179 ? "#0d001a" : "#e7e5ea";
 }
 
 export default function ChatMessage({ message, showSourceChannel }) {

@@ -6,7 +6,7 @@ import {UserState, UserStateHolder} from './UserStateHolder';
 import { LogService } from '../logService';
 import {Follower, UserData} from './types/UserData';
 import { AppEvent } from './messageParser';
-import {fetchFollower, fetchModerators, fetchStreams, fetchVips} from "./authorizedHelixApi";
+import {fetchCustomRewards, fetchFollower, fetchModerators, fetchStreams, fetchVips} from "./authorizedHelixApi";
 import {DbRepository} from "../db/DbRepository";
 import {ipcMain} from "electron";
 import {EVENT_BROADCASTING} from "./esService";
@@ -140,11 +140,12 @@ export class TwitchClient extends EventEmitter {
     await chatService.sendMessage(message);
   }
 
-  async refreshUser(): Promise<void> {
+  async refreshUser(): Promise<string | null> {
     const tokens = await authService.getTokens();
     if (tokens && tokens.user_id) {
       this.userState.setId(tokens.user_id);
     }
+    return tokens?.user_id ?? null;
   }
 
   getEditors(): Promise<UserData[]> {
@@ -153,6 +154,10 @@ export class TwitchClient extends EventEmitter {
 
   getUser(): Promise<UserState> {
     return this.userState.getUser();
+  }
+
+  getUserId(): string | null {
+    return this.userState.getUserId();
   }
 
   invalidateUserCache(): void {
@@ -197,6 +202,11 @@ export class TwitchClient extends EventEmitter {
         return { total, data };
     })
 
+    ipcMain.handle('twitch:get-rewards', async () => {
+        const response = await fetchCustomRewards();
+        return response.data;
+    });
+
     ipcMain.handle('auth:getAccountInfo', async () => {
         const accountInfo = await this.userState.getUser();
         const editors = await this.userState.getEditors();
@@ -219,4 +229,5 @@ export class TwitchClient extends EventEmitter {
     //   return this.getLastChatTimestamp();
     // });
   }
+
 }

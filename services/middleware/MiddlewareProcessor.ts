@@ -5,7 +5,11 @@ import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
 import Middleware from "./Middleware";
 import {UserData} from "../twitch/types/UserData";
-import {BotConfig} from "../store/StoreSchema";
+import {BotConfig, StoreSchema} from "../store/StoreSchema";
+import ElectronStore from "electron-store";
+import {GachaMiddleware} from "./gacha/GachaMiddleware";
+import type * as Database from "better-sqlite3";
+import {DbRepository} from "../db/DbRepository";
 
 
 export class MiddlewareProcessor {
@@ -13,12 +17,17 @@ export class MiddlewareProcessor {
   private logService: LogService;
   private middlewares: Middleware[] = [];
 
-  constructor(applyAction: (action: { type: ActionType; payload: any }) => Promise<void>, logService: LogService) {
+  constructor(
+      applyAction: (action: { type: ActionType; payload: any }) => Promise<void>,
+      logService: LogService,
+      store: ElectronStore<StoreSchema>,
+  ) {
     this.applyAction = applyAction;
     this.logService = logService;
     this.middlewares = [
       new RouletteService(this.logService),
-      new GreetingMiddleware(this.logService)
+      new GreetingMiddleware(this.logService),
+      new GachaMiddleware(store)
     ];
   }
 
@@ -37,61 +46,11 @@ export class MiddlewareProcessor {
     return currentMessage;
   }
 
-
-  isBotConfig(obj: any): obj is BotConfig {
-    const r = obj?.roulette;
-    const c = obj?.custom;
-    const p = obj?.pingpong;
-
-    const validCustom = c === null || (typeof c === 'object' && typeof c?.enabled === 'boolean');
-
-    const validPingPong =
-        typeof p === 'object' &&
-        p !== null &&
-        typeof p.enabled === 'boolean' &&
-        Array.isArray(p.commands) &&
-        p.commands.every((cmd: any) =>
-            typeof cmd === 'object' &&
-            typeof cmd.enabled === 'boolean' &&
-            typeof cmd.name === 'string' &&
-            typeof cmd.triggerType === 'string' &&
-            ['exact', 'start', 'contains'].includes(cmd.triggerType) &&
-            Array.isArray(cmd.triggers) &&
-            cmd.triggers.every((tr: any) =>
-                typeof tr === 'object' &&
-                typeof tr.type === 'string' &&
-                (tr.type === 'text' || (tr.type === 'regex' && typeof tr.flags === 'string')) &&
-                typeof tr.value === 'string'
-            ) &&
-            Array.isArray(cmd.responses) &&
-            cmd.responses.every((resp: any) => typeof resp === 'string')
-        );
-
-    return (
-        typeof r?.enabled === 'boolean' &&
-        Array.isArray(r?.commands) &&
-        Array.isArray(r?.survivalMessages) &&
-        Array.isArray(r?.deathMessages) &&
-        Array.isArray(r?.cooldownMessage) &&
-        Array.isArray(r?.protectedUsersMessages) &&
-        typeof r?.allowToBanEditors === 'boolean' ||
-        typeof r?.muteDuration === 'number' &&
-        typeof r?.commandCooldown === 'number' &&
-        typeof r?.chance === 'number' &&
-        validCustom && validPingPong
-    );
-  }
-
-  safeCast<T>(value: any, checker: (v: any) => v is T): T | null {
-    return checker(value) ? value : null;
-  }
-
-  onThemeUpdated(botConfig: any): void {
-    const config = this.safeCast<BotConfig>(botConfig, this.isBotConfig);
-    if (config) {
+  onThemeUpdated(botConfig: BotConfig): void {
+    if (botConfig) {
       console.log('✅ Конфигурация бота валидна!');
       for (const middleware of this.middlewares) {
-        middleware.updateConfig(config);
+        middleware.updateConfig(botConfig);
       }
     } else {
       console.warn('❌ Невалидная конфигурация бота!', botConfig);
@@ -106,6 +65,13 @@ export class MiddlewareProcessor {
     }
   }
 
+  onUserUpdated(userId: string | null) {
+    for (const middleware of this.middlewares) {
+      if (middleware instanceof GachaMiddleware) {
+        middleware.onUserIdUpdated(userId);
+      }
+    }
+  }
 }
 
 export function applyRandomInt(template: string): string {

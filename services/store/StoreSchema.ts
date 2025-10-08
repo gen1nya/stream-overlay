@@ -1,3 +1,6 @@
+import {GachaStoreSchema} from "../middleware/gacha/types";
+
+
 export interface StoreSchema {
     themes: {
         default: ThemeConfig;
@@ -177,7 +180,6 @@ export interface ThemeConfig {
     player: PlayerConfig;
     allMessages: AllMessagesConfig;
     overlay: OverlayConfig;
-    bot: BotConfig;
 }
 
 // Bot command trigger configuration
@@ -227,4 +229,5 @@ export interface BotConfig {
     roulette: RouletteBotConfig;
     custom: CustomBotConfig;
     pingpong: PingPongBotConfig;
+    gacha: GachaStoreSchema;
 }

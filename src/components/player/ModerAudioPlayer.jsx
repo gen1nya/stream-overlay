@@ -127,7 +127,7 @@ const Cover = styled.img`
         }
     }}px;
     border-radius: ${({theme}) => (theme.modernPlayer?.borderRadius || 20) * 0.3}px;
-    background-color: #535bf2;
+    background-color: rgba(83, 91, 242, 0.65);
     object-fit: cover;
     box-shadow: 3px 3px 12px rgba(0, 0, 0, 0.1);
     flex-shrink: 0;
@@ -387,7 +387,7 @@ function ModernAudioPlayer() {
                     <Cover
                         ref={coverRef}
                         src={metadata?.albumArtBase64 ? `${metadata.albumArtBase64}` : undefined}
-                        alt="Album Art"
+                        alt=""
                         crossOrigin="anonymous"
                     />
                     <Info>

@@ -72,6 +72,7 @@ export function registerIpcHandlers(
     });
     onAccountReady();
   });
+
   ipcMain.handle('chat:open-overlay', () => createChatWindow());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());
   ipcMain.handle('utils:open_url', async (_e, url) => { await shell.openExternal(url); });

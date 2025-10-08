@@ -4,6 +4,7 @@ import * as authService from './authService';
 import {CLIENT_ID} from './authService';
 import {FollowerResponse, ModeratorResponse, UsersResponse, VipsResponse} from "./types/UserData";
 import {TwitchStreamResponseType} from "./types/TwitchStreamResponseType";
+import {CustomRewardResponse} from "./types/CustomRevardData";
 
 const BASE_URL = 'https://api.twitch.tv/helix';
 
@@ -356,6 +357,21 @@ export async function getExtendedUser(query: UserQuery): Promise<ExtendedTwitchU
         isBanned: banStatus.isBanned,
         banExpiresAt: banStatus.banExpiresAt
     };
+}
+
+export async function fetchCustomRewards(): Promise<CustomRewardResponse> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = await authService.getUserId();
+
+    const params = new URLSearchParams({ broadcaster_id: String(broadcaster_id) });
+    const response = await axios.get<CustomRewardResponse>(`${BASE_URL}/channel_points/custom_rewards?${params.toString()}`, {
+        headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'Client-Id': authService.CLIENT_ID,
+        },
+    });
+    return response.data;
 }
 
 export async function fetchEditors(): Promise<UsersResponse> {

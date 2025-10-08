@@ -19,6 +19,7 @@ import {AudiosessionManager} from "./audiosessionManager";
 import {BotConfig, PingPongCommandConfig, StoreSchema, ThemeConfig} from "./services/store/StoreSchema";
 import {ProxyService} from "./services/ProxyService";
 import {BotConfigService} from "./services/BotConfigService";
+import {DbRepository} from "./services/db/DbRepository";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -78,14 +79,6 @@ if (migrated) {
 }
 let currentThemeName: string = (store.get('currentTheme') as string) || 'default';
 
-if (!store.has('bots') || Object.keys(store.get('bots')).length === 0) {
-  console.log('Боты не найдены, извлекаем из тем');
-  const bots = migrateBots(themes).bots;
-  store.set('bots', bots);
-  store.set('currentBot', currentThemeName);
-  console.log('Боты успешно сохранены в хранилище');
-}
-
 let currentTheme = themes[currentThemeName] || defaultTheme;
 messageCache.updateSettings({
   lifetime: currentTheme.allMessages?.lifetime ?? 60,
@@ -121,7 +114,8 @@ const applyAction = async (action: { type: string; payload: any }) => {
       break;
   }
 };
-const middlewareProcessor = new MiddlewareProcessor(applyAction, logService);
+
+const middlewareProcessor = new MiddlewareProcessor(applyAction, logService, store);
 
 const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
   middlewareProcessor.setEditors(editors);
@@ -170,11 +164,12 @@ function broadcast(channel: string, payload: any) {
   });
 }
 
-twitchClient.on('event', ({ destination, event }) => {
+twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
     messageCache.addMessage(event);
   } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
-    messageCache.addMessage(event);
+    const result = await middlewareProcessor.processMessage(event);
+    messageCache.addMessage(result);
   } else {
     broadcast(destination, event);
   }
@@ -208,7 +203,13 @@ app.whenReady().then(() => {
       messageCache,
       logService,
       twitchClient,
-      () => twitchClient.refreshUser(),
+      () => {
+        twitchClient.refreshUser().then((userId) => {
+          middlewareProcessor.onUserUpdated(userId)
+        });
+
+
+      }
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();
@@ -284,42 +285,6 @@ app.on('before-quit', async (event) => {
     process.exit(0);
   }, 500);
 });
-
-function migrateBots(themes: Record<string, any>): { bots: Record<string, BotConfig> } {
-  const bots: Record<string, BotConfig> = {};
-
-  for (const [key, theme] of Object.entries(themes)) {
-    bots[key] = {
-      roulette: {
-        enabled: theme.bot?.roulette?.enabled ?? false,
-        allowToBanEditors: theme.bot?.roulette?.allowToBanEditors ?? false,
-        commands: theme.bot?.roulette?.commands ?? [],
-        survivalMessages: theme.bot?.roulette?.survivalMessages ?? [],
-        deathMessages: theme.bot?.roulette?.deathMessages ?? [],
-        cooldownMessage: theme.bot?.roulette?.cooldownMessage ?? [],
-        protectedUsersMessages: theme.bot?.roulette?.protectedUsersMessages ?? [],
-        muteDuration: theme.bot?.roulette?.muteDuration ?? 60,
-        commandCooldown: theme.bot?.roulette?.commandCooldown ?? 60,
-        chance: theme.bot?.roulette?.chance ?? 0.5,
-      },
-      pingpong: {
-        enabled: theme.bot?.pingpong?.enabled ?? false,
-        commands: (theme.bot?.pingpong?.commands || []).map((cmd: PingPongCommandConfig) => ({
-          ...cmd,
-          triggers: cmd.triggers || [],
-          responses: cmd.responses || [],
-          triggerType: cmd.triggerType || 'exact',
-        })),
-      },
-      custom: {
-        enabled: theme.bot?.custom?.enabled ?? false,
-      },
-    };
-  }
-
-  return { bots };
-}
-
 
 function migrateTheme(theme: any) {
   if (!theme) return theme;

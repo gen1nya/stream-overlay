@@ -184,3 +184,7 @@ export async function searchTwitchUsers(query, offset, limit) {
         throw error;
     }
 }
+
+export async function getTwitchRewards() {
+    return ipcRenderer?.invoke('twitch:get-rewards');
+}
