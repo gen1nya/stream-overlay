@@ -47,6 +47,10 @@ export const openOverlay = () => {
     return ipcRenderer?.invoke('chat:open-overlay');
 };
 
+export const openTerminal = () => {
+    return ipcRenderer?.invoke('arg:create-terminal');
+}
+
 export const setRemoteTheme = (theme, name) => {
     ipcRenderer.send('theme:update', theme, name);
 }

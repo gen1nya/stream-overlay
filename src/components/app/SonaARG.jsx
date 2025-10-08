@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 
 // Цветовая схема
 const COLORS = {
@@ -35,12 +35,9 @@ const decrypt = (encrypted) => {
     }
 };
 
-// База пользователей (зашифрованные данные: имя пользователя -> уровень допуска)
+// База пользователей (зашифрованные данные: имя пользователя -> уровень доступа)
 const USERS_DB = {
     [encrypt('guest')]: 0,
-    [encrypt('user')]: 1,
-    [encrypt('admin')]: 2,
-    [encrypt('root')]: 3,
 };
 
 // Конфигурация команд
@@ -138,22 +135,163 @@ const commandConfig = {
         description: 'Секретная команда высокого уровня',
         accessLevel: 2,
         execute: () => {
-            return `🔐 Секретное сообщение: Вы получили доступ к закрытым данным!\nЭта команда доступна только администраторам.`;
+            return `🔒 Секретное сообщение: Вы получили доступ к закрытым данным!\nЭта команда доступна только администраторам.`;
         }
     },
     shutdown: {
         description: 'Выключить систему (только для root)',
         accessLevel: 3,
         execute: () => {
-            return `⚠️  ВНИМАНИЕ: Инициирована процедура выключения системы...\n>>> СИСТЕМА БУДЕТ ОСТАНОВЛЕНА <<<\n(это всего лишь эмуляция)`;
+            return `⚠️ ВНИМАНИЕ: Инициирована процедура выключения системы...\n>>> СИСТЕМА БУДЕТ ОСТАНОВЛЕНА <<<\n(это всего лишь эмуляция)`;
         }
     }
 };
 
+// ============ ЭФФЕКТЫ СТАРОГО МОНИТОРА ============
+
+// Анимация мерцания
+const flicker = keyframes`
+    0% { opacity: 0.97; }
+    5% { opacity: 1; }
+    10% { opacity: 0.98; }
+    15% { opacity: 0.99; }
+    20% { opacity: 1; }
+    25% { opacity: 0.98; }
+    30% { opacity: 0.99; }
+    35% { opacity: 0.97; }
+    40% { opacity: 1; }
+    45% { opacity: 0.99; }
+    50% { opacity: 0.98; }
+    55% { opacity: 1; }
+    60% { opacity: 0.97; }
+    65% { opacity: 0.99; }
+    70% { opacity: 1; }
+    75% { opacity: 0.98; }
+    80% { opacity: 0.99; }
+    85% { opacity: 0.97; }
+    90% { opacity: 1; }
+    95% { opacity: 0.99; }
+    100% { opacity: 0.98; }
+`;
+
+// Анимация помех/шума
+const noise = keyframes`
+    0%, 100% { transform: translate(0, 0); }
+    10% { transform: translate(-1px, 1px); }
+    20% { transform: translate(-2px, 0); }
+    30% { transform: translate(1px, -1px); }
+    40% { transform: translate(1px, 1px); }
+    50% { transform: translate(-1px, 0); }
+    60% { transform: translate(-2px, 1px); }
+    70% { transform: translate(2px, 1px); }
+    80% { transform: translate(-1px, -1px); }
+    90% { transform: translate(1px, 0); }
+`;
+
+// Контейнер всего экрана с CRT эффектом
+const CRTWrapper = styled.div`
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: #000;
+    overflow: hidden;
+`;
+
+// Слой с эффектом изгиба экрана
+const CRTScreen = styled.div`
+    width: 100%;
+    height: 100%;
+    position: relative;
+    background: radial-gradient(ellipse at center, ${COLORS.background} 0%, #000 100%);
+
+    /* Эффект изгиба ЭЛТ-экрана */
+    &::before {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+                rgba(18, 16, 16, 0) 50%,
+                rgba(0, 0, 0, 0.5) 50%
+        );
+        background-size: 100% 6px;
+        z-index: 2;
+        pointer-events: none;
+    }
+
+    /* Эффект виньетирования */
+    &::after {
+        content: "";
+        display: block;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.85) 100%);
+        z-index: 3;
+        pointer-events: none;
+    }
+`;
+
+// Слой со сканлайнами
+const Scanlines = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 4;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+            0deg,
+            rgba(0, 0, 0, 0.3),
+            rgba(0, 0, 0, 0.3) 2px,
+            transparent 2px,
+            transparent 4px
+    );
+    animation: ${flicker} 0.15s infinite;
+`;
+
+// Слой с эффектом свечения
+const GlowLayer = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    background: ${COLORS.text};
+    opacity: 0.08;
+    filter: blur(8px);
+    mix-blend-mode: screen;
+`;
+
+// Слой с шумом/помехами
+const NoiseLayer = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 5;
+    pointer-events: none;
+    opacity: 0.08;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzMDAiIGhlaWdodD0iMzAwIj48ZmlsdGVyIGlkPSJhIj48ZmVUdXJidWxlbmNlIGJhc2VGcmVxdWVuY3k9Ii43NSIgc3RpdGNoVGlsZXM9InN0aXRjaCIgdHlwZT0iZnJhY3RhbE5vaXNlIi8+PGZlQ29sb3JNYXRyaXggdHlwZT0ic2F0dXJhdGUiIHZhbHVlcz0iMCIvPjwvZmlsdGVyPjxwYXRoIGQ9Ik0wIDBoMzAwdjMwMEgweiIgZmlsdGVyPSJ1cmwoI2EpIiBvcGFjaXR5PSIuNSIvPjwvc3ZnPg==');
+    animation: ${noise} 0.2s infinite;
+`;
+
+// Основной контейнер терминала
 const TerminalContainer = styled.div`
     width: 100%;
     height: 100vh;
-    background-color: ${COLORS.background};
+    background-color: transparent;
     color: ${COLORS.text};
     font-family: 'Courier New', monospace;
     font-size: 14px;
@@ -162,6 +300,14 @@ const TerminalContainer = styled.div`
     overflow: hidden;
     display: flex;
     flex-direction: column;
+    position: relative;
+    z-index: 10;
+
+    /* Эффект свечения текста */
+    text-shadow:
+            0 0 8px ${COLORS.text},
+            0 0 15px ${COLORS.text}80,
+            0 0 20px ${COLORS.text}40;
 `;
 
 const TerminalHeader = styled.div`
@@ -169,6 +315,10 @@ const TerminalHeader = styled.div`
     padding-bottom: 10px;
     border-bottom: 1px solid ${COLORS.text};
     font-weight: bold;
+    text-shadow:
+            0 0 10px ${COLORS.text},
+            0 0 20px ${COLORS.text}80,
+            0 0 30px ${COLORS.text}60;
 `;
 
 const TerminalOutput = styled.div`
@@ -187,6 +337,9 @@ const TerminalOutput = styled.div`
     &::-webkit-scrollbar-thumb {
         background: ${COLORS.text};
         border-radius: 5px;
+        box-shadow:
+                0 0 8px ${COLORS.text},
+                0 0 15px ${COLORS.text}80;
     }
 `;
 
@@ -197,59 +350,69 @@ const OutputLine = styled.div`
 `;
 
 const InputLine = styled.div`
-  display: flex;
-  align-items: center;
-  position: relative;
+    display: flex;
+    align-items: center;
+    position: relative;
 `;
 
 const Prompt = styled.span`
-  color: ${COLORS.text};
-  margin-right: 8px;
-  font-weight: bold;
-  flex-shrink: 0;
+    color: ${COLORS.text};
+    margin-right: 8px;
+    font-weight: bold;
+    flex-shrink: 0;
 `;
 
 const InputWrapper = styled.div`
-  flex: 1;
-  position: relative;
-  display: inline-block;
+    flex: 1;
+    position: relative;
+    display: inline-block;
 `;
 
 const Input = styled.input`
-  background: transparent;
-  border: none;
-  color: ${COLORS.text};
-  font-family: 'Courier New', monospace;
-  font-size: 14px;
-  outline: none;
-  caret-color: transparent;
-  width: 100%;
-  min-width: 50px;
+    background: transparent;
+    border: none;
+    color: ${COLORS.text};
+    font-family: 'Courier New', monospace;
+    font-size: 14px;
+    outline: none;
+    caret-color: transparent;
+    width: 100%;
+    min-width: 50px;
+    text-shadow:
+            0 0 8px ${COLORS.text},
+            0 0 15px ${COLORS.text}80,
+            0 0 20px ${COLORS.text}40;
 `;
 
 const Cursor = styled.span`
-  position: absolute;
-  left: ${props => props.position}ch;
-  top: 0;
-  display: inline-block;
-  width: 8px;
-  height: 16px;
-  background-color: ${COLORS.text};
-  animation: blink 1s step-end infinite;
-  pointer-events: none;
-  
-  @keyframes blink {
-    50% {
-      opacity: 0;
+    position: absolute;
+    left: ${props => props.position}ch;
+    top: 0;
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background-color: ${COLORS.text};
+    box-shadow:
+            0 0 10px ${COLORS.text},
+            0 0 20px ${COLORS.text},
+            0 0 30px ${COLORS.text}80;
+    animation: blink 1s step-end infinite;
+    pointer-events: none;
+
+    @keyframes blink {
+        50% {
+            opacity: 0;
+        }
     }
-  }
 `;
 
 function Terminal() {
+    document.title = "NEPTUNE INTELLIGENZA TERMINAL";
     const [userData, setUserData] = useState({ name: 'guest', level: 0 });
     const [history, setHistory] = useState([
-        { type: 'output', content: 'Ретро Терминал v1.0 - Инициализация...' },
-        { type: 'output', content: 'Система готова. Введите "help" для списка команд.' },
+        { type: 'output', content: 'thin client v0.1 - init... ready' },
+        { type: 'output', content: 'language: ru-RU' },
+        { type: 'output', content: 'Состояние сети: 12 узлов доступно; Подключение; Отвергнуто консенсусом; Остановлен.' },
         { type: 'output', content: 'Для доступа к дополнительным функциям используйте: login <имя_пользователя>' },
         { type: 'output', content: '' }
     ]);
@@ -281,7 +444,6 @@ function Terminal() {
         const args = parts.slice(1);
 
         if (commandConfig[command]) {
-            // Проверка уровня доступа
             if (commandConfig[command].accessLevel > userData.level) {
                 return `Ошибка: недостаточно прав для выполнения команды "${command}".\nТребуемый уровень: ${commandConfig[command].accessLevel}\nВаш уровень: ${userData.level}`;
             }
@@ -346,40 +508,48 @@ function Terminal() {
     };
 
     return (
-        <TerminalContainer onClick={() => inputRef.current?.focus()}>
-            <TerminalHeader>
-                === RETRO TERMINAL ===
-            </TerminalHeader>
+        <CRTWrapper>
+            <CRTScreen>
+                <GlowLayer />
+                <Scanlines />
+                <NoiseLayer />
 
-            <TerminalOutput ref={outputRef}>
-                {history.map((item, index) => (
-                    <OutputLine key={index}>
-                        {item.type === 'command' && (
-                            <>
-                                <Prompt>{userData.name}@terminal {'>'}</Prompt>
-                                {item.content}
-                            </>
-                        )}
-                        {item.type === 'output' && item.content}
-                    </OutputLine>
-                ))}
-            </TerminalOutput>
+                <TerminalContainer onClick={() => inputRef.current?.focus()}>
+                    <TerminalHeader>
+                        === NEPTUNE INTELLIGENZA TERMINAL ===
+                    </TerminalHeader>
 
-            <InputLine>
-                <Prompt>{userData.name}@terminal {'>'}</Prompt>
-                <InputWrapper>
-                    <Input
-                        ref={inputRef}
-                        type="text"
-                        value={input}
-                        onChange={(e) => setInput(e.target.value)}
-                        onKeyDown={handleKeyDown}
-                        autoFocus
-                    />
-                    <Cursor position={input.length} />
-                </InputWrapper>
-            </InputLine>
-        </TerminalContainer>
+                    <TerminalOutput ref={outputRef}>
+                        {history.map((item, index) => (
+                            <OutputLine key={index}>
+                                {item.type === 'command' && (
+                                    <>
+                                        <Prompt>{userData.name}@terminal {'>'}</Prompt>
+                                        {item.content}
+                                    </>
+                                )}
+                                {item.type === 'output' && item.content}
+                            </OutputLine>
+                        ))}
+                    </TerminalOutput>
+
+                    <InputLine>
+                        <Prompt>{userData.name}@terminal {'>'}</Prompt>
+                        <InputWrapper>
+                            <Input
+                                ref={inputRef}
+                                type="text"
+                                value={input}
+                                onChange={(e) => setInput(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                autoFocus
+                            />
+                            <Cursor position={input.length} />
+                        </InputWrapper>
+                    </InputLine>
+                </TerminalContainer>
+            </CRTScreen>
+        </CRTWrapper>
     );
 }
 

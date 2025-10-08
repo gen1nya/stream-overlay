@@ -4,6 +4,24 @@ import path from "path";
 export let mainWindow: BrowserWindow | null = null;
 export let chatWindow: BrowserWindow | null = null;
 export let previewWindow: BrowserWindow | null = null;
+export let terminalWindow: BrowserWindow | null = null;
+
+export function createTerminalWindow(): void {
+    terminalWindow = new BrowserWindow({
+        width: 800,
+        height: 600,
+        title: 'NEPTUNE INTELLIGENZA TERMINAL',
+        webPreferences: {
+          nodeIntegration: true,
+          contextIsolation: false,
+          devTools: false,
+        },
+        icon: path.join(__dirname, 'assets', 'icon.png'),
+    });
+    terminalWindow.setTitle("NEPTUNE INTELLIGENZA TERMINAL")
+    terminalWindow.setMenuBarVisibility(false);
+    terminalWindow.loadURL('http://localhost:5173/tty');
+}
 
 export function createMainWindow(url: string): void {
   mainWindow = new BrowserWindow({

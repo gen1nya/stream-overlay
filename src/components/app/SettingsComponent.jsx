@@ -47,6 +47,7 @@ import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndic
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
+import AboutCard from "./settings/About";
 
 const Panel = styled.div`
     position: fixed;
@@ -198,6 +199,7 @@ const PageInfoConfig = {
     players: {title: "Настройки плееров", icon: <FiMusic/>},
     youtube: {title: "Чат ютуба", icon: <FiYoutube/>},
     followers_goal: {title: "Прогресс фоловеров", icon: <FiTarget/>},
+    about: {title: "О программе", icon: <FiAlertCircle/>},
 };
 
 export default function Settings() {
@@ -346,6 +348,7 @@ export default function Settings() {
                         {key: "players", icon: <FiMusic/>, label: "Плееры"},
                         {key: "youtube", icon: <FiYoutube/>, label: "YouTube Чат"},
                         {key: "followers_goal", icon: <FiTarget/>, label: "Прогресс"},
+                        {key : "about", icon: <FiAlertCircle/>, label: "О программе"},
                     ]}
                 />
 
@@ -529,6 +532,12 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 </Content>
             );
         }
+        case "about":
+            return (
+                <Content>
+                    <AboutCard/>
+                </Content>
+            );
         case "followers_goal":
             return (
                 <Content>

@@ -7,7 +7,7 @@ import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import { createChatWindow, createPreviewWindow } from './windowsManager';
+import {createChatWindow, createPreviewWindow, createTerminalWindow} from './windowsManager';
 import {LogService} from "./services/logService";
 import {
   addModerator,
@@ -73,6 +73,7 @@ export function registerIpcHandlers(
     onAccountReady();
   });
 
+  ipcMain.handle('arg:create-terminal', async (_e, userId?: string) => createTerminalWindow());
   ipcMain.handle('chat:open-overlay', () => createChatWindow());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());
   ipcMain.handle('utils:open_url', async (_e, url) => { await shell.openExternal(url); });
