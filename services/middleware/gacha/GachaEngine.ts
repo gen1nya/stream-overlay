@@ -42,19 +42,23 @@ export class GachaSystem {
         return this.itemDb;
     }
 
-    pull(userId: string): PullResult {
-        const pityData = this.userManager.getUserPityStatus(userId);
+    pull(userId: string, userName: string): PullResult {
+        const pityData = this.userManager.getUserPityStatus(userId, userName);
 
         pityData.pullsSince5Star++;
         pityData.pullsSince4Star++;
 
-        this.userManager.updateUserPity(userId, {
-            pullsSince5Star: pityData.pullsSince5Star,
-            pullsSince4Star: pityData.pullsSince4Star
-        });
+        this.userManager.updateUserPity(
+            userId,
+            {
+                pullsSince5Star: pityData.pullsSince5Star,
+                pullsSince4Star: pityData.pullsSince4Star
+            },
+            userName
+        );
 
         const result = this.determinePullResult(pityData);
-        this.updatePityAfterPull(userId, result);
+        this.updatePityAfterPull(userId, result, userName);
 
         return {
             item: result.item,
@@ -67,10 +71,10 @@ export class GachaSystem {
         };
     }
 
-    multiPull(userId: string, count: number = 10): PullResult[] {
+    multiPull(userId: string, count: number = 10, userName: string): PullResult[] {
         const results: PullResult[] = [];
         for (let i = 0; i < count; i++) {
-            results.push(this.pull(userId));
+            results.push(this.pull(userId, userName));
         }
         return results;
     }
@@ -248,7 +252,8 @@ export class GachaSystem {
 
     private updatePityAfterPull(
         userId: string,
-        result: ReturnType<typeof this.get5StarItem>
+        result: ReturnType<typeof this.get5StarItem>,
+        userName: string,
     ): void {
         const update: Partial<PityData> = {};
 
@@ -265,7 +270,7 @@ export class GachaSystem {
             // Обновляем счетчик проигрышей rate-up для 4*
             const featured4StarIds = this.bannerConfig.featured4StarIds;
             const isFeatured = featured4StarIds.includes(result.item.id);
-            const currentPity = this.userManager.getUserPityStatus(userId);
+            const currentPity = this.userManager.getUserPityStatus(userId, userName);
 
             if (isFeatured) {
                 update.pity4StarFailedRateUp = 0;
@@ -274,7 +279,7 @@ export class GachaSystem {
             }
         }
 
-        this.userManager.updateUserPity(userId, update);
+        this.userManager.updateUserPity(userId, update, userName);
     }
 
     setCurrentUserId(userId: string | null) {

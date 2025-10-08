@@ -188,3 +188,27 @@ export async function searchTwitchUsers(query, offset, limit) {
 export async function getTwitchRewards() {
     return ipcRenderer?.invoke('twitch:get-rewards');
 }
+
+// gacha users api
+export const getGachaUsers = async (offset, limit) => {
+    return await ipcRenderer.invoke('gatcha:get-users', { offset, limit });
+};
+
+export const searchGachaUsers = async (query, offset, limit) => {
+    return await ipcRenderer.invoke('gatcha:search-users', { query, offset, limit });
+};
+
+export const deleteGachaUser = async (userId) => {
+    return await ipcRenderer.invoke('gatcha:delete-user', { userId });
+};
+
+export const updateGachaUser = async (userId, userName, pityData) => {
+    return await ipcRenderer.invoke('gatcha:update-user', {
+        userId,
+        userName,
+        pullsSince5Star: pityData.pullsSince5Star,
+        pullsSince4Star: pityData.pullsSince4Star,
+        pity4StarFailedRateUp: pityData.pity4StarFailedRateUp,
+        isGuaranteed5Star: pityData.isGuaranteed5Star
+    });
+};

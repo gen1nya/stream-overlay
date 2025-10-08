@@ -1,5 +1,5 @@
 import Database from 'better-sqlite3';
-import {PityData} from "../middleware/gacha/types";
+import {PityData, UserPityData} from "../middleware/gacha/types";
 
 export class PityRepository {
     private db: Database.Database;
@@ -35,15 +35,15 @@ export class PityRepository {
     }
 
     /** Создать начальные pity данные для пользователя */
-    createUserPity(userId: string): PityData {
+    createUserPity(userId: string, userName: string): PityData {
         this.db
             .prepare(
                 `
-                INSERT INTO user_pity (user_id)
-                VALUES (@userId)
-                `
+            INSERT INTO user_pity (user_id, user_name)
+            VALUES (@userId, @userName)
+            `
             )
-            .run({ userId: String(userId) });
+            .run({ userId: String(userId), userName: String(userName)});
 
         return {
             pullsSince5Star: 0,
@@ -54,7 +54,11 @@ export class PityRepository {
     }
 
     /** Обновить pity данные пользователя */
-    updateUserPity(userId: string, update: Partial<PityData>): void {
+    updateUserPity(
+        userId: string,
+        update: Partial<PityData>,
+        userName: string
+    ): void {
         const sets: string[] = [];
         const params: any = { userId: String(userId) };
 
@@ -108,4 +112,74 @@ export class PityRepository {
             .prepare('DELETE FROM user_pity WHERE user_id = @userId')
             .run({ userId: String(userId) });
     }
+
+    countUsers() {
+        return this.db.prepare(`SELECT COUNT(*) FROM user_pity`).pluck().get() as number;
+    }
+
+
+    getUsers(offset: number, limit: number): UserPityData[] {
+        const rows = this.db
+            .prepare(
+                `
+            SELECT 
+                user_id AS userId,
+                user_name AS userName,
+                pulls_since_5_star AS pullsSince5Star,
+                pulls_since_4_star AS pullsSince4Star,
+                pity_4_star_failed_rate_up AS pity4StarFailedRateUp,
+                is_guaranteed_5_star AS isGuaranteed5Star
+            FROM user_pity
+            ORDER BY user_id
+            LIMIT @limit OFFSET @offset
+            `
+            )
+            .all({ offset, limit }) as any[];
+
+        return rows.map(row => ({
+            userName: row.userName,
+            userId: row.userId,
+            pity: {
+                pullsSince5Star: row.pullsSince5Star,
+                pullsSince4Star: row.pullsSince4Star,
+                pity4StarFailedRateUp: row.pity4StarFailedRateUp,
+                isGuaranteed5Star: !!row.isGuaranteed5Star
+            }
+        }));
+    };
+
+    searchUsers(query: string, offset: number, limit: number = 20): UserPityData[] {
+        const rows = this.db
+            .prepare(
+                `
+            SELECT 
+                user_id AS userId,
+                user_name AS userName,
+                pulls_since_5_star AS pullsSince5Star,
+                pulls_since_4_star AS pullsSince4Star,
+                pity_4_star_failed_rate_up AS pity4StarFailedRateUp,
+                is_guaranteed_5_star AS isGuaranteed5Star
+            FROM user_pity
+            WHERE user_name LIKE @query
+            ORDER BY user_name
+            LIMIT @limit OFFSET @offset
+            `
+            )
+            .all({
+                query: `%${query}%`,
+                offset,
+                limit
+            }) as any[];
+
+        return rows.map(row => ({
+            userId: row.userId,
+            userName: row.userName,
+            pity: {
+                pullsSince5Star: row.pullsSince5Star,
+                pullsSince4Star: row.pullsSince4Star,
+                pity4StarFailedRateUp: row.pity4StarFailedRateUp,
+                isGuaranteed5Star: !!row.isGuaranteed5Star
+            }
+        }));
+    };
 }

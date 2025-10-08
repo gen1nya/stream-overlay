@@ -72,6 +72,7 @@ export class DbRepository {
         this.db.prepare(`
             CREATE TABLE IF NOT EXISTS user_pity (
                 user_id TEXT PRIMARY KEY,
+                user_name TEXT DEFAULT 'unknown',
                 pulls_since_5_star INTEGER DEFAULT 0,
                 pulls_since_4_star INTEGER DEFAULT 0,
                 pity_4_star_failed_rate_up INTEGER DEFAULT 0,

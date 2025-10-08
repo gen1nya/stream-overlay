@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, {useState, useCallback, useEffect} from 'react';
 import styled from 'styled-components';
 import Switch from '../../../../utils/Switch';
 import {
@@ -12,8 +12,8 @@ import {
     SectionTitle,
     SettingsCard,
 } from "../../SharedSettingsStyles";
-import { Row } from "../../../SettingsComponent";
-import { Spacer } from "../../../../utils/Separator";
+import {Row} from "../../../SettingsComponent";
+import {Spacer} from "../../../../utils/Separator";
 import {
     CollapsibleHeader,
     CollapsedPreview,
@@ -26,6 +26,9 @@ import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
 import TriggersManager from './TriggersManager';
 import AdvancedSettings from './AdvancedSettings';
+import {Button} from "../pingpong/PingPongActionEditorComponent";
+import {ActionButton} from "../../../SharedStyles";
+import GachaUsersPopup from "./GachaUsersPopup";
 
 const CollapseToggle = styled.div`
     display: flex;
@@ -34,13 +37,13 @@ const CollapseToggle = styled.div`
     color: #999;
     font-size: 0.9rem;
     transition: color 0.2s ease;
-    
+
     svg {
         width: 18px;
         height: 18px;
         transition: transform 0.2s ease;
     }
-    
+
     ${CollapsibleHeader}:hover & {
         color: #ccc;
     }
@@ -61,7 +64,7 @@ const InfoTitle = styled.div`
     font-weight: 600;
     color: #e0e0e0;
     margin-bottom: 12px;
-    
+
     svg {
         color: #8853f2;
     }
@@ -89,7 +92,7 @@ const StatCard = styled.div`
     display: flex;
     align-items: center;
     gap: 12px;
-    
+
     svg {
         width: 24px;
         height: 24px;
@@ -135,8 +138,7 @@ const createDefaultConfig = () => ({
     triggers: []
 });
 
-export default function GachaComponent({ gachaConfig, apply }) {
-
+export default function GachaComponent({gachaConfig, apply}) {
 
     const [config, setConfig] = useState(() => {
         if (!gachaConfig || !gachaConfig.items || !Array.isArray(gachaConfig.items) || !gachaConfig.banner || !gachaConfig.triggers) {
@@ -154,6 +156,7 @@ export default function GachaComponent({ gachaConfig, apply }) {
     });
     const [isOpen, setIsOpen] = useState(false);
     const [enabled, setEnabled] = useState(config.enabled);
+    const [showUsersPopup, setShowUsersPopup] = useState(false);
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
@@ -171,7 +174,7 @@ export default function GachaComponent({ gachaConfig, apply }) {
         apply((prev) => {
             const newConfig = typeof updater === 'function'
                 ? updater(prev.gacha)
-                : { ...prev.gacha, ...updater };
+                : {...prev.gacha, ...updater};
             return {
                 ...prev,
                 gacha: newConfig,
@@ -179,9 +182,6 @@ export default function GachaComponent({ gachaConfig, apply }) {
         });
     }, [apply]);
 
-
-
-    // Статистика для отображения
     const stats = {
         totalItems: config.items?.length || 0,
         fiveStarCount: config.items?.filter(item => item.rarity === 5).length || 0,
@@ -189,155 +189,171 @@ export default function GachaComponent({ gachaConfig, apply }) {
         triggersCount: config.triggers?.length || 0,
     };
 
-    console.log('GachaComponent render with config:', JSON.stringify(config, null, 2));
-
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <Row gap="12px">
-                    <EnabledToggle enabled={enabled}>
-                        <Switch
-                            checked={enabled}
-                            onChange={(e) => {
-                                const newState = e.target.checked;
-                                setEnabled(newState);
-                                updateGachaConfig({ enabled: newState });
-                            }}
-                        />
-                        <StatusBadge enabled={enabled}>
-                            {enabled ? 'Включено' : 'Выключено'}
-                        </StatusBadge>
-                    </EnabledToggle>
+        <>
+            {showUsersPopup && <GachaUsersPopup onClose={() => setShowUsersPopup(false)}/>}
 
-                    <CardTitle>
-                        <FiGift />
-                        Гача-система
-                    </CardTitle>
+            <SettingsCard>
+                <CollapsibleHeader onClick={toggleOpen}>
+                    <Row gap="12px">
+                        <EnabledToggle enabled={enabled}>
+                            <Switch
+                                checked={enabled}
+                                onChange={(e) => {
+                                    const newState = e.target.checked;
+                                    setEnabled(newState);
+                                    updateGachaConfig({enabled: newState});
+                                }}
+                            />
+                            <StatusBadge enabled={enabled}>
+                                {enabled ? 'Включено' : 'Выключено'}
+                            </StatusBadge>
+                        </EnabledToggle>
 
-                    <Spacer />
+                        <CardTitle>
+                            <FiGift/>
+                            Гача-система
+                        </CardTitle>
 
-                    <CollapseToggle>
-                        {isOpen ? 'Свернуть' : 'Развернуть'}
-                        {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                    </CollapseToggle>
-                </Row>
-            </CollapsibleHeader>
+                        <Spacer/>
 
-            {/* Свернутое описание */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    Система гача-механики по типу Hoyoverse (Genshin Impact, Honkai, ZZZ)
-                    <br /><br />
-                    <StatsGrid>
-                        <StatCard $color="#fbbf24">
-                            <FiStar />
-                            <StatContent>
-                                <StatLabel>Всего предметов</StatLabel>
-                                <StatValue>{stats.totalItems}</StatValue>
-                            </StatContent>
-                        </StatCard>
-                        <StatCard $color="#8853f2">
-                            <FiZap />
-                            <StatContent>
-                                <StatLabel>5★ предметов</StatLabel>
-                                <StatValue>{stats.fiveStarCount}</StatValue>
-                            </StatContent>
-                        </StatCard>
-                        <StatCard $color="#646cff">
-                            <FiPackage />
-                            <StatContent>
-                                <StatLabel>4★ предметов</StatLabel>
-                                <StatValue>{stats.fourStarCount}</StatValue>
-                            </StatContent>
-                        </StatCard>
-                        <StatCard $color="#22c55e">
-                            <FiGift />
-                            <StatContent>
-                                <StatLabel>Триггеров</StatLabel>
-                                <StatValue>{stats.triggersCount}</StatValue>
-                            </StatContent>
-                        </StatCard>
-                    </StatsGrid>
-                </CollapsedPreview>
-            )}
+                        <CollapseToggle>
+                            {isOpen ? 'Свернуть' : 'Развернуть'}
+                            {isOpen ? <FiChevronUp/> : <FiChevronDown/>}
+                        </CollapseToggle>
+                    </Row>
+                </CollapsibleHeader>
 
-            {isOpen && (
-                <CardContent>
-                    {/* Информация о системе */}
-                    <Section>
-                        <InfoCard>
-                            <InfoTitle>
-                                <FiInfo />
-                                О гача-системе
-                            </InfoTitle>
-                            <InfoText>
-                                Гача-система работает по принципу игр Hoyoverse с механикой "pity":
-                                <br />• <strong>Hard Pity</strong>: гарантированный 5★ каждые 90 pulls
-                                <br />• <strong>Soft Pity</strong>: повышенные шансы после 74 pulls
-                                <br />• <strong>50/50 система</strong>: при получении 5★ есть 50% шанс получить featured персонажа
-                                <br />• <strong>Capturing Radiance</strong>: 5% шанс получить featured даже при проигрыше 50/50
-                            </InfoText>
-                        </InfoCard>
-                    </Section>
+                {/* Свернутое описание */}
+                {!isOpen && (
+                    <CollapsedPreview onClick={toggleOpen}>
+                        Система гача-механики по типу Hoyoverse (Genshin Impact, Honkai, ZZZ)
+                        <br/><br/>
+                        <StatsGrid>
+                            <StatCard $color="#fbbf24">
+                                <FiStar/>
+                                <StatContent>
+                                    <StatLabel>Всего предметов</StatLabel>
+                                    <StatValue>{stats.totalItems}</StatValue>
+                                </StatContent>
+                            </StatCard>
+                            <StatCard $color="#8853f2">
+                                <FiZap/>
+                                <StatContent>
+                                    <StatLabel>5★ предметов</StatLabel>
+                                    <StatValue>{stats.fiveStarCount}</StatValue>
+                                </StatContent>
+                            </StatCard>
+                            <StatCard $color="#646cff">
+                                <FiPackage/>
+                                <StatContent>
+                                    <StatLabel>4★ предметов</StatLabel>
+                                    <StatValue>{stats.fourStarCount}</StatValue>
+                                </StatContent>
+                            </StatCard>
+                            <StatCard $color="#22c55e">
+                                <FiGift/>
+                                <StatContent>
+                                    <StatLabel>Триггеров</StatLabel>
+                                    <StatValue>{stats.triggersCount}</StatValue>
+                                </StatContent>
+                            </StatCard>
+                        </StatsGrid>
+                    </CollapsedPreview>
+                )}
 
-                    {/* Настройки баннера */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiStar />
-                                Настройки баннера
-                            </SectionTitle>
-                        </SectionHeader>
-                        <BannerSettingsEditor
-                            banner={config.banner}
-                            items={config.items}
-                            updateConfig={updateGachaConfig}
-                        />
-                    </Section>
+                {isOpen && (
+                    <CardContent>
+                        {/* Информация о системе */}
+                        <Section>
+                            <InfoCard>
+                                <InfoTitle>
+                                    <FiInfo/>
+                                    О гача-системе
+                                </InfoTitle>
+                                <InfoText>
+                                    Гача-система работает по принципу игр Hoyoverse с механикой "pity":
+                                    <br/>• <strong>Hard Pity</strong>: гарантированный 5★ каждые 90 pulls
+                                    <br/>• <strong>Soft Pity</strong>: повышенные шансы после 74 pulls
+                                    <br/>• <strong>50/50 система</strong>: при получении 5★ есть 50% шанс получить
+                                    featured персонажа
+                                    <br/>• <strong>Capturing Radiance</strong>: 5% шанс получить featured даже при
+                                    проигрыше 50/50
+                                </InfoText>
+                            </InfoCard>
+                        </Section>
 
-                    {/* Управление предметами */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiPackage />
-                                Управление предметами
-                            </SectionTitle>
-                        </SectionHeader>
-                        <ItemsManager
-                            items={config.items}
-                            updateConfig={updateGachaConfig}
-                        />
-                    </Section>
+                        <Row>
+                            <ActionButton
+                                className={"secondary"}
+                                onClick={() => setShowUsersPopup(true)}
+                            >
+                                Пользователи
+                            </ActionButton>
+                            <Spacer/>
 
-                    {/* Триггеры (Twitch награды) */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiGift />
-                                Триггеры (Twitch награды)
-                            </SectionTitle>
-                        </SectionHeader>
-                        <TriggersManager
-                            triggers={config.triggers}
-                            updateConfig={updateGachaConfig}
-                        />
-                    </Section>
+                        </Row>
 
-                    {/* Продвинутые настройки */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiSettings />
-                                Продвинутые настройки механики
-                            </SectionTitle>
-                        </SectionHeader>
-                        <AdvancedSettings
-                            banner={config.banner}
-                            updateConfig={updateGachaConfig}
-                        />
-                    </Section>
-                </CardContent>
-            )}
-        </SettingsCard>
+
+                        {/* Настройки баннера */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiStar/>
+                                    Настройки баннера
+                                </SectionTitle>
+                            </SectionHeader>
+                            <BannerSettingsEditor
+                                banner={config.banner}
+                                items={config.items}
+                                updateConfig={updateGachaConfig}
+                            />
+                        </Section>
+
+                        {/* Управление предметами */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiPackage/>
+                                    Управление предметами
+                                </SectionTitle>
+                            </SectionHeader>
+                            <ItemsManager
+                                items={config.items}
+                                updateConfig={updateGachaConfig}
+                            />
+                        </Section>
+
+                        {/* Триггеры (Twitch награды) */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiGift/>
+                                    Триггеры (Twitch награды)
+                                </SectionTitle>
+                            </SectionHeader>
+                            <TriggersManager
+                                triggers={config.triggers}
+                                updateConfig={updateGachaConfig}
+                            />
+                        </Section>
+
+                        {/* Продвинутые настройки */}
+                        <Section>
+                            <SectionHeader>
+                                <SectionTitle>
+                                    <FiSettings/>
+                                    Продвинутые настройки механики
+                                </SectionTitle>
+                            </SectionHeader>
+                            <AdvancedSettings
+                                banner={config.banner}
+                                updateConfig={updateGachaConfig}
+                            />
+                        </Section>
+                    </CardContent>
+                )}
+            </SettingsCard>
+        </>
     );
 }

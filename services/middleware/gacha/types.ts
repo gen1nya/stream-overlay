@@ -30,6 +30,7 @@ export interface PityData {
 }
 
 export interface UserPityData {
+    userName: string;
     userId: string;
     pity: PityData;
 }

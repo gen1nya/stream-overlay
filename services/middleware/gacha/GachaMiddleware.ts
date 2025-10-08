@@ -47,7 +47,10 @@ export class GachaMiddleware extends Middleware {
 
         let response = "";
         if (trigger.amount === 1) {
-            const result = this.gachaEngine.pull(redemption.userId?.toString() || '0');
+            const result = this.gachaEngine.pull(
+                redemption.userId?.toString() || '0',
+                redemption.userName?.toString() || 'UnknownUser'
+            );
             const stars = '⭐'.repeat(result.item.rarity);
 
             response = `@${redemption.userName}, you got: ${result.item.name} ${stars}`;
@@ -71,7 +74,10 @@ export class GachaMiddleware extends Middleware {
             let _5items: Array<{name: string, result: any}> = [];
 
             for (let i = 0; i < trigger.amount; i++) {
-                const result = this.gachaEngine.pull(redemption.userId?.toString() || '0');
+                const result = this.gachaEngine.pull(
+                    redemption.userId?.toString() || '0',
+                    redemption.userName?.toString() || 'UnknownUser'
+                );
                 if (result.item.rarity === 3) {
                     _3counter++;
                 } else if (result.item.rarity === 4) {

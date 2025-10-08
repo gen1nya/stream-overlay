@@ -204,12 +204,9 @@ export type TransliterateOptions = {
 
 const CYRILLIC_RE =
     /[\u0400-\u04FF\u0500-\u052F\u2DE0-\u2DFF\uA640-\uA69F\u1C80-\u1C8F]/;
-// если у тебя среда поддерживает Unicode property escapes:
-// const CYRILLIC_RE = /\p{Script=Cyrillic}/u;
 
 
 export function transliterateRuToEn(input: string, opts: TransliterateOptions = {}): string {
-    // ранний выход: нет кириллицы → вернуть без изменений
     if (!CYRILLIC_RE.test(input)) return input;
 
     const map: Record<string, string> = {
