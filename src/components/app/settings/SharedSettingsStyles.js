@@ -246,49 +246,49 @@ export const ActionButton = styled.button`
     font-size: 14px;
     font-weight: 500;
     transition: all 0.2s ease;
-    
+
     &:hover {
         background: #333;
         border-color: #555;
         transform: translateY(-1px);
     }
-    
+
     &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
     }
-    
+
     &.primary {
         background: #646cff;
         border-color: #646cff;
-        
+
         &:hover {
             background: #5a5acf;
             border-color: #5a5acf;
         }
     }
-    
+
     &.secondary {
-        background: #059669;
+        background: rgba(5, 150, 105, 0.66);
         border-color: #059669;
-        
+
         &:hover {
-            background: #047857;
+            background: rgba(4, 120, 87, 0.5);
             border-color: #047857;
         }
     }
-    
+
     &.danger {
         background: #dc2626;
         border-color: #dc2626;
-        
+
         &:hover {
             background: #b91c1c;
             border-color: #b91c1c;
         }
     }
-    
+
     svg {
         width: 16px;
         height: 16px;

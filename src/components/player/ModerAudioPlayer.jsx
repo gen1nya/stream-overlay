@@ -394,20 +394,23 @@ function ModernAudioPlayer() {
                         <Title>{metadata ? metadata?.title : ""}</Title>
                         <Artist>{metadata ? metadata?.artist : ""}</Artist>
                         <FFTWrapper key={`fft-${theme.modernPlayer?.mode}`}>
-                            {/*<FFTBars
-                                bars={48}
-                                backgroundColor={"rgba(255,255,255,0.02)"}
-                                barColor={spectrumColor}
-                                peakColor={spectrumPeakColor}
-                            />*/}
-
-                            <WaveForm
-                                backgroundColor={"rgba(255,255,255,0.02)"}
-                                lineColor={spectrumPeakColor}
-                                showCenterLine={false}
-                                showGrid={false}
-                            />
-
+                            {/*режим визуализации в зависимости от theme.visualization*/}
+                            {theme.modernPlayer?.visualization === 'spectrum' && (
+                                <FFTBars
+                                    bars={48}
+                                    backgroundColor={"rgba(255,255,255,0.02)"}
+                                    barColor={spectrumColor}
+                                    peakColor={spectrumPeakColor}
+                                />
+                            )}
+                            {(theme.modernPlayer?.visualization === 'waveform' || !theme.modernPlayer?.visualization) && (
+                                <WaveForm
+                                    backgroundColor={"rgba(255,255,255,0.02)"}
+                                    lineColor={spectrumPeakColor}
+                                    showCenterLine={false}
+                                    showGrid={false}
+                                />
+                            )}
                         </FFTWrapper>
                     </Info>
                 </TopRow>

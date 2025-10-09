@@ -97,12 +97,12 @@ export const ActionButton = styled.button`
     }
 
     &.secondary {
-        background: #059669;
+        background: rgba(5, 150, 105, 0.2);
         border-color: #059669;
 
         &:hover {
-            background: #047857;
-            border-color: #047857;
+            background: rgba(4, 120, 87, 0.7);
+            border-color: #02cc93;
         }
     }
 

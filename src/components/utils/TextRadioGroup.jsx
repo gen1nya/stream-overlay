@@ -1,43 +1,51 @@
-import React, { useState, useRef, useEffect, Suspense } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import * as AiIcons from "react-icons/ai";
 
 const Wrapper = styled.div`
     display: flex;
     flex-direction: column;
+    gap: 8px;
 `;
 
 const Title = styled.div`
-    color: #d9d9d9;
+    color: #e0e0e0;
     font-size: 14px;
     font-weight: 500;
-    margin-bottom: 4px;
 `;
 
 const Container = styled.div`
     display: flex;
     flex-direction: ${({ direction }) => direction === 'vertical' ? 'column' : 'row'};
     position: relative;
-    background: rgba(136, 83, 242, 0.11);
-    border-radius: 8px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 9px;
     padding: 4px;
     overflow: hidden;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
 
 const Option = styled.div`
     position: relative;
     z-index: 1;
-    padding: 4px 8px;
+    padding: 8px 12px;
     cursor: pointer;
     user-select: none;
     text-align: center;
     flex: 1;
-    width: ${({ width }) => width || 'none'};
+    width: ${({ width }) => width || 'auto'};
     box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    transition: all 0.2s ease;
+    border-radius: 6px;
+
+    &:hover {
+        background: rgba(100, 108, 255, 0.1);
+    }
 `;
 
 const Highlight = styled.div`
@@ -46,16 +54,23 @@ const Highlight = styled.div`
     left: ${({left}) => left}px;
     width: ${({width}) => width}px;
     height: ${({height}) => height}px;
-    background: rgba(101, 65, 177, 0.29);
-    border: rgba(111, 70, 201, 0.64) 2px solid;
-    border-radius: 8px;
-    transition: all 0.3s ease;
+    box-sizing: border-box;
+    background: linear-gradient(135deg, rgba(100, 108, 255, 0.3), rgba(124, 58, 237, 0.3));
+    border: 1px solid #646cff;
+    border-radius: 6px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 0;
+    box-shadow:
+            0 0 20px rgba(100, 108, 255, 0.3),
+            inset 0 1px 0 rgba(255, 255, 255, 0.1);
 `;
 
 const Text = styled.div`
-    color: ${({ active }) => (active ? 'white' : '#d9d9d9')};
-    font-weight: ${({ active }) => (active ? 'bold' : 'normal')};
+    color: ${({ active }) => (active ? '#fff' : '#aaa')};
+    font-weight: ${({ active }) => (active ? '600' : '500')};
+    font-size: 14px;
+    transition: all 0.2s ease;
+    white-space: nowrap;
 `;
 
 const RadioGroup = ({
@@ -63,7 +78,7 @@ const RadioGroup = ({
                         onChange,
                         defaultSelected,
                         direction = 'horizontal',
-                        itemWidth = '200px',
+                        itemWidth,
                         title,
                     }) => {
     const getInitialKey = () => {
@@ -88,6 +103,15 @@ const RadioGroup = ({
         }
     }, [defaultSelected, items]);
 
+    useEffect(() => {
+        // Update highlight on window resize
+        const handleResize = () => {
+            updateHighlight(selectedKey);
+        };
+        window.addEventListener('resize', handleResize);
+        return () => window.removeEventListener('resize', handleResize);
+    }, [selectedKey]);
+
     const updateHighlight = (key) => {
         const el = optionRefs.current[key];
         const container = containerRef.current;
@@ -95,8 +119,8 @@ const RadioGroup = ({
             const rect = el.getBoundingClientRect();
             const containerRect = container.getBoundingClientRect();
             setHighlightStyle({
-                left: rect.left - containerRect.left,
-                top: rect.top - containerRect.top,
+                left: rect.left - containerRect.left - 1,
+                top: rect.top - containerRect.top - 1,
                 width: rect.width,
                 height: rect.height,
             });
@@ -113,7 +137,13 @@ const RadioGroup = ({
     const renderIcon = (name, active) => {
         const IconComponent = AiIcons[name];
         if (!IconComponent) return null;
-        return <IconComponent size={18} color={active ? 'white' : '#d9d9d9'} />;
+        return (
+            <IconComponent
+                size={18}
+                color={active ? '#fff' : '#aaa'}
+                style={{ transition: 'color 0.2s ease' }}
+            />
+        );
     };
 
     const containerContent = (

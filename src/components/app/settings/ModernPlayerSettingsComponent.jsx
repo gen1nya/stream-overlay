@@ -161,6 +161,7 @@ export default function ModernPlayerSettingsComponent({
 
     const modernPlayer = current.modernPlayer || {};
     const currentMode = modernPlayer.mode ?? 'compact';
+    const currentVisualization = modernPlayer.visualization ?? 'waveform';
     const isCompactMode = currentMode === 'compact';
     const isExpandedMode = currentMode === 'expanded';
 
@@ -237,6 +238,22 @@ export default function ModernPlayerSettingsComponent({
                                     onChange={value => updatePlayer('borderRadius', value)}
                                 />
                             </ControlGroup>
+                        </Row>
+                        <Row>
+                            <ControlGroup>
+                                <RadioGroup
+                                    title="Визуализация (для расширенного режима)"
+                                    defaultSelected={currentVisualization}
+                                    items={[
+                                        { key: 'spectrum', text: 'Спектр' },
+                                        { key: 'waveform', text: 'Волна' },
+                                    ]}
+                                    direction="horizontal"
+                                    itemWidth="140px"
+                                    onChange={value => updatePlayer('visualization', value)}
+                                />
+                            </ControlGroup>
+
                         </Row>
                     </Section>
 

@@ -7,7 +7,7 @@ import {
     getStats,
     reconnect,
     openExternalLink,
-    getThemes, importTheme, createNewTheme, deleteTheme, setTheme
+    openTerminal
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
@@ -17,10 +17,7 @@ import {
     FiLogOut,
     FiExternalLink,
     FiCopy,
-    FiMessageSquare,
     FiLayers,
-    FiArrowLeft,
-    FiEye
 } from 'react-icons/fi';
 import {Row} from "./SettingsComponent";
 import {Spacer} from "../utils/Separator";
@@ -434,6 +431,7 @@ export default function Dashboard() {
         <ExternalLink href='https://tools.rus.ebatel.online/'>Ebatel.online</ExternalLink>,
         'Здорова солнышки!',
         'Ты сейсо или хорни?',
+        <span onClick={openTerminal}>NEPTUNE INTELLIGENZA</span>,
     ];
 
     const [headerText] = useState(() => headerTexts[Math.floor(Math.random() * headerTexts.length)]);
