@@ -1,7 +1,7 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
 import {applyRandomInt} from './MiddlewareProcessor';
-import {AppEvent} from "../twitch/messageParser";
+import {AppEvent, ParsedIrcMessage} from "../twitch/messageParser";
 import {LogService} from "../logService";
 import {BotConfig} from "../store/StoreSchema";
 
@@ -15,6 +15,7 @@ interface CompiledCommand {
 
 export default class GreetingMiddleware extends Middleware {
   private logService: LogService;
+  private userId: string | null = "unknown";
 
   /**
    * Deadzone period to prevent command spamming (in milliseconds). Per user per command.
@@ -32,6 +33,7 @@ export default class GreetingMiddleware extends Middleware {
   private enabled = true;
 
   async processMessage(message: AppEvent) {
+    console.log("middleware_processor_debug", JSON.stringify(message, null, 2));
     if (!this.enabled) {
       return { message, actions: [], accepted: false };
     }
@@ -44,6 +46,10 @@ export default class GreetingMiddleware extends Middleware {
     }
 
     const actions: any = [];
+
+    if (this.userId !== null && message.sourceRoomId !== null && message.sourceRoomId !== this.userId) {
+      return { message, actions: [], accepted: false };
+    }
 
     for (const command of this.commands) {
       console.log('🔍 Checking command:', command.name, 'for text:', text);
@@ -79,18 +85,20 @@ export default class GreetingMiddleware extends Middleware {
             message.userName || 'user',
             message.htmlMessage || ''
         );
-        actions.push(
-          {
-            type: ActionTypes.SEND_MESSAGE,
-            payload: { message: response, forwardToUi: true }
-          }
-        );
+        actions.push({
+          type: ActionTypes.SEND_MESSAGE,
+          payload: { message: response, forwardToUi: true }
+        });
       } else {
         console.log('❌ Command did not match:', command.name);
       }
     }
 
     return { accepted: actions.length > 0, message: { ...message }, actions };
+  }
+
+  onUserIdUpdated(userId: string | null) {
+    this.userId = userId
   }
 
   updateConfig(config: BotConfig): void {

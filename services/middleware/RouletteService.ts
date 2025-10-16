@@ -23,6 +23,7 @@ export default class RouletteService extends Middleware {
   private chance: number;
   private logService: LogService;
   private editors: UserData[] = [];
+  private userId: string | null = "unknown";
 
   constructor(
     logService: LogService,
@@ -90,6 +91,10 @@ export default class RouletteService extends Middleware {
     if (!this.commands.includes(message.htmlMessage)) {
       return { accepted: false, message: { ...message }, actions: [] };
     }
+    if (this.userId !== null && message.sourceRoomId !== null && message.sourceRoomId !== this.userId) {
+      return { message, actions: [], accepted: false };
+    }
+
     const now = Date.now();
     const lastUsed = this.cooldowns.get(message.userId) || 0;
     if (now - lastUsed < this.commandCooldown) {
@@ -189,6 +194,10 @@ export default class RouletteService extends Middleware {
     let result = template.replace(/\$\{user\}/g, username)
 
     return applyRandomInt(result);
+  }
+
+  onUserIdUpdated(userId: string | null) {
+    this.userId = userId
   }
 
   private log(message: string, userId?: string | null, userName?: string | null): void {

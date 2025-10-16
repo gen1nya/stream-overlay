@@ -67,9 +67,7 @@ export class MiddlewareProcessor {
 
   onUserUpdated(userId: string | null) {
     for (const middleware of this.middlewares) {
-      if (middleware instanceof GachaMiddleware) {
-        middleware.onUserIdUpdated(userId);
-      }
+      middleware.onUserIdUpdated(userId);
     }
   }
 }

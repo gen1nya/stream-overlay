@@ -11,4 +11,8 @@ export default class Middleware {
   updateConfig(config: BotConfig): void {
     throw new Error('updateConfig not implemented');
   }
+
+  onUserIdUpdated(userId: string | null) {
+    throw new Error('onUserIdUpdated not implemented');
+  }
 }
