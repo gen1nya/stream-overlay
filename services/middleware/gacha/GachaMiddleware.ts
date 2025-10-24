@@ -11,7 +11,7 @@ export class GachaMiddleware extends Middleware {
     private store: ElectronStore<StoreSchema>;
     private gachaEngine: GachaEngine;
 
-    private triggers: [ { rewardId: string, amount: number }];
+    private triggers: { rewardId: string, amount: number }[];
 
     constructor(
         store: ElectronStore<StoreSchema>,

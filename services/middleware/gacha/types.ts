@@ -60,5 +60,5 @@ export interface GachaStoreSchema {
     // list of channel rewards that allow to trigger gacha pull for specific amount
     // rewardId - Twitch reward ID
     // amount - number of pulls to trigger
-    triggers: [ { rewardId: string, amount: number }];
+    triggers: { rewardId: string; amount: number }[];
 }
