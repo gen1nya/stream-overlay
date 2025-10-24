@@ -2,22 +2,28 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import {
     CardContent,
-    CardHeader,
     CardTitle,
     Section,
     SectionHeader,
     SectionTitle,
     SettingsCard,
-    ControlGroup
+    ControlGroup, ActionButton
 } from "./SharedSettingsStyles";
-import { FiTarget, FiType, FiSettings, FiBarChart2, FiChevronUp, FiChevronDown } from 'react-icons/fi';
-import { RiColorFilterLine } from "react-icons/ri";
+import {
+    FiTarget,
+    FiType,
+    FiSettings,
+    FiBarChart2,
+    FiChevronUp,
+    FiChevronDown,
+    FiExternalLink,
+    FiCopy
+} from 'react-icons/fi';
 import { BiExpand } from "react-icons/bi";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
 import ColorSelectorButton from "./ColorSelectorButton";
 import FontAndSizeEditor from "../../utils/FontAndSizeEditor";
-import RadioGroup from "../../utils/TextRadioGroup";
 import { Row } from "../SettingsComponent";
 import { Spacer } from "../../utils/Separator";
 import Switch from "../../utils/Switch";
@@ -125,6 +131,16 @@ const Label = styled.label`
     display: block;
 `;
 
+const LinkButton = styled(ActionButton)`
+    background: rgba(30, 64, 175, 0.35);
+    border-color: #1e40af;
+
+    &:hover {
+        background: rgba(29, 78, 216, 0.62);
+        border-color: #1d4ed8;
+    }
+`;
+
 export default function FollowersGoalSettingsComponent({ current, onChange, openColorPopup }) {
     const [isOpen, setIsOpen] = useState(true);
 
@@ -144,6 +160,11 @@ export default function FollowersGoalSettingsComponent({ current, onChange, open
             currentObj[keys[keys.length - 1]] = value;
             return newState;
         });
+    };
+
+    const handleCopyLink = () => {
+        let chatUrl = 'http://localhost:5173/new-followers-overlay';
+        navigator.clipboard.writeText(chatUrl).catch(console.error);
     };
 
     const followersGoal = current.followersGoal || {};
@@ -176,6 +197,14 @@ export default function FollowersGoalSettingsComponent({ current, onChange, open
                 <CardContent>
                     {/* Основные настройки */}
                     <Section>
+                        {/**/}
+                        <Row>
+                            <LinkButton onClick={handleCopyLink}>
+                                <FiCopy />
+                                Копировать ссылку
+                            </LinkButton>
+                        </Row>
+
                         <SectionHeader>
                             <SectionTitle>
                                 <FiSettings />
