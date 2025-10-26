@@ -23,7 +23,7 @@ class ChatService {
     authService.onTokenRefreshed(() => {
       if (this.client && !this.isStopping) {
         console.log('🔄 Tokens refreshed (on auth service), reconnecting IRC...');
-        this.handleAuthFailure();
+        this.handleAuthFailure(false);
       }
     });
   }
@@ -45,9 +45,9 @@ class ChatService {
     await this.connect();
   }
 
-  private async handleAuthFailure(): Promise<void> {
+  private async handleAuthFailure(forceRefresh: boolean): Promise<void> {
     console.warn('⚠️ IRC authentication failed, attempting to refresh tokens...');
-    const tokens = await authService.getTokens();
+    const tokens = await authService.getTokens(forceRefresh);
     if (!tokens) {
       console.error('❌ Token refresh failed or user logged out. Stopping IRC.');
       this.stopChat();
@@ -154,8 +154,8 @@ class ChatService {
         }
 
         if (/authentication failed/i.test(message)) {
-          console.warn('⚠️ IRC authentication failed.');
-          await this.handleAuthFailure();
+          console.warn('⚠️ IRC authentication failed. message is :', message);
+          await this.handleAuthFailure(true);
           return;
         }
 
@@ -256,6 +256,12 @@ class ChatService {
   setLogger(logger: LogService) {
     this.logger = logger;
   }
+
+  registerLogoutHandler(handler: () => void) {
+    authService.onLogout(() => {
+      handler();
+    });
+  }
 }
 
 const instance = new ChatService();
@@ -265,5 +271,6 @@ export const stopChat = () => instance.stopChat();
 export const setLogger = (logger: LogService) => instance.setLogger(logger);
 export const sendMessage = (msg: string) => instance.sendMessage(msg);
 export const registerMessageHandler = (handler: (msg: any) => Promise<void>) => instance.registerMessageHandler(handler);
+export const registerLogoutHandler = (handler: () => void) => instance.registerLogoutHandler(handler);
 export const getLastEventTimestamp = () => instance.getLastEventTimestamp();
 export const reconnect = () => instance.reconnect();

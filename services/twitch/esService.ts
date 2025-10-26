@@ -812,6 +812,12 @@ class EventSubService {
       globalInstance = null;
     }
   }
+
+  registerLogoutHandler(handler: () => void): void {
+    authService.onLogout(() => {
+      handler();
+    });
+  }
 }
 
 // ============================================================================
@@ -845,6 +851,7 @@ export const start = (...args: any[]) => instance?.start(...args);
 export const stop = (...args: any[]) => instance?.stop(...args);
 export const registerEventHandlers = (handler: (dest: string, payload: AppEvent) => void) =>
     instance?.registerEventHandlers(handler);
+export const registerLogoutHandler = (handler: () => void) => instance?.registerLogoutHandler(handler);
 export const getLastEventTimestamp = () => instance?.getLastEventTimestamp();
 export const setLogger = (logger: LogService) => instance?.setLogger(logger);
 export const getConnectionId = () => instance?.getConnectionId();

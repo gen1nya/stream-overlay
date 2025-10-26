@@ -93,12 +93,12 @@ export async function clearTokens(): Promise<void> {
   authEmitter.emit('logout');
 }
 
-export async function getTokens(): Promise<Tokens | null> {
+export async function getTokens(forceRefresh: boolean = false): Promise<Tokens | null> {
   const raw = await keytar.getPassword(SERVICE, ACCOUNT);
   if (!raw) return null;
   let tokens: Tokens = JSON.parse(raw);
   const now = Date.now();
-  if (tokens.obtained_at && tokens.expires_in && now >= tokens.obtained_at + tokens.expires_in * 1000) {
+  if (forceRefresh || (tokens.obtained_at && tokens.expires_in && now >= tokens.obtained_at + tokens.expires_in * 1000)) {
     try {
       tokens = await refreshToken(tokens.refresh_token);
     } catch (err: any) {
@@ -215,4 +215,8 @@ export async function getCurrentLogin(): Promise<string | null> {
 
 export function onTokenRefreshed(listener: (t: Tokens) => void): void {
   authEmitter.on('tokenRefreshed', listener);
+}
+
+export function onLogout(listener: () => void): void {
+  authEmitter.on('logout', listener);
 }

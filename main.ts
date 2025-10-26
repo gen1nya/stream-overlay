@@ -6,7 +6,7 @@ import * as messageCache from './services/MessageCacheManager';
 import {MiddlewareProcessor} from './services/middleware/MiddlewareProcessor';
 import {ActionTypes} from './services/middleware/ActionTypes';
 import {timeoutUser} from './services/twitch/authorizedHelixApi';
-import {createMainWindow} from "./windowsManager";
+import {createMainWindow, mainWindow} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/twitch/esService";
@@ -117,9 +117,16 @@ const applyAction = async (action: { type: string; payload: any }) => {
 
 const middlewareProcessor = new MiddlewareProcessor(applyAction, logService, store);
 
-const twitchClient = new TwitchClient(logService, (editors: UserData[]) => {
-  middlewareProcessor.setEditors(editors);
-});
+const twitchClient = new TwitchClient(
+  logService,
+  (editors: UserData[]) => {
+    middlewareProcessor.setEditors(editors);
+  },
+  () => {
+    console.log('Twitch client logged out');
+    mainWindow?.webContents?.send("logout:success");
+  }
+);
 
 const botService = new BotConfigService(
     store,

@@ -216,3 +216,8 @@ export const updateGachaUser = async (userId, userName, pityData) => {
         isGuaranteed5Star: pityData.isGuaranteed5Star
     });
 };
+
+// listener
+export const onLogout = (callback) => {
+    ipcRenderer.on('logout:success', callback);
+}

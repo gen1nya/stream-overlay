@@ -15,12 +15,15 @@ export class TwitchClient extends EventEmitter {
   private userState: UserStateHolder;
   private dbRepository: DbRepository | null = null;
   private newFollowers: Set<string> = new Set();
+  private readonly onLogoutCallback: () => void = () => {};
 
   constructor(
     private logService: LogService,
-    private onEditorsFetched: (editors: UserData[]) => void = () => {}
+    private onEditorsFetched: (editors: UserData[]) => void = () => {},
+    private onLogout: () => void = () => {},
   ) {
     super();
+    this.onLogoutCallback = this.onLogout;
     this.userState = new UserStateHolder(
       logService,
       (editors: UserData[]) => {
@@ -65,6 +68,9 @@ export class TwitchClient extends EventEmitter {
             this.dbRepository?.users.updateLastSeenByName(parsedMessage.userNameRaw, parsedMessage.timestamp);
         }
     });
+
+    chatService.registerLogoutHandler(this.onLogoutCallback);
+    eventSubService.registerLogoutHandler(this.onLogoutCallback);
 
     await eventSubService.start();
     await chatService.startChat();
