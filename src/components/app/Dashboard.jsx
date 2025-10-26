@@ -7,7 +7,7 @@ import {
     getStats,
     reconnect,
     openExternalLink,
-    openTerminal
+    openTerminal, onLogout
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
@@ -373,7 +373,8 @@ export default function Dashboard() {
         'sonamint',
         'kigudi',
         'kurosakissora',
-        'qvik_l'
+        'qvik_l',
+        'gena_zogii'
     ];
 
     const ExternalLink = ({ href, children }) => (
@@ -444,7 +445,6 @@ export default function Dashboard() {
 
     const handleLogout = async () => {
         await logout();
-        navigate('/auth', { replace: true });
     };
 
     const handleOpenOverlay = () => {
@@ -479,6 +479,12 @@ export default function Dashboard() {
     };
 
     useEffect(() => {
+        console.log("is ipcRenderer available:", !!window.ipcRenderer);
+        onLogout(() => {
+            console.log('Logout successful:');
+            navigate('/auth', { replace: true });
+        });
+
         if (!called.current) {
             called.current = true;
             getAccountInfo().then(info => {
@@ -742,7 +748,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.6.3-beta</Version>
+                <Version>v0.6.4-beta</Version>
             </Footer>
         </Wrapper>
     );
