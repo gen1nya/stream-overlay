@@ -6,7 +6,7 @@ import {
     setAudioDevice,
     getAudioDevice,
     enableFFT,
-    getFFTconfig
+    getFFTconfig, setFFTGain, setFFTdbFloor, setFFTTilt
 } from '../../../services/api';
 import {
     SettingsCard,
@@ -297,6 +297,39 @@ export default function FFTControlComponent() {
         }
     };
 
+    const handleSetFFTGain = async (gain) => {
+        setFftConfig(prev => ({ ...prev, masterGain: gain }));
+        try {
+            await setFFTGain(gain);
+            setError('');
+        } catch (err) {
+            console.error('Ошибка установки усиления FFT:', err);
+            setError('Не удалось установить усиление FFT');
+        }
+    }
+
+    const handleSetFFTDbFloor = async (dbFloor) => {
+        setFftConfig(prev => ({ ...prev, dbFloor: dbFloor }));
+        try {
+            await setFFTdbFloor(dbFloor);
+            setError('');
+        } catch (err) {
+            console.error('Ошибка установки нижнего порога FFT:', err);
+            setError('Не удалось установить нижний порог FFT');
+        }
+    }
+
+    const handleSetFFTTilt = async (tilt) => {
+        setFftConfig(prev => ({ ...prev, tilt: tilt }));
+        try {
+            await setFFTTilt(tilt);
+            setError('');
+        } catch (err) {
+            console.error('Ошибка установки наклона FFT:', err);
+            setError('Не удалось установить наклон FFT');
+        }
+    }
+
     // Определение статуса
     const getStatus = () => {
         if (error) return 'error';
@@ -461,36 +494,29 @@ export default function FFTControlComponent() {
                                     max={-20}
                                     value={fftConfig.dbFloor}
                                     step={1}
-                                    onChange={(value) => {
-                                        setFftConfig(prev => ({ ...prev, dbFloor: value }));
-                                        // TODO: отправить изменения на бекенд
-                                    }}
+                                    onChange={handleSetFFTDbFloor}
                                     formatValue={(val) => `${val} dB`}
                                 />
 
                                 <SeekbarComponent
                                     title="Основное усиление"
                                     min={0.1}
-                                    max={5}
+                                    max={100}
                                     value={fftConfig.masterGain}
                                     step={0.1}
-                                    onChange={(value) => {
-                                        setFftConfig(prev => ({ ...prev, masterGain: value }));
-                                        // TODO: отправить изменения на бекенд
-                                    }}
+                                    onChange={handleSetFFTGain}
+                                    logarithmic={true}
+                                    roundTo={2}
                                     formatValue={(val) => `×${val.toFixed(1)}`}
                                 />
 
                                 <SeekbarComponent
                                     title="Наклон частот"
-                                    min={-10}
-                                    max={10}
+                                    min={-2}
+                                    max={2}
                                     value={fftConfig.tilt}
-                                    step={0.1}
-                                    onChange={(value) => {
-                                        setFftConfig(prev => ({ ...prev, tilt: value }));
-                                        // TODO: отправить изменения на бекенд
-                                    }}
+                                    step={0.01}
+                                    onChange={handleSetFFTTilt}
                                     formatValue={(val) => `${val > 0 ? '+' : ''}${val.toFixed(1)}`}
                                 />
                             </ParameterGrid>

@@ -125,6 +125,18 @@ export async function enableFFT(enable) {
     return ipcRenderer?.invoke('audio:enableFFT', enable);
 }
 
+export async function setFFTGain(gain) {
+    return ipcRenderer?.invoke('audio:setFFTGain', gain);
+}
+
+export async function setFFTdbFloor(dbFloor) {
+    return ipcRenderer?.invoke('audio:setFFTDbFloor', dbFloor);
+}
+
+export async function setFFTTilt(tilt) {
+    return ipcRenderer?.invoke('audio:setFFTTilt', tilt);
+}
+
 export async function getFFTconfig() {
     return ipcRenderer?.invoke('audio:getFFTConfig');
 }

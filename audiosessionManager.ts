@@ -272,6 +272,29 @@ export class AudiosessionManager {
             return this.config.fft.device;
         });
 
+        ipcMain.handle('audio:setFFTGain', async (event, args) => {
+            const masterGain = args;
+            this.fftbridge.setMasterGain(masterGain);
+            this.appStorage.set("audio.fft.masterGain", masterGain);
+            this.config.fft.masterGain = masterGain;
+            return masterGain;
+        })
+
+        ipcMain.handle('audio:setFFTDbFloor', async (event, args) => {
+            const dbFloor = args;
+            this.fftbridge.setDbFloor(dbFloor);
+            this.appStorage.set("audio.fft.dbFloor", dbFloor);
+            this.config.fft.dbFloor = dbFloor;
+        })
+
+        ipcMain.handle('audio:setFFTTilt', async (event, args) => {
+            const tilt = args;
+            this.fftbridge.setTilt(tilt);
+            this.appStorage.set("audio.fft.tilt", tilt);
+            this.config.fft.tilt = tilt;
+            return tilt;
+        })
+
         ipcMain.handle('audio:enableFFT', async (event, args) => {
             const enabled = args.enabled;
             if (enabled) {

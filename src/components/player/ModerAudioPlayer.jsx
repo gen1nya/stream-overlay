@@ -301,12 +301,19 @@ function ModernAudioPlayer() {
     const {isConnected: metaConnected} = useReconnectingWebSocket('ws://localhost:5001/ws', {
         onOpen: () => console.log('🟢 WebSocket metadata подключен'),
         onMessage: (event) => {
-            const {type, data} = JSON.parse(event.data);
-            if (type !== 'metadata') return;
-            setMetadata(data);
-            setProgress(data.position);
-            console.log(data.position);
-            setDuration(data.duration || 1);
+            if (typeof event.data === 'string') {
+                // Это текстовое сообщение (JSON)
+                try {
+                    const {type, data} = JSON.parse(event.data);
+                    if (type !== 'metadata') return;
+                    setMetadata(data);
+                    setProgress(data.position);
+                    console.log(data.position);
+                    setDuration(data.duration || 1);
+                } catch (error) {
+                    console.warn('Ошибка парсинга JSON:', error);
+                }
+            }
         },
         onClose: () => console.log('🔴 WebSocket metadata отключен'),
     });

@@ -248,7 +248,7 @@ void WasapiEngine::publishWaveform(){
   for(int i = 0; i < 1024; ++i){
     float sample = waveSamples[i * 2]; // Берем каждый второй
     // Конвертируем в int16_t с клампингом
-    int32_t val = static_cast<int32_t>(sample * 32767.0f);
+    int32_t val = static_cast<int32_t>(sample * 32767.0f * masterGain_);
     val = std::max(-32768, std::min(32767, val));
     downsampled[i] = static_cast<int16_t>(val);
   }
