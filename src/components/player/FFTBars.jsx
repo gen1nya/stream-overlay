@@ -26,6 +26,7 @@ const FFTBars = ({
                      peakFall          = 800,     // ms, peak fall duration
                      peakColor         = "#ce00ff",
                      peakThickness     = 2,       // px, thickness of peak line
+                     amplitude         = 1,       // vertical scale factor (0-1)
                      bars              = 256,     // number of frequency bands
                  }) => {
     const BAR_COUNT = bars;
@@ -61,6 +62,7 @@ const FFTBars = ({
         peakFall,
         peakColor,
         peakThickness,
+        amplitude,
     });
 
     useEffect(() => {
@@ -72,6 +74,7 @@ const FFTBars = ({
             peakFall,
             peakColor,
             peakThickness,
+            amplitude,
         };
         const ctx = canvasRef.current?.getContext("2d");
         if (ctx) buildGradient(ctx, canvasRef.current.height);
@@ -220,8 +223,9 @@ const FFTBars = ({
                         }
 
                         start.current.set(current.current);
+                        const amp = optsRef.current.amplitude || 1.0;
                         for (let i = 0; i < bars; i++) {
-                            target.current[i] = processed[i];
+                            target.current[i] = processed[i] * amp;
                         }
 
                         animStart.current = performance.now();
