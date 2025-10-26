@@ -48,14 +48,14 @@ export default function AddTrigger({
                     type === 'text'
                         ? { type: 'text', value: text.trim() }
                         : { type: 'regex', value: regex, flags };
-                const commands = cfg.bot.pingpong.commands.map((cmd, i) =>
+                const commands = cfg.pingpong.commands.map((cmd, i) =>
                     i === commandIndex
                         ? { ...cmd, triggers: [...cmd.triggers, trigger] }
                         : cmd,
                 );
                 return {
                     ...cfg,
-                    bot: { ...cfg.bot, pingpong: { ...cfg.bot.pingpong, commands } },
+                    pingpong: { ...cfg.pingpong, commands },
                 };
             }),
         );
