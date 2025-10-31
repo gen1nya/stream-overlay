@@ -348,7 +348,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                                 <NumericEditorComponent
                                     title="Время жизни (сек):"
                                     value={allMessages?.lifetime ?? 10}
-                                    max={60}
+                                    max={600}
                                     min={-1}
                                     width="150px"
                                     onChange={value => {

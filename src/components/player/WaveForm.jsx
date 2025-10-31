@@ -225,6 +225,8 @@ const WaveForm = ({
                         if (type === 0) {
                             const int16Data = new Int16Array(e.data, 2); // offset = 2 байта
                             normalizedData = Array.from(int16Data).map(x => x / 32768.0);
+                        } else {
+                            return;
                         }
                     } else {
                         // JSON mode: parse and normalize

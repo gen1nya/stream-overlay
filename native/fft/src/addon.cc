@@ -31,6 +31,7 @@ public:
       InstanceMethod("onFft", &Bridge::OnFft),
       InstanceMethod("stop", &Bridge::Stop),
       InstanceMethod("onWave", &Bridge::OnWave),
+      InstanceMethod("onVu", &Bridge::OnVu),
     });
     exports.Set("FftBridge", ctor); return exports;
   }
@@ -46,7 +47,7 @@ Bridge(const Napi::CallbackInfo& info)
     1   // threadsafe-function initial thread count
   );
 }
-  ~Bridge(){ if(!cbRef_.IsEmpty()) cbRef_.Unref(); tsfn_.Release(); eng_.enable(false); }
+  ~Bridge(){ if(!cbRef_.IsEmpty()) cbRef_.Unref(); if(!waveRef_.IsEmpty()) waveRef_.Unref(); if(!vuRef_.IsEmpty()) vuRef_.Unref(); tsfn_.Release(); eng_.enable(false); }
 
 private:
   // Helpers
@@ -63,6 +64,14 @@ private:
           if(!cbRef_.IsEmpty()) {
               cbRef_.Unref();
               cbRef_.Reset();
+          }
+          if(!waveRef_.IsEmpty()) {
+              waveRef_.Unref();
+              waveRef_.Reset();
+          }
+          if(!vuRef_.IsEmpty()) {
+              vuRef_.Unref();
+              vuRef_.Reset();
           }
       } catch(const std::exception& e){ }
       return info.Env().Undefined();
@@ -124,6 +133,34 @@ private:
       return info.Env().Undefined();
     }
 
+  Napi::Value OnVu(const Napi::CallbackInfo& info){
+    if(!info[0].IsFunction()){
+      Napi::TypeError::New(info.Env(), "callback required").ThrowAsJavaScriptException();
+      return info.Env().Undefined();
+    }
+
+    if(!vuRef_.IsEmpty()) vuRef_.Unref();
+    vuRef_ = Napi::Persistent(info[0].As<Napi::Function>());
+    vuRef_.Ref();
+
+    eng_.setVuCallback([this](const std::vector<uint8_t>& v){
+      auto payload = std::make_shared<std::vector<uint8_t>>(v);
+      this->tsfn_.BlockingCall(
+        payload.get(),
+        [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<uint8_t>* data){
+          Napi::HandleScope scope(env);
+          if(!this->vuRef_.IsEmpty()){
+            auto arr = Napi::Uint8Array::New(env, data->size());
+            std::memcpy(arr.Data(), data->data(), data->size());
+            this->vuRef_.Call({ arr });
+          }
+        }
+      );
+    });
+
+    return info.Env().Undefined();
+  }
+
   Napi::Value SetBufferSize(const Napi::CallbackInfo& info){ try{ eng_.setFftSize(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
   Napi::Value SetHopSize(const Napi::CallbackInfo& info){ try{ eng_.setHopSize(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
   Napi::Value SetColumns(const Napi::CallbackInfo& info){ try{ eng_.setColumns(info[0].As<Napi::Number>().Int32Value()); } catch(const std::exception& e){ Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException(); } return info.Env().Undefined(); }
@@ -168,6 +205,7 @@ Napi::Value OnFft(const Napi::CallbackInfo& info){
   Napi::ThreadSafeFunction tsfn_;
   Napi::FunctionReference cbRef_;
   Napi::FunctionReference waveRef_;
+  Napi::FunctionReference vuRef_;
 };
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports){ return Bridge::Init(env, exports); }

@@ -10,5 +10,6 @@ export interface FftBridge {
   //onFft(cb: (spectrum: Float32Array)=>void): void
   onFft(cb: (spectrum: Uint8Array) => void): void
   onWave(cb: (waveform: Int16Array )=>void): void
+  onVu(cb: (vu: Uint8Array)=>void): void
 }
 export const FftBridge: { new(): FftBridge }

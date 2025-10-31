@@ -23,6 +23,7 @@ public:
   //using WaveCallback = std::function<void(const std::vector<float>&)>;
   using FftCallback = std::function<void(const std::vector<uint8_t>&)>;
   using WaveCallback = std::function<void(const std::vector<int16_t>&)>;
+  using VuCallback = std::function<void(const std::vector<uint8_t>&)>;
 
   WasapiEngine();
   ~WasapiEngine();
@@ -41,6 +42,7 @@ public:
   void enable(bool on);
   void setCallback(FftCallback cb);
   void setWaveCallback(WaveCallback cb);
+  void setVuCallback(VuCallback cb);
 
 
 private:
@@ -48,6 +50,7 @@ private:
   void stop();
   void workerLoop();
   void computeFftAndPublish(const float* frame);
+  void computeAndPublishVu();
   void publishWaveform();
 
   // COM
@@ -66,6 +69,7 @@ private:
   FloatRingBuffer sampleBuf_{4096*4};
   TripleBuffer<uint8_t> specBuf_{256};
   FftCallback cb_;
+  VuCallback vuCb_;
   WaveCallback waveCb_;
 
   // device props
@@ -83,4 +87,9 @@ private:
 
   std::vector<float> waveformBuf_;
   std::mutex waveformMutex_;
+
+  // VU meter state
+  int nChannels_ = 0;
+  std::vector<std::vector<float>> vuBufs_;  // per-channel sample buffers for VU calculation
+  std::mutex vuMutex_;
 };

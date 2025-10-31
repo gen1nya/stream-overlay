@@ -65,6 +65,7 @@ void WasapiEngine::setTilt(float exp){ tiltExp_ = exp; }
 void WasapiEngine::setLoopback(bool on){ loopback_ = on; }
 void WasapiEngine::setCallback(FftCallback cb){ cb_ = std::move(cb); }
 void WasapiEngine::setWaveCallback(WaveCallback cb) { waveCb_ = std::move(cb); }
+void WasapiEngine::setVuCallback(VuCallback cb) { vuCb_ = std::move(cb); }
 
 void WasapiEngine::enable(bool on){ if(on){ start(); } else { stop(); } }
 
@@ -92,12 +93,20 @@ void WasapiEngine::start(){
   check(audioClient_->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, dur, 0, wfx_, nullptr), "Initialize");
   check(audioClient_->GetService(IID_PPV_ARGS(&cap_)), "GetService IAudioCaptureClient");
   sampleRate_ = (int)sampleRate; binmap_ = makeBinMap(sampleRate_, plan_.fftSize, plan_.columns);
+  nChannels_ = (int)nChannels;
 
   kiss_ = new Kiss(); kiss_->in.resize(plan_.fftSize); kiss_->out.resize(plan_.fftSize/2+1); kiss_->cfg = kiss_fftr_alloc(plan_.fftSize, 0, nullptr, nullptr);
 
   // Инициализация waveform буфера
   waveformBuf_.clear();
   waveformBuf_.reserve(2048);
+
+  // Инициализация VU буферов (4096 samples на канал ~ 85ms при 48kHz)
+  vuBufs_.clear();
+  vuBufs_.resize(nChannels_);
+  for(auto& buf : vuBufs_) {
+    buf.reserve(4096);
+  }
 
   HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   check(audioClient_->SetEventHandle(evt), "SetEventHandle");
@@ -151,6 +160,20 @@ void WasapiEngine::start(){
                 }
               }
 
+              // Добавляем samples всех каналов в VU буферы
+              {
+                std::lock_guard<std::mutex> lock(vuMutex_);
+                for(size_t k = 0; k < toCopy; ++k){
+                  for(int ch = 0; ch < nChannels_; ++ch){
+                    float sample = silent ? 0.0f : f[(i + (UINT32)k) * nChannels_ + ch];
+                    vuBufs_[ch].push_back(sample);
+                    if(vuBufs_[ch].size() > 4096) {
+                      vuBufs_[ch].erase(vuBufs_[ch].begin());
+                    }
+                  }
+                }
+              }
+
               hopFill += toCopy;
               i += (UINT32)toCopy;
 
@@ -189,6 +212,20 @@ void WasapiEngine::start(){
                 }
               }
 
+              // Добавляем samples всех каналов в VU буферы
+              {
+                std::lock_guard<std::mutex> lock(vuMutex_);
+                for(size_t k = 0; k < toCopy; ++k){
+                  for(int ch = 0; ch < nChannels_; ++ch){
+                    float sample = silent ? 0.0f : s[(i + (UINT32)k) * nChannels_ + ch] / 32768.0f;
+                    vuBufs_[ch].push_back(sample);
+                    if(vuBufs_[ch].size() > 4096) {
+                      vuBufs_[ch].erase(vuBufs_[ch].begin());
+                    }
+                  }
+                }
+              }
+
               hopFill += toCopy;
               i += (UINT32)toCopy;
 
@@ -213,6 +250,7 @@ void WasapiEngine::start(){
 
         if(elapsed.count() >= wavePublishInterval){
           publishWaveform();
+          computeAndPublishVu();
           lastWavePublish = now;
         }
       }
@@ -257,6 +295,56 @@ void WasapiEngine::publishWaveform(){
   waveCb_(downsampled);
 }
 
+void WasapiEngine::computeAndPublishVu(){
+  if(!vuCb_ || nChannels_ == 0) return;
+
+  std::vector<float> channelSamples[8]; // Поддержка до 8 каналов
+  {
+    std::lock_guard<std::mutex> lock(vuMutex_);
+    for(int ch = 0; ch < nChannels_ && ch < 8; ++ch){
+      if(vuBufs_[ch].empty()) return; // Ждем накопления данных
+      channelSamples[ch] = vuBufs_[ch]; // Копируем
+    }
+  }
+
+  std::vector<uint8_t> vuLevels(nChannels_);
+
+  // Вычисляем RMS для каждого канала
+  for(int ch = 0; ch < nChannels_; ++ch){
+    const auto& samples = channelSamples[ch];
+    if(samples.empty()) {
+      vuLevels[ch] = 0;
+      continue;
+    }
+
+    // Быстрый RMS на последних 1024 сэмплах (~21ms при 48kHz)
+    size_t n = std::min<size_t>(1024, samples.size());
+    size_t start = samples.size() - n;
+
+    double sumSquares = 0.0;
+    for(size_t i = start; i < samples.size(); ++i){
+      double s = samples[i];
+      sumSquares += s * s;
+    }
+
+    double rms = std::sqrt(sumSquares / n);
+
+    // Применяем мастер-гейн и конвертируем в dB
+    rms *= masterGain_;
+    double db = 20.0 * std::log10(rms + 1e-10);
+
+    // Маппинг dB в 0-255 диапазон
+    // -60dB = 0, 0dB = 255
+    double normalized = (db + 60.0) / 60.0; // 0..1 для -60dB..0dB
+    normalized = std::max(0.0, std::min(1.0, normalized));
+
+    vuLevels[ch] = static_cast<uint8_t>(std::round(normalized * 255.0));
+  }
+
+  // Публикуем
+  vuCb_(vuLevels);
+}
+
 void WasapiEngine::computeFftAndPublish(const float* frame){
   // Waveform теперь публикуется отдельно в publishWaveform()
 
@@ -272,18 +360,18 @@ void WasapiEngine::computeFftAndPublish(const float* frame){
   const float dbFloor = plan_.dbFloor;
   for(int b=0;b<plan_.columns;++b){
     double sum=0;
-    int cnt=0; 
-    for(int j=binmap_.start[b]; j<binmap_.end[b]; ++j,++cnt){ 
+    int cnt=0;
+    for(int j=binmap_.start[b]; j<binmap_.end[b]; ++j,++cnt){
         double re = kiss_->out[j].r;
         double im = kiss_->out[j].i;
         const double ampScale = 2.0 / double(plan_.fftSize);
         sum += std::sqrt(re*re + im*im) * ampScale;
     }
-    double lin = cnt>0 ? sum/cnt : 0.0; 
-    double db = 20.0*std::log10(lin + 1e-20); 
-    
+    double lin = cnt>0 ? sum/cnt : 0.0;
+    double db = 20.0*std::log10(lin + 1e-20);
+
     double clamped = std::max(db, (double)dbFloor);
-    double norm = double(b+10)/double(plan_.columns+10); 
+    double norm = double(b+10)/double(plan_.columns+10);
     double gain = std::pow(norm, (double)tiltExp_);
     float v = float(((clamped - dbFloor)/-dbFloor) * gain * masterGain_);
     if (clampUnit_) v = std::max(0.0f, std::min(1.0f, v));

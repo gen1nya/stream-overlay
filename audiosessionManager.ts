@@ -106,6 +106,15 @@ export class AudiosessionManager {
     }
 
     private setupMediaBridges() {
+        const vuSource = new Promise((resolve) => {
+            this.fftbridge.onVu((vu: Uint8Array) => {
+                this.mediaWss.clients.forEach((client) => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(this.createMessage(2, vu));
+                    }
+                });
+            })
+        });
         const waveFormSource = new Promise((resolve) => {
             this.fftbridge.onWave((waveform: Int16Array) => {
                 this.mediaWss.clients.forEach((client) => {
@@ -171,6 +180,12 @@ export class AudiosessionManager {
             console.log("Waveform source finished successfully");
         }).catch((err) => {
             console.error("Error in waveform source:", err);
+        });
+
+        vuSource.then(() => {
+            console.log("VU source finished successfully");
+        }).catch((err) => {
+            console.error("Error in VU source:", err);
         });
     }
 

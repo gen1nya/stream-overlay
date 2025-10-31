@@ -5,6 +5,7 @@ import FFTBars from "./FFTBars";
 import useReconnectingWebSocket from "../../hooks/useReconnectingWebSocket";
 import ColorThief from "colorthief";
 import WaveForm from "./WaveForm";
+import VUMeter from "./Vumeter";
 
 const ensureRgba = (color, opacity = 1) => {
     if (color.includes('rgba')) return color;
@@ -171,9 +172,13 @@ const Artist = styled.div`
 
 const FFTWrapper = styled.div`
     width: 100%;
-    height: ${({theme}) => theme.modernPlayer?.mode === 'compact' ? '0' : '60px'};
+    height: ${({theme}) => {
+        if (theme.modernPlayer?.mode === 'compact') return '0';
+        if (theme.modernPlayer?.visualization === 'vumeter') return '80px';
+        return '60px'
+    }};
     margin-top: ${({theme}) => theme.modernPlayer?.mode === 'compact' ? '0' : '8px'};
-    border-radius: ${({theme}) => (theme.modernPlayer?.borderRadius || 20) * 0.25}px;
+    border-radius: ${({theme}) => (theme.modernPlayer?.borderRadius || 20) * 0.4}px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
     display: ${({theme}) => theme.modernPlayer?.mode === 'compact' ? 'none' : 'block'};
@@ -417,6 +422,9 @@ function ModernAudioPlayer() {
                                     showCenterLine={false}
                                     showGrid={false}
                                 />
+                            )}
+                            {(theme.modernPlayer?.visualization === 'vumeter') && (
+                                <VUMeter/>
                             )}
                         </FFTWrapper>
                     </Info>

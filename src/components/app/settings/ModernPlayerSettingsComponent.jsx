@@ -247,6 +247,7 @@ export default function ModernPlayerSettingsComponent({
                                     items={[
                                         { key: 'spectrum', text: 'Спектр' },
                                         { key: 'waveform', text: 'Волна' },
+                                        { key: 'vumeter', text: 'VU-метр' },
                                     ]}
                                     direction="horizontal"
                                     itemWidth="140px"
