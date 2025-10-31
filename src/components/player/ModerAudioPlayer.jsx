@@ -178,7 +178,7 @@ const FFTWrapper = styled.div`
         return '60px'
     }};
     margin-top: ${({theme}) => theme.modernPlayer?.mode === 'compact' ? '0' : '8px'};
-    border-radius: ${({theme}) => (theme.modernPlayer?.borderRadius || 20) * 0.4}px;
+    border-radius: 7px;
     border: 1px solid rgba(255, 255, 255, 0.1);
     overflow: hidden;
     display: ${({theme}) => theme.modernPlayer?.mode === 'compact' ? 'none' : 'block'};
