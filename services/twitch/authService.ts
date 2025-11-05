@@ -1,6 +1,6 @@
 import keytar from 'keytar';
 import axios from 'axios';
-import { shell, dialog } from 'electron';
+import {shell, dialog, ipcMain} from 'electron';
 import { URLSearchParams } from 'url';
 import { EventEmitter } from 'events';
 import {fetchUser} from "./authorizedHelixApi";
@@ -21,6 +21,7 @@ export interface DeviceCodeInfo {
   verification_uri: string;
   expires_in: number;
   interval: number;
+  device_code: string;
 }
 
 const authEmitter = new EventEmitter();
@@ -52,6 +53,10 @@ const DEVICE_INFO_SERVICE = 'TwitchWatcherDevice';
 const DEVICE_INFO_ACCOUNT = 'device_code';
 
 let refreshTimeout: NodeJS.Timeout | null = null;
+
+let authAbortController: AbortController | null = null;
+let pollingInterval: NodeJS.Timeout | null = null;
+
 
 function scheduleRefresh(tokens: Tokens) {
   if (refreshTimeout) clearTimeout(refreshTimeout);
@@ -142,7 +147,7 @@ async function requestDeviceCode(): Promise<DeviceCodeInfo> {
   });
   const { device_code, user_code, verification_uri, expires_in, interval } = resp.data;
   await keytar.setPassword(DEVICE_INFO_SERVICE, DEVICE_INFO_ACCOUNT, device_code);
-  return { user_code, verification_uri, expires_in, interval };
+  return { user_code, device_code, verification_uri, expires_in, interval };
 }
 
 async function pollForToken(): Promise<Tokens> {
@@ -177,6 +182,129 @@ async function pollForToken(): Promise<Tokens> {
     }
   }
 }
+
+
+ipcMain.handle('auth:start', async (event) => {
+  const tokens = await getTokens();
+  if (tokens) {
+    return { success: true, alreadyAuthorized: true };
+  }
+
+  try {
+    authAbortController = new AbortController();
+
+    const { user_code, device_code, verification_uri, expires_in, interval } =
+        await requestDeviceCode();
+
+    event.sender.send('auth:code-ready', {
+      userCode: user_code,
+      verificationUri: verification_uri,
+      expiresIn: expires_in
+    });
+
+    shell.openExternal(verification_uri);
+
+    startPolling(event.sender, device_code, interval || 5);
+
+    return { success: true, alreadyAuthorized: false };
+
+  } catch (err: any) {
+    console.error('❌ Authorization failed:', err.message);
+    event.sender.send('auth:error', { message: err.message });
+    return { success: false, error: err.message };
+  }
+});
+
+function startPolling(
+    sender: Electron.WebContents,
+    deviceCode: string,
+    intervalSeconds: number
+) {
+  let attemptCount = 0;
+
+  pollingInterval = setInterval(async () => {
+    if (authAbortController?.signal.aborted) {
+      clearInterval(pollingInterval!);
+      pollingInterval = null;
+      if (!sender.isDestroyed()) {
+        sender.send('auth:cancelled');
+      }
+      return;
+    }
+
+    attemptCount++;
+    sender.send('auth:polling', { attempt: attemptCount });
+
+    try {
+      const tokens = await checkDeviceCodeStatus(deviceCode);
+
+      if (tokens) {
+        clearInterval(pollingInterval!);
+        pollingInterval = null;
+        authAbortController = null;
+
+        const userInfo = await fetchUser(tokens.access_token);
+        if (userInfo) {
+          tokens.user_id = userInfo.id;
+          tokens.login = userInfo.login;
+          await saveTokens(tokens);
+        }
+
+        sender.send('auth:success', {
+          userId: userInfo?.id,
+          login: userInfo?.login
+        });
+      }
+
+    } catch (err: any) {
+      if (err.message !== 'authorization_pending') {
+        clearInterval(pollingInterval!);
+        pollingInterval = null;
+        authAbortController = null;
+
+        sender.send('auth:error', { message: err.message });
+      }
+    }
+
+  }, intervalSeconds * 1000);
+}
+
+async function checkDeviceCodeStatus(deviceCode: string) {
+  const response = await fetch('https://id.twitch.tv/oauth2/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: CLIENT_ID,
+      device_code: deviceCode,
+      grant_type: 'urn:ietf:params:oauth:grant-type:device_code'
+    })
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    if (data.message === 'authorization_pending') {
+      throw new Error('authorization_pending');
+    }
+    throw new Error(data.message || 'Token request failed');
+  }
+
+  return data;
+}
+
+ipcMain.handle('auth:cancel', async (event) => {
+  if (authAbortController) {
+    authAbortController.abort();
+    authAbortController = null;
+  }
+  if (pollingInterval) {
+    clearInterval(pollingInterval);
+    pollingInterval = null;
+  }
+
+  event.sender.send('auth:cancelled');
+  return { success: true };
+});
 
 export async function authorizeIfNeeded(): Promise<boolean> {
   const tokens = await getTokens();

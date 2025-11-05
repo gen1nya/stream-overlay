@@ -378,6 +378,7 @@ class EventSubService {
     console.log(`🟢 [${this.connectionId}] Connected to Twitch EventSub`);
 
     this.log('Соединение с EventSub установлено');
+    this.startHealthCheck();
   }
 
   private handlePing(ws: WebSocket): void {

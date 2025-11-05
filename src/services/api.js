@@ -23,10 +23,6 @@ export const openPreview = () => {
     return ipcRenderer?.invoke('setting:open-preview');
 };
 
-export const authorize = () => {
-    return ipcRenderer?.invoke('auth:authorize');
-};
-
 export const getTokens = () => {
     return ipcRenderer?.invoke('auth:getTokens');
 };
@@ -233,3 +229,52 @@ export const updateGachaUser = async (userId, userName, pityData) => {
 export const onLogout = (callback) => {
     ipcRenderer.on('logout:success', callback);
 }
+
+export const authorize = async () => {
+    const result = await ipcRenderer.invoke('auth:start');
+    return result.success;
+};
+
+// Отменить авторизацию
+export const cancelAuth = async () => {
+    await ipcRenderer.invoke('auth:cancel');
+};
+
+// События авторизации
+export const onAuthCodeReady = (callback) => {
+    ipcRenderer.on('auth:code-ready', (event, data) => {
+        callback(data);
+    });
+};
+
+export const onAuthPolling = (callback) => {
+    ipcRenderer.on('auth:polling', (event, data) => {
+        callback(data);
+    });
+};
+
+export const onAuthSuccess = (callback) => {
+    ipcRenderer.on('auth:success', (event, data) => {
+        callback(data);
+    });
+};
+
+export const onAuthError = (callback) => {
+    ipcRenderer.on('auth:error', (event, data) => {
+        callback(data);
+    });
+};
+
+export const onAuthCancelled = (callback) => {
+    ipcRenderer.on('auth:cancelled', (event) => {
+        callback();
+    });
+};
+
+export const removeAuthListeners = () => {
+    ipcRenderer.removeAllListeners('auth:code-ready');
+    ipcRenderer.removeAllListeners('auth:polling');
+    ipcRenderer.removeAllListeners('auth:success');
+    ipcRenderer.removeAllListeners('auth:error');
+    ipcRenderer.removeAllListeners('auth:cancelled');
+};

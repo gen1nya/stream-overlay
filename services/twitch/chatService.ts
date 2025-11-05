@@ -12,8 +12,15 @@ class ChatService {
   private messageHandler: ((msg: AppEvent) => Promise<void>) | null = null;
   private isStopping = false;
   private isConnecting = false;
+  private ignoreClose = false; // ← ДОБАВЛЕНО: флаг для контроля автореконнекта
   private lastEventTimestamp = Date.now();
   private logger: LogService | null = null;
+
+  // Health check - ДОБАВЛЕНО
+  private healthCheckTimer: NodeJS.Timeout | null = null;
+  private readonly HEALTH_CHECK_INTERVAL = 60_000; // 60 секунд
+  private readonly INACTIVITY_THRESHOLD = 300_000; // 5 минут
+
   // Concurrency guards
   private connectEpoch = 0;
   private reconnecting = false;
@@ -76,6 +83,7 @@ class ChatService {
     try {
       // Force-stop current socket if any
       if (this.client) {
+        this.ignoreClose = true;
         try { this.client.removeAllListeners(); } catch {}
         try { this.client.destroy(); } catch {}
         this.client = null;
@@ -139,6 +147,8 @@ class ChatService {
       socket.write(`PASS oauth:${accessToken}\r\n`);
       socket.write(`NICK ${username}\r\n`);
       socket.write(`JOIN #${channel}\r\n`);
+
+      this.startHealthCheck();
     });
 
     socket.on('data', async (data) => {
@@ -196,6 +206,12 @@ class ChatService {
         userName: null
       });
       console.log('🔴 IRC Connection closed.');
+
+      if (!this.ignoreClose && !this.isStopping) {
+        console.log('🔄 Attempting to reconnect IRC in 5 seconds...');
+        setTimeout(() => this.safeReconnect(), 5000);
+      }
+      this.ignoreClose = false;
     });
 
     socket.on('error', (err) => {
@@ -211,7 +227,33 @@ class ChatService {
     });
   }
 
+  private startHealthCheck(): void {
+    this.clearHealthCheck();
+
+    console.log('🔍 IRC Health check started');
+
+    this.healthCheckTimer = setInterval(() => {
+      const inactivity = Date.now() - this.lastEventTimestamp;
+      const inactivitySeconds = Math.floor(inactivity / 1000);
+
+      if (inactivity > this.INACTIVITY_THRESHOLD && !this.isConnecting && !this.isStopping) {
+        console.warn(`⚠️ IRC no activity for ${inactivitySeconds}s, reconnecting...`);
+        this.safeReconnect();
+      }
+    }, this.HEALTH_CHECK_INTERVAL);
+  }
+
+  private clearHealthCheck(): void {
+    if (this.healthCheckTimer) {
+      clearInterval(this.healthCheckTimer);
+      this.healthCheckTimer = null;
+      console.log('🔍 IRC Health check stopped');
+    }
+  }
+
   stopChat(): void {
+    this.ignoreClose = true;
+    this.clearHealthCheck();
     if (this.client) {
       try { this.client.end(); } catch {}; try { this.client.destroy(); } catch {};
       this.client = null;
