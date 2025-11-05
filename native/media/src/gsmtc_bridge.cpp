@@ -5,7 +5,6 @@
 #include <string>
 #include <mutex>
 #include <iostream>
-#include <sstream>
 
 #include <winrt/base.h>
 #include <winrt/Windows.Foundation.h>
@@ -25,7 +24,7 @@ struct EventData {
   int64_t durationMs{};
   int64_t positionMs{};
   int32_t playbackStatus{};
-  std::vector<uint8_t> thumbnail; // raw bytes
+  std::vector<uint8_t> thumbnail;
 };
 
 struct ErrorData {
@@ -46,92 +45,155 @@ public:
   }
 
   GSMTCBridge(const Napi::CallbackInfo& info) : Napi::ObjectWrap<GSMTCBridge>(info) {}
-  ~GSMTCBridge() { StopInternal(); }
+  ~GSMTCBridge() {
+    std::cerr << "[GSMTC] Destructor called" << std::endl;
+    StopInternal();
+  }
 
 private:
+  // ===== helpers =====
+  template <typename AsyncOp, typename Rep, typename Period>
+  bool wait_and_get(AsyncOp const& op, std::chrono::duration<Rep, Period> timeout) {
+    // Возвращает true, если Completed, иначе false (Canceled/Errored/Timed out)
+    auto st = op.wait_for(timeout);
+    if (st == AsyncStatus::Completed) return true;
+    return false;
+  }
+
+  static std::vector<uint8_t> ReadAll(IRandomAccessStream const& stream) {
+    if (!stream) return {};
+    auto size = stream.Size();
+    if (size == 0) return {};
+
+    auto input = stream.GetInputStreamAt(0);
+    DataReader reader(input);
+
+    // Защита от зависания LoadAsync — ждём не дольше 500мс
+    auto load = reader.LoadAsync(static_cast<uint32_t>(size));
+    if (!load) return {};
+    if (!wait_for(load)) return {};
+
+    std::vector<uint8_t> bytes(static_cast<size_t>(size));
+    reader.ReadBytes(bytes);
+    return bytes;
+  }
+
+  // Более явная форма wait_for для IAsyncAction/IAsyncOperation
+  template <typename AsyncT>
+  static bool wait_for(AsyncT const& op, std::chrono::milliseconds to = std::chrono::milliseconds(500)) {
+    auto st = op.wait_for(to);
+    return st == AsyncStatus::Completed;
+  }
+
+  // ===== API =====
   Napi::Value Start(const Napi::CallbackInfo& info) {
     Napi::Env env = info.Env();
 
-    // Первый аргумент - data callback (обязательный)
-    if (!info[0].IsFunction()) {
+    if (info.Length() < 1 || !info[0].IsFunction()) {
       Napi::TypeError::New(env, "data callback required").ThrowAsJavaScriptException();
       return env.Undefined();
     }
-
-    // Второй аргумент - error callback (опциональный)
     bool hasErrorCallback = info.Length() > 1 && info[1].IsFunction();
 
     std::lock_guard<std::mutex> lock(mutex_);
     if (running_) return env.Undefined();
 
-    // Data callback
-    tsfn_ = Napi::ThreadSafeFunction::New(
-      env,
-      info[0].As<Napi::Function>(),
-      "GSMTCCallback",
-      0, 1
-    );
+    std::cerr << "[GSMTC] Starting..." << std::endl;
 
-    // Error callback (если передан)
+    tsfn_ = Napi::ThreadSafeFunction::New(env, info[0].As<Napi::Function>(), "GSMTCCallback", 0, 1);
     if (hasErrorCallback) {
-      errorTsfn_ = Napi::ThreadSafeFunction::New(
-        env,
-        info[1].As<Napi::Function>(),
-        "GSMTCErrorCallback",
-        0, 1
-      );
+      errorTsfn_ = Napi::ThreadSafeFunction::New(env, info[1].As<Napi::Function>(), "GSMTCErrorCallback", 0, 1);
     }
 
     running_ = true;
     worker_ = std::thread([this] { this->Pump(); });
+
+    std::cerr << "[GSMTC] Started successfully" << std::endl;
     return env.Undefined();
   }
 
   Napi::Value Stop(const Napi::CallbackInfo& info) {
+    std::cerr << "[GSMTC] Stop() called from JS" << std::endl;
     StopInternal();
+    std::cerr << "[GSMTC] Stop() completed" << std::endl;
     return info.Env().Undefined();
   }
 
-  void StopInternal() {
-    {
-      std::lock_guard<std::mutex> lock(mutex_);
-      if (!running_) return;
-      running_ = false;
+  void UnsubscribeSessionEvents_NoThrow_Locked_() {
+    try {
+      if (session_) {
+        if (mediaPropsToken_.value)  session_.MediaPropertiesChanged(mediaPropsToken_);
+        if (playbackToken_.value)    session_.PlaybackInfoChanged(playbackToken_);
+        if (timelineToken_.value)    session_.TimelinePropertiesChanged(timelineToken_);
+        session_ = nullptr;
+      }
+    } catch (const winrt::hresult_error& e) {
+      LogError("UnsubscribeSessionEvents", winrt::to_string(e.message()), e.code());
+    } catch (...) {
+      LogError("UnsubscribeSessionEvents", "Unknown error");
     }
-
-    // Ждём завершения потока (КРИТИЧНО!)
-    if (worker_.joinable()) {
-      worker_.join();
-    }
-
-    // Теперь безопасно очищаем ресурсы
-    std::lock_guard<std::mutex> lock(mutex_);
-    if (tsfn_) {
-      tsfn_.Release();
-      tsfn_ = {};
-    }
-    if (errorTsfn_) {
-      errorTsfn_.Release();
-      errorTsfn_ = {};
-    }
+    mediaPropsToken_ = {};
+    playbackToken_   = {};
+    timelineToken_   = {};
   }
 
-  // Логирование ошибки
-  void LogError(const std::string& location, const std::string& message, int32_t hresult = 0) {
-    // Логируем в stderr (видно в Node.js консоли)
-    std::cerr << "[GSMTC Error] " << location << ": " << message;
-    if (hresult != 0) {
-      std::cerr << " (HRESULT: 0x" << std::hex << hresult << std::dec << ")";
+  void StopInternal() {
+    std::cerr << "[GSMTC] StopInternal: begin" << std::endl;
+
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (!running_) {
+        std::cerr << "[GSMTC] StopInternal: already stopped" << std::endl;
+        return;
+      }
+      std::cerr << "[GSMTC] StopInternal: setting running_ = false" << std::endl;
+      running_ = false;
+
+      // Снять все подписки максимально рано
+      std::cerr << "[GSMTC] StopInternal: unsubscribing session events..." << std::endl;
+      UnsubscribeSessionEvents_NoThrow_Locked_();
+
+      if (mgr_ && currentChangedToken_.value) {
+        try {
+          std::cerr << "[GSMTC] StopInternal: unsubscribing CurrentSessionChanged..." << std::endl;
+          mgr_.CurrentSessionChanged(currentChangedToken_);
+        } catch (const winrt::hresult_error& e) {
+          LogError("StopInternal/UnsubscribeManager", winrt::to_string(e.message()), e.code());
+        } catch (...) {
+          LogError("StopInternal/UnsubscribeManager", "Unknown error");
+        }
+        currentChangedToken_ = {};
+      }
+      mgr_ = nullptr;
     }
+
+    std::cerr << "[GSMTC] StopInternal: waiting for worker thread to join..." << std::endl;
+    if (worker_.joinable()) {
+      worker_.join();
+      std::cerr << "[GSMTC] StopInternal: worker thread joined successfully" << std::endl;
+    } else {
+      std::cerr << "[GSMTC] StopInternal: worker thread was not joinable" << std::endl;
+    }
+
+    std::cerr << "[GSMTC] StopInternal: cleaning up ThreadSafeFunctions..." << std::endl;
+    {
+      std::lock_guard<std::mutex> lock(mutex_);
+      if (tsfn_) { tsfn_.Abort(); tsfn_.Release(); tsfn_ = {}; }
+      if (errorTsfn_) { errorTsfn_.Abort(); errorTsfn_.Release(); errorTsfn_ = {}; }
+    }
+
+    std::cerr << "[GSMTC] StopInternal: complete!" << std::endl;
+  }
+
+  void LogError(const std::string& location, const std::string& message, int32_t hresult = 0) {
+    std::cerr << "[GSMTC Error] " << location << ": " << message;
+    if (hresult != 0) std::cerr << " (HRESULT: 0x" << std::hex << hresult << std::dec << ")";
     std::cerr << std::endl;
 
-    // Если есть error callback - отправляем туда
     Napi::ThreadSafeFunction errorTsfn_copy;
     {
       std::lock_guard<std::mutex> lock(mutex_);
-      if (errorTsfn_ && running_) {
-        errorTsfn_copy = errorTsfn_;
-      }
+      if (errorTsfn_ && running_) errorTsfn_copy = errorTsfn_;
     }
 
     if (errorTsfn_copy) {
@@ -143,9 +205,7 @@ private:
             Napi::Object o = Napi::Object::New(env);
             o.Set("location", data->location);
             o.Set("message", data->message);
-            if (data->hresult != 0) {
-              o.Set("hresult", Napi::Number::New(env, data->hresult));
-            }
+            if (data->hresult != 0) o.Set("hresult", Napi::Number::New(env, data->hresult));
             cb.Call({ o });
           } catch (...) {}
           delete data;
@@ -154,40 +214,59 @@ private:
   }
 
   void Pump() {
-    winrt::init_apartment(apartment_type::single_threaded);
+    std::cerr << "[GSMTC] Pump: thread started" << std::endl;
 
-    GlobalSystemMediaTransportControlsSessionManager mgr{ nullptr };
-    event_token currentChangedToken{};
+    // ВАЖНО: используем MTA, чтобы блокирующие get() не зависали в STA
+    winrt::init_apartment(apartment_type::multi_threaded);
+    std::cerr << "[GSMTC] Pump: WinRT apartment (MTA) initialized" << std::endl;
 
     try {
-      mgr = GlobalSystemMediaTransportControlsSessionManager::RequestAsync().get();
-
-      // Подписка на смену текущей сессии
-      currentChangedToken = mgr.CurrentSessionChanged([this](auto const& m, auto const&) {
-        if (!running_) return;
-
-        try {
-          auto s = m.GetCurrentSession();
-          SubscribeToSession(s);
-          if (s) EmitSnapshot(s);
-        } catch (const winrt::hresult_error& e) {
-          LogError("CurrentSessionChanged", winrt::to_string(e.message()), e.code());
-        } catch (const std::exception& e) {
-          LogError("CurrentSessionChanged", e.what());
-        } catch (...) {
-          LogError("CurrentSessionChanged", "Unknown error");
+      std::cerr << "[GSMTC] Pump: requesting SessionManager..." << std::endl;
+      {
+        auto req = GlobalSystemMediaTransportControlsSessionManager::RequestAsync();
+        // Ждём не дольше 1с — иначе считаем, что системы нет/висит
+        if (!wait_for(req, std::chrono::milliseconds(1000))) {
+          LogError("Pump/Init", "RequestAsync timeout");
+          goto CLEANUP;
         }
-      });
+        auto mgrLocal = req.get();
+        {
+          std::lock_guard<std::mutex> lock(mutex_);
+          if (!running_) goto CLEANUP;
+          mgr_ = mgrLocal;
+        }
+      }
+      std::cerr << "[GSMTC] Pump: SessionManager obtained" << std::endl;
 
-      // начальная сессия
-      auto s = mgr.GetCurrentSession();
-      SubscribeToSession(s);
-      if (s) EmitSnapshot(s);
+      {
+        std::lock_guard<std::mutex> lock(mutex_);
+        currentChangedToken_ = mgr_.CurrentSessionChanged([this](auto const& m, auto const&) {
+          if (!running_) return;
+          try {
+            auto s = m.GetCurrentSession();
+            SubscribeToSession(s);
+            if (s) EmitSnapshot(s);
+          } catch (const winrt::hresult_error& e) {
+            LogError("CurrentSessionChanged", winrt::to_string(e.message()), e.code());
+          } catch (const std::exception& e) {
+            LogError("CurrentSessionChanged", e.what());
+          } catch (...) {
+            LogError("CurrentSessionChanged", "Unknown error");
+          }
+        });
+      }
 
-      // держим поток живым
+      {
+        auto s = mgr_.GetCurrentSession();
+        SubscribeToSession(s);
+        if (s) EmitSnapshot(s);
+      }
+
+      std::cerr << "[GSMTC] Pump: entering main loop" << std::endl;
       while (running_) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
       }
+      std::cerr << "[GSMTC] Pump: exited main loop (running_ = false)" << std::endl;
 
     } catch (const winrt::hresult_error& e) {
       LogError("Pump/Init", winrt::to_string(e.message()), e.code());
@@ -197,33 +276,15 @@ private:
       LogError("Pump/Init", "Unknown error during initialization");
     }
 
-    // Cleanup: отписываемся от событий ПЕРЕД выходом из потока
-    try {
-      std::lock_guard<std::mutex> lock(mutex_);
-
-      if (session_) {
-        if (mediaPropsToken_.value)  session_.MediaPropertiesChanged(mediaPropsToken_);
-        if (playbackToken_.value)    session_.PlaybackInfoChanged(playbackToken_);
-        if (timelineToken_.value)    session_.TimelinePropertiesChanged(timelineToken_);
-        session_ = nullptr;
-      }
-
-      if (mgr && currentChangedToken.value) {
-        mgr.CurrentSessionChanged(currentChangedToken);
-      }
-    } catch (const winrt::hresult_error& e) {
-      LogError("Pump/Cleanup", winrt::to_string(e.message()), e.code());
-    } catch (...) {
-      LogError("Pump/Cleanup", "Unknown error during cleanup");
-    }
-
+  CLEANUP:
+    std::cerr << "[GSMTC] Pump: uninitializing WinRT apartment..." << std::endl;
     winrt::uninit_apartment();
+    std::cerr << "[GSMTC] Pump: thread ending" << std::endl;
   }
 
   void SubscribeToSession(GlobalSystemMediaTransportControlsSession const& s) {
     std::lock_guard<std::mutex> lock(mutex_);
 
-    // Отписываемся от старой сессии
     if (session_) {
       try {
         if (mediaPropsToken_.value)  session_.MediaPropertiesChanged(mediaPropsToken_);
@@ -236,114 +297,91 @@ private:
       }
       session_ = nullptr;
       mediaPropsToken_ = {};
-      playbackToken_ = {};
-      timelineToken_ = {};
+      playbackToken_   = {};
+      timelineToken_   = {};
     }
 
     session_ = s;
     if (!session_) return;
 
-    // Подписываемся на новую сессию
     try {
       mediaPropsToken_ = session_.MediaPropertiesChanged([this](auto const& sess, auto const&) {
         if (!running_) return;
-        try {
-          EmitSnapshot(sess);
-        } catch (const winrt::hresult_error& e) {
-          LogError("MediaPropertiesChanged", winrt::to_string(e.message()), e.code());
-        } catch (const std::exception& e) {
-          LogError("MediaPropertiesChanged", e.what());
-        } catch (...) {
-          LogError("MediaPropertiesChanged", "Unknown error");
-        }
+        try { EmitSnapshot(sess); }
+        catch (const winrt::hresult_error& e) { LogError("MediaPropertiesChanged", winrt::to_string(e.message()), e.code()); }
+        catch (const std::exception& e) { LogError("MediaPropertiesChanged", e.what()); }
+        catch (...) { LogError("MediaPropertiesChanged", "Unknown error"); }
       });
 
       playbackToken_ = session_.PlaybackInfoChanged([this](auto const& sess, auto const&) {
         if (!running_) return;
-        try {
-          EmitSnapshot(sess);
-        } catch (const winrt::hresult_error& e) {
-          LogError("PlaybackInfoChanged", winrt::to_string(e.message()), e.code());
-        } catch (const std::exception& e) {
-          LogError("PlaybackInfoChanged", e.what());
-        } catch (...) {
-          LogError("PlaybackInfoChanged", "Unknown error");
-        }
+        try { EmitSnapshot(sess); }
+        catch (const winrt::hresult_error& e) { LogError("PlaybackInfoChanged", winrt::to_string(e.message()), e.code()); }
+        catch (const std::exception& e) { LogError("PlaybackInfoChanged", e.what()); }
+        catch (...) { LogError("PlaybackInfoChanged", "Unknown error"); }
       });
 
       timelineToken_ = session_.TimelinePropertiesChanged([this](auto const& sess, auto const&) {
         if (!running_) return;
-        try {
-          EmitSnapshot(sess);
-        } catch (const winrt::hresult_error& e) {
-          LogError("TimelinePropertiesChanged", winrt::to_string(e.message()), e.code());
-        } catch (const std::exception& e) {
-          LogError("TimelinePropertiesChanged", e.what());
-        } catch (...) {
-          LogError("TimelinePropertiesChanged", "Unknown error");
-        }
+        try { EmitSnapshot(sess); }
+        catch (const winrt::hresult_error& e) { LogError("TimelinePropertiesChanged", winrt::to_string(e.message()), e.code()); }
+        catch (const std::exception& e) { LogError("TimelinePropertiesChanged", e.what()); }
+        catch (...) { LogError("TimelinePropertiesChanged", "Unknown error"); }
       });
     } catch (const winrt::hresult_error& e) {
       LogError("SubscribeToSession/Subscribe", winrt::to_string(e.message()), e.code());
       session_ = nullptr;
+      mediaPropsToken_ = {};
+      playbackToken_   = {};
+      timelineToken_   = {};
     } catch (...) {
       LogError("SubscribeToSession/Subscribe", "Unknown error");
       session_ = nullptr;
+      mediaPropsToken_ = {};
+      playbackToken_   = {};
+      timelineToken_   = {};
     }
   }
 
-  static std::vector<uint8_t> ReadAll(IRandomAccessStream const& stream) {
-    if (!stream) return {};
-
-    auto size = stream.Size();
-    if (size == 0) return {};
-
-    auto input = stream.GetInputStreamAt(0);
-    DataReader reader(input);
-    reader.LoadAsync(static_cast<uint32_t>(size)).get();
-    std::vector<uint8_t> bytes(static_cast<size_t>(size));
-    reader.ReadBytes(bytes);
-    return bytes;
-  }
-
   void EmitSnapshot(GlobalSystemMediaTransportControlsSession const& s) {
-    if (!running_) return;
-    if (!s) return;
+    if (!running_ || !s) return;
 
     EventData ev;
 
-    // media properties (title/artist/album/thumbnail)
+    // media properties
     try {
-      auto props = s.TryGetMediaPropertiesAsync().get();
-      if (!props) {
-        LogError("EmitSnapshot", "TryGetMediaPropertiesAsync returned null");
-        return;
-      }
+      auto op = s.TryGetMediaPropertiesAsync();
+      if (op && wait_for(op)) {
+        auto props = op.get();
+        if (props) {
+          ev.title  = winrt::to_string(props.Title());
+          ev.artist = winrt::to_string(props.Artist());
+          ev.album  = winrt::to_string(props.AlbumTitle());
 
-      ev.title  = winrt::to_string(props.Title());
-      ev.artist = winrt::to_string(props.Artist());
-      ev.album  = winrt::to_string(props.AlbumTitle());
-
-      if (auto thumb = props.Thumbnail()) {
-        try {
-          auto rs = thumb.OpenReadAsync().get();
-          ev.thumbnail = ReadAll(rs);
-        } catch (const winrt::hresult_error& e) {
-          LogError("EmitSnapshot/Thumbnail", winrt::to_string(e.message()), e.code());
-        } catch (...) {
-          LogError("EmitSnapshot/Thumbnail", "Failed to read thumbnail");
+          if (auto thumb = props.Thumbnail()) {
+            try {
+              auto rop = thumb.OpenReadAsync();
+              if (rop && wait_for(rop)) {
+                auto rs = rop.get();
+                ev.thumbnail = ReadAll(rs); // внутри тоже с таймаутом
+              }
+            } catch (const winrt::hresult_error& e) {
+              LogError("EmitSnapshot/Thumbnail", winrt::to_string(e.message()), e.code());
+            } catch (...) {
+              LogError("EmitSnapshot/Thumbnail", "Failed to read thumbnail");
+            }
+          }
         }
       }
     } catch (const winrt::hresult_error& e) {
       LogError("EmitSnapshot/MediaProps", winrt::to_string(e.message()), e.code());
-      // Продолжаем с пустыми метаданными
     } catch (const std::exception& e) {
       LogError("EmitSnapshot/MediaProps", e.what());
     } catch (...) {
       LogError("EmitSnapshot/MediaProps", "Unknown error");
     }
 
-    // playback info (status)
+    // playback info
     try {
       auto pb = s.GetPlaybackInfo();
       ev.playbackStatus = static_cast<int32_t>(pb.PlaybackStatus());
@@ -353,12 +391,10 @@ private:
       LogError("EmitSnapshot/PlaybackInfo", "Unknown error");
     }
 
-    // timeline (duration/position)
+    // timeline
     try {
       auto tl = s.GetTimelineProperties();
-      auto toMs = [](Windows::Foundation::TimeSpan ts) -> int64_t {
-        return ts.count() / 10000;
-      };
+      auto toMs = [](Windows::Foundation::TimeSpan ts) -> int64_t { return ts.count() / 10000; };
       ev.durationMs = toMs(tl.EndTime());
       ev.positionMs = toMs(tl.Position());
     } catch (const winrt::hresult_error& e) {
@@ -376,7 +412,6 @@ private:
       LogError("EmitSnapshot/AppId", "Unknown error");
     }
 
-    // Проверяем tsfn_ с блокировкой
     Napi::ThreadSafeFunction tsfn_copy;
     {
       std::lock_guard<std::mutex> lock(mutex_);
@@ -384,11 +419,9 @@ private:
       tsfn_copy = tsfn_;
     }
 
-    // Вызываем без блокировки
     auto status = tsfn_copy.NonBlockingCall(new EventData(std::move(ev)),
       [](Napi::Env env, Napi::Function cb, EventData* data) {
         Napi::HandleScope scope(env);
-
         try {
           Napi::Object o = Napi::Object::New(env);
           o.Set("title",   data->title);
@@ -400,25 +433,20 @@ private:
           o.Set("playbackStatus", data->playbackStatus);
 
           if (!data->thumbnail.empty()) {
-            auto buf = Napi::Buffer<uint8_t>::Copy(env, data->thumbnail.data(),
-                                                   data->thumbnail.size());
+            auto buf = Napi::Buffer<uint8_t>::Copy(env, data->thumbnail.data(), data->thumbnail.size());
             o.Set("thumbnail", buf);
           }
-
           cb.Call({ o });
         } catch (const Napi::Error& e) {
           std::cerr << "[GSMTC Error] Callback exception: " << e.what() << std::endl;
         } catch (...) {
           std::cerr << "[GSMTC Error] Unknown callback exception" << std::endl;
         }
-
         delete data;
       });
 
-    // Если очередь переполнена, удаляем данные вручную
     if (status != napi_ok) {
       LogError("EmitSnapshot", "Failed to queue callback (queue full?)");
-      delete new EventData(std::move(ev));
     }
   }
 
@@ -427,6 +455,9 @@ private:
   std::mutex mutex_;
   Napi::ThreadSafeFunction tsfn_{};
   Napi::ThreadSafeFunction errorTsfn_{};
+
+  GlobalSystemMediaTransportControlsSessionManager mgr_{ nullptr };
+  event_token currentChangedToken_{};
 
   GlobalSystemMediaTransportControlsSession session_{ nullptr };
   event_token mediaPropsToken_{};
