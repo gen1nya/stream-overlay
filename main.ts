@@ -95,7 +95,7 @@ const applyAction = async (action: { type: string; payload: any }) => {
       if (action.payload.forwardToUi) {
         setTimeout(async () => {
           const botMessage: ChatEvent = createBotMessage(action.payload.message);
-          messageCache.addMessage(botMessage);
+          messageCache.processMessage(botMessage);
         }, 1000);
       }
       break;
@@ -141,7 +141,7 @@ const scraper = new YouTubeLiveStreamsScraper(
       if (!message || !message.type || message.type !== 'chat') {
         return;
       }
-      messageCache.addMessage({
+      messageCache.processMessage({
         type: 'chat',
         userName: message.author,
         color: '#ffffff',
@@ -173,10 +173,10 @@ function broadcast(channel: string, payload: any) {
 
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
-    messageCache.addMessage(event);
+    messageCache.processMessage(event);
   } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
     const result = await middlewareProcessor.processMessage(event);
-    messageCache.addMessage(result);
+    messageCache.processMessage(result);
   } else {
     broadcast(destination, event);
   }
@@ -185,7 +185,7 @@ twitchClient.on('event', async ({ destination, event }) => {
 twitchClient.on('chat', async (parsedMessage) => {
   const result = await middlewareProcessor.processMessage(parsedMessage);
   if (result) {
-    messageCache.addMessage(result);
+    messageCache.processMessage(result);
   }
 });
 app.commandLine.appendSwitch('lang', 'en-US');

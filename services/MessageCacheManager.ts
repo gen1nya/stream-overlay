@@ -14,37 +14,53 @@ export function registerMessageHandler(
   messageHandler = handler;
 }
 
-export function addMessage(message: AppEvent): void {
+export function processMessage(message: AppEvent): void {
   if (!message || typeof message !== 'object') {
     console.error('❌ Invalid message format:', message);
     return;
   }
-  if (message.type === 'system' || message.type === 'join' || message.type === 'part') {
+  const {
+    type,
+    id,
+    deletedMessageId,
+    sourceRoomId
+  } = message as ParsedIrcMessage;
+
+  if (['system', 'join', 'part'].includes(type)) return;
+
+  if (type === 'delete_msg' && deletedMessageId) {
+    if (messageCache.has(deletedMessageId)) {
+      messageCache.delete(deletedMessageId);
+      console.log(`🗑️ Message ${deletedMessageId} deleted from cache`);
+      sendCached();
+    }
     return;
   }
-  if (TTL === 0) {
-    return;
+  if (TTL === 0) return;
+  const messageId = id ?? randomUUID();
+  if (timers.has(messageId)) {
+    clearTimeout(timers.get(messageId)!);
   }
-  const id: string = message.id ?? randomUUID();
-  if (timers.has(id)) {
-    clearTimeout(timers.get(id)!);
-  }
-  messageCache.set(id, message);
-  if ((message as ParsedIrcMessage).sourceRoomId && !showSourceChannel) {
+  messageCache.set(messageId, message);
+
+  if (sourceRoomId && !showSourceChannel) {
     showSourceChannel = true;
     console.log('🔗 Detected collab-mode via foreign message');
   }
+
   if (TTL > 0) {
     const timer = setTimeout(() => {
-      messageCache.delete(id);
-      timers.delete(id);
+      messageCache.delete(messageId);
+      timers.delete(messageId);
       sendCached();
     }, TTL);
-    timers.set(id, timer);
+    timers.set(messageId, timer);
   }
+
   cleanupMessages();
   sendCached();
 }
+
 
 function sendCached(): void {
   if (messageHandler && TTL !== 0) {

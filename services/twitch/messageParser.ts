@@ -30,7 +30,7 @@ interface Identity {
 }
 
 export interface ParsedIrcMessage extends Identity {
-  type: 'chat' | 'system' | 'join' | 'part';
+  type: 'chat' | 'system' | 'join' | 'part' | 'delete_msg';
   color: string;
   rawMessage: string;
   htmlBadges: string;
@@ -44,6 +44,7 @@ export interface ParsedIrcMessage extends Identity {
     avatarUrl?: string | null;
   };
   roles: ChatRoles;
+  deletedMessageId?: string | null;
 }
 
 export interface ParserFollowMessage extends Identity {
@@ -64,11 +65,12 @@ export type ChatEvent  = Envelope<'chat', ParsedIrcMessage>;
 export type SystemEvent  = Envelope<'system', ParsedIrcMessage>;
 export type JoinEvent  = Envelope<'join', ParsedIrcMessage>;
 export type PartEvent  = Envelope<'part', ParsedIrcMessage>;
+export type DeleteEvent  = Envelope<'delete_msg', ParsedIrcMessage>;
 export type RedeemEvent  = Envelope<'redemption', ParserRedeemMessage>;
 export type FollowEvent  = Envelope<'follow', ParserFollowMessage>;
 export type BroadcastEvent  = Envelope<'broadcast', ParsedBroadcastStatus>;
 
-export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | JoinEvent | PartEvent | BroadcastEvent;
+export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | JoinEvent | PartEvent | BroadcastEvent | DeleteEvent;
 
 export const emptyRoles: ChatRoles = {
     isModerator: false,
@@ -102,6 +104,7 @@ export function createBotMessage(message: string): ChatEvent {
     roles: emptyRoles,
     timestamp: Date.now(),
     userNameRaw: 'bot',
+    deletedMessageId: null,
   };
 }
 
@@ -333,7 +336,7 @@ function parseBadges(badgesTag: string): string {
     .join('');
 }
 
-function cleanMessage(message) {
+function cleanMessage(message: string): string {
   return message
       .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, '') // zero-width, BOM, nbsp
       .replace(/[\u0000-\u001F\u007F]/g, '')       // ASCII control chars
@@ -342,79 +345,85 @@ function cleanMessage(message) {
 }
 
 export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
-  const tagMatch = rawLine.match(/^@([^ ]+) /);
-  const tags: Record<string, string> = {};
-  if (tagMatch) {
-    tagMatch[1].split(';').forEach((tag) => {
-      const [key, value] = tag.split('=');
-      tags[key] = value;
-    });
-  }
-  const commandMatch = rawLine.match(/(?:^@[^ ]+ )?:[^ ]+![^ ]+@[^ ]+\.tmi\.twitch\.tv ([A-Z]+)/);
-  const command = commandMatch?.[1] || null;
+  const parsed: ParsedIrcLine = parseIrcLine(rawLine);
+  const { tags, command, params, prefix } = parsed;
 
+  // Команда → тип события
+  const type: 'chat' | 'system' | 'join' | 'part' | 'delete_msg' = (() => {
+    switch (command) {
+      case 'PRIVMSG':   return 'chat';
+      case 'JOIN':      return 'join';
+      case 'PART':      return 'part';
+      case 'CLEARMSG':  return 'delete_msg';
+      default:          return 'system';
+    }
+  })();
+
+  // Текст сообщения:
+  // - для PRIVMSG: trailing-параметр (обычно params[1])
+  // - для остальных: последний параметр, если он есть (например NOTICE/CLEARMSG)
   let messageContent = '';
-  let type: 'chat' | 'system' | 'join' | 'part' = 'system';
-
   if (command === 'PRIVMSG') {
-    const messageStart = rawLine.indexOf('PRIVMSG');
-    messageContent = rawLine.substring(rawLine.indexOf(':', messageStart) + 1).trim();
-    messageContent = cleanMessage(messageContent);
-    type = 'chat';
+    const trailing = params.length >= 2 ? params[1] : params.at(-1) ?? '';
+    messageContent = cleanMessage(trailing);
   } else {
-    if (command === 'JOIN') {
-      type = 'join';
-    } else if (command === 'PART') {
-      type = 'part';
-    } else {
-      type = 'system';
-    }
-    const parts = rawLine.split(':');
-    if (parts.length > 1) {
-      messageContent = parts.slice(1).join(':').trim();
-    } else {
-      messageContent = rawLine.trim();
-    }
+    messageContent = params.at(-1) ?? '';
   }
 
-  const id = tags['id'] || crypto.randomUUID();
-  const username = tags['display-name'] || extractUsername(rawLine) || 'unknown';
-  const usernameRaw = extractUsername(rawLine) || 'unknown';
-  const color = tags['color'] || '#FFFFFF';
-  const emotes = tags['emotes'] || '';
-  const badgesTag = tags['badges'] || '';
-  const roomId = tags['room-id'] || null;
-  const sourceRoomId = tags['source-room-id'] || null;
-  const channelInfo = await getChannelInfoByRoomId(sourceRoomId);
-  const userId = tags['user-id'] || null;
+  // Идентификатор:
+  // - Для обычного сообщения берём @id, иначе генерируем.
+  // - Для CLEARMSG id нам не критичен как «событию», ведь удаление по target-msg-id.
+  const id = (command === 'PRIVMSG' ? (tags['id'] as string | undefined) : undefined) ?? crypto.randomUUID();
 
+  // Логин/ник:
+  // - Для CLEARMSG Twitch кладёт автора удалённого сообщения в @login
+  // - Для PRIVMSG — display-name, потом префикс до '!' как fallback
+  const displayName = (tags['display-name'] as string | undefined) ?? null;
+  const loginFromClear = (tags['login'] as string | undefined) ?? null;
+  const userFromPrefix = prefix && prefix.includes('!') ? prefix.slice(0, prefix.indexOf('!')) : prefix || null;
+
+  const userName =
+      displayName ??
+      loginFromClear ??
+      userFromPrefix ??
+      'unknown';
+
+  const color        = (tags['color'] as string | undefined) ?? '#FFFFFF';
+  const emotes       = (tags['emotes'] as string | undefined) ?? '';
+  const badgesTag    = (tags['badges'] as string | undefined) ?? '';
+  const roomId       = (tags['room-id'] as string | undefined) ?? null;
+  const sourceRoomId = (tags['source-room-id'] as string | undefined) ?? null;
+  const userId       = (tags['user-id'] as string | undefined) ?? null;
+
+  const deletedMessageId =
+      command === 'CLEARMSG'
+          ? ((tags['target-msg-id'] as string | undefined) ?? null)
+          : null;
+
+  const channelInfo = await getChannelInfoByRoomId(sourceRoomId);
   const roles = extractRolesFromBadges(badgesTag);
 
   return {
-    type: type as 'chat' | 'system' | 'join' | 'part',
+    type,
     timestamp: Date.now(),
-    userName: username,
-    color: color,
+    userName,
+    color,
     rawMessage: messageContent,
     htmlBadges: parseBadges(badgesTag),
     htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes, cheerEmotes),
-    id: id,
-    roomId: roomId,
-    userId: userId,
-    sourceRoomId: sourceRoomId,
+    id,
+    roomId,
+    userId,
+    sourceRoomId,
     sourceChannel: {
       displayName: channelInfo?.displayName,
-      login: channelInfo?.login,
-      avatarUrl: channelInfo?.profileImageUrl,
+      login:       channelInfo?.login,
+      avatarUrl:   channelInfo?.profileImageUrl,
     },
-    roles: roles,
-    userNameRaw: usernameRaw,
+    roles,
+    userNameRaw: userFromPrefix ?? userName,
+    deletedMessageId,
   };
-}
-
-function extractUsername(rawLine: string): string | null {
-  const userMatch = rawLine.match(/^:([^!]+)!/);
-  return userMatch ? userMatch[1] : null;
 }
 
 /**
@@ -433,4 +442,73 @@ function extractRolesFromBadges(badgesTag: string): ChatRoles {
     isAdmin:      badgeIds.includes('admin'),
     isGlobalMod:  badgeIds.includes('global_mod'),
   };
+}
+
+export interface ParsedIrcLine {
+  raw: string;                 // исходная строка IRC
+  tags: Record<string, string | boolean>; // @теги (ключ → значение)
+  prefix: string | null;       // префикс, например "tmi.twitch.tv" или "user!user@user.tmi.twitch.tv"
+  command: string | null;      // команда IRC, например "PRIVMSG", "CLEARMSG", "NOTICE", "PING"
+  params: string[];            // список параметров, включая канал и текст сообщения
+}
+
+/**
+ * Универсальный парсер IRC-сообщений Twitch.
+ * Работает со всеми типами строк (PRIVMSG, CLEARMSG, NOTICE, PING и др.)
+ */
+export function parseIrcLine(rawLine: string): ParsedIrcLine {
+  const result: ParsedIrcLine = {
+    raw: rawLine,
+    tags: {},
+    prefix: null,
+    command: null,
+    params: [],
+  };
+
+  let line = rawLine.trim();
+
+  // Теги (начинаются с @)
+  if (line.startsWith('@')) {
+    const tagPartEnd = line.indexOf(' ');
+    const tagPart = line.slice(1, tagPartEnd);
+    line = line.slice(tagPartEnd + 1);
+    for (const tag of tagPart.split(';')) {
+      const [key, val] = tag.split('=');
+      result.tags[key] = val ?? true;
+    }
+  }
+
+  // Префикс (начинается с :)
+  if (line.startsWith(':')) {
+    const prefixEnd = line.indexOf(' ');
+    result.prefix = line.slice(1, prefixEnd);
+    line = line.slice(prefixEnd + 1);
+  }
+
+  // Команда (первое слово)
+  const spaceIdx = line.indexOf(' ');
+  if (spaceIdx === -1) {
+    result.command = line;
+    return result;
+  }
+
+  result.command = line.slice(0, spaceIdx);
+  line = line.slice(spaceIdx + 1).trim();
+
+  // Параметры
+  while (line.length) {
+    if (line.startsWith(':')) {
+      result.params.push(line.slice(1));
+      break;
+    }
+    const nextSpace = line.indexOf(' ');
+    if (nextSpace === -1) {
+      result.params.push(line);
+      break;
+    }
+    result.params.push(line.slice(0, nextSpace));
+    line = line.slice(nextSpace + 1);
+  }
+
+  return result;
 }
