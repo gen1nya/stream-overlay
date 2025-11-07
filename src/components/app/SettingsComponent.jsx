@@ -1,5 +1,5 @@
 // Settings.js
-import React, {useEffect, useState} from 'react';
+import React, {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
 import {useNavigate} from 'react-router-dom';
 import {
@@ -48,6 +48,7 @@ import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import AboutCard from "./settings/About";
+import { useTranslation } from 'react-i18next';
 
 const Panel = styled.div`
     position: fixed;
@@ -190,20 +191,21 @@ export const Row = styled.div`
     gap: ${({gap = "0.5rem"}) => gap};
 `;
 
-const PageInfoConfig = {
-    general: {title: "Общие настройки", icon: <FiSettings/>},
-    chat: {title: "Настройки сообщений", icon: <FiMessageCircle/>},
-    follow: {title: "Настройки подписок", icon: <FiHeart/>},
-    channel_points: {title: "Настройки баллов канала", icon: <FiAward/>},
-    bot: {title: "Настройки бота", icon: <AiFillRobot/>},
-    players: {title: "Настройки плееров", icon: <FiMusic/>},
-    youtube: {title: "Чат ютуба", icon: <FiYoutube/>},
-    followers_goal: {title: "Прогресс фоловеров", icon: <FiTarget/>},
-    about: {title: "О программе", icon: <FiAlertCircle/>},
-};
-
 export default function Settings() {
     const navigate = useNavigate();
+    const { t } = useTranslation();
+
+    const pageInfoConfig = useMemo(() => ({
+        general: {title: t('settings.pages.general.title'), icon: <FiSettings/>},
+        chat: {title: t('settings.pages.chat.title'), icon: <FiMessageCircle/>},
+        follow: {title: t('settings.pages.follow.title'), icon: <FiHeart/>},
+        channel_points: {title: t('settings.pages.channelPoints.title'), icon: <FiAward/>},
+        bot: {title: t('settings.pages.bot.title'), icon: <AiFillRobot/>},
+        players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
+        youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
+        followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
+        about: {title: t('settings.pages.about.title'), icon: <FiAlertCircle/>},
+    }), [t]);
 
     const {
         themes,
@@ -240,10 +242,10 @@ export default function Settings() {
         initialAlpha: 1,
         onChange: () => {
         },
-        title: 'Цвет',
+        title: t('settings.colorPicker.title'),
     });
 
-    const openColorPopup = ({initialColor = '#ffffff', onChange, title = 'Цвет', initialAlpha}) => {
+    const openColorPopup = ({initialColor = '#ffffff', onChange, title = t('settings.colorPicker.title'), initialAlpha}) => {
         setColorPopup({
             open: true,
             initialColor,
@@ -274,7 +276,7 @@ export default function Settings() {
         await openPreview()
     };
 
-    const currentPageInfo = PageInfoConfig[activePage] || PageInfoConfig.general;
+    const currentPageInfo = pageInfoConfig[activePage] || pageInfoConfig.general;
 
     return (
         <Panel>
@@ -310,25 +312,25 @@ export default function Settings() {
                 <HeaderLeft>
                     <BackButton onClick={handleBackButton}>
                         <FiArrowLeft/>
-                        Назад
+                        {t('common.back')}
                     </BackButton>
-                    <HeaderTitle>Настройки</HeaderTitle>
+                    <HeaderTitle>{t('settings.header.title')}</HeaderTitle>
                 </HeaderLeft>
 
                 <HeaderActions>
                     <ThemeIndicator onClick={openThemeSelector}>
                         <FiLayers/>
-                        Тема: <span className="theme-name">{selectedThemeName}</span>
+                        {t('common.theme')}: <span className="theme-name">{selectedThemeName}</span>
                     </ThemeIndicator>
 
                     <ThemeIndicator onClick={openBotConfig}>
                         <AiFillRobot/>
-                        Бот: <span className="theme-name">{botName}</span>
+                        {t('common.bot')}: <span className="theme-name">{botName}</span>
                     </ThemeIndicator>
 
                     <ActionButton className="secondary" onClick={handlePreviewButton}>
                         <FiEye/>
-                        Превью
+                        {t('common.preview')}
                     </ActionButton>
 
                 </HeaderActions>
@@ -340,15 +342,15 @@ export default function Settings() {
                     active={activePage}
                     onSelect={setActivePage}
                     items={[
-                        {key: "general", icon: <FiSettings/>, label: "Общие"},
-                        {key: "chat", icon: <FiMessageCircle/>, label: "Сообщения"},
-                        {key: "follow", icon: <FiHeart/>, label: "Follow"},
-                        {key: "channel_points", icon: <FiAward/>, label: "Баллы"},
-                        {key: "bot", icon: <AiFillRobot/>, label: "Бот >_"},
-                        {key: "players", icon: <FiMusic/>, label: "Плееры"},
-                        {key: "youtube", icon: <FiYoutube/>, label: "YouTube Чат"},
-                        {key: "followers_goal", icon: <FiTarget/>, label: "Прогресс"},
-                        {key : "about", icon: <FiAlertCircle/>, label: "О программе"},
+                        {key: "general", icon: <FiSettings/>, label: t('settings.pages.general.label')},
+                        {key: "chat", icon: <FiMessageCircle/>, label: t('settings.pages.chat.label')},
+                        {key: "follow", icon: <FiHeart/>, label: t('settings.pages.follow.label')},
+                        {key: "channel_points", icon: <FiAward/>, label: t('settings.pages.channelPoints.label')},
+                        {key: "bot", icon: <AiFillRobot/>, label: t('settings.pages.bot.label')},
+                        {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
+                        {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
+                        {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},
+                        {key : "about", icon: <FiAlertCircle/>, label: t('settings.pages.about.label')},
                     ]}
                 />
 
@@ -376,6 +378,7 @@ export default function Settings() {
 }
 
 const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig}) => {
+    const { t } = useTranslation();
     switch (page) {
         case "general":
             return (
@@ -505,11 +508,11 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>
-                            <h3>Конфигурация бота не найдена</h3>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
                             <p>
-                                Для настройки бота необходимо загрузить или создать конфигурацию.
+                                {t('settings.botConfigMissing.line1')}
                                 <br/>
-                                Чтото сломалось. Стучите в личку
+                                {t('settings.botConfigMissing.line2')}
                             </p>
                         </NoConfigCard>
                     )}
@@ -549,6 +552,6 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 </Content>
             );
         default:
-            return <div>Неизвестная страница</div>;
+            return <div>{t('settings.unknownPage')}</div>;
     }
 };

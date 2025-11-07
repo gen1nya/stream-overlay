@@ -1,8 +1,9 @@
-import {useEffect, useState} from "react";
+import {useEffect, useMemo, useState} from "react";
 import {getUserById, getUserByLogin, muteUser, unbanUser, updateRoles} from "../../services/api";
 import Popup from "../utils/PopupComponent";
 import styled from "styled-components";
 import {TbDiamond, TbDiamondOff, TbShield, TbShieldPlus, TbShieldX, TbClock, TbCalendar, TbUserCheck} from "react-icons/tb";
+import { useTranslation } from 'react-i18next';
 
 const PopupContent = styled.div`
     display: flex;
@@ -262,6 +263,8 @@ export default function UserInfoPopup({userId, userName, onClose}) {
     const [isVIP, setIsVIP] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [muteUntil, setMuteUntil] = useState(null);
+    const { t, i18n } = useTranslation();
+    const dateLocale = useMemo(() => (i18n.language === 'ru' ? 'ru-RU' : 'en-US'), [i18n.language]);
 
     const handleMute = (duration) => {
         const id = uiModel.user?.user?.id;
@@ -357,11 +360,11 @@ export default function UserInfoPopup({userId, userName, onClose}) {
         <Popup onClose={onClose}>
             <PopupContent>
                 <Header>
-                    <Title>User Info</Title>
+                    <Title>{t('userInfo.title')}</Title>
                 </Header>
 
                 {uiModel.type === "loading" && (
-                    <LoadingContainer>Loading...</LoadingContainer>
+                    <LoadingContainer>{t('userInfo.loading')}</LoadingContainer>
                 )}
 
                 {uiModel.type === "loaded" && uiModel.user && (
@@ -388,17 +391,17 @@ export default function UserInfoPopup({userId, userName, onClose}) {
                                     <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
                                         {isMod && (
                                             <StatusBadge $type="mod">
-                                                <TbShield /> Moderator
+                                                <TbShield /> {t('userInfo.badges.moderator')}
                                             </StatusBadge>
                                         )}
                                         {isVIP && (
                                             <StatusBadge $type="vip">
-                                                <TbDiamond /> VIP
+                                                <TbDiamond /> {t('userInfo.badges.vip')}
                                             </StatusBadge>
                                         )}
                                         {isMuted && (
                                             <StatusBadge $type="muted">
-                                                <TbClock /> Muted
+                                                <TbClock /> {t('userInfo.badges.muted')}
                                             </StatusBadge>
                                         )}
                                     </div>
@@ -408,22 +411,22 @@ export default function UserInfoPopup({userId, userName, onClose}) {
                             <MetaInfo>
                                 <MetaItem>
                                     <TbUserCheck />
-                                    <span>ID: <strong>{uiModel.user.user.id}</strong></span>
+                                    <span>{t('userInfo.meta.id')}: <strong>{uiModel.user.user.id}</strong></span>
                                 </MetaItem>
                                 <MetaItem>
                                     <TbCalendar />
-                                    <span>Created: <strong>{new Date(uiModel.user.user.created_at).toLocaleDateString('ru-RU')}</strong></span>
+                                    <span>{t('userInfo.meta.created')}: <strong>{new Date(uiModel.user.user.created_at).toLocaleDateString(dateLocale)}</strong></span>
                                 </MetaItem>
                                 {uiModel.user.followedAt && (
                                     <MetaItem>
                                         <TbUserCheck />
-                                        <span>Follows since: <strong>{new Date(uiModel.user.followedAt).toLocaleDateString('ru-RU')}</strong></span>
+                                        <span>{t('userInfo.meta.following')}: <strong>{new Date(uiModel.user.followedAt).toLocaleDateString(dateLocale)}</strong></span>
                                     </MetaItem>
                                 )}
                                 {isMuted && muteUntil && (
                                     <MetaItem>
                                         <TbClock />
-                                        <span>Muted until: <strong>{new Date(muteUntil).toLocaleTimeString('ru-RU')}</strong></span>
+                                        <span>{t('userInfo.meta.mutedUntil')}: <strong>{new Date(muteUntil).toLocaleTimeString(dateLocale)}</strong></span>
                                     </MetaItem>
                                 )}
                             </MetaInfo>
@@ -432,28 +435,28 @@ export default function UserInfoPopup({userId, userName, onClose}) {
                         <ActionButtons>
                             {isMuted && (
                                 <ActionButton className="success" onClick={() => handleMute()}>
-                                    Unban
+                                    {t('userInfo.actions.unban')}
                                 </ActionButton>
                             )}
                             {!isMuted && (
                                 <>
                                     <ActionButton onClick={() => handleMute(60)}>
-                                        Mute 1m
+                                        {t('userInfo.actions.mute1m')}
                                     </ActionButton>
                                     <ActionButton onClick={() => handleMute(600)}>
-                                        Mute 10m
+                                        {t('userInfo.actions.mute10m')}
                                     </ActionButton>
                                 </>
                             )}
 
                             <ActionButton onClick={() => handleRoleToggle("vip")}>
                                 {isVIP ? <UnVIPIcon size={18}/> : <VIPIcon size={18}/>}
-                                {isVIP ? 'Remove VIP' : 'Make VIP'}
+                                {isVIP ? t('userInfo.actions.removeVip') : t('userInfo.actions.makeVip')}
                             </ActionButton>
 
                             <ActionButton onClick={() => handleRoleToggle("mod")}>
                                 {isMod ? <UnModIcon size={18}/> : <GiveModIcon size={18}/>}
-                                {isMod ? 'Remove Mod' : 'Make Mod'}
+                                {isMod ? t('userInfo.actions.removeMod') : t('userInfo.actions.makeMod')}
                             </ActionButton>
                         </ActionButtons>
                     </>
@@ -461,7 +464,7 @@ export default function UserInfoPopup({userId, userName, onClose}) {
 
                 {uiModel.type === "error" && (
                     <ErrorContainer>
-                        <p>Could not load user info.</p>
+                        <p>{t('userInfo.error')}</p>
                     </ErrorContainer>
                 )}
             </PopupContent>
