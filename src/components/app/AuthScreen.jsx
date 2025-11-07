@@ -10,11 +10,15 @@ import {
     onAuthCancelled,
     removeAuthListeners,
     onAccountReady,
-    openExternalLink
+    openExternalLink,
+    getAvailableLocales,
+    getCurrentLocale,
+    setLocale
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
 import RadioGroup from "../utils/TextRadioGroup";
+import { useTranslation } from 'react-i18next';
 
 const Container = styled.div`
     display: flex;
@@ -24,6 +28,9 @@ const Container = styled.div`
     min-height: calc(100vh - 100px);
     text-align: center;
     padding: 20px;
+    position: relative;
+    width: 100%;
+    box-sizing: border-box;
 `;
 
 const Title = styled.h2`
@@ -31,6 +38,15 @@ const Title = styled.h2`
     font-weight: 600;
     color: #d6d6d6;
     margin-bottom: 32px;
+`;
+
+const LanguageSelectorWrapper = styled.div`
+    position: absolute;
+    top: 20px;
+    right: 24px;
+    display: flex;
+    justify-content: flex-end;
+    max-width: 320px;
 `;
 
 const AuthCard = styled.div`
@@ -284,14 +300,49 @@ const ViewModeSection = styled.div`
 
 export default function AuthScreen() {
     const navigate = useNavigate();
+    const { t, i18n } = useTranslation();
     const [status, setStatus] = useState('idle');
     const [authData, setAuthData] = useState({
         userCode: '',
         verificationUri: '',
         attempt: 0,
-        error: ''
+        error: '',
+        errorMessageKey: null
     });
     const [viewMode, setViewMode] = useState('code');
+    const [locales, setLocales] = useState([]);
+    const [currentLocale, setCurrentLocale] = useState(i18n.language);
+
+    useEffect(() => {
+        let active = true;
+
+        const loadLocales = async () => {
+            try {
+                const available = await getAvailableLocales();
+                if (!active) {
+                    return;
+                }
+                setLocales(Array.isArray(available) ? available : []);
+                const storedLocale = await getCurrentLocale();
+                if (!active) {
+                    return;
+                }
+                const nextLocale = storedLocale || i18n.language;
+                setCurrentLocale(nextLocale);
+                if (nextLocale && nextLocale !== i18n.language) {
+                    await i18n.changeLanguage(nextLocale);
+                }
+            } catch (error) {
+                console.error('Failed to load locales', error);
+            }
+        };
+
+        loadLocales();
+
+        return () => {
+            active = false;
+        };
+    }, [i18n]);
 
     useEffect(() => {
         onAuthCodeReady((data) => {
@@ -300,7 +351,9 @@ export default function AuthScreen() {
             setAuthData(prev => ({
                 ...prev,
                 userCode: data.userCode,
-                verificationUri: data.verificationUri
+                verificationUri: data.verificationUri,
+                error: '',
+                errorMessageKey: null
             }));
         });
 
@@ -322,13 +375,17 @@ export default function AuthScreen() {
         onAuthError((data) => {
             console.error('❌ Auth error:', data.message);
             setStatus('error');
-            setAuthData(prev => ({ ...prev, error: data.message }));
+            setAuthData(prev => ({
+                ...prev,
+                error: data.message || '',
+                errorMessageKey: data.message ? null : 'auth.startError'
+            }));
         });
 
         onAuthCancelled(() => {
             console.log('🚫 Auth cancelled');
             setStatus('idle');
-            setAuthData({ userCode: '', verificationUri: '', attempt: 0, error: '' });
+            setAuthData({ userCode: '', verificationUri: '', attempt: 0, error: '', errorMessageKey: null });
         });
 
         return () => {
@@ -342,7 +399,11 @@ export default function AuthScreen() {
 
         if (!success) {
             setStatus('error');
-            setAuthData(prev => ({ ...prev, error: 'Не удалось начать авторизацию' }));
+            setAuthData(prev => ({
+                ...prev,
+                error: '',
+                errorMessageKey: 'auth.startError'
+            }));
         }
     };
 
@@ -370,29 +431,63 @@ export default function AuthScreen() {
         openExternalLink('http://localhost:5173/audio-fft-round-demo');
     };
 
+    const handleLocaleChange = async (localeCode) => {
+        if (!localeCode || localeCode === currentLocale) {
+            return;
+        }
+
+        const previousLocale = currentLocale;
+        setCurrentLocale(localeCode);
+
+        try {
+            await setLocale(localeCode);
+            await i18n.changeLanguage(localeCode);
+        } catch (error) {
+            console.error('Failed to set locale', error);
+            setCurrentLocale(previousLocale);
+            await i18n.changeLanguage(previousLocale);
+        }
+    };
+
     const getFullAuthUrl = () => {
         if (!authData.verificationUri || !authData.userCode) return '';
         return `${authData.verificationUri}?user_code=${authData.userCode}`;
     };
 
     const isWaitingForAuth = status === 'code-ready' || status === 'polling';
+    const errorMessage = authData.errorMessageKey ? t(authData.errorMessageKey) : authData.error;
 
     return (
         <>
             <Container>
+                {locales.length > 0 && (
+                    <LanguageSelectorWrapper>
+                        <RadioGroup
+                            title={t('auth.language')}
+                            items={locales.map((locale) => ({
+                                key: locale.code,
+                                text: locale.name
+                            }))}
+                            defaultSelected={currentLocale}
+                            onChange={handleLocaleChange}
+                            direction="horizontal"
+                            itemWidth="120px"
+                        />
+                    </LanguageSelectorWrapper>
+                )}
 
-                <Title>Ну что, поехали?</Title>
+                <Title>{t('auth.title')}</Title>
                 {/* Idle state */}
                 {status === 'idle' && (
                     <AuthCard>
                         <CardHeader>
                             <StatusText style={{ color: '#ccc' }}>
-                                Для начала работы необходимо авторизоваться
+                                {t('auth.idle.message')}
                             </StatusText>
                         </CardHeader>
                         <CardContent>
                             <AuthButton onClick={handleAuth}>
-                                Авторизоваться через Twitch
+                                {t('auth.idle.button')}
                             </AuthButton>
                         </CardContent>
                     </AuthCard>
@@ -404,7 +499,7 @@ export default function AuthScreen() {
                         <CardContent>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <Spinner />
-                                <StatusText>Инициализация...</StatusText>
+                                <StatusText>{t('auth.loading')}</StatusText>
                             </div>
                         </CardContent>
                     </AuthCard>
@@ -415,17 +510,17 @@ export default function AuthScreen() {
                     <AuthCard>
                         <CardHeader>
                             <StatusText style={{ color: '#ccc' }}>
-                                Выполните авторизацию в Twitch
+                                {t('auth.prompt')}
                             </StatusText>
                         </CardHeader>
                         <CardContent>
                             <ViewModeSection>
                                 <RadioGroup
-                                    title="Способ авторизации"
+                                    title={t('auth.methodTitle')}
                                     defaultSelected={viewMode}
                                     items={[
-                                        { key: 'code', text: 'Код и ссылка' },
-                                        { key: 'qr', text: 'QR код' }
+                                        { key: 'code', text: t('auth.methodCode') },
+                                        { key: 'qr', text: t('auth.methodQr') }
                                     ]}
                                     direction="horizontal"
                                     itemWidth="140px"
@@ -436,7 +531,7 @@ export default function AuthScreen() {
                             {viewMode === 'code' ? (
                                 <CodeSection>
                                     <div>
-                                        <SectionLabel>Откройте в браузере</SectionLabel>
+                                        <SectionLabel>{t('auth.openBrowser')}</SectionLabel>
                                         <Link
                                             href="#"
                                             onClick={(e) => {
@@ -449,7 +544,7 @@ export default function AuthScreen() {
                                     </div>
 
                                     <div>
-                                        <SectionLabel>Введите код</SectionLabel>
+                                        <SectionLabel>{t('auth.enterCode')}</SectionLabel>
                                         <CodeBox>
                                             <Code>{authData.userCode}</Code>
                                         </CodeBox>
@@ -466,8 +561,7 @@ export default function AuthScreen() {
                                         />
                                     </QRContainer>
                                     <QRHint>
-                                        Отсканируйте QR код с мобильного устройства.
-                                        Камера откроет страницу авторизации с уже введенным кодом.
+                                        {t('auth.qrHint')}
                                     </QRHint>
                                 </QRSection>
                             )}
@@ -475,12 +569,12 @@ export default function AuthScreen() {
                             {status === 'polling' && (
                                 <PollingInfo>
                                     <Spinner />
-                                    Ожидание авторизации (попытка {authData.attempt})
+                                    {t('auth.waiting', { count: authData.attempt })}
                                 </PollingInfo>
                             )}
 
                             <CancelButton onClick={handleCancel}>
-                                Отменить
+                                {t('auth.cancel')}
                             </CancelButton>
                         </CardContent>
                     </AuthCard>
@@ -491,9 +585,9 @@ export default function AuthScreen() {
                     <AuthCard>
                         <CardContent>
                             <SuccessBox>
-                                ✅ Успешная авторизация!
+                                {t('auth.successTitle')}
                             </SuccessBox>
-                            <StatusText>Переход в панель управления...</StatusText>
+                            <StatusText>{t('auth.successSubtitle')}</StatusText>
                         </CardContent>
                     </AuthCard>
                 )}
@@ -503,11 +597,11 @@ export default function AuthScreen() {
                     <AuthCard>
                         <CardContent>
                             <ErrorBox>
-                                <strong>Ошибка авторизации</strong>
-                                <div>{authData.error}</div>
+                                <strong>{t('auth.errorTitle')}</strong>
+                                <div>{errorMessage}</div>
                             </ErrorBox>
                             <AuthButton onClick={handleAuth}>
-                                Попробовать снова
+                                {t('auth.retry')}
                             </AuthButton>
                         </CardContent>
                     </AuthCard>
@@ -515,11 +609,11 @@ export default function AuthScreen() {
             </Container>
 
             <Footer>
-                <FooterButton onClick={handlerOpenSettings}>Настройки</FooterButton>
-                <FooterButton onClick={openPlayer2}>Плеер №2 (пластинка)</FooterButton>
-                <FooterButton onClick={openPlayer1}>Плеер №1</FooterButton>
-                <FooterButton onClick={openDemoFFTColumns}>Демо FFT (столбцы)</FooterButton>
-                <FooterButton onClick={openDemoFFTRing}>Демо FFT (кольцо)</FooterButton>
+                <FooterButton onClick={handlerOpenSettings}>{t('footer.settings')}</FooterButton>
+                <FooterButton onClick={openPlayer2}>{t('footer.player2')}</FooterButton>
+                <FooterButton onClick={openPlayer1}>{t('footer.player1')}</FooterButton>
+                <FooterButton onClick={openDemoFFTColumns}>{t('footer.demoColumns')}</FooterButton>
+                <FooterButton onClick={openDemoFFTRing}>{t('footer.demoRing')}</FooterButton>
             </Footer>
         </>
     );

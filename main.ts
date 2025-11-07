@@ -20,6 +20,7 @@ import {BotConfig, PingPongCommandConfig, StoreSchema, ThemeConfig} from "./serv
 import {ProxyService} from "./services/ProxyService";
 import {BotConfigService} from "./services/BotConfigService";
 import {DbRepository} from "./services/db/DbRepository";
+import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -61,6 +62,10 @@ const logService = new LogService((logs) => {
 
 const audiosessionManager = new AudiosessionManager(store, logService);
 const proxy = new ProxyService();
+const localeRepository = new AppLocaleRepository([
+  { code: 'ru', name: 'Русский' },
+  { code: 'en', name: 'English' },
+], 'ru');
 
 /* Theme migration */
 let themes: any = store.get('themes');
@@ -216,7 +221,8 @@ app.whenReady().then(() => {
         });
 
 
-      }
+      },
+      localeRepository
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();

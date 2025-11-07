@@ -18,6 +18,7 @@ import {
   removeVip, timeoutUser
 } from "./services/twitch/authorizedHelixApi";
 import {updateRoles} from "./services/twitch/roleUpdater";
+import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 
 export function registerIpcHandlers(
     store: Store,
@@ -30,6 +31,7 @@ export function registerIpcHandlers(
     logService: LogService,
     twitchClient: TwitchClient,
     onAccountReady: () => void,
+    localeRepository: AppLocaleRepository,
 ) {
   ipcMain.handle('user:getById', async ( event, args) => {
     return await getExtendedUser({ id: args.userId });
@@ -71,6 +73,20 @@ export function registerIpcHandlers(
       });
     });
     onAccountReady();
+  });
+
+  ipcMain.handle('locale:list', async () => {
+    return localeRepository.getAvailableLocales();
+  });
+
+  ipcMain.handle('locale:get', async () => {
+    return localeRepository.getCurrentLocale();
+  });
+
+  ipcMain.handle('locale:set', async (_e, localeCode: string) => {
+    const newLocale = localeRepository.setCurrentLocale(localeCode);
+    broadcast('locale:changed', { locale: newLocale });
+    return newLocale;
   });
 
   ipcMain.handle('arg:create-terminal', async (_e, userId?: string) => createTerminalWindow());
