@@ -480,6 +480,77 @@ const en = {
                     disabledTooltip: 'Cannot delete the last item',
                 },
             },
+            channelPoints: {
+                title: 'Channel points variant #{{index}}',
+                collapse: 'Collapse',
+                expand: 'Expand',
+                template: {
+                    title: 'Message template',
+                    hint: 'Available placeholders: {userName}, {cost}, {title}',
+                    label: 'Template for channel points reward',
+                    textColor: 'Text color',
+                    shadowColor: 'Text shadow color',
+                    shadowRadius: 'Shadow radius',
+                    default: '🎉 {userName} spent {cost} points on {title}',
+                },
+                background: {
+                    title: 'Background settings',
+                    type: 'Background type',
+                    radius: 'Corner radius',
+                    options: {
+                        color: 'Color',
+                        image: 'Image',
+                        gradient: 'Gradient',
+                    },
+                },
+                layout: {
+                    title: 'Spacing and positioning',
+                },
+                delete: {
+                    action: 'Delete variant',
+                    tooltip: 'Delete variant',
+                    disabledTooltip: 'Cannot delete the last item',
+                },
+            },
+            chatMessages: {
+                title: 'Chat message settings',
+                header: {
+                    title: 'Header settings',
+                    namePosition: {
+                        label: 'Name position',
+                        options: {
+                            row: 'Left',
+                            column: 'Top',
+                        },
+                    },
+                    backgroundToggle: {
+                        label: 'Enable header background',
+                        enabled: 'Enabled',
+                        disabled: 'Disabled',
+                    },
+                    font: 'Header font:',
+                },
+                body: {
+                    title: 'Message text settings',
+                    textColor: 'Text color',
+                    font: 'Message font:',
+                    shadowColor: 'Text shadow color',
+                    shadowRadius: 'Shadow radius',
+                },
+                background: {
+                    title: 'Background settings',
+                    type: 'Background type',
+                    radius: 'Corner radius',
+                    options: {
+                        color: 'Color',
+                        image: 'Image',
+                        gradient: 'Gradient',
+                    },
+                },
+                layout: {
+                    title: 'Spacing and positioning',
+                },
+            },
             fft: {
                 title: 'FFT analyzer',
                 collapse: 'Collapse',

@@ -1,4 +1,4 @@
-import React, {useState, useCallback} from 'react';
+import React, {useState, useCallback, useMemo} from 'react';
 import styled from 'styled-components';
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import {TemplateEditor} from '../../utils/TemplateEditor';
@@ -9,6 +9,7 @@ import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
 import {FiAward, FiType, FiImage, FiLayout, FiTrash2, FiChevronDown, FiChevronUp} from 'react-icons/fi';
+import { useTranslation } from "react-i18next";
 import {
     CardContent,
     CardHeader,
@@ -92,9 +93,9 @@ const DeleteButton = styled(ActionButton)`
 `;
 
 const BACKGROUND_MODE_ITEMS = [
-    {key: 'color', text: 'цвет'},
-    {key: 'image', text: 'картинки'},
-    {key: 'gradient', text: 'градиент'},
+    {key: 'color', labelKey: 'settings.channelPoints.background.options.color'},
+    {key: 'image', labelKey: 'settings.channelPoints.background.options.image'},
+    {key: 'gradient', labelKey: 'settings.channelPoints.background.options.gradient'},
 ];
 
 export default function RedeemPointsBlock({
@@ -102,11 +103,20 @@ export default function RedeemPointsBlock({
                                               onChange,
                                               index,
                                               openColorPopup,
-                                              onRemove,
-                                              disableRemove = false,
-                                          }) {
+                                          onRemove,
+                                          disableRemove = false,
+                                      }) {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const message = current.redeemMessage?.[index] ?? {};
+    const backgroundModeItems = useMemo(
+        () =>
+            BACKGROUND_MODE_ITEMS.map((item) => ({
+                key: item.key,
+                text: t(item.labelKey),
+            })),
+        [t],
+    );
 
     const updateRedeemMessage = useCallback(
         (updater) =>
@@ -145,8 +155,9 @@ export default function RedeemPointsBlock({
             };
         });
 
+    const defaultTemplate = t('settings.channelPoints.template.default');
     const {
-        template = '🎉 {userName} потратил {cost} баллов на {title}',
+        template = defaultTemplate,
         fontSize = 16,
         messageFont = {family: 'Roboto'},
         backgroundMode = 'color',
@@ -163,10 +174,10 @@ export default function RedeemPointsBlock({
             <CollapsibleHeader onClick={toggleOpen}>
                 <CardTitle>
                     <FiAward />
-                    Трата баллов вариант #{index + 1}
+                    {t('settings.channelPoints.title', { index: index + 1 })}
                 </CardTitle>
                 <CollapseToggle>
-                    {isOpen ? 'Свернуть' : 'Развернуть'}
+                    {isOpen ? t('settings.channelPoints.collapse') : t('settings.channelPoints.expand')}
                     {isOpen ? <FiChevronUp /> : <FiChevronDown />}
                 </CollapseToggle>
             </CollapsibleHeader>
@@ -186,13 +197,13 @@ export default function RedeemPointsBlock({
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiType />
-                                    Шаблон сообщения
+                                    {t('settings.channelPoints.template.title')}
                                 </SectionTitle>
                             </SectionHeader>
 
                             <TemplateEditor
-                                hint="Доступные плейсхолдеры: {userName}, {cost}, {title}"
-                                label="Шаблон для баллов канала"
+                                hint={t('settings.channelPoints.template.hint')}
+                                label={t('settings.channelPoints.template.label')}
                                 value={template}
                                 onChange={(val) => updateField('template', val)}
                                 fontSize={`${fontSize}px`}
@@ -210,7 +221,7 @@ export default function RedeemPointsBlock({
                             <Row gap="20px">
                                 <ControlGroup>
                                     <ColorSelectorButton
-                                        title="Цвет текста:"
+                                        title={t('settings.channelPoints.template.textColor')}
                                         hex={messageFont.color || '#ffffff'}
                                         alpha={messageFont.opacity || 1}
                                         openColorPopup={openColorPopup}
@@ -224,7 +235,7 @@ export default function RedeemPointsBlock({
 
                                 <ControlGroup>
                                     <ColorSelectorButton
-                                        title="Цвет тени текста:"
+                                        title={t('settings.channelPoints.template.shadowColor')}
                                         hex={messageFont?.shadowColor ?? "#000000"}
                                         alpha={messageFont?.shadowOpacity ?? 0}
                                         openColorPopup={openColorPopup}
@@ -236,7 +247,7 @@ export default function RedeemPointsBlock({
 
                                 <ControlGroup flex="1 1 200px">
                                     <SeekbarComponent
-                                        title={`Радиус тени`}
+                                        title={t('settings.channelPoints.template.shadowRadius')}
                                         min="0"
                                         max="20"
                                         step="1"
@@ -255,16 +266,16 @@ export default function RedeemPointsBlock({
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiImage />
-                                    Настройки фона
+                                    {t('settings.channelPoints.background.title')}
                                 </SectionTitle>
                             </SectionHeader>
 
                             <Row gap="20px">
                                 <ControlGroup>
                                     <RadioGroup
-                                        title="Тип фона:"
+                                        title={t('settings.channelPoints.background.type')}
                                         defaultSelected={backgroundMode}
-                                        items={BACKGROUND_MODE_ITEMS}
+                                        items={backgroundModeItems}
                                         direction="horizontal"
                                         itemWidth="120px"
                                         onChange={(v) => updateField('backgroundMode', v)}
@@ -275,7 +286,7 @@ export default function RedeemPointsBlock({
 
                                 <ControlGroup flex="1 1 200px">
                                     <SeekbarComponent
-                                        title={`Скругление углов`}
+                                        title={t('settings.channelPoints.background.radius')}
                                         min="0"
                                         max="20"
                                         step="1"
@@ -326,7 +337,7 @@ export default function RedeemPointsBlock({
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiLayout />
-                                    Отступы и позиционирование
+                                    {t('settings.channelPoints.layout.title')}
                                 </SectionTitle>
                             </SectionHeader>
 
@@ -345,10 +356,10 @@ export default function RedeemPointsBlock({
                         <DeleteButton
                             onClick={() => onRemove?.(index)}
                             disabled={disableRemove}
-                            title={disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить вариант'}
+                            title={disableRemove ? t('settings.channelPoints.delete.disabledTooltip') : t('settings.channelPoints.delete.tooltip')}
                         >
                             <FiTrash2 />
-                            Удалить вариант
+                            {t('settings.channelPoints.delete.action')}
                         </DeleteButton>
                     </DeleteSection>
                 </>
