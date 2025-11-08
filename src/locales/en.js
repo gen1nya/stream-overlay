@@ -49,6 +49,28 @@ const en = {
             close: 'Close',
             loading: 'Loading...',
         },
+        sidebar: {
+            title: 'Navigation',
+        },
+        addNewStyleButton: {
+            addAnother: '+ Add another',
+        },
+        preview: {
+            title: 'Theme preview',
+            connectionLost: 'No connection to the source',
+            logs: {
+                wsConnected: '🟢 WebSocket connected',
+                themeUpdated: 'Theme updated:',
+                unknownChannel: 'Unknown channel',
+                wsDisconnected: '🔴 WebSocket disconnected',
+            },
+            sampleMessage: {
+                userName: 'User',
+                shortMessage: 'This is a sample chat message.',
+                longMessage: 'Dive into the magical world of Teyvat in Genshin Impact! Build your team of heroes, explore stunning locations, battle formidable enemies, and uncover the secrets of the seven elements. Play for free on PC, PlayStation, and mobile devices. Join millions of players around the globe—start your grand adventure today! #GenshinImpact #PlayForFree',
+                rewardTitle: 'Gift',
+            },
+        },
         dashboard: {
             windowTitle: 'Overlay HQ - {{name}}',
             headerMessages: [
@@ -755,6 +777,229 @@ const en = {
                     },
                     addResponse: {
                         placeholder: 'New response',
+                    },
+                },
+                gacha: {
+                    component: {
+                        defaults: {
+                            bannerName: 'New banner',
+                        },
+                        title: 'Gacha system',
+                        collapsedDescription: 'Gacha mechanics inspired by games from a big Chinese company.',
+                        stats: {
+                            totalItems: 'Total items',
+                            fiveStar: '5★ items',
+                            fourStar: '4★ items',
+                            triggers: 'Triggers',
+                        },
+                        info: {
+                            title: 'About the gacha system',
+                            description: 'The system follows pity-style mechanics similar to popular titles from a big Chinese company:',
+                            details: [
+                                { title: 'Hard pity', text: 'Guaranteed 5★ every 90 pulls.' },
+                                { title: 'Soft pity', text: 'Increased chances after 74 pulls.' },
+                                { title: '50/50 safety', text: 'A 50% chance to get the featured item on a 5★.' },
+                                { title: 'Special guarantee', text: '5% chance to get the featured item even after losing the 50/50.' },
+                            ],
+                        },
+                        actions: {
+                            manageUsers: 'Users',
+                        },
+                        sections: {
+                            banner: 'Banner settings',
+                            items: 'Item management',
+                            triggers: 'Triggers (Twitch rewards)',
+                            advanced: 'Advanced mechanics settings',
+                        },
+                    },
+                    advanced: {
+                        warning: [
+                            '⚠️ Changing these parameters can disrupt the balance of the system.',
+                            'Use the default values from popular gacha references unless you know what you are doing.',
+                        ],
+                        fields: {
+                            specialGuarantee: {
+                                title: 'Special guarantee',
+                                description: 'Optional safety mechanic inspired by a big Chinese company’s games. Adds a small chance to receive the featured item after losing the 50/50.',
+                            },
+                            hardPity5Star: {
+                                title: 'Hard pity for 5★',
+                                description: 'Guaranteed 5★ item after the specified number of pulls. Defaults: 90 for characters, 80 for weapons.',
+                            },
+                            softPityStart: {
+                                title: 'Soft pity threshold',
+                                description: 'When the chance to get a 5★ starts increasing. Defaults: 74 for characters, 64 for weapons.',
+                            },
+                            hardPity4Star: {
+                                title: 'Hard pity for 4★',
+                                description: 'Guaranteed 4★ item after the specified number of pulls. Default: 10 pulls.',
+                            },
+                            baseRate5Star: {
+                                title: 'Base 5★ rate',
+                                description: 'Chance to get a 5★ before soft pity kicks in. Default: 0.6% (0.006).',
+                            },
+                            baseRate4Star: {
+                                title: 'Base 4★ rate',
+                                description: 'Chance to get a 4★ item. Default: 5.1% (0.051).',
+                            },
+                            featuredRate4Star: {
+                                title: 'Featured 4★ rate',
+                                description: 'Chance to get a featured 4★ when any 4★ drops. Default: 50% (0.5).',
+                            },
+                        },
+                    },
+                    banner: {
+                        fields: {
+                            name: {
+                                label: 'Banner name',
+                                hint: 'Visible only to you',
+                                placeholder: 'Enter banner name',
+                            },
+                            featured5Star: {
+                                label: 'Featured 5★ item',
+                                hint: 'Select the limited 5★ item for the banner',
+                                none: 'None (standard banner)',
+                            },
+                            featured4Star: {
+                                label: 'Featured 4★ items (max. 3)',
+                                hint: 'Select up to three items with boosted rates',
+                                empty: 'No 4★ items available. Add them in the “Item management” section.',
+                                limitWarning: '⚠️ Maximum reached (3 items). Deselect one to add another.',
+                            },
+                        },
+                    },
+                    items: {
+                        form: {
+                            titleEdit: 'Edit item',
+                            titleAdd: 'Add item',
+                            fields: {
+                                id: {
+                                    label: 'Item ID',
+                                    placeholder: 'e.g. hero01',
+                                },
+                                name: {
+                                    label: 'Name',
+                                    placeholder: 'e.g. Jade Guardian',
+                                },
+                                rarity: {
+                                    label: 'Rarity',
+                                },
+                                isLimited: 'Limited-time item',
+                            },
+                            errors: {
+                                idRequired: 'Item ID cannot be empty',
+                                idDuplicate: 'An item with this ID already exists',
+                                nameRequired: 'Name cannot be empty',
+                            },
+                        },
+                        actions: {
+                            cancel: 'Cancel',
+                            save: 'Save',
+                            add: 'Add',
+                            addItem: 'Add item',
+                            edit: 'Edit',
+                            delete: 'Delete',
+                        },
+                        confirmDelete: {
+                            title: 'Delete item',
+                            message: 'Are you sure you want to delete the item “{{name}}”?',
+                            warning: 'This action cannot be undone.',
+                        },
+                        filters: {
+                            all: 'All ({{count}})',
+                            rarity: {
+                                five: '★★★★★ ({{count}})',
+                                four: '★★★★ ({{count}})',
+                                three: '★★★ ({{count}})',
+                            },
+                        },
+                        badges: {
+                            id: 'ID: {{id}}',
+                            limited: 'LIMITED',
+                        },
+                        empty: 'No items to display',
+                    },
+                    triggers: {
+                        info: '💡 Link Twitch channel rewards to the gacha system. When a viewer redeems a reward, they automatically receive the specified number of pulls.',
+                        loading: 'Loading rewards...',
+                        errors: {
+                            rewardRequired: 'Select a reward',
+                            rewardDuplicate: 'A trigger for this reward already exists',
+                            amountRange: 'Amount must be between 1 and 10',
+                        },
+                        actions: {
+                            addTrigger: 'Add trigger',
+                            refreshRewards: 'Refresh rewards',
+                            add: 'Add',
+                            cancel: 'Cancel',
+                        },
+                        form: {
+                            reward: {
+                                label: 'Twitch reward',
+                                placeholder: 'Select a reward',
+                                option: '{{title}} ({{cost}} points)',
+                            },
+                            amount: {
+                                label: 'Number of pulls',
+                            },
+                        },
+                        empty: 'No triggers configured yet. Create one to link rewards with the gacha system.',
+                        rewardFallback: 'Reward {{id}}',
+                        rewardCost: '{{cost}} points',
+                        rewardMissing: 'Reward not found',
+                        pullsBadge: '{{count}} pull',
+                        pullsBadge_plural: '{{count}} pulls',
+                    },
+                    users: {
+                        title: 'Gacha user management',
+                        search: {
+                            placeholder: 'Search by user name…',
+                            clearTooltip: 'Clear search (ESC)',
+                        },
+                        table: {
+                            headers: {
+                                user: 'User',
+                                pity5: '5★ pity',
+                                pity4: '4★ pity',
+                                failed4: '4★ fails',
+                                guaranteed: '5★ guarantee',
+                                actions: 'Actions',
+                            },
+                            guaranteed: {
+                                yes: 'Yes',
+                                no: 'No',
+                            },
+                        },
+                        empty: {
+                            title: 'No users found',
+                            subtitle: 'Try adjusting the search criteria',
+                        },
+                        pagination: {
+                            info: 'Showing {{shown}} of {{total}} users',
+                            current: 'Page {{page}}',
+                        },
+                        actions: {
+                            editTooltip: 'Edit',
+                            deleteTooltip: 'Delete',
+                            cancel: 'Cancel',
+                            save: 'Save',
+                            saving: 'Saving…',
+                        },
+                        edit: {
+                            title: 'Edit user',
+                            fields: {
+                                userName: 'User name',
+                                pullsSince5: 'Pulls since last 5★',
+                                pullsSince4: 'Pulls since last 4★',
+                                pity4Fails: 'Failed 4★ rate-ups',
+                                isGuaranteed: 'Guaranteed 5★ on next pull',
+                            },
+                        },
+                        confirmDelete: 'Are you sure you want to delete this user’s data?',
+                        notifications: {
+                            saveError: 'Failed to save changes',
+                            deleteError: 'Failed to delete user',
+                        },
                     },
                 },
                 commandList: {

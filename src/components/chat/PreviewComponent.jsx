@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import styled, { ThemeProvider } from "styled-components";
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from "./ChatMessage";
@@ -6,6 +6,7 @@ import ChatFollow from './ChatFollow';
 import {defaultTheme} from "../../theme";
 import ChatRedemption from "./ChatRedemption";
 import {registerFontFace} from "../utils/fontsCache";
+import { useTranslation } from "react-i18next";
 
 const BackgroundContainer = styled.div`
     position: absolute;
@@ -90,11 +91,14 @@ const ConnectionLost = styled.div`
 
 export default function PreviewComponent() {
     const [theme, setTheme] = useState(defaultTheme);
+    const { t } = useTranslation();
 
-    document.title = `Предпросмотр темы`;
+    useEffect(() => {
+        document.title = t('preview.title');
+    }, [t]);
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
         onOpen: (_, socket) => {
-            console.log('🟢 WebSocket подключен');
+            console.log(t('preview.logs.wsConnected'));
             socket.send(JSON.stringify({ channel: 'theme:get' }));
         },
         onMessage: event => {
@@ -116,37 +120,37 @@ export default function PreviewComponent() {
                         payload.chatMessage.messageFont.family,
                         payload.chatMessage.messageFont.url
                     );
-                    console.log('Тема обновлена:', payload);
+                    console.log(t('preview.logs.themeUpdated'), payload);
                     break;
                 default:
-                    console.log('unknown channel', channel, payload);
+                    console.log(t('preview.logs.unknownChannel'), channel, payload);
             }
         },
-        onClose: () => console.log('🔴 WebSocket отключен'),
+        onClose: () => console.log(t('preview.logs.wsDisconnected')),
     });
 
     const message = {
-        userName: "Пользователь",
+        userName: t('preview.sampleMessage.userName'),
         color: "#ffffff",
         htmlBadges: "",
-        htmlMessage: "Это пример сообщения в чате.",
+        htmlMessage: t('preview.sampleMessage.shortMessage'),
     };
 
     const longMessage = {
-        userName: "Пользователь",
+        userName: t('preview.sampleMessage.userName'),
         color: "#ffffff",
         htmlBadges: "",
-        htmlMessage: "Открой волшебный мир Teyvat в Genshin Impact! Собирай команду героев, исследуй потрясающие локации, сражайся с могущественными врагами и раскрывай тайны семи стихий. Бесплатно играй на ПК, PlayStation и мобильных устройствах. Присоединяйся к миллионам игроков по всему миру — начни своё великое приключение уже сегодня! #GenshinImpact #ИграйБесплатно"
+        htmlMessage: t('preview.sampleMessage.longMessage')
     };
 
     const followMessage = {
-        userName: "Пользователь"
+        userName: t('preview.sampleMessage.userName')
     };
 
     const redemptionMessage = {
-        userName: "Пользователь",
+        userName: t('preview.sampleMessage.userName'),
         reward: {
-            title: "Подарок",
+            title: t('preview.sampleMessage.rewardTitle'),
             cost: 100
         }
     }
@@ -174,7 +178,7 @@ export default function PreviewComponent() {
                     />
                 ))}
             </MessagePreviewContainer>
-            {!isConnected && <ConnectionLost>нет связи с источником</ConnectionLost>}
+            {!isConnected && <ConnectionLost>{t('preview.connectionLost')}</ConnectionLost>}
         </>
 
     </ThemeProvider>;

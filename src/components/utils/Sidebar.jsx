@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 
 const Wrapper = styled.div`
@@ -166,12 +167,13 @@ const HeaderTitle = styled.h3`
 
 export const Sidebar = ({ open, active, onSelect, items }) => {
     // Группируем элементы (можно добавить логику группировки)
+    const { t } = useTranslation();
     const mainItems = items || [];
 
     return (
         <Wrapper open={open}>
             <SidebarHeader open={open}>
-                <HeaderTitle open={open}>Навигация</HeaderTitle>
+                <HeaderTitle open={open}>{t('sidebar.title')}</HeaderTitle>
             </SidebarHeader>
 
             <Divider />
