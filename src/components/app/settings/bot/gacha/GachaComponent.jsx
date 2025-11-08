@@ -1,4 +1,4 @@
-import React, {useState, useCallback, useEffect} from 'react';
+import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
 import Switch from '../../../../utils/Switch';
 import {
@@ -26,9 +26,9 @@ import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
 import TriggersManager from './TriggersManager';
 import AdvancedSettings from './AdvancedSettings';
-import {Button} from "../pingpong/PingPongActionEditorComponent";
 import {ActionButton} from "../../../SharedStyles";
 import GachaUsersPopup from "./GachaUsersPopup";
+import {useTranslation} from 'react-i18next';
 
 const CollapseToggle = styled.div`
     display: flex;
@@ -119,11 +119,11 @@ const StatValue = styled.span`
     color: #e0e0e0;
 `;
 
-const createDefaultConfig = () => ({
+const createDefaultConfig = (defaultBannerName) => ({
     enabled: false,
     banner: {
         id: 0,
-        name: 'Новый баннер',
+        name: defaultBannerName,
         featured5StarId: null,
         featured4StarIds: [],
         hardPity5Star: 90,
@@ -140,9 +140,15 @@ const createDefaultConfig = () => ({
 
 export default function GachaComponent({gachaConfig, apply}) {
 
+    const {t} = useTranslation();
+
+    const getDefaultConfig = useCallback(() => (
+        createDefaultConfig(t('settings.bot.gacha.component.defaults.bannerName'))
+    ), [t]);
+
     const [config, setConfig] = useState(() => {
         if (!gachaConfig || !gachaConfig.items || !Array.isArray(gachaConfig.items) || !gachaConfig.banner || !gachaConfig.triggers) {
-            const newConfig = createDefaultConfig();
+            const newConfig = getDefaultConfig();
             apply((prev) => {
                 return {
                     ...prev,
@@ -166,9 +172,9 @@ export default function GachaComponent({gachaConfig, apply}) {
 
     useEffect(() => {
         if (gachaConfig) {
-            setConfig(gachaConfig || createDefaultConfig());
+            setConfig(gachaConfig || getDefaultConfig());
         }
-    }, [gachaConfig || createDefaultConfig()]);
+    }, [gachaConfig, getDefaultConfig]);
 
     const updateGachaConfig = useCallback((updater) => {
         apply((prev) => {
@@ -182,12 +188,16 @@ export default function GachaComponent({gachaConfig, apply}) {
         });
     }, [apply]);
 
-    const stats = {
+    const stats = useMemo(() => ({
         totalItems: config.items?.length || 0,
         fiveStarCount: config.items?.filter(item => item.rarity === 5).length || 0,
         fourStarCount: config.items?.filter(item => item.rarity === 4).length || 0,
         triggersCount: config.triggers?.length || 0,
-    };
+    }), [config.items, config.triggers]);
+
+    const infoDetails = useMemo(() => (
+        t('settings.bot.gacha.component.info.details', {returnObjects: true})
+    ), [t]);
 
     return (
         <>
@@ -206,19 +216,19 @@ export default function GachaComponent({gachaConfig, apply}) {
                                 }}
                             />
                             <StatusBadge enabled={enabled}>
-                                {enabled ? 'Включено' : 'Выключено'}
+                                {enabled ? t('settings.bot.shared.status.enabled') : t('settings.bot.shared.status.disabled')}
                             </StatusBadge>
                         </EnabledToggle>
 
                         <CardTitle>
                             <FiGift/>
-                            Гача-система
+                            {t('settings.bot.gacha.component.title')}
                         </CardTitle>
 
                         <Spacer/>
 
                         <CollapseToggle>
-                            {isOpen ? 'Свернуть' : 'Развернуть'}
+                            {isOpen ? t('settings.bot.shared.collapse.close') : t('settings.bot.shared.collapse.open')}
                             {isOpen ? <FiChevronUp/> : <FiChevronDown/>}
                         </CollapseToggle>
                     </Row>
@@ -227,34 +237,34 @@ export default function GachaComponent({gachaConfig, apply}) {
                 {/* Свернутое описание */}
                 {!isOpen && (
                     <CollapsedPreview onClick={toggleOpen}>
-                        Система гача-механики по типу Hoyoverse (Genshin Impact, Honkai, ZZZ)
+                        {t('settings.bot.gacha.component.collapsedDescription')}
                         <br/><br/>
                         <StatsGrid>
                             <StatCard $color="#fbbf24">
                                 <FiStar/>
                                 <StatContent>
-                                    <StatLabel>Всего предметов</StatLabel>
+                                    <StatLabel>{t('settings.bot.gacha.component.stats.totalItems')}</StatLabel>
                                     <StatValue>{stats.totalItems}</StatValue>
                                 </StatContent>
                             </StatCard>
                             <StatCard $color="#8853f2">
                                 <FiZap/>
                                 <StatContent>
-                                    <StatLabel>5★ предметов</StatLabel>
+                                    <StatLabel>{t('settings.bot.gacha.component.stats.fiveStar')}</StatLabel>
                                     <StatValue>{stats.fiveStarCount}</StatValue>
                                 </StatContent>
                             </StatCard>
                             <StatCard $color="#646cff">
                                 <FiPackage/>
                                 <StatContent>
-                                    <StatLabel>4★ предметов</StatLabel>
+                                    <StatLabel>{t('settings.bot.gacha.component.stats.fourStar')}</StatLabel>
                                     <StatValue>{stats.fourStarCount}</StatValue>
                                 </StatContent>
                             </StatCard>
                             <StatCard $color="#22c55e">
                                 <FiGift/>
                                 <StatContent>
-                                    <StatLabel>Триггеров</StatLabel>
+                                    <StatLabel>{t('settings.bot.gacha.component.stats.triggers')}</StatLabel>
                                     <StatValue>{stats.triggersCount}</StatValue>
                                 </StatContent>
                             </StatCard>
@@ -269,16 +279,15 @@ export default function GachaComponent({gachaConfig, apply}) {
                             <InfoCard>
                                 <InfoTitle>
                                     <FiInfo/>
-                                    О гача-системе
+                                    {t('settings.bot.gacha.component.info.title')}
                                 </InfoTitle>
                                 <InfoText>
-                                    Гача-система работает по принципу игр Hoyoverse с механикой "pity":
-                                    <br/>• <strong>Hard Pity</strong>: гарантированный 5★ каждые 90 pulls
-                                    <br/>• <strong>Soft Pity</strong>: повышенные шансы после 74 pulls
-                                    <br/>• <strong>50/50 система</strong>: при получении 5★ есть 50% шанс получить
-                                    featured персонажа
-                                    <br/>• <strong>Capturing Radiance</strong>: 5% шанс получить featured даже при
-                                    проигрыше 50/50
+                                    {t('settings.bot.gacha.component.info.description')}
+                                    {Array.isArray(infoDetails) && infoDetails.map((detail, index) => (
+                                        <React.Fragment key={detail.title || index}>
+                                            <br/>• <strong>{detail.title}</strong>: {detail.text}
+                                        </React.Fragment>
+                                    ))}
                                 </InfoText>
                             </InfoCard>
                         </Section>
@@ -288,7 +297,7 @@ export default function GachaComponent({gachaConfig, apply}) {
                                 className={"secondary"}
                                 onClick={() => setShowUsersPopup(true)}
                             >
-                                Пользователи
+                                {t('settings.bot.gacha.component.actions.manageUsers')}
                             </ActionButton>
                             <Spacer/>
 
@@ -300,7 +309,7 @@ export default function GachaComponent({gachaConfig, apply}) {
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiStar/>
-                                    Настройки баннера
+                                    {t('settings.bot.gacha.component.sections.banner')}
                                 </SectionTitle>
                             </SectionHeader>
                             <BannerSettingsEditor
@@ -315,7 +324,7 @@ export default function GachaComponent({gachaConfig, apply}) {
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiPackage/>
-                                    Управление предметами
+                                    {t('settings.bot.gacha.component.sections.items')}
                                 </SectionTitle>
                             </SectionHeader>
                             <ItemsManager
@@ -329,7 +338,7 @@ export default function GachaComponent({gachaConfig, apply}) {
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiGift/>
-                                    Триггеры (Twitch награды)
+                                    {t('settings.bot.gacha.component.sections.triggers')}
                                 </SectionTitle>
                             </SectionHeader>
                             <TriggersManager
@@ -343,7 +352,7 @@ export default function GachaComponent({gachaConfig, apply}) {
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiSettings/>
-                                    Продвинутые настройки механики
+                                    {t('settings.bot.gacha.component.sections.advanced')}
                                 </SectionTitle>
                             </SectionHeader>
                             <AdvancedSettings

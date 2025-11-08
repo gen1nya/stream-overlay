@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
 import { AddButton, ErrorText, FormRow, NameInput } from '../SharedBotStyles';
 import RadioGroup from '../../../../utils/TextRadioGroup';
 import Popup from '../../../../utils/PopupComponent';
+import { useTranslation } from 'react-i18next';
 
 const ItemsGrid = styled.div`
     display: grid;
@@ -193,6 +194,7 @@ const ConfirmText = styled.p`
 
 // Item Form Popup
 function ItemFormPopup({ item, allItems, onClose, onSave }) {
+    const { t } = useTranslation();
     const isEdit = !!item;
     const [formData, setFormData] = useState(item || {
         id: '',
@@ -206,13 +208,13 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
         const errs = {};
 
         if (!formData.id.trim()) {
-            errs.id = 'ID не может быть пустым';
+            errs.id = t('settings.bot.gacha.items.form.errors.idRequired');
         } else if (!isEdit && allItems.some(i => i.id === formData.id.trim())) {
-            errs.id = 'Предмет с таким ID уже существует';
+            errs.id = t('settings.bot.gacha.items.form.errors.idDuplicate');
         }
 
         if (!formData.name.trim()) {
-            errs.name = 'Название не может быть пустым';
+            errs.name = t('settings.bot.gacha.items.form.errors.nameRequired');
         }
 
         setErrors(errs);
@@ -231,13 +233,13 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
     return (
         <Popup onClose={onClose}>
             <PopupContent>
-                <PopupTitle>{isEdit ? 'Редактировать предмет' : 'Добавить предмет'}</PopupTitle>
+                <PopupTitle>{isEdit ? t('settings.bot.gacha.items.form.titleEdit') : t('settings.bot.gacha.items.form.titleAdd')}</PopupTitle>
 
                 <FormRow>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', color: '#ccc' }}>ID предмета</label>
+                        <label style={{ fontSize: '0.9rem', color: '#ccc' }}>{t('settings.bot.gacha.items.form.fields.id.label')}</label>
                         <NameInput
-                            placeholder="например: zhongli"
+                            placeholder={t('settings.bot.gacha.items.form.fields.id.placeholder')}
                             value={formData.id}
                             $error={!!errors.id}
                             disabled={isEdit}
@@ -250,9 +252,9 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
                     </div>
 
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        <label style={{ fontSize: '0.9rem', color: '#ccc' }}>Название</label>
+                        <label style={{ fontSize: '0.9rem', color: '#ccc' }}>{t('settings.bot.gacha.items.form.fields.name.label')}</label>
                         <NameInput
-                            placeholder="например: Чжун Ли"
+                            placeholder={t('settings.bot.gacha.items.form.fields.name.placeholder')}
                             value={formData.name}
                             $error={!!errors.name}
                             onChange={(e) => {
@@ -266,7 +268,7 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
 
                 <div>
                     <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
-                        Редкость
+                        {t('settings.bot.gacha.items.form.fields.rarity.label')}
                     </label>
                     <RadioGroup
                         defaultSelected={formData.rarity.toString()}
@@ -288,16 +290,16 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
                             checked={formData.isLimited}
                             onChange={(e) => setFormData({ ...formData, isLimited: e.target.checked })}
                         />
-                        <span>Лимитированный персонаж</span>
+                        <span>{t('settings.bot.gacha.items.form.fields.isLimited')}</span>
                     </CheckboxLabel>
                 )}
 
                 <PopupButtons>
                     <PopupButton onClick={onClose}>
-                        Отмена
+                        {t('settings.bot.gacha.items.actions.cancel')}
                     </PopupButton>
                     <PopupButton $primary onClick={handleSave}>
-                        {isEdit ? 'Сохранить' : 'Добавить'}
+                        {isEdit ? t('settings.bot.gacha.items.actions.save') : t('settings.bot.gacha.items.actions.add')}
                     </PopupButton>
                 </PopupButtons>
             </PopupContent>
@@ -307,21 +309,22 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
 
 // Confirm Delete Popup
 function ConfirmDeletePopup({ itemName, onClose, onConfirm }) {
+    const { t } = useTranslation();
     return (
         <Popup onClose={onClose}>
             <PopupContent style={{ minWidth: '400px' }}>
-                <PopupTitle>Подтверждение удаления</PopupTitle>
+                <PopupTitle>{t('settings.bot.gacha.items.confirmDelete.title')}</PopupTitle>
                 <ConfirmText>
-                    Вы уверены, что хотите удалить предмет <strong>"{itemName}"</strong>?
+                    {t('settings.bot.gacha.items.confirmDelete.message', { name: itemName })}
                     <br />
-                    Это действие нельзя отменить.
+                    {t('settings.bot.gacha.items.confirmDelete.warning')}
                 </ConfirmText>
                 <PopupButtons>
                     <PopupButton onClick={onClose}>
-                        Отмена
+                        {t('settings.bot.gacha.items.actions.cancel')}
                     </PopupButton>
                     <PopupButton $danger onClick={onConfirm}>
-                        Удалить
+                        {t('settings.bot.gacha.items.actions.delete')}
                     </PopupButton>
                 </PopupButtons>
             </PopupContent>
@@ -331,6 +334,7 @@ function ConfirmDeletePopup({ itemName, onClose, onConfirm }) {
 
 // Main Component
 export default function ItemsManager({ items, updateConfig }) {
+    const { t } = useTranslation();
     const [filter, setFilter] = useState('all');
     const [activePopup, setActivePopup] = useState(null); // 'add', 'edit', 'delete'
     const [selectedItem, setSelectedItem] = useState(null);
@@ -339,6 +343,13 @@ export default function ItemsManager({ items, updateConfig }) {
         if (filter === 'all') return true;
         return item.rarity === parseInt(filter);
     });
+
+    const filtersConfig = useMemo(() => ({
+        total: t('settings.bot.gacha.items.filters.all', { count: items.length }),
+        five: t('settings.bot.gacha.items.filters.rarity.five', { count: items.filter(i => i.rarity === 5).length }),
+        four: t('settings.bot.gacha.items.filters.rarity.four', { count: items.filter(i => i.rarity === 4).length }),
+        three: t('settings.bot.gacha.items.filters.rarity.three', { count: items.filter(i => i.rarity === 3).length })
+    }), [items, t]);
 
     const handleAddItem = (itemData) => {
         updateConfig(prev => ({
@@ -388,7 +399,7 @@ export default function ItemsManager({ items, updateConfig }) {
             {/* Кнопка добавления */}
             <AddButton onClick={() => setActivePopup('add')}>
                 <FiPlus />
-                Добавить предмет
+                {t('settings.bot.gacha.items.actions.addItem')}
             </AddButton>
 
             {/* Фильтры */}
@@ -397,25 +408,25 @@ export default function ItemsManager({ items, updateConfig }) {
                     $active={filter === 'all'}
                     onClick={() => setFilter('all')}
                 >
-                    Все ({items.length})
+                    {filtersConfig.total}
                 </FilterButton>
                 <FilterButton
                     $active={filter === '5'}
                     onClick={() => setFilter('5')}
                 >
-                    ⭐⭐⭐⭐⭐ ({items.filter(i => i.rarity === 5).length})
+                    {filtersConfig.five}
                 </FilterButton>
                 <FilterButton
                     $active={filter === '4'}
                     onClick={() => setFilter('4')}
                 >
-                    ⭐⭐⭐⭐ ({items.filter(i => i.rarity === 4).length})
+                    {filtersConfig.four}
                 </FilterButton>
                 <FilterButton
                     $active={filter === '3'}
                     onClick={() => setFilter('3')}
                 >
-                    ⭐⭐⭐ ({items.filter(i => i.rarity === 3).length})
+                    {filtersConfig.three}
                 </FilterButton>
             </FilterBar>
 
@@ -432,11 +443,11 @@ export default function ItemsManager({ items, updateConfig }) {
 
                         <ItemBadges>
                             <Badge $bg="rgba(100, 108, 255, 0.2)" $color="#7c8aff">
-                                ID: {item.id}
+                                {t('settings.bot.gacha.items.badges.id', { id: item.id })}
                             </Badge>
                             {item.isLimited && (
                                 <Badge $bg="rgba(251, 191, 36, 0.2)" $color="#fbbf24">
-                                    LIMITED
+                                    {t('settings.bot.gacha.items.badges.limited')}
                                 </Badge>
                             )}
                         </ItemBadges>
@@ -450,7 +461,7 @@ export default function ItemsManager({ items, updateConfig }) {
                                 }}
                             >
                                 <FiEdit2 />
-                                Изменить
+                                {t('settings.bot.gacha.items.actions.edit')}
                             </IconButton>
                             <IconButton
                                 $color="#dc2626"
@@ -460,7 +471,7 @@ export default function ItemsManager({ items, updateConfig }) {
                                 }}
                             >
                                 <FiTrash2 />
-                                Удалить
+                                {t('settings.bot.gacha.items.actions.delete')}
                             </IconButton>
                         </ItemActions>
                     </ItemCard>
@@ -469,7 +480,7 @@ export default function ItemsManager({ items, updateConfig }) {
 
             {filteredItems.length === 0 && (
                 <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
-                    Нет предметов для отображения
+                    {t('settings.bot.gacha.items.empty')}
                 </div>
             )}
 

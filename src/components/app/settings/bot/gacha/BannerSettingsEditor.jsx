@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { Row } from '../../../SettingsComponent';
 import { AddCommandForm, FormRow, NameInput, ErrorText } from '../SharedBotStyles';
+import { useTranslation } from 'react-i18next';
 
 const SettingsGrid = styled.div`
     display: grid;
@@ -109,6 +110,7 @@ const InfoText = styled.p`
 `;
 
 export default function BannerSettingsEditor({ banner, items, updateConfig }) {
+    const { t } = useTranslation();
     const [bannerName, setBannerName] = useState(banner.name);
 
     const fiveStarItems = items.filter(item => item.rarity === 5) || [];
@@ -174,29 +176,29 @@ export default function BannerSettingsEditor({ banner, items, updateConfig }) {
             {/* Название баннера */}
             <Row style={{ gap: '16px', flexWrap: 'nowrap' }}>
             <SettingRow style={{ width: '100%', height: 'fit-content' }}>
-                <Label>Название баннера</Label>
+                <Label>{t('settings.bot.gacha.banner.fields.name.label')}</Label>
                 <InfoText>
-                    Виден только вам
+                    {t('settings.bot.gacha.banner.fields.name.hint')}
                 </InfoText>
                 <NameInput
                     value={bannerName}
                     onChange={handleNameChange}
                     onBlur={handleNameBlur}
-                    placeholder="Введите название баннера"
+                    placeholder={t('settings.bot.gacha.banner.fields.name.placeholder')}
                 />
             </SettingRow>
 
             {/* Featured 5★ персонаж */}
             <SettingRow style={{ width: '100%' }}>
-                <Label>Featured 5★ персонаж</Label>
+                <Label>{t('settings.bot.gacha.banner.fields.featured5Star.label')}</Label>
                 <InfoText>
-                    Выберите ивентового 5★ персонажа
+                    {t('settings.bot.gacha.banner.fields.featured5Star.hint')}
                 </InfoText>
                 <Select
                     value={banner.featured5StarId || ''}
                     onChange={handleFeatured5StarChange}
                 >
-                    <option value="">Нет (стандартный баннер)</option>
+                    <option value="">{t('settings.bot.gacha.banner.fields.featured5Star.none')}</option>
                     {fiveStarItems
                         .filter(item => item.isLimited)
                         .map(item => (
@@ -210,13 +212,13 @@ export default function BannerSettingsEditor({ banner, items, updateConfig }) {
 
             {/* Featured 4★ персонажи */}
             <SettingRow>
-                <Label>Ивентовые 4★ персонажи (макс. 3)</Label>
+                <Label>{t('settings.bot.gacha.banner.fields.featured4Star.label')}</Label>
                 <InfoText>
-                    Выберите до 3 персонажей с повышенным шансом выпадения
+                    {t('settings.bot.gacha.banner.fields.featured4Star.hint')}
                 </InfoText>
                 <MultiSelect>
                     {fourStarItems.length === 0 ? (
-                        <InfoText>Нет доступных 4★ персонажей. Добавьте их в разделе "Управление предметами"</InfoText>
+                        <InfoText>{t('settings.bot.gacha.banner.fields.featured4Star.empty')}</InfoText>
                     ) : (
                         fourStarItems.map(item => {
                             const isSelected = (banner.featured4StarIds || []).includes(item.id);
@@ -238,7 +240,7 @@ export default function BannerSettingsEditor({ banner, items, updateConfig }) {
                 </MultiSelect>
                 {(banner.featured4StarIds || []).length >= 3 && (
                     <InfoText style={{ color: '#fbbf24' }}>
-                        ⚠️ Достигнут максимум (3 персонажа). Снимите выбор с одного, чтобы добавить другого.
+                        {t('settings.bot.gacha.banner.fields.featured4Star.limitWarning')}
                     </InfoText>
                 )}
             </SettingRow>
