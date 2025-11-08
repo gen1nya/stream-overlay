@@ -183,6 +183,16 @@ const en = {
                 followersGoal: { title: 'Follower progress', label: 'Progress' },
                 about: { title: 'About', label: 'About' },
             },
+            general: {
+                appearance: {
+                    title: 'Appearance',
+                    subtitle: 'Personalize the interface to your liking',
+                    languageLabel: 'Interface language',
+                    loading: 'Loading languages…',
+                    saving: 'Applying language…',
+                    error: 'Could not update the language. Please try again.',
+                },
+            },
             botConfigMissing: {
                 title: 'Bot configuration not found',
                 line1: 'Load or create a configuration to set up the bot.',

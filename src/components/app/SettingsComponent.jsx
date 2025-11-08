@@ -49,6 +49,7 @@ import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
+import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
 
 const Panel = styled.div`
     position: fixed;
@@ -383,6 +384,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
         case "general":
             return (
                 <Content>
+                    <AppearanceSettingsCard />
                     <UnifiedSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
