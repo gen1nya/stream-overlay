@@ -46,6 +46,8 @@ const en = {
             preview: 'Preview',
             copyLink: 'Copy link',
             open: 'Open',
+            close: 'Close',
+            loading: 'Loading...',
         },
         dashboard: {
             windowTitle: 'Overlay HQ - {{name}}',
@@ -191,6 +193,119 @@ const en = {
                     loading: 'Loading languages…',
                     saving: 'Applying language…',
                     error: 'Could not update the language. Please try again.',
+                },
+            },
+            follow: {
+                title: 'Follow variant #{{index}}',
+                collapse: 'Collapse',
+                expand: 'Expand',
+                template: {
+                    title: 'Message template',
+                    hint: 'Available placeholders: {userName}',
+                    label: 'Template for new followers',
+                    textColor: 'Text color',
+                    shadowColor: 'Text shadow color',
+                    shadowRadius: 'Shadow radius',
+                },
+                background: {
+                    title: 'Background settings',
+                    type: 'Background type',
+                    radius: 'Corner radius',
+                    options: {
+                        color: 'Color',
+                        image: 'Image',
+                        gradient: 'Gradient',
+                    },
+                },
+                layout: {
+                    title: 'Spacing and positioning',
+                },
+                delete: {
+                    action: 'Delete variant',
+                    tooltip: 'Delete variant',
+                    disabledTooltip: 'Cannot delete the last item',
+                },
+            },
+            fft: {
+                title: 'FFT analyzer',
+                collapse: 'Collapse',
+                expand: 'Configure',
+                status: {
+                    error: 'Error',
+                    active: 'Active',
+                    noDevice: 'No device',
+                    disabled: 'Disabled',
+                },
+                device: {
+                    notSelected: 'Not selected',
+                    placeholder: 'Choose a device',
+                    refresh: 'Refresh device list',
+                    selected: 'Selected: {{name}}',
+                },
+                sections: {
+                    general: 'General settings',
+                    device: 'Audio device',
+                    parameters: 'Analyzer parameters',
+                    demo: 'FFT demo',
+                },
+                controls: {
+                    enable: 'Enable FFT analyzer',
+                    enabled: 'Enabled',
+                    disabled: 'Disabled',
+                },
+                preview: {
+                    description: 'Real-time audio analyzer for creating visual effects.<br/><br/><highlight>Device:</highlight> {{device}}',
+                },
+                sliders: {
+                    dbFloor: 'Lower threshold (dB)',
+                    masterGain: 'Master gain',
+                    tilt: 'Frequency tilt',
+                },
+                demo: {
+                    columns: 'FFT demo (bars)',
+                    ring: 'FFT demo (ring)',
+                    waveform: 'Wave demo',
+                    hint: 'Opens in a new window for visualization testing.',
+                },
+                errors: {
+                    loadConfig: 'Failed to load FFT configuration',
+                    loadDevices: 'Failed to load audio devices',
+                    toggle: 'Failed to toggle FFT',
+                    setDevice: 'Failed to set audio device',
+                    setGain: 'Failed to update FFT gain',
+                    setDbFloor: 'Failed to update FFT lower threshold',
+                    setTilt: 'Failed to update FFT tilt',
+                },
+            },
+            about: {
+                appName: 'Overlay HQ',
+                version: 'Version {{version}}',
+                build: 'Built on {{date}}',
+                description: {
+                    title: 'About the project',
+                    paragraph1: {
+                        line1: 'A set of widgets for overlays in OBS Studio and other software (chat, players, follower goal).',
+                        line2: 'Includes a bot with gacha, roulette, and simple call-and-response.',
+                    },
+                    paragraph2: {
+                        line1: 'The project is fully open source, free, collects no analytics, and needs no server.',
+                        line2: 'I appreciate any help—from testing and bug reports to code and design.',
+                    },
+                    support: 'Crafted with support from <highlight>NEPTUNE INTELLIGENZA</highlight>',
+                    license: {
+                        label: 'License',
+                        value: 'GNU GPL v3 License',
+                    },
+                    platform: {
+                        label: 'Platforms',
+                        value: 'Windows, Linux (if you are brave enough)',
+                    },
+                },
+                social: {
+                    title: 'Contacts & social',
+                    github: 'GitHub',
+                    twitch: 'Twitch',
+                    website: 'Website',
                 },
             },
             botConfigMissing: {

@@ -46,6 +46,8 @@ const ru = {
             preview: 'Превью',
             copyLink: 'Скопировать ссылку',
             open: 'Открыть',
+            close: 'Закрыть',
+            loading: 'Загрузка...',
         },
         dashboard: {
             windowTitle: 'Оверлеешная - {{name}}',
@@ -191,6 +193,119 @@ const ru = {
                     loading: 'Загрузка языков…',
                     saving: 'Применение языка…',
                     error: 'Не удалось обновить язык. Попробуйте ещё раз.',
+                },
+            },
+            follow: {
+                title: 'Follow вариант №{{index}}',
+                collapse: 'Свернуть',
+                expand: 'Развернуть',
+                template: {
+                    title: 'Шаблон сообщения',
+                    hint: 'Доступные плейсхолдеры: {userName}',
+                    label: 'Шаблон для новых фолловеров',
+                    textColor: 'Цвет текста',
+                    shadowColor: 'Цвет тени текста',
+                    shadowRadius: 'Радиус тени',
+                },
+                background: {
+                    title: 'Настройки фона',
+                    type: 'Тип фона',
+                    radius: 'Скругление углов',
+                    options: {
+                        color: 'Цвет',
+                        image: 'Картинка',
+                        gradient: 'Градиент',
+                    },
+                },
+                layout: {
+                    title: 'Отступы и позиционирование',
+                },
+                delete: {
+                    action: 'Удалить вариант',
+                    tooltip: 'Удалить вариант',
+                    disabledTooltip: 'Нельзя удалить последний элемент',
+                },
+            },
+            fft: {
+                title: 'FFT анализатор',
+                collapse: 'Свернуть',
+                expand: 'Настроить',
+                status: {
+                    error: 'Ошибка',
+                    active: 'Активен',
+                    noDevice: 'Нет устройства',
+                    disabled: 'Отключен',
+                },
+                device: {
+                    notSelected: 'Не выбрано',
+                    placeholder: 'Выберите устройство',
+                    refresh: 'Обновить список устройств',
+                    selected: 'Выбрано: {{name}}',
+                },
+                sections: {
+                    general: 'Основные настройки',
+                    device: 'Аудиоустройство',
+                    parameters: 'Параметры анализатора',
+                    demo: 'Демонстрация FFT',
+                },
+                controls: {
+                    enable: 'Включить FFT анализ',
+                    enabled: 'Включен',
+                    disabled: 'Выключен',
+                },
+                preview: {
+                    description: 'Анализатор аудиочастот в реальном времени для визуальных эффектов.<br/><br/><highlight>Устройство:</highlight> {{device}}',
+                },
+                sliders: {
+                    dbFloor: 'Нижний порог (dB)',
+                    masterGain: 'Основное усиление',
+                    tilt: 'Наклон частот',
+                },
+                demo: {
+                    columns: 'Демо FFT (столбцы)',
+                    ring: 'Демо FFT (кольцо)',
+                    waveform: 'Демо волна',
+                    hint: 'Откроется в новом окне для тестирования визуализаций.',
+                },
+                errors: {
+                    loadConfig: 'Не удалось загрузить конфигурацию FFT',
+                    loadDevices: 'Не удалось загрузить список аудиоустройств',
+                    toggle: 'Не удалось переключить FFT',
+                    setDevice: 'Не удалось установить аудиоустройство',
+                    setGain: 'Не удалось установить усиление FFT',
+                    setDbFloor: 'Не удалось установить нижний порог FFT',
+                    setTilt: 'Не удалось установить наклон FFT',
+                },
+            },
+            about: {
+                appName: 'Оверлеешная',
+                version: 'Версия {{version}}',
+                build: 'Собрано {{date}}',
+                description: {
+                    title: 'Описание',
+                    paragraph1: {
+                        line1: 'Набор виджетов для оверлеев в OBS Studio и других программах (чат, плееры, счётчик фолловеров).',
+                        line2: 'А ещё бот с гачей, рулеткой и простыми запрос-ответ.',
+                    },
+                    paragraph2: {
+                        line1: 'Проект полностью открытый и бесплатный, аналитику не собирает, сервер не требует.',
+                        line2: 'Буду рад любой помощи — от тестирования и багрепортов до кода и дизайна.',
+                    },
+                    support: 'Слеплено при поддержке <highlight>NEPTUNE INTELLIGENZA</highlight>',
+                    license: {
+                        label: 'Лицензия',
+                        value: 'GNU GPL v3 License',
+                    },
+                    platform: {
+                        label: 'Платформа',
+                        value: 'Windows, Linux (если достаточно смелы)',
+                    },
+                },
+                social: {
+                    title: 'Контакты и социальные сети',
+                    github: 'GitHub',
+                    twitch: 'Twitch',
+                    website: 'Веб-сайт',
                 },
             },
             botConfigMissing: {

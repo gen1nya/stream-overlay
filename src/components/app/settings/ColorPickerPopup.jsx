@@ -5,6 +5,7 @@ import Popup from '../../utils/PopupComponent';
 import { ColorPicker } from 'react-pick-color';
 import throttle from 'lodash.throttle';
 import {hexToRgba} from "../../../utils";
+import { useTranslation } from "react-i18next";
 
 const PopupContent = styled.div`
     display: flex;
@@ -35,12 +36,14 @@ const CloseButton = styled.button`
 `;
 
 export default function ColorPickerPopup({
-                                             title = "Выбор цвета",
+                                             title,
                                              initialColor = "#ffffff",
                                              initialAlpha = 1,
                                              onClose,
                                              onColorChange
 }) {
+    const { t } = useTranslation();
+    const resolvedTitle = title ?? t('settings.colorPicker.title');
     const [color, setColor] = useState(initialColor);
     const [alpha, setAlpha] = useState(initialAlpha || 1);
 
@@ -61,7 +64,7 @@ export default function ColorPickerPopup({
     return (
         <Popup onClose={onClose}>
             <PopupContent>
-                <Title>{title}</Title>
+                <Title>{resolvedTitle}</Title>
                 <ColorPicker
                     color={hexToRgba(color, alpha)}
                     onChange={ (colorObj) => {
@@ -79,7 +82,7 @@ export default function ColorPickerPopup({
                     }
                     hideInput={false}
                 />
-                <CloseButton onClick={onClose}>Закрыть</CloseButton>
+                <CloseButton onClick={onClose}>{t('common.close')}</CloseButton>
             </PopupContent>
         </Popup>
     );

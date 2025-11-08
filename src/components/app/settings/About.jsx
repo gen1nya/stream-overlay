@@ -13,6 +13,7 @@ import sora_1 from "../../../assets/sora_silent.png";
 import sora_2 from "../../../assets/sora_speak.png";
 import {openExternalLink, openTerminal} from "../../../services/api";
 import {AiFillTwitch} from "react-icons/ai";
+import { Trans, useTranslation } from "react-i18next";
 
 const AboutCardWrapper = styled(SettingsCard)`
     position: relative;
@@ -141,6 +142,9 @@ const ExternalLink = ({ href, children }) => (
     </SocialLink>
 );
 
+const APP_VERSION = '0.6.0-beta';
+const BUILD_DATE = '08.10.2025';
+
 const InfoGrid = styled.div`
     display: flex;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -171,6 +175,8 @@ const InfoValue = styled.div`
 `;
 
 export default function AboutCard() {
+    const { t } = useTranslation();
+
     return (
         <AboutCardWrapper>
             <BackgroundImage />
@@ -181,9 +187,9 @@ export default function AboutCard() {
                     <AppIconSection>
                         <AppIcon/>
                         <AppInfo>
-                            <AppName>Оверлеешная</AppName>
-                            <AppVersion>Версия 0.6.0-beta</AppVersion>
-                            <AppTagline>Собрано 08.10.2025</AppTagline>
+                            <AppName>{t('settings.about.appName')}</AppName>
+                            <AppVersion>{t('settings.about.version', { version: APP_VERSION })}</AppVersion>
+                            <AppTagline>{t('settings.about.build', { date: BUILD_DATE })}</AppTagline>
                         </AppInfo>
                     </AppIconSection>
 
@@ -192,32 +198,37 @@ export default function AboutCard() {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiInfo />
-                                Описание
+                                {t('settings.about.description.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <DescriptionText>
-                            Набор виджетов для оверлеев в OBS Studio и других программ. (чат, плееры, счетчик фоловеров)<br/>
-                            И еще бот с гачей, рулеткой и простым запрос-ответ
+                            {t('settings.about.description.paragraph1.line1')}
+                            <br/>
+                            {t('settings.about.description.paragraph1.line2')}
                         </DescriptionText>
 
                         <DescriptionText>
-                            Проект полностью открытый и бесплатный, аналитику не собирает, сервер не требует. <br/>
-                            Я буду рад любой помощи - от тестирования и багрепортов до кода и дизайна.
+                            {t('settings.about.description.paragraph2.line1')}
+                            <br/>
+                            {t('settings.about.description.paragraph2.line2')}
                         </DescriptionText>
 
                         <DescriptionText>
-                            Слеплено при поддержке <span onClick={openTerminal}>NEPTUNE INTELLIGENZA</span>
+                            <Trans
+                                i18nKey="settings.about.description.support"
+                                components={{ highlight: <span onClick={openTerminal} /> }}
+                            />
                         </DescriptionText>
 
                         <InfoGrid>
                             <InfoItem>
-                                <InfoLabel>Лицензия</InfoLabel>
-                                <InfoValue>GNU GPL v3 License</InfoValue>
+                                <InfoLabel>{t('settings.about.description.license.label')}</InfoLabel>
+                                <InfoValue>{t('settings.about.description.license.value')}</InfoValue>
                             </InfoItem>
                             <InfoItem>
-                                <InfoLabel>Платформа</InfoLabel>
-                                <InfoValue>Windows, Linux (if you brave enough)</InfoValue>
+                                <InfoLabel>{t('settings.about.description.platform.label')}</InfoLabel>
+                                <InfoValue>{t('settings.about.description.platform.value')}</InfoValue>
                             </InfoItem>
                         </InfoGrid>
                     </Section>
@@ -227,22 +238,22 @@ export default function AboutCard() {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiGlobe />
-                                Контакты и социальные сети
+                                {t('settings.about.social.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <SocialLinks>
                             <ExternalLink href="https://github.com/gen1nya/stream-overlay" target="_blank" rel="noopener noreferrer">
                                 <FiGithub />
-                                GitHub
+                                {t('settings.about.social.github')}
                             </ExternalLink>
                             <ExternalLink href="https://www.twitch.tv/evg_on" target="_blank" rel="noopener noreferrer">
                                 <AiFillTwitch />
-                                Twitch
+                                {t('settings.about.social.twitch')}
                             </ExternalLink>
                             <ExternalLink href="https://tools.rus.ebatel.online/" target="_blank" rel="noopener noreferrer">
                                 <FiGlobe />
-                                Веб-сайт
+                                {t('settings.about.social.website')}
                             </ExternalLink>
                         </SocialLinks>
                     </Section>
