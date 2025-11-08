@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
@@ -19,6 +19,7 @@ import ColorSelectorButton from "./ColorSelectorButton";
 import {RiColorFilterLine} from "react-icons/ri";
 import {Row} from "../SettingsComponent";
 import {Spacer} from "../../utils/Separator";
+import { useTranslation } from "react-i18next";
 
 const ColorGrid = styled.div`
     display: grid;
@@ -114,12 +115,19 @@ const CollapseToggle = styled.div`
     }
 `;
 
+const TEXT_ALIGN_OPTIONS = [
+    { key: 'left', labelKey: 'settings.players.vinyl.sections.text.alignment.options.left' },
+    { key: 'center', labelKey: 'settings.players.vinyl.sections.text.alignment.options.center' },
+    { key: 'right', labelKey: 'settings.players.vinyl.sections.text.alignment.options.right' },
+];
+
 export default function PlayerSettingsComponent({
                                                     current,
                                                     onChange,
                                                     openColorPopup,
                                                 }) {
     const [isOpen, setIsOpen] = useState(false);
+    const { t } = useTranslation();
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
@@ -160,6 +168,10 @@ export default function PlayerSettingsComponent({
     };
 
     const player = current.player || {};
+    const textAlignOptions = useMemo(
+        () => TEXT_ALIGN_OPTIONS.map(option => ({ key: option.key, text: t(option.labelKey) })),
+        [t],
+    );
 
     return (
         <SettingsCard>
@@ -167,13 +179,13 @@ export default function PlayerSettingsComponent({
                 <Row gap="12px">
                     <CardTitle>
                         <FiDisc/>
-                        Плеер-пластинка
+                        {t('settings.players.vinyl.title')}
                     </CardTitle>
 
                     <Spacer />
 
                     <CollapseToggle>
-                        {isOpen ? 'Свернуть' : 'Настроить'}
+                        {isOpen ? t('settings.shared.collapse.close') : t('settings.shared.collapse.open')}
                         {isOpen ? <FiChevronUp /> : <FiSettings />}
                     </CollapseToggle>
                 </Row>
@@ -192,7 +204,7 @@ export default function PlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <RiColorFilterLine   />
-                                Цветовая схема
+                                {t('settings.players.vinyl.sections.colors.title')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -200,7 +212,7 @@ export default function PlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Фон плеера"
+                                    title={t('settings.players.vinyl.colors.background')}
                                     alpha={player.backgroundOpacity ?? 1.0}
                                     hex={player.backgroundColor ?? "#3e837c"}
                                     onColorChange={({color, alpha}) => {
@@ -212,7 +224,7 @@ export default function PlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Обводка плеера"
+                                    title={t('settings.players.vinyl.colors.border')}
                                     alpha={player.borderOpacity ?? 1.0}
                                     hex={player.borderColor ?? "#3e837c"}
                                     onColorChange={({color, alpha}) => {
@@ -228,7 +240,7 @@ export default function PlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <TbShadow />
-                                Тени и эффекты
+                                {t('settings.players.vinyl.sections.shadows.title')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -236,7 +248,7 @@ export default function PlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Тень плеера"
+                                    title={t('settings.players.vinyl.shadows.player')}
                                     alpha={player.shadowOpacity ?? 1.0}
                                     hex={player.shadowColor ?? "#3e837c"}
                                     onColorChange={({color, alpha}) => {
@@ -248,7 +260,7 @@ export default function PlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Тень пластинки"
+                                    title={t('settings.players.vinyl.shadows.disk')}
                                     alpha={player.diskShadowOpacity ?? 1.0}
                                     hex={player.diskShadowColor ?? "#3e837c"}
                                     onColorChange={({color, alpha}) => {
@@ -264,16 +276,16 @@ export default function PlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <FiCornerUpLeft />
-                                Скругление углов
+                                {t('settings.players.vinyl.sections.radius.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <RadiusGrid>
                             <RadiusSection>
-                                <RadiusTitle>Верхние углы</RadiusTitle>
+                                <RadiusTitle>{t('settings.players.vinyl.sections.radius.groups.top')}</RadiusTitle>
                                 <ControlGroup>
                                     <SeekbarComponent
-                                        title={`Слева: ${player.borderRadius?.topLeft ?? 0}px`}
+                                        title={t('settings.players.vinyl.sections.radius.labels.left', {value: player.borderRadius?.topLeft ?? 0})}
                                         min={0}
                                         max={150}
                                         value={player.borderRadius?.topLeft ?? 0}
@@ -284,7 +296,7 @@ export default function PlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <SeekbarComponent
-                                        title={`Справа: ${player.borderRadius?.topRight ?? 0}px`}
+                                        title={t('settings.players.vinyl.sections.radius.labels.right', {value: player.borderRadius?.topRight ?? 0})}
                                         min={0}
                                         max={150}
                                         value={player.borderRadius?.topRight ?? 0}
@@ -296,10 +308,10 @@ export default function PlayerSettingsComponent({
                             </RadiusSection>
 
                             <RadiusSection>
-                                <RadiusTitle>Нижние углы</RadiusTitle>
+                                <RadiusTitle>{t('settings.players.vinyl.sections.radius.groups.bottom')}</RadiusTitle>
                                 <ControlGroup>
                                     <SeekbarComponent
-                                        title={`Слева: ${player.borderRadius?.bottomLeft ?? 0}px`}
+                                        title={t('settings.players.vinyl.sections.radius.labels.left', {value: player.borderRadius?.bottomLeft ?? 0})}
                                         min={0}
                                         max={150}
                                         value={player.borderRadius?.bottomLeft ?? 0}
@@ -310,7 +322,7 @@ export default function PlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <SeekbarComponent
-                                        title={`Справа: ${player.borderRadius?.bottomRight ?? 0}px`}
+                                        title={t('settings.players.vinyl.sections.radius.labels.right', {value: player.borderRadius?.bottomRight ?? 0})}
                                         min={0}
                                         max={150}
                                         value={player.borderRadius?.bottomRight ?? 0}
@@ -328,20 +340,16 @@ export default function PlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <FiType />
-                                Настройки текста
+                                {t('settings.players.vinyl.sections.text.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <ControlGroup>
                             <Row>
                                 <RadioGroup
-                                    title="Выравнивание текста"
+                                    title={t('settings.players.vinyl.sections.text.alignment.title')}
                                     defaultSelected={player.text?.textAlign ?? 'left'}
-                                    items={[
-                                        { key: 'left', text: 'Слева' },
-                                        { key: 'center', text: 'По центру' },
-                                        { key: 'right', text: 'Справа' },
-                                    ]}
+                                    items={textAlignOptions}
                                     direction="horizontal"
                                     itemWidth="120px"
                                     onChange={value => updatePlayer('text.textAlign', value)}
@@ -353,12 +361,12 @@ export default function PlayerSettingsComponent({
                             <TextPropertyCard>
                                 <TextPropertyTitle>
                                     <FiType />
-                                    Исполнитель
+                                    {t('settings.players.vinyl.sections.text.cards.artist.title')}
                                 </TextPropertyTitle>
                                 <ControlGroup>
                                     <ColorSelectorButton
                                         openColorPopup={openColorPopup}
-                                        title="Цвет текста"
+                                        title={t('settings.shared.controls.textColor')}
                                         alpha={1.0}
                                         hex={player.text?.artist?.color ?? "#ffffff"}
                                         onColorChange={({color}) => {
@@ -368,7 +376,7 @@ export default function PlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <NumericEditorComponent
-                                        title="Размер шрифта"
+                                        title={t('settings.shared.controls.fontSize')}
                                         value={player.text?.artist?.fontSize ?? 16}
                                         max={32}
                                         min={8}
@@ -383,12 +391,12 @@ export default function PlayerSettingsComponent({
                             <TextPropertyCard>
                                 <TextPropertyTitle>
                                     <FiMusic />
-                                    Название трека
+                                    {t('settings.players.vinyl.sections.text.cards.track.title')}
                                 </TextPropertyTitle>
                                 <ControlGroup>
                                     <ColorSelectorButton
                                         openColorPopup={openColorPopup}
-                                        title="Цвет текста"
+                                        title={t('settings.shared.controls.textColor')}
                                         alpha={1.0}
                                         hex={player.text?.title?.color ?? "#ffffff"}
                                         onColorChange={({color}) => {
@@ -398,7 +406,7 @@ export default function PlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <NumericEditorComponent
-                                        title="Размер шрифта"
+                                        title={t('settings.shared.controls.fontSize')}
                                         value={player.text?.title?.fontSize ?? 16}
                                         max={32}
                                         min={8}
