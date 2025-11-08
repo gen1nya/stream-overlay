@@ -342,11 +342,11 @@ const en = {
                         close: 'Collapse',
                     },
                     tagInputPlaceholder: 'Add a command…',
-                    variablesHint: 'You can include variables in messages:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number',
+                    variablesHint: "You can include variables in messages:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number",
                 },
                 roulette: {
                     title: 'Russian roulette (mute)',
-                    preview: 'The bot will mute viewers who trigger roulette commands for a configured duration and chance.<br/><br/><warning>⚠️ Attention!</warning> Restarting during a mute will not restore chat roles (VIP, mod).<br/><br/>You can include variables:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number',
+                    preview: "The bot will mute viewers who trigger roulette commands for a configured duration and chance.<br/><br/><warning>⚠️ Attention!</warning> Restarting during a mute will not restore chat roles (VIP, mod).<br/><br/>You can include variables:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number",
                     sections: {
                         main: 'Main parameters',
                         commands: 'Roulette commands',
@@ -385,7 +385,7 @@ const en = {
                 },
                 pingpong: {
                     title: 'Ping-pong commands',
-                    preview: 'The bot will reply to keywords and commands (for example !ping).<br/><br/>You can include variables:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{last_message}'}</highlight> – viewer message<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number',
+                    preview: "The bot will reply to keywords and commands (for example !ping).<br/><br/>You can include variables:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{last_message}'}</highlight> – viewer message<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number",
                     sections: {
                         variables: 'Available variables',
                         addCommand: 'Add a new command',
