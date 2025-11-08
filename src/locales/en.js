@@ -308,6 +308,47 @@ const en = {
                     },
                 },
             },
+            themePopup: {
+                title: 'Theme manager',
+                actions: {
+                    export: 'Export theme',
+                    delete: 'Delete theme',
+                },
+                create: {
+                    title: 'Create a new theme',
+                    placeholder: 'Enter a theme name...',
+                    button: 'Create',
+                },
+                import: 'Import theme',
+            },
+            botPopup: {
+                title: 'Bot manager',
+                actions: {
+                    export: 'Export bot',
+                    delete: 'Delete bot',
+                },
+                create: {
+                    title: 'Create a new bot',
+                    placeholder: 'Enter a bot name...',
+                    button: 'Create',
+                },
+                import: 'Import bot',
+                confirmDelete: 'Are you sure you want to delete bot "{{name}}"?',
+                errors: {
+                    singleBotDelete: 'You cannot delete the only bot!',
+                    defaultDelete: 'You cannot delete the default bot!',
+                    notFound: 'The bot was not found or cannot be deleted',
+                    delete: 'An error occurred while deleting the bot',
+                    exists: 'A bot named "{{name}}" already exists!',
+                    create: 'An error occurred while creating the bot',
+                    invalidFormat: 'Invalid bot configuration format',
+                    noData: 'The file does not contain valid bot data',
+                    import: 'Error importing file. Please check the file format.',
+                },
+                success: {
+                    import: 'Bot "{{name}}" imported successfully!',
+                },
+            },
             youtubeScraper: {
                 title: 'YouTube Scraper',
                 status: {
