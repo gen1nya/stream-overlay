@@ -1,4 +1,4 @@
-import React, {useCallback} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import ColorSelectorButton from './ColorSelectorButton';
 import FontAndSizeEditor from '../../utils/FontAndSizeEditor';
@@ -20,13 +20,15 @@ import {
 import {Spacer} from "../../utils/Separator";
 import {Row} from "../SettingsComponent";
 import Switch from "../../utils/Switch";
+import { useTranslation } from "react-i18next";
 
 const MESSAGE_DIRECTION_OPT = [
-    {key: 'row', text: 'слева', aiIcon: 'AiOutlineInsertRowLeft'},
-    {key: 'column', text: 'сверху', aiIcon: 'AiOutlineInsertRowAbove'},
+    {key: 'row', labelKey: 'settings.chatMessages.header.namePosition.options.row', aiIcon: 'AiOutlineInsertRowLeft'},
+    {key: 'column', labelKey: 'settings.chatMessages.header.namePosition.options.column', aiIcon: 'AiOutlineInsertRowAbove'},
 ];
 
 export default function MessageSettingsBlock({current: {chatMessage}, onChange, openColorPopup}) {
+    const { t } = useTranslation();
     const updateChatMessage = useCallback(
         (updater) =>
             onChange((prev) => ({
@@ -69,13 +71,30 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
         shadowOpacity = 1,
         shadowRadius = 0,
     } = chatMessage;
+    const messageDirectionOptions = useMemo(
+        () =>
+            MESSAGE_DIRECTION_OPT.map((item) => ({
+                key: item.key,
+                aiIcon: item.aiIcon,
+                text: t(item.labelKey),
+            })),
+        [t],
+    );
+    const backgroundOptions = useMemo(
+        () => [
+            {key: 'color', text: t('settings.chatMessages.background.options.color')},
+            {key: 'image', text: t('settings.chatMessages.background.options.image')},
+            {key: 'gradient', text: t('settings.chatMessages.background.options.gradient')},
+        ],
+        [t],
+    );
 
     return (
         <SettingsCard>
             <CardHeader>
                 <CardTitle>
                     <FiMessageSquare />
-                    Настройки сообщений чата
+                    {t('settings.chatMessages.title')}
                 </CardTitle>
             </CardHeader>
 
@@ -85,17 +104,17 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                     <SectionHeader>
                         <SectionTitle>
                             <FiType />
-                            Настройки заголовка
+                            {t('settings.chatMessages.header.title')}
                         </SectionTitle>
                     </SectionHeader>
 
                     <Row gap="20px">
                         <ControlGroup>
                             <RadioGroup
-                                title="Расположение имени:"
+                                title={t('settings.chatMessages.header.namePosition.label')}
                                 defaultSelected={direction}
                                 itemWidth="120px"
-                                items={MESSAGE_DIRECTION_OPT}
+                                items={messageDirectionOptions}
                                 onChange={(v) => updateField('direction', v)}
                             />
                         </ControlGroup>
@@ -105,7 +124,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                         <ControlGroup>
                             <label
                                 style={{fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px'}}>
-                                Включить Фон Заголовка
+                                {t('settings.chatMessages.header.backgroundToggle.label')}
                             </label>
                             <div style={{display: 'flex', gap: '8px'}}>
                                 <Switch
@@ -115,7 +134,9 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                                     }}
                                 />
                                 <span style={{fontSize: '0.85rem', color: '#999'}}>
-                                    {chatMessage.titleBackgroundMode === 'solid' ? 'Включен' : 'Выключен'}
+                                    {chatMessage.titleBackgroundMode === 'solid'
+                                        ? t('settings.chatMessages.header.backgroundToggle.enabled')
+                                        : t('settings.chatMessages.header.backgroundToggle.disabled')}
                                 </span>
                             </div>
                         </ControlGroup>
@@ -124,7 +145,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
 
                         <ControlGroup>
                             <FontAndSizeEditor
-                                title="Шрифт заголовка:"
+                                title={t('settings.chatMessages.header.font')}
                                 fontSize={titleFontSize}
                                 fontFamily={titleFont.family}
                                 onFontChange={({family, url}) =>
@@ -140,14 +161,14 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                     <SectionHeader>
                         <SectionTitle>
                             <FiAlignCenter  />
-                            Настройки текста сообщений
+                            {t('settings.chatMessages.body.title')}
                         </SectionTitle>
                     </SectionHeader>
 
                     <Row gap="20px">
                         <ControlGroup>
                             <ColorSelectorButton
-                                title="Цвет текста:"
+                                title={t('settings.chatMessages.body.textColor')}
                                 hex={messageFont.color || '#ffffff'}
                                 alpha={messageFont.opacity || 1}
                                 openColorPopup={openColorPopup}
@@ -161,7 +182,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
 
                         <ControlGroup>
                             <FontAndSizeEditor
-                                title="Шрифт сообщений:"
+                                title={t('settings.chatMessages.body.font')}
                                 fontSize={fontSize}
                                 fontFamily={messageFont.family}
                                 onFontChange={({family, url}) =>
@@ -176,7 +197,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
 
                         <ControlGroup>
                             <ColorSelectorButton
-                                title="Цвет тени текста:"
+                                title={t('settings.chatMessages.body.shadowColor')}
                                 hex={messageFont?.shadowColor ?? "#000000"}
                                 alpha={messageFont?.shadowOpacity ?? 0}
                                 openColorPopup={openColorPopup}
@@ -188,7 +209,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                         <Spacer />
                         <ControlGroup >
                             <SeekbarComponent
-                                title={`Радиус тени`}
+                                title={t('settings.chatMessages.body.shadowRadius')}
                                 min="0"
                                 max="20"
                                 step="1"
@@ -207,20 +228,16 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                     <SectionHeader>
                         <SectionTitle>
                             <FiImage />
-                            Настройки фона
+                            {t('settings.chatMessages.background.title')}
                         </SectionTitle>
                     </SectionHeader>
 
                     <Row gap="20px">
                         <ControlGroup>
                             <RadioGroup
-                                title="Тип фона:"
+                                title={t('settings.chatMessages.background.type')}
                                 defaultSelected={backgroundMode}
-                                items={[
-                                    {key: 'color', text: 'цвет'},
-                                    {key: 'image', text: 'картинки'},
-                                    {key: 'gradient', text: 'градиент'},
-                                ]}
+                                items={backgroundOptions}
                                 direction="horizontal"
                                 itemWidth="120px"
                                 onChange={(v) => updateField('backgroundMode', v)}
@@ -231,7 +248,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
 
                         <ControlGroup>
                             <SeekbarComponent
-                                title={`Скругление углов`}
+                                title={t('settings.chatMessages.background.radius')}
                                 min="0"
                                 max="20"
                                 step="1"
@@ -284,7 +301,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                     <SectionHeader>
                         <SectionTitle>
                             <FiLayout />
-                            Отступы и позиционирование
+                            {t('settings.chatMessages.layout.title')}
                         </SectionTitle>
                     </SectionHeader>
 

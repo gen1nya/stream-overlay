@@ -244,6 +244,94 @@ const en = {
                 },
                 range: 'from {{min}} to {{max}}',
             },
+            shared: {
+                collapse: {
+                    open: 'Configure',
+                    close: 'Collapse',
+                },
+                toggle: {
+                    enabled: 'Enabled',
+                    disabled: 'Disabled',
+                },
+                paddingEditor: {
+                    outerTitle: 'Outer margins',
+                    innerTitle: 'Inner padding',
+                    horizontal: 'Horizontal',
+                    vertical: 'Vertical',
+                },
+                controls: {
+                    textColor: 'Text color',
+                    font: 'Font and size',
+                    weight: 'Weight: {{value}}',
+                    topMargin: 'Top margin: {{value}}px',
+                    fontSize: 'Font size',
+                },
+            },
+            followersGoal: {
+                title: 'Stream follower progress bar',
+                collapsedPreview: {
+                    prefix: 'Goal:',
+                    suffix: 'followers',
+                },
+                sections: {
+                    general: {
+                        title: 'General settings',
+                        target: 'Target follower count',
+                        width: 'Widget width',
+                        titleLabel: 'Widget title',
+                        titlePlaceholder: 'Follower goal',
+                        completedLabel: 'Completion message',
+                        completedPlaceholder: '🎉 Goal reached!',
+                        customGoalLabel: 'Goal text (leave empty for automatic)',
+                        customGoalPlaceholder: 'Remaining: X followers',
+                    },
+                    layout: {
+                        title: 'Spacing and layout',
+                        padding: 'Inner padding: {{value}}px',
+                        spacing: 'Element spacing: {{value}}px',
+                        radius: 'Corner radius: {{value}}px',
+                        border: 'Border width: {{value}}px',
+                        background: 'Widget background color',
+                        stroke: 'Border color',
+                    },
+                    progressBar: {
+                        title: 'Progress bar settings',
+                        height: 'Bar height: {{value}}px',
+                        radius: 'Bar corner radius: {{value}}px',
+                        glow: {
+                            label: 'Progress bar glow',
+                        },
+                        animation: {
+                            label: 'Goal completion animation',
+                        },
+                        background: 'Progress bar background',
+                        border: 'Progress bar border',
+                        gradient: 'Fill gradient (normal state)',
+                        completedGradient: 'Fill gradient (goal reached)',
+                    },
+                    text: {
+                        title: 'Text settings',
+                        cards: {
+                            header: {
+                                title: 'Title',
+                                glow: 'Title glow',
+                            },
+                            counter: {
+                                title: 'Counter',
+                            },
+                            percentage: {
+                                title: 'Percentage',
+                            },
+                            goal: {
+                                title: 'Goal text',
+                            },
+                            completed: {
+                                title: 'Completion message',
+                            },
+                        },
+                    },
+                },
+            },
             players: {
                 modern: {
                     title: 'Player card',
@@ -328,6 +416,55 @@ const en = {
                                 bold: 'Bold',
                             },
                         },
+                    },
+                },
+                vinyl: {
+                    title: 'Vinyl player',
+                    sections: {
+                        colors: {
+                            title: 'Color scheme',
+                        },
+                        shadows: {
+                            title: 'Shadows and effects',
+                        },
+                        radius: {
+                            title: 'Corner radius',
+                            groups: {
+                                top: 'Top corners',
+                                bottom: 'Bottom corners',
+                            },
+                            labels: {
+                                left: 'Left: {{value}}px',
+                                right: 'Right: {{value}}px',
+                            },
+                        },
+                        text: {
+                            title: 'Text settings',
+                            alignment: {
+                                title: 'Text alignment',
+                                options: {
+                                    left: 'Left',
+                                    center: 'Center',
+                                    right: 'Right',
+                                },
+                            },
+                            cards: {
+                                artist: {
+                                    title: 'Artist',
+                                },
+                                track: {
+                                    title: 'Track title',
+                                },
+                            },
+                        },
+                    },
+                    colors: {
+                        background: 'Player background',
+                        border: 'Player border',
+                    },
+                    shadows: {
+                        player: 'Player shadow',
+                        disk: 'Record shadow',
                     },
                 },
             },
@@ -478,6 +615,77 @@ const en = {
                     action: 'Delete variant',
                     tooltip: 'Delete variant',
                     disabledTooltip: 'Cannot delete the last item',
+                },
+            },
+            channelPoints: {
+                title: 'Channel points variant #{{index}}',
+                collapse: 'Collapse',
+                expand: 'Expand',
+                template: {
+                    title: 'Message template',
+                    hint: 'Available placeholders: {userName}, {cost}, {title}',
+                    label: 'Template for channel points reward',
+                    textColor: 'Text color',
+                    shadowColor: 'Text shadow color',
+                    shadowRadius: 'Shadow radius',
+                    default: '🎉 {userName} spent {cost} points on {title}',
+                },
+                background: {
+                    title: 'Background settings',
+                    type: 'Background type',
+                    radius: 'Corner radius',
+                    options: {
+                        color: 'Color',
+                        image: 'Image',
+                        gradient: 'Gradient',
+                    },
+                },
+                layout: {
+                    title: 'Spacing and positioning',
+                },
+                delete: {
+                    action: 'Delete variant',
+                    tooltip: 'Delete variant',
+                    disabledTooltip: 'Cannot delete the last item',
+                },
+            },
+            chatMessages: {
+                title: 'Chat message settings',
+                header: {
+                    title: 'Header settings',
+                    namePosition: {
+                        label: 'Name position',
+                        options: {
+                            row: 'Left',
+                            column: 'Top',
+                        },
+                    },
+                    backgroundToggle: {
+                        label: 'Enable header background',
+                        enabled: 'Enabled',
+                        disabled: 'Disabled',
+                    },
+                    font: 'Header font:',
+                },
+                body: {
+                    title: 'Message text settings',
+                    textColor: 'Text color',
+                    font: 'Message font:',
+                    shadowColor: 'Text shadow color',
+                    shadowRadius: 'Shadow radius',
+                },
+                background: {
+                    title: 'Background settings',
+                    type: 'Background type',
+                    radius: 'Corner radius',
+                    options: {
+                        color: 'Color',
+                        image: 'Image',
+                        gradient: 'Gradient',
+                    },
+                },
+                layout: {
+                    title: 'Spacing and positioning',
                 },
             },
             fft: {
