@@ -8,6 +8,7 @@ import {mergeWithDefaults} from "../../utils/defaultBotConfig";
 import {FiSettings, FiMessageSquare, FiEye, FiImage, FiType, FiClock} from "react-icons/fi";
 import {TbShadow} from "react-icons/tb";
 import RadioGroup from "../../utils/TextRadioGroup";
+import { useTranslation } from "react-i18next";
 import {
     CardContent,
     CardHeader, CardSubtitle,
@@ -21,6 +22,7 @@ import {Row} from "../SettingsComponent";
 
 // Объединенный компонент настроек
 export default function UnifiedSettingsComponent({current, onChange, openColorPopup}) {
+    const { t } = useTranslation();
     const handleChange = updaterOrTheme => {
         onChange(updaterOrTheme);
     };
@@ -45,6 +47,16 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
         return null;
     };
 
+    const widthTitle = overlay?.chatWidth
+        ? t('settings.unified.overlay.sections.dimensions.width')
+        : t('settings.unified.overlay.sections.dimensions.widthAuto');
+
+    const heightTitle = overlay?.chatHeight
+        ? t('settings.unified.overlay.sections.dimensions.height')
+        : t('settings.unified.overlay.sections.dimensions.heightAuto');
+
+    const backgroundOnlyTooltip = t('settings.unified.overlay.sections.dimensions.backgroundOnlyTooltip');
+
     return (
         <>
             {/* Настройки оверлея */}
@@ -52,10 +64,10 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                 <CardHeader>
                     <CardTitle>
                         <FiSettings />
-                        Оверлей
+                        {t('settings.unified.overlay.title')}
                     </CardTitle>
                     {getOverlaySizes() && (
-                        <InfoBadge>OBS: {getOverlaySizes()}</InfoBadge>
+                        <InfoBadge>{t('settings.unified.overlay.obsSize', { size: getOverlaySizes() })}</InfoBadge>
                     )}
                 </CardHeader>
 
@@ -64,21 +76,21 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <SectionHeader>
                             <SectionTitle>
                                 <FiEye />
-                                Размеры и позиция
+                                {t('settings.unified.overlay.sections.dimensions.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="20px">
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Ширина ${overlay?.chatWidth ? "" : "[auto]"}`}
+                                    title={widthTitle}
                                     min="100"
                                     max={widthMax}
                                     value={overlay?.chatWidth ?? 0}
                                     step="1"
                                     width="180px"
                                     disabled={!isBackgroundImage}
-                                    tooltip="Доступно только для фона-изображения"
+                                    tooltip={backgroundOnlyTooltip}
                                     onChange={e =>
                                         handleChange(prev => ({
                                             ...prev,
@@ -93,14 +105,14 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Высота ${overlay?.chatHeight ? "" : "[auto]"}`}
+                                    title={heightTitle}
                                     min="100"
                                     max={heightMax}
                                     value={overlay?.chatHeight ?? 100}
                                     step="1"
                                     width="180px"
                                     disabled={!isBackgroundImage}
-                                    tooltip="Доступно только для фона-изображения"
+                                    tooltip={backgroundOnlyTooltip}
                                     onChange={e =>
                                         handleChange(prev => ({
                                             ...prev,
@@ -115,7 +127,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup flex="1 1 300px">
                                 <SeekbarComponent
-                                    title={`Скругление углов`}
+                                    title={t('settings.unified.overlay.sections.dimensions.borderRadius')}
                                     min="0"
                                     max="64"
                                     width="320px"
@@ -137,13 +149,13 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <Row gap="20px">
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Отступ слева`}
+                                    title={t('settings.unified.overlay.sections.dimensions.paddingLeft')}
                                     min="0"
                                     max={widthMax}
                                     value={overlay?.paddingLeft ?? 0}
                                     step="1"
                                     width="180px"
-                                    tooltip="Доступно только для фона-изображения"
+                                    tooltip={backgroundOnlyTooltip}
                                     onChange={e =>
                                         handleChange(prev => ({
                                             ...prev,
@@ -158,13 +170,13 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Отступ сверху`}
+                                    title={t('settings.unified.overlay.sections.dimensions.paddingTop')}
                                     min="0"
                                     max={heightMax}
                                     width="180px"
                                     value={overlay?.paddingTop ?? 0}
                                     step="1"
-                                    tooltip="Доступно только для фона-изображения"
+                                    tooltip={backgroundOnlyTooltip}
                                     onChange={e =>
                                         handleChange(prev => ({
                                             ...prev,
@@ -183,7 +195,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <SectionHeader>
                             <SectionTitle>
                                 <FiImage />
-                                Фон
+                                {t('settings.unified.overlay.sections.background.title')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -192,13 +204,13 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                                 <RadioGroup
                                     defaultSelected={overlay?.backgroundType ?? "none"}
                                     items={[
-                                        {key: 'color', text: 'Цвет'},
-                                        {key: 'image', text: 'Картинка'},
-                                        {key: 'none', text: 'Нет'},
+                                        {key: 'color', text: t('settings.unified.overlay.sections.background.types.color')},
+                                        {key: 'image', text: t('settings.unified.overlay.sections.background.types.image')},
+                                        {key: 'none', text: t('settings.unified.overlay.sections.background.types.none')},
                                     ]}
                                     direction="horizontal"
                                     itemWidth="120px"
-                                    title="Тип фона:"
+                                    title={t('settings.unified.overlay.sections.background.typeLabel')}
                                     onChange={(v) =>
                                         handleChange(prev => ({
                                             ...prev,
@@ -216,7 +228,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                             {overlay?.backgroundType === "color" && (
                                 <ControlGroup>
                                     <ColorSelectorButton
-                                        title="Цвет фона:"
+                                        title={t('settings.unified.overlay.sections.background.colorLabel')}
                                         hex={overlay?.backgroundColor ?? "#000000"}
                                         alpha={1}
                                         openColorPopup={openColorPopup}
@@ -272,13 +284,13 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                                     onSuccess={value => console.log("Image confirmed:", value)}
                                     onError={error => console.error("Error confirming image:", error)}
                                     initialValue={overlay?.backgroundImage ?? ""}
-                                    placeholder="Введите ссылку на изображение..."
+                                    placeholder={t('settings.unified.overlay.sections.background.imagePlaceholder')}
                                 />
 
                                 <Row gap="20px">
                                     <ControlGroup>
                                         <SeekbarComponent
-                                            title={`Ширина фона`}
+                                            title={t('settings.unified.overlay.sections.background.imageWidth')}
                                             min="100"
                                             max="2000"
                                             value={overlay?.containerWidth ?? 500}
@@ -298,7 +310,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                                     <ControlGroup>
                                         <SeekbarComponent
-                                            title={`Прозрачность`}
+                                            title={t('settings.unified.overlay.sections.background.imageOpacity')}
                                             min="0"
                                             max="1"
                                             value={overlay?.backgroundOpacity ?? 1}
@@ -327,10 +339,10 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                 <CardHeader>
                     <CardTitle>
                         <FiMessageSquare />
-                        Общие настройки сообщений
+                        {t('settings.unified.messages.title')}
                     </CardTitle>
                     <CardSubtitle>
-                        Применяется ко всем типам сообщений, если не указано иное
+                        {t('settings.unified.messages.subtitle')}
                     </CardSubtitle>
                 </CardHeader>
 
@@ -339,14 +351,14 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <SectionHeader>
                             <SectionTitle>
                                 <FiClock />
-                                Поведение и отображение
+                                {t('settings.unified.messages.sections.behavior.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="20px">
                             <ControlGroup>
                                 <NumericEditorComponent
-                                    title="Время жизни (сек):"
+                                    title={t('settings.unified.messages.sections.behavior.lifetime')}
                                     value={allMessages?.lifetime ?? 10}
                                     max={600}
                                     min={-1}
@@ -365,7 +377,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <NumericEditorComponent
-                                    title="Макс. сообщений:"
+                                    title={t('settings.unified.messages.sections.behavior.maxCount')}
                                     value={allMessages?.maxCount ?? 30}
                                     max={30}
                                     min={1}
@@ -384,7 +396,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup flex="1 1 300px">
                                 <SeekbarComponent
-                                    title={`Размытие фона`}
+                                    title={t('settings.unified.messages.sections.behavior.blurRadius')}
                                     min="0"
                                     max="20"
                                     value={allMessages?.blurRadius ?? 0}
@@ -408,14 +420,14 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <SectionHeader>
                             <SectionTitle>
                                 <FiType />
-                                Внешний вид текста
+                                {t('settings.unified.messages.sections.text.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="20px">
                             <ControlGroup>
                                 <ColorSelectorButton
-                                    title="Цвет текста:"
+                                    title={t('settings.unified.messages.sections.text.color')}
                                     hex={allMessages?.textColor ?? "#000000"}
                                     alpha={allMessages?.textOpacity ?? 1}
                                     openColorPopup={openColorPopup}
@@ -438,14 +450,14 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                         <SectionHeader>
                             <SectionTitle>
                                 <TbShadow />
-                                Тень текста
+                                {t('settings.unified.messages.sections.shadow.title')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="20px">
                             <ControlGroup>
                                 <ColorSelectorButton
-                                    title="Цвет тени:"
+                                    title={t('settings.unified.messages.sections.shadow.color')}
                                     hex={allMessages?.textShadowColor ?? "#000000"}
                                     alpha={allMessages?.textShadowOpacity ?? 1}
                                     openColorPopup={openColorPopup}
@@ -464,7 +476,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <NumericEditorComponent
-                                    title="Смещение X:"
+                                    title={t('settings.unified.messages.sections.shadow.offsetX')}
                                     value={allMessages?.textShadowXPosition ?? 0}
                                     max={20}
                                     min={-20}
@@ -483,7 +495,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup>
                                 <NumericEditorComponent
-                                    title="Смещение Y:"
+                                    title={t('settings.unified.messages.sections.shadow.offsetY')}
                                     value={allMessages?.textShadowYPosition ?? 0}
                                     max={20}
                                     min={-20}
@@ -502,7 +514,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                             <ControlGroup flex="1 1 300px">
                                 <SeekbarComponent
-                                    title={`Радиус тени`}
+                                    title={t('settings.unified.messages.sections.shadow.radius')}
                                     min="0"
                                     max="20"
                                     value={allMessages?.textShadowRadius ?? 5}

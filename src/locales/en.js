@@ -350,6 +350,61 @@ const en = {
                     },
                 },
             },
+            unified: {
+                overlay: {
+                    title: 'Overlay',
+                    obsSize: 'OBS: {{size}}',
+                    sections: {
+                        dimensions: {
+                            title: 'Dimensions and position',
+                            width: 'Width',
+                            widthAuto: 'Width [auto]',
+                            height: 'Height',
+                            heightAuto: 'Height [auto]',
+                            borderRadius: 'Corner radius',
+                            paddingLeft: 'Left padding',
+                            paddingTop: 'Top padding',
+                            backgroundOnlyTooltip: 'Available only for image background',
+                        },
+                        background: {
+                            title: 'Background',
+                            typeLabel: 'Background type:',
+                            types: {
+                                color: 'Color',
+                                image: 'Image',
+                                none: 'None',
+                            },
+                            colorLabel: 'Background color:',
+                            imagePlaceholder: 'Enter image URL...',
+                            imageWidth: 'Background width',
+                            imageOpacity: 'Opacity',
+                        },
+                    },
+                },
+                messages: {
+                    title: 'General message settings',
+                    subtitle: 'Applies to all message types unless specified otherwise',
+                    sections: {
+                        behavior: {
+                            title: 'Behavior and display',
+                            lifetime: 'Lifetime (sec):',
+                            maxCount: 'Max messages:',
+                            blurRadius: 'Background blur',
+                        },
+                        text: {
+                            title: 'Text appearance',
+                            color: 'Text color:',
+                        },
+                        shadow: {
+                            title: 'Text shadow',
+                            color: 'Shadow color:',
+                            offsetX: 'Offset X:',
+                            offsetY: 'Offset Y:',
+                            radius: 'Shadow radius',
+                        },
+                    },
+                },
+            },
             followersGoal: {
                 title: 'Stream follower progress bar',
                 collapsedPreview: {

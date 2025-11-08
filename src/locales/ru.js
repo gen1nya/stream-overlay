@@ -350,6 +350,61 @@ const ru = {
                     },
                 },
             },
+            unified: {
+                overlay: {
+                    title: 'Оверлей',
+                    obsSize: 'OBS: {{size}}',
+                    sections: {
+                        dimensions: {
+                            title: 'Размеры и позиция',
+                            width: 'Ширина',
+                            widthAuto: 'Ширина [auto]',
+                            height: 'Высота',
+                            heightAuto: 'Высота [auto]',
+                            borderRadius: 'Скругление углов',
+                            paddingLeft: 'Отступ слева',
+                            paddingTop: 'Отступ сверху',
+                            backgroundOnlyTooltip: 'Доступно только для фона-изображения',
+                        },
+                        background: {
+                            title: 'Фон',
+                            typeLabel: 'Тип фона:',
+                            types: {
+                                color: 'Цвет',
+                                image: 'Картинка',
+                                none: 'Нет',
+                            },
+                            colorLabel: 'Цвет фона:',
+                            imagePlaceholder: 'Введите ссылку на изображение...',
+                            imageWidth: 'Ширина фона',
+                            imageOpacity: 'Прозрачность',
+                        },
+                    },
+                },
+                messages: {
+                    title: 'Общие настройки сообщений',
+                    subtitle: 'Применяется ко всем типам сообщений, если не указано иное',
+                    sections: {
+                        behavior: {
+                            title: 'Поведение и отображение',
+                            lifetime: 'Время жизни (сек):',
+                            maxCount: 'Макс. сообщений:',
+                            blurRadius: 'Размытие фона',
+                        },
+                        text: {
+                            title: 'Внешний вид текста',
+                            color: 'Цвет текста:',
+                        },
+                        shadow: {
+                            title: 'Тень текста',
+                            color: 'Цвет тени:',
+                            offsetX: 'Смещение X:',
+                            offsetY: 'Смещение Y:',
+                            radius: 'Радиус тени',
+                        },
+                    },
+                },
+            },
             followersGoal: {
                 title: 'Прогресс-бар фолловеров за стрим',
                 collapsedPreview: {
