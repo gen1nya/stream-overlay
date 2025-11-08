@@ -3,14 +3,20 @@ import AddNewStyleButton from "../../../../utils/AddNewStyleButton";
 import { Accordion } from "../../../../utils/AccordionComponent";
 import React from "react";
 import {CollapsedPreview} from "../../SettingBloks";
+import { useTranslation, Trans } from 'react-i18next';
 
 export default function CooldownMessagesComponent({ botConfig, apply }) {
+    const { t } = useTranslation();
     return (
-        <Accordion title="Для КД">
+        <Accordion title={t('settings.bot.roulette.messages.cooldown.title')}>
             <CollapsedPreview>
-                  <span>
-                      {'В сообщения можно вставлять переменную ${user}; В ответе будет видно имя чатерса'}
-                  </span>
+                  <Trans
+                      i18nKey="settings.bot.shared.variablesHint"
+                      components={{
+                          highlight: <span className="highlight" />,
+                          br: <br />
+                      }}
+                  />
             </CollapsedPreview>
             {botConfig.roulette.cooldownMessage.map((msg, index) => (
                 <SmallTemplateEditor
@@ -57,14 +63,14 @@ export default function CooldownMessagesComponent({ botConfig, apply }) {
                         return {
                             ...config,
 
-                            roulette: {
-                                ...config.roulette,
-                                cooldownMessage: [
-                                    ...config.roulette.cooldownMessage,
-                                    "Не так быстро, ${user}! 🎉",
-                                ],
-                            },
-                        };
+                                roulette: {
+                                    ...config.roulette,
+                                    cooldownMessage: [
+                                        ...config.roulette.cooldownMessage,
+                                        t('settings.bot.roulette.messages.cooldown.defaultTemplate'),
+                                    ],
+                                },
+                            };
                     })
                 }
             />

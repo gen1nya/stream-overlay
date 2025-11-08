@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
 import { IoClose } from 'react-icons/io5';
+import { useTranslation } from 'react-i18next';
 
 const Container = styled.div`
     min-height: 40px;
@@ -64,9 +65,11 @@ const Input = styled.input`
 export const TagInput = ({
                       value = "",
                       onChange,
-                      placeholder = "Добавить команду...",
+                      placeholder,
                       hideDelete = false
                   }) => {
+    const { t } = useTranslation();
+    const placeholderText = placeholder ?? t('settings.bot.shared.tagInputPlaceholder');
     const [inputValue, setInputValue] = useState("");
     const [tags, setTags] = useState([]);
     const inputRef = useRef(null);
@@ -162,7 +165,7 @@ export const TagInput = ({
                 value={inputValue}
                 onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
-                placeholder={tags.length === 0 ? placeholder : ""}
+                placeholder={tags.length === 0 ? placeholderText : ""}
             />
         </Container>
     );

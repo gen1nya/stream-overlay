@@ -23,6 +23,7 @@ import {Row} from "../SettingsComponent";
 import {Spacer} from "../../utils/Separator";
 import ModernAudioPlayer from "../../player/ModerAudioPlayer";
 import Switch from "../../utils/Switch";
+import { useTranslation } from 'react-i18next';
 
 const ColorGrid = styled.div`
     display: grid;
@@ -132,6 +133,7 @@ export default function ModernPlayerSettingsComponent({
                                                           onChange,
                                                           openColorPopup
                                                       }) {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
@@ -164,6 +166,8 @@ export default function ModernPlayerSettingsComponent({
     const currentVisualization = modernPlayer.visualization ?? 'waveform';
     const isCompactMode = currentMode === 'compact';
     const isExpandedMode = currentMode === 'expanded';
+    const borderRadius = modernPlayer.borderRadius ?? 16;
+    const shadowRadius = modernPlayer.shadowRadius ?? 20;
 
     return (
         <SettingsCard>
@@ -171,13 +175,15 @@ export default function ModernPlayerSettingsComponent({
                 <Row gap="12px">
                     <CardTitle>
                         <FiMusic/>
-                        Плеера-карточка
+                        {t('settings.players.modern.title')}
                     </CardTitle>
 
                     <Spacer />
 
                     <CollapseToggle>
-                        {isOpen ? 'Свернуть' : 'Настроить'}
+                        {isOpen
+                            ? t('settings.players.modern.collapse.close')
+                            : t('settings.players.modern.collapse.open')}
                         {isOpen ? <FiChevronUp /> : <FiSettings />}
                     </CollapseToggle>
                 </Row>
@@ -197,7 +203,7 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <FiMusic />
-                                Превью
+                                {t('settings.players.modern.sections.preview')}
                             </SectionTitle>
                         </SectionHeader>
                         <ModernAudioPlayer/>
@@ -206,18 +212,18 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <FiSettings />
-                                Общие настройки
+                                {t('settings.players.modern.sections.general')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="20px">
                             <ControlGroup>
                                 <RadioGroup
-                                    title="Режим отображения"
+                                    title={t('settings.players.modern.mode.label')}
                                     defaultSelected={currentMode}
                                     items={[
-                                        { key: 'compact', text: 'Компактный' },
-                                        { key: 'expanded', text: 'Расширенный' }
+                                        { key: 'compact', text: t('settings.players.modern.mode.compact') },
+                                        { key: 'expanded', text: t('settings.players.modern.mode.expanded') }
                                     ]}
                                     direction="horizontal"
                                     itemWidth="140px"
@@ -229,10 +235,10 @@ export default function ModernPlayerSettingsComponent({
 
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Скругление углов: ${modernPlayer.borderRadius ?? 16}px`}
+                                    title={t('settings.players.modern.mode.borderRadius', { value: borderRadius })}
                                     min={0}
                                     max={32}
-                                    value={modernPlayer.borderRadius ?? 16}
+                                    value={borderRadius}
                                     step={1}
                                     width="200px"
                                     onChange={value => updatePlayer('borderRadius', value)}
@@ -242,12 +248,12 @@ export default function ModernPlayerSettingsComponent({
                         <Row>
                             <ControlGroup>
                                 <RadioGroup
-                                    title="Визуализация (для расширенного режима)"
+                                    title={t('settings.players.modern.visualization.label')}
                                     defaultSelected={currentVisualization}
                                     items={[
-                                        { key: 'spectrum', text: 'Спектр' },
-                                        { key: 'waveform', text: 'Волна' },
-                                        { key: 'vumeter', text: 'VU-метр' },
+                                        { key: 'spectrum', text: t('settings.players.modern.visualization.spectrum') },
+                                        { key: 'waveform', text: t('settings.players.modern.visualization.waveform') },
+                                        { key: 'vumeter', text: t('settings.players.modern.visualization.vumeter') },
                                     ]}
                                     direction="horizontal"
                                     itemWidth="140px"
@@ -263,16 +269,16 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <BiExpand />
-                                Размеры плеера
+                                {t('settings.players.modern.sections.dimensions')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <DimensionsGrid>
                             <DimensionsSection disabled={!isCompactMode}>
-                                <DimensionsTitle>Компактный режим</DimensionsTitle>
+                                <DimensionsTitle>{t('settings.players.modern.dimensions.compact')}</DimensionsTitle>
                                 <ControlGroup>
                                     <NumericEditorComponent
-                                        title="Ширина"
+                                        title={t('settings.players.modern.dimensions.width')}
                                         value={modernPlayer.widthCompact ?? 300}
                                         max={600}
                                         min={200}
@@ -282,7 +288,7 @@ export default function ModernPlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <NumericEditorComponent
-                                        title="Высота"
+                                        title={t('settings.players.modern.dimensions.height')}
                                         value={modernPlayer.heightCompact ?? 64}
                                         max={120}
                                         min={40}
@@ -293,10 +299,10 @@ export default function ModernPlayerSettingsComponent({
                             </DimensionsSection>
 
                             <DimensionsSection disabled={!isExpandedMode}>
-                                <DimensionsTitle>Расширенный режим</DimensionsTitle>
+                                <DimensionsTitle>{t('settings.players.modern.dimensions.expanded')}</DimensionsTitle>
                                 <ControlGroup>
                                     <NumericEditorComponent
-                                        title="Ширина"
+                                        title={t('settings.players.modern.dimensions.width')}
                                         value={modernPlayer.widthExpanded ?? 400}
                                         max={800}
                                         min={300}
@@ -306,7 +312,7 @@ export default function ModernPlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <NumericEditorComponent
-                                        title="Высота"
+                                        title={t('settings.players.modern.dimensions.height')}
                                         value={modernPlayer.heightExpanded ?? 80}
                                         max={250}
                                         min={60}
@@ -323,7 +329,7 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <RiColorFilterLine />
-                                Цветовая схема
+                                {t('settings.players.modern.sections.colors')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -331,7 +337,7 @@ export default function ModernPlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Основной фон"
+                                    title={t('settings.players.modern.colors.background')}
                                     alpha={modernPlayer.backgroundOpacity ?? 0.94}
                                     hex={modernPlayer.backgroundColor ?? "#000000"}
                                     onColorChange={({color, alpha}) => {
@@ -344,7 +350,7 @@ export default function ModernPlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Оттенок фона"
+                                    title={t('settings.players.modern.colors.tint')}
                                     alpha={modernPlayer.backgroundTintOpacity ?? 0.3}
                                     hex={modernPlayer.backgroundTint ?? "#000000"}
                                     onColorChange={({color, alpha}) => {
@@ -357,7 +363,7 @@ export default function ModernPlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Обводка"
+                                    title={t('settings.players.modern.colors.border')}
                                     alpha={modernPlayer.borderOpacity ?? 1.0}
                                     hex={modernPlayer.borderColor ?? "#333333"}
                                     onColorChange={({color, alpha}) => {
@@ -374,7 +380,7 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <TbShadow />
-                                Тень
+                                {t('settings.players.modern.sections.shadow')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -382,7 +388,7 @@ export default function ModernPlayerSettingsComponent({
                             <ControlGroup>
                                 <ColorSelectorButton
                                     openColorPopup={openColorPopup}
-                                    title="Цвет тени"
+                                    title={t('settings.players.modern.shadow.color')}
                                     alpha={modernPlayer.shadowOpacity ?? 0.26}
                                     hex={modernPlayer.shadowColor ?? "#000000"}
                                     onColorChange={({color, alpha}) => {
@@ -396,10 +402,10 @@ export default function ModernPlayerSettingsComponent({
 
                             <ControlGroup>
                                 <SeekbarComponent
-                                    title={`Радиус тени: ${modernPlayer.shadowRadius ?? 20}px`}
+                                    title={t('settings.players.modern.shadow.radius', { value: shadowRadius })}
                                     min={0}
                                     max={50}
-                                    value={modernPlayer.shadowRadius ?? 20}
+                                    value={shadowRadius}
                                     step={1}
                                     width="200px"
                                     onChange={value => updatePlayer('shadowRadius', value)}
@@ -413,18 +419,18 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <FiImage />
-                                Настройки изображения
+                                {t('settings.players.modern.sections.image')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="20px">
                             <ControlGroup>
                                 <RadioGroup
-                                    title="Позиция изображения"
+                                    title={t('settings.players.modern.image.position.label')}
                                     defaultSelected={modernPlayer.image?.position ?? 'left'}
                                     items={[
-                                        { key: 'left', text: 'Слева' },
-                                        { key: 'right', text: 'Справа' }
+                                        { key: 'left', text: t('settings.players.modern.image.position.left') },
+                                        { key: 'right', text: t('settings.players.modern.image.position.right') }
                                     ]}
                                     direction="horizontal"
                                     itemWidth="120px"
@@ -434,7 +440,7 @@ export default function ModernPlayerSettingsComponent({
 
                             <ControlGroup>
                                 <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px' }}>
-                                    Показывать обложку трека
+                                    {t('settings.players.modern.image.showCover')}
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Switch
@@ -442,7 +448,9 @@ export default function ModernPlayerSettingsComponent({
                                         onChange={(e) => updatePlayer('image.show', e.target.checked)}
                                     />
                                     <span style={{ fontSize: '0.85rem', color: '#999' }}>
-                                        {modernPlayer.image?.show ? 'Включено' : 'Отключено'}
+                                        {modernPlayer.image?.show
+                                            ? t('settings.players.modern.image.status.enabled')
+                                            : t('settings.players.modern.image.status.disabled')}
                                     </span>
                                 </div>
                             </ControlGroup>
@@ -451,7 +459,7 @@ export default function ModernPlayerSettingsComponent({
 
                             <DisabledControlGroup disabled={!isCompactMode}>
                                 <NumericEditorComponent
-                                    title="Размер изображения (компактный)"
+                                    title={t('settings.players.modern.image.sizeCompact')}
                                     value={modernPlayer.image?.compact?.size ?? 48}
                                     max={120}
                                     min={32}
@@ -462,7 +470,7 @@ export default function ModernPlayerSettingsComponent({
 
                             <DisabledControlGroup disabled={!isExpandedMode}>
                                 <NumericEditorComponent
-                                    title="Размер изображения (расширенный)"
+                                    title={t('settings.players.modern.image.sizeExpanded')}
                                     value={modernPlayer.image?.extended?.size ?? 48}
                                     max={120}
                                     min={32}
@@ -478,19 +486,19 @@ export default function ModernPlayerSettingsComponent({
                         <SectionHeader>
                             <SectionTitle>
                                 <FiType />
-                                Настройки текста
+                                {t('settings.players.modern.sections.text')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <ControlGroup>
                             <Row>
                                 <RadioGroup
-                                    title="Выравнивание текста"
+                                    title={t('settings.players.modern.text.alignment.label')}
                                     defaultSelected={modernPlayer.text?.textAlign ?? 'left'}
                                     items={[
-                                        { key: 'left', text: 'Слева' },
-                                        { key: 'center', text: 'По центру' },
-                                        { key: 'right', text: 'Справа' },
+                                        { key: 'left', text: t('settings.players.modern.text.alignment.left') },
+                                        { key: 'center', text: t('settings.players.modern.text.alignment.center') },
+                                        { key: 'right', text: t('settings.players.modern.text.alignment.right') },
                                     ]}
                                     direction="horizontal"
                                     itemWidth="120px"
@@ -503,12 +511,12 @@ export default function ModernPlayerSettingsComponent({
                             <TextPropertyCard>
                                 <TextPropertyTitle>
                                     <FiMusic />
-                                    Название трека
+                                    {t('settings.players.modern.text.title.heading')}
                                 </TextPropertyTitle>
                                 <ControlGroup>
                                     <ColorSelectorButton
                                         openColorPopup={openColorPopup}
-                                        title="Цвет текста"
+                                        title={t('settings.players.modern.text.title.color')}
                                         alpha={1.0}
                                         hex={modernPlayer.text?.title?.color ?? "#ffffff"}
                                         onColorChange={({color}) => {
@@ -518,7 +526,7 @@ export default function ModernPlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <FontAndSizeEditor
-                                        title="Шрифт и размер"
+                                        title={t('settings.players.modern.text.title.font')}
                                         fontSize={modernPlayer.text?.title?.fontSize ?? 16}
                                         fontFamily={modernPlayer.text?.title?.family ?? "Roboto"}
                                         onFontChange={({family, url}) => {
@@ -532,11 +540,11 @@ export default function ModernPlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <RadioGroup
-                                        title="Начертание"
+                                        title={t('settings.players.modern.text.title.weight.label')}
                                         defaultSelected={modernPlayer.text?.title?.fontWeight ?? 'bold'}
                                         items={[
-                                            { key: 'normal', text: 'Обычный' },
-                                            { key: 'bold', text: 'Жирный' }
+                                            { key: 'normal', text: t('settings.players.modern.text.title.weight.normal') },
+                                            { key: 'bold', text: t('settings.players.modern.text.title.weight.bold') }
                                         ]}
                                         direction="horizontal"
                                         itemWidth="100px"
@@ -548,12 +556,12 @@ export default function ModernPlayerSettingsComponent({
                             <TextPropertyCard>
                                 <TextPropertyTitle>
                                     <FiType />
-                                    Исполнитель
+                                    {t('settings.players.modern.text.artist.heading')}
                                 </TextPropertyTitle>
                                 <ControlGroup>
                                     <ColorSelectorButton
                                         openColorPopup={openColorPopup}
-                                        title="Цвет текста"
+                                        title={t('settings.players.modern.text.artist.color')}
                                         alpha={1.0}
                                         hex={modernPlayer.text?.artist?.color ?? "#858585"}
                                         onColorChange={({color}) => {
@@ -563,7 +571,7 @@ export default function ModernPlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <FontAndSizeEditor
-                                        title="Шрифт и размер"
+                                        title={t('settings.players.modern.text.artist.font')}
                                         fontSize={modernPlayer.text?.artist?.fontSize ?? 14}
                                         fontFamily={modernPlayer.text?.artist?.family ?? "Roboto"}
                                         onFontChange={({family, url}) => {
@@ -577,11 +585,11 @@ export default function ModernPlayerSettingsComponent({
                                 </ControlGroup>
                                 <ControlGroup>
                                     <RadioGroup
-                                        title="Начертание"
+                                        title={t('settings.players.modern.text.artist.weight.label')}
                                         defaultSelected={modernPlayer.text?.artist?.fontWeight ?? 'normal'}
                                         items={[
-                                            { key: 'normal', text: 'Обычный' },
-                                            { key: 'bold', text: 'Жирный' }
+                                            { key: 'normal', text: t('settings.players.modern.text.artist.weight.normal') },
+                                            { key: 'bold', text: t('settings.players.modern.text.artist.weight.bold') }
                                         ]}
                                         direction="horizontal"
                                         itemWidth="100px"

@@ -10,6 +10,7 @@ import RadioGroup from '../../../../utils/TextRadioGroup';
 import {SmallTemplateEditor} from '../../../../utils/SmallTemplateEditor';
 import AddTrigger from "./AddTrigger";
 import AddResponse from "./AddResponse";
+import { useTranslation } from 'react-i18next';
 
 // -----------------------------------------------------------------------------
 // Styled‑components
@@ -49,6 +50,7 @@ const updateConfig = (prev, updater) => {
 // -----------------------------------------------------------------------------
 export default function PingPongActionEditorComponent({botConfig, apply}) {
     const cfg = botConfig;
+    const { t } = useTranslation();
 
     const removeCommand = useCallback(
         (commandIndex) => {
@@ -106,11 +108,13 @@ export default function PingPongActionEditorComponent({botConfig, apply}) {
         <Fragment>
             {cfg.pingpong.commands.map((command, commandIndex) => (
                 <Row key={commandIndex}>
-                    <Accordion title={(command.enabled ? "✅" : "⛔") + command.name || 'Без имени'}
-                               style={{width: '100%'}}>
+                    <Accordion
+                        title={`${command.enabled ? '✅' : '⛔'}${command.name || t('settings.bot.pingpong.action.untitled')}`}
+                        style={{width: '100%'}}
+                    >
                         {/* Активность + удаление */}
                         <Row>
-                            <span>Активно:</span>
+                            <span>{t('settings.bot.pingpong.action.active')}</span>
                             <Switch checked={command.enabled} onChange={() => toggleEnabled(commandIndex)}/>
                             <Spacer/>
                             <RemoveButton onClick={() => removeCommand(commandIndex)}>
@@ -121,13 +125,13 @@ export default function PingPongActionEditorComponent({botConfig, apply}) {
 
                         {/* Тип срабатывания */}
                         <Row>
-                            <TitleRow>Тип срабатывания:</TitleRow>
+                            <TitleRow>{t('settings.bot.pingpong.action.triggerType.label')}</TitleRow>
                             <RadioGroup
                                 defaultSelected={command.triggerType}
                                 items={[
-                                    {key: 'exact', text: 'точно'},
-                                    {key: 'start', text: 'в начале'},
-                                    {key: 'contains', text: 'где угодно'},
+                                    {key: 'exact', text: t('settings.bot.pingpong.action.triggerType.exact')},
+                                    {key: 'start', text: t('settings.bot.pingpong.action.triggerType.start')},
+                                    {key: 'contains', text: t('settings.bot.pingpong.action.triggerType.contains')},
                                 ]}
                                 direction="horizontal"
                                 itemWidth="120px"
@@ -136,12 +140,12 @@ export default function PingPongActionEditorComponent({botConfig, apply}) {
                         </Row>
 
                         {/* Триггеры */}
-                        <Accordion title="Триггеры">
+                        <Accordion title={t('settings.bot.pingpong.action.triggers')}>
                             {command.triggers.map((trigger, triggerIndex) => (
                                 <Fragment key={triggerIndex}>
                                     {trigger.type === 'regex' ? (
                                         <div>
-                                            <label>RegEx</label>
+                                            <label>{t('settings.bot.pingpong.action.regex')}</label>
                                             <Row>
                                                 <SmallTemplateEditor
                                                     hideDelete
@@ -178,7 +182,7 @@ export default function PingPongActionEditorComponent({botConfig, apply}) {
                                         </div>
                                     ) : (
                                         <div>
-                                            <label>Текст</label>
+                                            <label>{t('settings.bot.pingpong.action.text')}</label>
                                             <SmallTemplateEditor
                                                 hideDelete={false}
                                                 type="text"
@@ -210,7 +214,7 @@ export default function PingPongActionEditorComponent({botConfig, apply}) {
                         </Accordion>
 
                         {/* Ответы */}
-                        <Accordion title="Ответы (выбирается случайный)">
+                        <Accordion title={t('settings.bot.pingpong.action.responsesTitle')}>
                             {command.responses.map((response, responseIndex) => (
                                 <SmallTemplateEditor
                                     key={responseIndex}

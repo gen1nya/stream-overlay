@@ -9,6 +9,7 @@ import {
     AiOutlineVerticalAlignMiddle,
     AiOutlineVerticalAlignBottom
 } from 'react-icons/ai';
+import { useTranslation, Trans } from 'react-i18next';
 import {getImageUrl, saveImageBuffer} from "../../services/api";
 
 // Темы
@@ -439,6 +440,7 @@ export function ImageUploadField({
                               alignment,
                               onAlignmentChange
                           }) {
+    const { t } = useTranslation();
     const [isLoading, setIsLoading] = useState(false);
     const [showPreviewImage, setShowPreviewImage] = useState(false);
     const [dragActive, setDragActive] = useState(false);
@@ -508,9 +510,9 @@ export function ImageUploadField({
     };
 
     const alignmentOptions = [
-        { key: 'top', icon: AiOutlineVerticalAlignTop, label: 'Сверху' },
-        { key: 'center', icon: AiOutlineVerticalAlignMiddle, label: 'По центру' },
-        { key: 'bottom', icon: AiOutlineVerticalAlignBottom, label: 'Снизу' }
+        { key: 'top', icon: AiOutlineVerticalAlignTop, label: t('settings.backgroundImage.alignment.top') },
+        { key: 'center', icon: AiOutlineVerticalAlignMiddle, label: t('settings.backgroundImage.alignment.center') },
+        { key: 'bottom', icon: AiOutlineVerticalAlignBottom, label: t('settings.backgroundImage.alignment.bottom') }
     ];
 
     return (
@@ -547,9 +549,11 @@ export function ImageUploadField({
                                 <AiOutlineEye />
                             </LoadedIcon>
                             <LoadedDetails>
-                                <LoadedTitle>Изображение загружено</LoadedTitle>
+                                <LoadedTitle>{t('settings.backgroundImage.state.loaded')}</LoadedTitle>
                                 <LoadedSubtitle>
-                                    {value.startsWith('http') ? 'По ссылке' : 'Файл загружен'}
+                                    {value.startsWith('http')
+                                        ? t('settings.backgroundImage.state.fromUrl')
+                                        : t('settings.backgroundImage.state.fromUpload')}
                                 </LoadedSubtitle>
                             </LoadedDetails>
                         </LoadedInfo>
@@ -557,7 +561,9 @@ export function ImageUploadField({
                             {showPreview && (
                                 <ActionButton
                                     onClick={() => setShowPreviewImage(!showPreviewImage)}
-                                    title={showPreviewImage ? 'Скрыть превью' : 'Показать превью'}
+                                    title={showPreviewImage
+                                        ? t('settings.backgroundImage.actions.hidePreview')
+                                        : t('settings.backgroundImage.actions.showPreview')}
                                 >
                                     {showPreviewImage ? <AiOutlineEyeInvisible /> : <AiOutlineEye />}
                                 </ActionButton>
@@ -565,7 +571,7 @@ export function ImageUploadField({
                             <ActionButton
                                 variant="delete"
                                 onClick={() => onClear?.()}
-                                title="Удалить изображение"
+                                title={t('settings.backgroundImage.actions.remove')}
                             >
                                 <AiOutlineClose />
                             </ActionButton>
@@ -576,7 +582,7 @@ export function ImageUploadField({
                         {isLoading ? (
                             <LoadingState>
                                 <Spinner />
-                                <UploadDescription>Загружаем изображение...</UploadDescription>
+                                <UploadDescription>{t('settings.backgroundImage.state.uploading')}</UploadDescription>
                             </LoadingState>
                         ) : (
                             <EmptyState>
@@ -584,12 +590,16 @@ export function ImageUploadField({
                                     <AiOutlineCloudUpload />
                                 </UploadIcon>
                                 <div>
-                                    <UploadTitle>Добавить изображение</UploadTitle>
+                                    <UploadTitle>{t('settings.backgroundImage.actions.add')}</UploadTitle>
                                     <UploadDescription>
-                                        Перетащите файл сюда или{' '}
-                                        <UploadLink onClick={() => fileInputRef.current?.click()}>
-                                            выберите файл
-                                        </UploadLink>
+                                        <Trans
+                                            i18nKey="settings.backgroundImage.actions.dragOrSelect"
+                                            components={{
+                                                link: (
+                                                    <UploadLink onClick={() => fileInputRef.current?.click()} />
+                                                )
+                                            }}
+                                        />
                                     </UploadDescription>
                                 </div>
                             </EmptyState>
@@ -607,7 +617,7 @@ export function ImageUploadField({
 
             <UrlInput
                 type="url"
-                placeholder="Или вставьте ссылку на изображение"
+                placeholder={t('settings.backgroundImage.actions.pasteUrl')}
                 value={typeof value === 'string' && value.startsWith('http') ? value : ''}
                 onChange={(e) => onChange(e.target.value)}
             />
@@ -616,14 +626,14 @@ export function ImageUploadField({
                 <PreviewContainer>
                     <PreviewImage
                         src={value}
-                        alt="Preview"
+                        alt={t('settings.backgroundImage.preview.alt')}
                         onError={(e) => {
                             e.target.style.display = 'none';
                             e.target.nextSibling.style.display = 'block';
                         }}
                     />
                     <PreviewError>
-                        Не удалось загрузить изображение
+                        {t('settings.backgroundImage.preview.error')}
                     </PreviewError>
                 </PreviewContainer>
             )}
@@ -636,6 +646,7 @@ export default function BackgroundImageEditorComponent({
                                                            onImageChanged,
                                                            darkMode = true // Пропс для переключения темы
                                                        }) {
+    const { t } = useTranslation();
     const [isDark, setIsDark] = useState(darkMode);
     const backgroundImages = message?.backgroundImages || {};
     const currentTheme = isDark ? darkTheme : lightTheme;
@@ -644,14 +655,14 @@ export default function BackgroundImageEditorComponent({
         <ThemeProvider theme={currentTheme}>
             <Container>
                 <ImageUploadField
-                    label="Шапка"
+                    label={t('settings.backgroundImage.sections.header')}
                     value={backgroundImages.top}
                     onChange={(value) => onImageChanged({ top: value })}
                     onClear={() => onImageChanged({ top: undefined })}
                 />
 
                 <ImageUploadField
-                    label="Основное содержимое"
+                    label={t('settings.backgroundImage.sections.main')}
                     value={backgroundImages.middle}
                     onChange={(value) => onImageChanged({ middle: value })}
                     onClear={() => onImageChanged({ middle: undefined })}
@@ -660,7 +671,7 @@ export default function BackgroundImageEditorComponent({
                 />
 
                 <ImageUploadField
-                    label="Подвал"
+                    label={t('settings.backgroundImage.sections.footer')}
                     value={backgroundImages.bottom}
                     onChange={(value) => onImageChanged({ bottom: value })}
                     onClear={() => onImageChanged({ bottom: undefined })}

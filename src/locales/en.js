@@ -195,6 +195,260 @@ const en = {
                     error: 'Could not update the language. Please try again.',
                 },
             },
+            backgroundImage: {
+                alignment: {
+                    top: 'Top',
+                    center: 'Center',
+                    bottom: 'Bottom',
+                },
+                state: {
+                    loaded: 'Image uploaded',
+                    fromUrl: 'Via link',
+                    fromUpload: 'File uploaded',
+                    uploading: 'Uploading image…',
+                },
+                actions: {
+                    hidePreview: 'Hide preview',
+                    showPreview: 'Show preview',
+                    remove: 'Remove image',
+                    add: 'Add image',
+                    dragOrSelect: 'Drag a file here or <link>choose a file</link>',
+                    pasteUrl: 'Or paste an image URL',
+                },
+                preview: {
+                    alt: 'Preview',
+                    error: 'Failed to load the image',
+                },
+                sections: {
+                    header: 'Header',
+                    main: 'Main content',
+                    footer: 'Footer',
+                },
+            },
+            backgroundColor: {
+                background: 'Background color',
+                border: 'Border color',
+                shadowColor: 'Shadow color',
+                shadowRadius: 'Shadow radius',
+            },
+            numericEditor: {
+                errors: {
+                    invalid: 'Enter a valid number',
+                    min: 'Minimum value: {{value}}',
+                    max: 'Maximum value: {{value}}',
+                },
+                tooltips: {
+                    decrease: 'Decrease by {{step}}',
+                    increase: 'Increase by {{step}}',
+                    reset: 'Reset value',
+                },
+                range: 'from {{min}} to {{max}}',
+            },
+            players: {
+                modern: {
+                    title: 'Player card',
+                    collapse: {
+                        open: 'Configure',
+                        close: 'Collapse',
+                    },
+                    sections: {
+                        preview: 'Preview',
+                        general: 'General settings',
+                        dimensions: 'Player size',
+                        colors: 'Color palette',
+                        shadow: 'Shadow',
+                        image: 'Artwork settings',
+                        text: 'Text settings',
+                    },
+                    mode: {
+                        label: 'Display mode',
+                        compact: 'Compact',
+                        expanded: 'Expanded',
+                        borderRadius: 'Corner radius: {{value}}px',
+                    },
+                    visualization: {
+                        label: 'Visualization (expanded mode)',
+                        spectrum: 'Spectrum',
+                        waveform: 'Waveform',
+                        vumeter: 'VU meter',
+                    },
+                    dimensions: {
+                        compact: 'Compact mode',
+                        expanded: 'Expanded mode',
+                        width: 'Width',
+                        height: 'Height',
+                    },
+                    colors: {
+                        background: 'Base background',
+                        tint: 'Tint overlay',
+                        border: 'Border',
+                    },
+                    shadow: {
+                        color: 'Shadow color',
+                        radius: 'Shadow radius: {{value}}px',
+                    },
+                    image: {
+                        position: {
+                            label: 'Image position',
+                            left: 'Left',
+                            right: 'Right',
+                        },
+                        showCover: 'Show artwork',
+                        status: {
+                            enabled: 'Enabled',
+                            disabled: 'Disabled',
+                        },
+                        sizeCompact: 'Image size (compact)',
+                        sizeExpanded: 'Image size (expanded)',
+                    },
+                    text: {
+                        alignment: {
+                            label: 'Text alignment',
+                            left: 'Left',
+                            center: 'Center',
+                            right: 'Right',
+                        },
+                        title: {
+                            heading: 'Track title',
+                            color: 'Text color',
+                            font: 'Font & size',
+                            weight: {
+                                label: 'Font weight',
+                                normal: 'Normal',
+                                bold: 'Bold',
+                            },
+                        },
+                        artist: {
+                            heading: 'Artist',
+                            color: 'Text color',
+                            font: 'Font & size',
+                            weight: {
+                                label: 'Font weight',
+                                normal: 'Normal',
+                                bold: 'Bold',
+                            },
+                        },
+                    },
+                },
+            },
+            bot: {
+                shared: {
+                    status: {
+                        enabled: 'Enabled',
+                        disabled: 'Disabled',
+                    },
+                    collapse: {
+                        open: 'Expand',
+                        close: 'Collapse',
+                    },
+                    tagInputPlaceholder: 'Add a command…',
+                    variablesHint: 'You can include variables in messages:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number',
+                },
+                roulette: {
+                    title: 'Russian roulette (mute)',
+                    preview: 'The bot will mute viewers who trigger roulette commands for a configured duration and chance.<br/><br/><warning>⚠️ Attention!</warning> Restarting during a mute will not restore chat roles (VIP, mod).<br/><br/>You can include variables:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number',
+                    sections: {
+                        main: 'Main parameters',
+                        commands: 'Roulette commands',
+                        messages: 'Message templates',
+                    },
+                    warning: {
+                        roles: 'Roles are not restored after a restart',
+                    },
+                    parameters: {
+                        muteDuration: 'Mute duration (sec)',
+                        cooldown: 'Cooldown (sec)',
+                        chance: 'Chance (%)',
+                        allowEditors: 'Mute Editors',
+                    },
+                    commands: {
+                        placeholder: 'Enter commands separated by commas (e.g. !rr, !roulette, !russianroulette)',
+                    },
+                    messages: {
+                        survival: {
+                            title: 'For survivors',
+                            defaultTemplate: "You survived, ${user}! 🎉",
+                        },
+                        winners: {
+                            title: 'For winners',
+                            defaultTemplate: "You won, ${user}! 🎉",
+                        },
+                        cooldown: {
+                            title: 'Cooldown',
+                            defaultTemplate: "Not so fast, ${user}! 🎉",
+                        },
+                        protected: {
+                            title: 'For protected users (Editors)',
+                            defaultTemplate: "You won, ${user}! 🎉",
+                        },
+                    },
+                },
+                pingpong: {
+                    title: 'Ping-pong commands',
+                    preview: 'The bot will reply to keywords and commands (for example !ping).<br/><br/>You can include variables:<br/><highlight>${'{user}'}</highlight> – viewer name<br/><highlight>${'{last_message}'}</highlight> – viewer message<br/><highlight>${'{random(1000,9999)}'}</highlight> – random number',
+                    sections: {
+                        variables: 'Available variables',
+                        addCommand: 'Add a new command',
+                        manageCommands: 'Manage commands',
+                    },
+                    variables: {
+                        user: '– viewer name',
+                        lastMessage: '– viewer message',
+                        random: '– random number in range',
+                    },
+                    defaults: {
+                        trigger: '!ping',
+                        response: 'pong',
+                    },
+                    errors: {
+                        required: 'Command name cannot be empty',
+                        duplicate: 'A command with this name already exists',
+                    },
+                    placeholders: {
+                        commandName: 'Enter a command name (e.g. Greeting)',
+                    },
+                    actions: {
+                        addCommand: 'Add command',
+                        add: 'Add',
+                    },
+                    action: {
+                        untitled: 'No name',
+                        active: 'Active:',
+                        triggerType: {
+                            label: 'Trigger type:',
+                            exact: 'exact',
+                            start: 'starts with',
+                            contains: 'contains',
+                        },
+                        triggers: 'Triggers',
+                        regex: 'RegEx',
+                        text: 'Text',
+                        responsesTitle: 'Responses (one is chosen randomly)',
+                    },
+                    addTrigger: {
+                        title: 'Add trigger:',
+                        types: {
+                            text: 'text',
+                            regex: 'regex',
+                        },
+                        placeholders: {
+                            text: 'Trigger text',
+                            regex: 'RegExp',
+                            flags: 'Flags',
+                        },
+                    },
+                    addResponse: {
+                        placeholder: 'New response',
+                    },
+                },
+                commandList: {
+                    newCommand: 'New command',
+                    noTrigger: 'No trigger',
+                    enabled: 'Command enabled',
+                    trigger: 'Trigger:',
+                    addCommand: '+ Add command',
+                },
+            },
             follow: {
                 title: 'Follow variant #{{index}}',
                 collapse: 'Collapse',

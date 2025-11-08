@@ -26,6 +26,7 @@ import {
     StatusBadge, VariableItem,
     VariablesList
 } from "../SharedBotStyles";
+import { useTranslation, Trans } from 'react-i18next';
 
 
 const CollapseToggle = styled.div`
@@ -49,6 +50,7 @@ const CollapseToggle = styled.div`
 
 
 export default function PingPongComponent({ botConfig, apply }) {
+    const { t } = useTranslation();
     const [config, setConfig] = useState(botConfig);
     const [isOpen, setIsOpen] = useState(false);
     const [enabled, setEnabled] = useState(config.pingpong.enabled);
@@ -84,12 +86,12 @@ export default function PingPongComponent({ botConfig, apply }) {
 
         // Validate
         if (!trimmed) {
-            setNameError('Название команды не может быть пустым');
+            setNameError(t('settings.bot.pingpong.errors.required'));
             return;
         }
 
         if (commands.some((cmd) => cmd.name === trimmed)) {
-            setNameError('Команда с таким названием уже существует');
+            setNameError(t('settings.bot.pingpong.errors.duplicate'));
             return;
         }
 
@@ -108,10 +110,10 @@ export default function PingPongComponent({ botConfig, apply }) {
                     triggers: [
                         {
                             type: 'text',
-                            value: '!пинг',
+                            value: t('settings.bot.pingpong.defaults.trigger'),
                         },
                     ],
-                    responses: ['понг'],
+                    responses: [t('settings.bot.pingpong.defaults.response')],
                 },
             ],
         }));
@@ -137,19 +139,23 @@ export default function PingPongComponent({ botConfig, apply }) {
                             }}
                         />
                         <StatusBadge enabled={enabled}>
-                            {enabled ? 'Включено' : 'Выключено'}
+                            {enabled
+                                ? t('settings.bot.shared.status.enabled')
+                                : t('settings.bot.shared.status.disabled')}
                         </StatusBadge>
                     </EnabledToggle>
 
                     <CardTitle>
                         <FiMessageCircle />
-                        Пинг-Понг команды
+                        {t('settings.bot.pingpong.title')}
                     </CardTitle>
 
                     <Spacer />
 
                     <CollapseToggle>
-                        {isOpen ? 'Свернуть' : 'Развернуть'}
+                        {isOpen
+                            ? t('settings.bot.shared.collapse.close')
+                            : t('settings.bot.shared.collapse.open')}
                         {isOpen ? <FiChevronUp /> : <FiChevronDown />}
                     </CollapseToggle>
                 </Row>
@@ -158,12 +164,13 @@ export default function PingPongComponent({ botConfig, apply }) {
             {/* Свернутое описание */}
             {!isOpen && (
                 <CollapsedPreview onClick={toggleOpen}>
-                    Бот будет отвечать на ключевые слова и команды (например !пинг)
-                    <br /><br />
-                    В сообщения можно вставлять переменные:<br />
-                    <span className="highlight">${'{user}'}</span> - имя пользователя<br />
-                    <span className="highlight">${'{last_message}'}</span> - сообщение пользователя<br />
-                    <span className="highlight">${'{random(1000,9999)}'}</span> - случайное число в диапазоне
+                    <Trans
+                        i18nKey="settings.bot.pingpong.preview"
+                        components={{
+                            br: <br />,
+                            highlight: <span className="highlight" />
+                        }}
+                    />
                 </CollapsedPreview>
             )}
 
@@ -174,22 +181,22 @@ export default function PingPongComponent({ botConfig, apply }) {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiInfo />
-                                Доступные переменные
+                                {t('settings.bot.pingpong.sections.variables')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <VariablesList>
                             <VariableItem>
                                 <span className="var">${'{user}'}</span>
-                                <span className="desc">- имя пользователя</span>
+                                <span className="desc">{t('settings.bot.pingpong.variables.user')}</span>
                             </VariableItem>
                             <VariableItem>
                                 <span className="var">${'{last_message}'}</span>
-                                <span className="desc">- сообщение пользователя</span>
+                                <span className="desc">{t('settings.bot.pingpong.variables.lastMessage')}</span>
                             </VariableItem>
                             <VariableItem>
                                 <span className="var">${'{random(1000,9999)}'}</span>
-                                <span className="desc">- случайное число в диапазоне</span>
+                                <span className="desc">{t('settings.bot.pingpong.variables.random')}</span>
                             </VariableItem>
                         </VariablesList>
                     </Section>
@@ -199,14 +206,14 @@ export default function PingPongComponent({ botConfig, apply }) {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiPlus />
-                                Добавить новую команду
+                                {t('settings.bot.pingpong.sections.addCommand')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <AddCommandForm>
                             <FormRow>
                                 <NameInput
-                                    placeholder="Введите название команды (например: Приветствие)"
+                                    placeholder={t('settings.bot.pingpong.placeholders.commandName')}
                                     value={name}
                                     $error={!!nameError}
                                     onChange={(e) => {
@@ -217,7 +224,7 @@ export default function PingPongComponent({ botConfig, apply }) {
                                 />
                                 <AddButton onClick={addCommand}>
                                     <FiPlus />
-                                    Добавить команду
+                                    {t('settings.bot.pingpong.actions.addCommand')}
                                 </AddButton>
                             </FormRow>
                             {nameError && <ErrorText>{nameError}</ErrorText>}
@@ -229,7 +236,7 @@ export default function PingPongComponent({ botConfig, apply }) {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiSettings />
-                                Управление командами
+                                {t('settings.bot.pingpong.sections.manageCommands')}
                             </SectionTitle>
                         </SectionHeader>
 

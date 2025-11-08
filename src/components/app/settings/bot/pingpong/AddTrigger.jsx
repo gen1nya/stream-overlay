@@ -3,6 +3,7 @@ import { Row } from '../../../SettingsComponent';
 import { TitleRow } from '../../SettingBloks';
 import RadioGroup from '../../../../utils/TextRadioGroup';
 import {Button, FlagsInput, TextInput} from "./PingPongActionEditorComponent";
+import { useTranslation } from 'react-i18next';
 
 
 // -----------------------------------------------------------------------------
@@ -13,6 +14,7 @@ export default function AddTrigger({
                                        apply,
                                        updateConfig
                                    }) {
+    const { t } = useTranslation();
     const [type, setType] = useState('text');
     const [text, setText] = useState('');
     const [regex, setRegex] = useState('');
@@ -81,12 +83,12 @@ export default function AddTrigger({
             }}
         >
             <Row>
-                <TitleRow>Добавить триггер:</TitleRow>
+                <TitleRow>{t('settings.bot.pingpong.addTrigger.title')}</TitleRow>
                 <RadioGroup
                     defaultSelected={type}
                     items={[
-                        { key: 'text', text: 'текст' },
-                        { key: 'regex', text: 'regex' },
+                        { key: 'text', text: t('settings.bot.pingpong.addTrigger.types.text') },
+                        { key: 'regex', text: t('settings.bot.pingpong.addTrigger.types.regex') },
                     ]}
                     direction="horizontal"
                     itemWidth="100px"
@@ -102,7 +104,7 @@ export default function AddTrigger({
                     <TextInput
                         style={{marginTop: 8}}
                         $error={errors.value}
-                        placeholder="Текст триггера"
+                        placeholder={t('settings.bot.pingpong.addTrigger.placeholders.text')}
                         value={text}
                         onChange={(e) => {
                             setText(e.target.value);
@@ -111,7 +113,7 @@ export default function AddTrigger({
                     />
                     <Button
                         $mt={8} onClick={handleAdd}>
-                        Добавить
+                        {t('settings.bot.pingpong.actions.add')}
                     </Button>
                 </Row>
             )}
@@ -122,7 +124,7 @@ export default function AddTrigger({
                         <TextInput
                             style={{marginTop: 8}}
                             $error={errors.value}
-                            placeholder="RegExp"
+                            placeholder={t('settings.bot.pingpong.addTrigger.placeholders.regex')}
                             value={regex}
                             onChange={(e) => {
                                 setRegex(e.target.value);
@@ -131,14 +133,14 @@ export default function AddTrigger({
                         />
                         <Button
                             $mt={8} onClick={handleAdd}>
-                            Добавить
+                            {t('settings.bot.pingpong.actions.add')}
                         </Button>
                     </Row>
                     <Row>
                         <FlagsInput
                             style={{marginTop: 8}}
                             $error={errors.flags}
-                            placeholder="Флаги"
+                            placeholder={t('settings.bot.pingpong.addTrigger.placeholders.flags')}
                             value={flags}
                             onChange={(e) => {
                                 setFlags(e.target.value);
