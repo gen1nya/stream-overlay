@@ -49,6 +49,28 @@ const en = {
             close: 'Close',
             loading: 'Loading...',
         },
+        sidebar: {
+            title: 'Navigation',
+        },
+        addNewStyleButton: {
+            addAnother: '+ Add another',
+        },
+        preview: {
+            title: 'Theme preview',
+            connectionLost: 'No connection to the source',
+            logs: {
+                wsConnected: '🟢 WebSocket connected',
+                themeUpdated: 'Theme updated:',
+                unknownChannel: 'Unknown channel',
+                wsDisconnected: '🔴 WebSocket disconnected',
+            },
+            sampleMessage: {
+                userName: 'User',
+                shortMessage: 'This is a sample chat message.',
+                longMessage: 'Dive into the magical world of Teyvat in Genshin Impact! Build your team of heroes, explore stunning locations, battle formidable enemies, and uncover the secrets of the seven elements. Play for free on PC, PlayStation, and mobile devices. Join millions of players around the globe—start your grand adventure today! #GenshinImpact #PlayForFree',
+                rewardTitle: 'Gift',
+            },
+        },
         dashboard: {
             windowTitle: 'Overlay HQ - {{name}}',
             headerMessages: [

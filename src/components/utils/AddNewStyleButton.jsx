@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import styled from "styled-components";
 
 const ButtonBackground = styled.div`
@@ -28,11 +29,14 @@ export default function AddNewStyleButton({
                                               onClick = () => {},
                                               height = "100px",
                                               margin = "12px 12px 0 12px",
-                                              text = "+ Добавить еще",
+                                              text,
                                           } = {}) {
+    const { t } = useTranslation();
+    const buttonText = text ?? t('addNewStyleButton.addAnother');
+
     return (
         <ButtonBackground onClick={onClick} height={height} margin={margin}>
-            <Text>{text}</Text>
+            <Text>{buttonText}</Text>
         </ButtonBackground>
     );
 }
