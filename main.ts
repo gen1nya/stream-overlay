@@ -24,6 +24,7 @@ import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 
 const appStartTime = Date.now();
 let PORT = 5173;
+const DEFAULT_LOCALE = 'ru';
 
 const store = new Store<StoreSchema>({
   defaults: {
@@ -31,6 +32,7 @@ const store = new Store<StoreSchema>({
       default: defaultTheme as ThemeConfig,
       theme1: defaultTheme as ThemeConfig
     },
+    locale: DEFAULT_LOCALE,
     bots: {  },
     currentBot: null,
     currentTheme: 'default',
@@ -65,7 +67,7 @@ const proxy = new ProxyService();
 const localeRepository = new AppLocaleRepository([
   { code: 'ru', name: 'Русский' },
   { code: 'en', name: 'English' },
-], 'ru');
+], DEFAULT_LOCALE, store);
 
 /* Theme migration */
 let themes: any = store.get('themes');

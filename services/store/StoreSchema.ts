@@ -7,6 +7,7 @@ export interface StoreSchema {
         theme1: ThemeConfig;
         [key: string]: ThemeConfig;
     };
+    locale: string;
     currentTheme: string;
     bots: { [key: string]: BotConfig };
     currentBot?: string | null;

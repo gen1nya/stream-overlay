@@ -1,3 +1,6 @@
+import Store from "electron-store";
+import {StoreSchema} from "../store/StoreSchema";
+
 export interface AppLocaleOption {
     code: string;
     name: string;
@@ -8,11 +11,15 @@ export class AppLocaleRepository {
 
     private currentLocale: string;
 
-    constructor(locales: AppLocaleOption[], defaultLocale: string) {
+    constructor(locales: AppLocaleOption[], defaultLocale: string, private readonly store: Store<StoreSchema>) {
         this.locales = locales;
         const fallback = locales[0]?.code || defaultLocale;
-        const initialLocale = locales.find((locale) => locale.code === defaultLocale);
-        this.currentLocale = initialLocale ? initialLocale.code : fallback;
+        const storedLocale = this.store.get("locale") as string | undefined;
+        const initialLocale = this.getValidatedLocale(storedLocale) || this.getValidatedLocale(defaultLocale) || fallback;
+        this.currentLocale = initialLocale;
+        if (storedLocale !== this.currentLocale) {
+            this.store.set("locale", this.currentLocale);
+        }
     }
 
     public getAvailableLocales(): AppLocaleOption[] {
@@ -24,11 +31,20 @@ export class AppLocaleRepository {
     }
 
     public setCurrentLocale(localeCode: string): string {
-        const localeExists = this.locales.some((locale) => locale.code === localeCode);
-        if (!localeExists) {
+        const validLocale = this.getValidatedLocale(localeCode);
+        if (!validLocale) {
             throw new Error(`Unsupported locale: ${localeCode}`);
         }
-        this.currentLocale = localeCode;
+        this.currentLocale = validLocale;
+        this.store.set("locale", this.currentLocale);
         return this.currentLocale;
+    }
+
+    private getValidatedLocale(localeCode?: string): string | undefined {
+        if (!localeCode) {
+            return undefined;
+        }
+        const localeExists = this.locales.some((locale) => locale.code === localeCode);
+        return localeExists ? localeCode : undefined;
     }
 }
