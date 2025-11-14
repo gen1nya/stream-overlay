@@ -39,6 +39,9 @@ const ChatContainer = styled.div`
         }
     }};
 
+    /* Apply blended opacity if provided */
+    opacity: ${({ $opacity }) => $opacity !== undefined ? $opacity : 1};
+
     &::-webkit-scrollbar {
         width: 0 !important;
         height: 0 !important;
@@ -71,12 +74,20 @@ const getRedeemMax = (theme) => Math.max(theme?.redeemMessage?.length ?? 0, 1);
  * @param {Function} onThemeRequest - Callback to request theme from backend (socket) => void
  * @param {Function} onThemeUpdate - Callback when theme should be updated (theme) => void
  * @param {boolean} requestThemeOnConnect - Whether to request theme on WebSocket connect
+ * @param {string} messagesChannel - WebSocket channel to listen for messages (default: 'chat:messages')
+ * @param {string} messagesRequestChannel - WebSocket channel to request initial cache (default: 'chat:messages-request')
+ * @param {number} blendedOpacity - Optional blended opacity for messages (0-1)
+ * @param {Function} onMessageClick - Optional callback when message is clicked (message) => void
  */
 export default function ChatMessageList({
     theme,
     onThemeRequest,
     onThemeUpdate,
     requestThemeOnConnect = true,
+    messagesChannel = 'chat:messages',
+    messagesRequestChannel = 'chat:messages-request',
+    blendedOpacity,
+    onMessageClick,
 }) {
     const chatRef = useRef(null);
     const [messages, setMessages] = useState([]);
@@ -103,27 +114,31 @@ export default function ChatMessageList({
             if (requestThemeOnConnect && onThemeRequest) {
                 onThemeRequest(socket);
             }
+            // Request initial cache state
+            console.log('📥 Requesting initial cache from', messagesRequestChannel);
+            socket.send(JSON.stringify({ channel: messagesRequestChannel, payload: {} }));
         },
         onMessage: async (event) => {
             const { channel, payload } = JSON.parse(event.data);
-            switch (channel) {
-                case 'chat:messages': {
-                    const { messages = [], showSourceChannel = false } = payload;
-                    const initial = messages.map((m) => ({ ...m, type: m.type || 'chat' }));
-                    setMessages(initial);
-                    setShowSourceChannel(showSourceChannel);
-                    break;
-                }
-                case 'theme:update-by-name':
-                case 'theme:update': {
-                    if (onThemeUpdate) {
-                        onThemeUpdate(payload, channel);
-                    }
-                    break;
-                }
-                default:
-                    console.log('unknown channel', channel, payload);
+
+            // Handle messages from the configured channel
+            if (channel === messagesChannel) {
+                const { messages = [], showSourceChannel = false } = payload;
+                const initial = messages.map((m) => ({ ...m, type: m.type || 'chat' }));
+                setMessages(initial);
+                setShowSourceChannel(showSourceChannel);
+                return;
             }
+
+            // Handle theme updates
+            if (channel === 'theme:update-by-name' || channel === 'theme:update') {
+                if (onThemeUpdate) {
+                    onThemeUpdate(payload, channel);
+                }
+                return;
+            }
+
+            console.log('unknown channel', channel, payload);
         },
         onClose: () => {
             console.log('🔴 WebSocket отключен');
@@ -254,7 +269,7 @@ export default function ChatMessageList({
     return (
         <ThemeProvider theme={theme}>
             <>
-                <ChatContainer ref={chatRef}>
+                <ChatContainer ref={chatRef} $opacity={blendedOpacity}>
                     <TransitionGroup component={null}>
                         {messages.map((msg, idx) => {
                             const id = msg.id ?? `idx_${idx}`;
@@ -285,9 +300,11 @@ export default function ChatMessageList({
                                 redemptionIndex = redeemIndexByIdRef.current[id];
                             }
 
+                            const handleMessageClick = onMessageClick ? () => onMessageClick(msg) : undefined;
+
                             let Content;
                             if (msg.type === 'chat') {
-                                Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} />;
+                                Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} onClick={handleMessageClick} />;
                             } else if (msg.type === 'follow') {
                                 Content = <ChatFollow message={msg} currentTheme={theme} index={followIndex} />;
                             } else if (msg.type === 'redemption') {
@@ -338,7 +355,10 @@ export default function ChatMessageList({
                                     onExit={handleExitForMessage}
                                     onExited={handleExitedForMessage}
                                 >
-                                    <div ref={nodeRef} style={styleForVisibility}>
+                                    <div
+                                        ref={nodeRef}
+                                        style={styleForVisibility}
+                                    >
                                         {Content}
                                     </div>
                                 </CSSTransition>

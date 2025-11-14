@@ -189,6 +189,40 @@ const ru = {
             },
             error: 'Не удалось загрузить информацию о пользователе.'
         },
+        chatWindow: {
+            settings: {
+                title: 'Настройки',
+                opacity: 'Прозрачность окна',
+                theme: {
+                    label: 'Тема оформления',
+                    light: 'Светлая',
+                    dark: 'Тёмная',
+                },
+                fontScale: 'Масштаб шрифта',
+            },
+        },
+        moderatorPopup: {
+            title: 'Модерация',
+            loading: 'Загрузка...',
+            meta: {
+                id: 'ID',
+                created: 'Создан',
+                following: 'Фолловит с',
+                loadError: 'Не удалось загрузить данные',
+            },
+            actions: {
+                deleteMessage: 'Удалить сообщение',
+                mute1min: 'Мут 1 мин',
+                ban: 'Бан',
+            },
+            errors: {
+                noMessageId: 'Нет ID сообщения',
+                noUserId: 'Нет ID пользователя',
+                deleteMessage: 'Ошибка при удалении сообщения',
+                mute: 'Ошибка при блокировке пользователя',
+                ban: 'Ошибка при бане пользователя',
+            },
+        },
         settings: {
             header: {
                 title: 'Настройки',

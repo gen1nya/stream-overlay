@@ -1,13 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
 import { windowModeThemeDark, windowModeThemeLight } from '../../theme';
 import { usePersistentOpacity } from '../../hooks/usePersistentOpacity';
 import { usePersistentThemeMode } from '../../hooks/usePersistentThemeMode';
-import HorizontalSlider from '../utils/HorizontalSlider';
+import { usePersistentFontScale } from '../../hooks/usePersistentFontScale';
 import { Spacer } from '../utils/Separator';
-import { FiX } from 'react-icons/fi';
-import Switch from '../utils/Switch';
+import { FiX, FiSettings } from 'react-icons/fi';
 import ChatMessageList from './ChatMessageList';
+import ChatWindowSettings from './ChatWindowSettings';
+import ModeratorPopup from './ModeratorPopup';
 
 /* ---------- Global styles ---------- */
 const GlobalStyle = createGlobalStyle`
@@ -97,49 +98,55 @@ const Toolbar = styled.div`
     flex-direction: row;
     align-items: center;
     box-sizing: border-box;
-    padding: 0 0 0 24px;
+    padding: 0 12px;
     background: ${({ $isLight }) => ($isLight ? 'rgba(220, 220, 220, 0.8)' : 'rgba(155, 116, 255, 0.55)')};
     border-radius: 12px 12px 0 0;
 `;
 
-const StyledHorizontalSlider = styled(HorizontalSlider)`
-    ${noDrag}
-`;
-
-const StyledSwitch = styled.div`
-    ${noDrag}
+const ToolbarButton = styled.button`
+    ${noDrag};
+    background: none;
+    border: none;
+    box-sizing: border-box;
+    width: 40px;
+    height: 40px;
+    padding: 8px;
+    color: ${({ $isLight }) => ($isLight ? '#333' : '#fff')};
+    cursor: pointer;
+    border-radius: 6px;
     display: flex;
     align-items: center;
-    gap: 8px;
-`;
-
-const ThemeLabel = styled.span`
-    font-size: 18px;
-    color: ${({ $isLight }) => ($isLight ? '#333' : '#fff')};
-    user-select: none;
-    line-height: 1;
-`;
-
-const StyledCloseButton = styled(FiX)`
-    ${noDrag};
-    box-sizing: border-box;
-    width: 48px;
-    height: 48px;
-    padding: 12px;
-    color: ${({ $isLight }) => ($isLight ? '#333' : '#fff')};
+    justify-content: center;
+    transition: all 0.2s ease-in-out;
 
     &:hover {
-        color: #ff2e2e;
-        cursor: pointer;
-        transform: scale(1.5);
+        background: ${({ $isLight }) => ($isLight ? 'rgba(0, 0, 0, 0.1)' : 'rgba(255, 255, 255, 0.2)')};
     }
 
-    transition: all 0.2s ease-in-out;
+    &:active {
+        transform: scale(0.95);
+    }
+
+    svg {
+        width: 20px;
+        height: 20px;
+    }
+`;
+
+const CloseButton = styled(ToolbarButton)`
+    &:hover {
+        background: rgba(255, 46, 46, 0.2);
+        color: #ff2e2e;
+    }
 `;
 
 const ContentArea = styled.div`
     flex: 1;
     overflow: hidden;
+    position: relative;
+`;
+
+const SettingsContainer = styled.div`
     position: relative;
 `;
 
@@ -150,17 +157,60 @@ const ContentArea = styled.div`
 export default function ChatWindow() {
     const [opacity, setOpacity] = usePersistentOpacity('ui.opacity', 100, 100);
     const [themeMode, setThemeMode] = usePersistentThemeMode('ui.themeMode', 'dark');
+    const [fontScale, setFontScale] = usePersistentFontScale('ui.fontScale', 100);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const [selectedMessage, setSelectedMessage] = useState(null);
+    const [isModPopupOpen, setIsModPopupOpen] = useState(false);
+    const settingsButtonRef = useRef(null);
 
-    const currentTheme = themeMode === 'light' ? windowModeThemeLight : windowModeThemeDark;
+    const baseTheme = themeMode === 'light' ? windowModeThemeLight : windowModeThemeDark;
     const isLight = themeMode === 'light';
+
+    // Calculate blended opacity for messages
+    // Formula: 50% at 0 opacity, 100% at 100 opacity
+    const messagesOpacity = useMemo(() => {
+        return 0.5 + (opacity / 100) * 0.5;
+    }, [opacity]);
+
+    // Apply font scale to theme
+    const currentTheme = useMemo(() => {
+        const scale = fontScale / 100;
+        return {
+            ...baseTheme,
+            chatMessage: {
+                ...baseTheme.chatMessage,
+                fontSize: Math.round(baseTheme.chatMessage.fontSize * scale),
+                titleFontSize: Math.round(baseTheme.chatMessage.titleFontSize * scale),
+            },
+            followMessage: baseTheme.followMessage?.map(msg => ({
+                ...msg,
+                fontSize: Math.round(msg.fontSize * scale),
+            })),
+            redeemMessage: baseTheme.redeemMessage?.map(msg => ({
+                ...msg,
+                fontSize: Math.round(msg.fontSize * scale),
+            })),
+        };
+    }, [baseTheme, fontScale]);
 
     const handleCloseClick = () => {
         console.log('Closing chat window');
         window.close();
     };
 
-    const handleThemeToggle = (e) => {
-        setThemeMode(e.target.checked ? 'light' : 'dark');
+    const toggleSettings = () => {
+        setIsSettingsOpen((prev) => !prev);
+    };
+
+    const handleMessageClick = (message) => {
+        console.log('Message clicked:', message);
+        setSelectedMessage(message);
+        setIsModPopupOpen(true);
+    };
+
+    const handleCloseModPopup = () => {
+        setIsModPopupOpen(false);
+        setSelectedMessage(null);
     };
 
     return (
@@ -168,22 +218,32 @@ export default function ChatWindow() {
             <GlobalStyle />
             <Frame $opacity={opacity} $isLight={isLight}>
                 <Toolbar $isLight={isLight}>
-                    <StyledHorizontalSlider
-                        style={{ width: '200px' }}
-                        label=""
-                        min={0}
-                        max={100}
-                        value={opacity}
-                        onChange={(newOpacity) => setOpacity(newOpacity)}
-                        throttleMs={10}
-                    />
+                    <SettingsContainer>
+                        <ToolbarButton
+                            ref={settingsButtonRef}
+                            $isLight={isLight}
+                            onClick={toggleSettings}
+                            title="Настройки"
+                        >
+                            <FiSettings />
+                        </ToolbarButton>
+                        <ChatWindowSettings
+                            isOpen={isSettingsOpen}
+                            onClose={() => setIsSettingsOpen(false)}
+                            opacity={opacity}
+                            onOpacityChange={setOpacity}
+                            themeMode={themeMode}
+                            onThemeModeChange={setThemeMode}
+                            fontScale={fontScale}
+                            onFontScaleChange={setFontScale}
+                            isLight={isLight}
+                            triggerButtonRef={settingsButtonRef}
+                        />
+                    </SettingsContainer>
                     <Spacer />
-                    <StyledSwitch>
-                        <ThemeLabel $isLight={isLight}>{isLight ? '☀' : '🌙'}</ThemeLabel>
-                        <Switch checked={isLight} onChange={handleThemeToggle} />
-                    </StyledSwitch>
-                    <Spacer />
-                    <StyledCloseButton size={24} onClick={handleCloseClick} $isLight={isLight} />
+                    <CloseButton $isLight={isLight} onClick={handleCloseClick} title="Закрыть">
+                        <FiX />
+                    </CloseButton>
                 </Toolbar>
                 <ContentArea>
                     <ChatMessageList
@@ -191,9 +251,21 @@ export default function ChatWindow() {
                         requestThemeOnConnect={false}
                         onThemeRequest={null}
                         onThemeUpdate={null}
+                        messagesChannel="chat:window-messages"
+                        messagesRequestChannel="chat:window-messages-request"
+                        blendedOpacity={messagesOpacity}
+                        onMessageClick={handleMessageClick}
                     />
                 </ContentArea>
             </Frame>
+
+            {isModPopupOpen && selectedMessage && (
+                <ModeratorPopup
+                    message={selectedMessage}
+                    onClose={handleCloseModPopup}
+                    isLight={isLight}
+                />
+            )}
         </>
     );
 }

@@ -11,10 +11,32 @@ const Container = styled.div`
     min-width: 100px;
 `;
 
+// Default dark theme colors
+const defaultColors = {
+    labelText: '#e0e0e0',
+    background: '#1e1e1e',
+    backgroundHover: '#252525',
+    border: '#444',
+    borderHover: '#555',
+    borderFocus: '#646cff',
+    inputText: '#fff',
+    inputPlaceholder: '#666',
+    buttonText: '#888',
+    buttonTextHover: '#ccc',
+    buttonHoverBg: 'rgba(255, 255, 255, 0.05)',
+    buttonActiveBg: 'rgba(255, 255, 255, 0.1)',
+    resetBorder: '#333',
+    resetHoverBg: 'rgba(255, 193, 7, 0.1)',
+    resetHoverText: '#ffc107',
+    infoText: '#666',
+    errorText: '#dc2626',
+    errorBg: 'rgba(220, 38, 38, 0.05)',
+};
+
 const Label = styled.label`
     font-size: 0.8rem;
     font-weight: 500;
-    color: #e0e0e0;
+    color: ${({ $colors }) => $colors.labelText};
     margin-bottom: 2px;
     display: flex;
     align-items: center;
@@ -24,27 +46,27 @@ const Label = styled.label`
 const InputGroup = styled.div`
     display: flex;
     align-items: center;
-    background: #1e1e1e;
-    border: 1px solid #444;
+    background: ${({ $colors }) => $colors.background};
+    border: 1px solid ${({ $colors }) => $colors.border};
     border-radius: 8px;
     transition: all 0.2s ease;
     overflow: hidden;
     user-select: none;
 
     &:hover {
-        border-color: #555;
-        background: #252525;
+        border-color: ${({ $colors }) => $colors.borderHover};
+        background: ${({ $colors }) => $colors.backgroundHover};
     }
 
     &:focus-within {
-        border-color: #646cff;
-        background: #252525;
+        border-color: ${({ $colors }) => $colors.borderFocus};
+        background: ${({ $colors }) => $colors.backgroundHover};
         box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
     }
 
     &.error {
-        border-color: #dc2626;
-        background: rgba(220, 38, 38, 0.05);
+        border-color: ${({ $colors }) => $colors.errorText};
+        background: ${({ $colors }) => $colors.errorBg};
     }
 `;
 
@@ -55,19 +77,19 @@ const StepButton = styled.div`
     width: 24px;
     height: 28px;
     background: transparent;
-    color: #888;
+    color: ${({ $colors }) => $colors.buttonText};
     cursor: pointer;
     transition: all 0.2s ease;
     flex-shrink: 0;
     user-select: none;
 
     &:hover:not(.disabled) {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ccc;
+        background: ${({ $colors }) => $colors.buttonHoverBg};
+        color: ${({ $colors }) => $colors.buttonTextHover};
     }
 
     &:active:not(.disabled) {
-        background: rgba(255, 255, 255, 0.1);
+        background: ${({ $colors }) => $colors.buttonActiveBg};
         transform: scale(0.95);
     }
 
@@ -89,7 +111,7 @@ const Input = styled.input`
     background: transparent;
     border: none;
     outline: none;
-    color: #fff;
+    color: ${({ $colors }) => $colors.inputText};
     font-size: 0.85rem;
     padding: 6px 8px;
     text-align: center;
@@ -108,11 +130,11 @@ const Input = styled.input`
     }
 
     &::placeholder {
-        color: #666;
+        color: ${({ $colors }) => $colors.inputPlaceholder};
     }
 
     &:focus {
-        color: #fff;
+        color: ${({ $colors }) => $colors.inputText};
     }
 `;
 
@@ -123,16 +145,16 @@ const ResetButton = styled.div`
     width: 24px;
     height: 28px;
     background: transparent;
-    color: #888;
+    color: ${({ $colors }) => $colors.buttonText};
     cursor: pointer;
     transition: all 0.2s ease;
-    border-left: 1px solid #333;
+    border-left: 1px solid ${({ $colors }) => $colors.resetBorder};
     flex-shrink: 0;
     user-select: none;
 
     &:hover:not(.disabled) {
-        background: rgba(255, 193, 7, 0.1);
-        color: #ffc107;
+        background: ${({ $colors }) => $colors.resetHoverBg};
+        color: ${({ $colors }) => $colors.resetHoverText};
     }
 
     &:active:not(.disabled) {
@@ -157,18 +179,18 @@ const ValidationInfo = styled.div`
     justify-content: space-between;
     align-items: center;
     font-size: 0.7rem;
-    color: #666;
+    color: ${({ $colors }) => $colors.infoText};
     margin-top: 1px;
     min-height: 12px;
 `;
 
 const ErrorText = styled.span`
-    color: #dc2626;
+    color: ${({ $colors }) => $colors.errorText};
     font-size: 0.7rem;
 `;
 
 const RangeText = styled.span`
-    color: #666;
+    color: ${({ $colors }) => $colors.infoText};
 `;
 
 export default function NumericEditorComponent({
@@ -184,12 +206,16 @@ export default function NumericEditorComponent({
                                                    showRange = true,
                                                    showReset = false,
                                                    disabled = false,
+                                                   colorScheme,
                                                }) {
     const { t } = useTranslation();
     const [inputValue, setInputValue] = useState(String(value || ''));
     const [error, setError] = useState('');
     const [isFocused, setIsFocused] = useState(false);
     const inputRef = useRef(null);
+
+    // Merge provided colors with defaults
+    const colors = { ...defaultColors, ...colorScheme };
 
     useEffect(() => {
         setInputValue(String(value !== undefined && value !== null ? value : ''));
@@ -303,13 +329,14 @@ export default function NumericEditorComponent({
 
     return (
         <Container $width={width}>
-            {title && <Label>{title}</Label>}
+            {title && <Label $colors={colors}>{title}</Label>}
 
-            <InputGroup className={error ? 'error' : ''}>
+            <InputGroup className={error ? 'error' : ''} $colors={colors}>
                 <StepButton
                     className={!canStepDown ? 'disabled' : ''}
                     onMouseDown={handleStepDown}
                     title={t('settings.numericEditor.tooltips.decrease', { step })}
+                    $colors={colors}
                 >
                     <FiMinus />
                 </StepButton>
@@ -324,12 +351,14 @@ export default function NumericEditorComponent({
                     onKeyDown={handleKeyPress}
                     placeholder={placeholder || String(min)}
                     disabled={disabled}
+                    $colors={colors}
                 />
 
                 <StepButton
                     className={!canStepUp ? 'disabled' : ''}
                     onMouseDown={handleStepUp}
                     title={t('settings.numericEditor.tooltips.increase', { step })}
+                    $colors={colors}
                 >
                     <FiPlus />
                 </StepButton>
@@ -339,18 +368,19 @@ export default function NumericEditorComponent({
                         className={disabled ? 'disabled' : ''}
                         onMouseDown={handleReset}
                         title={t('settings.numericEditor.tooltips.reset')}
+                        $colors={colors}
                     >
                         <FiRotateCcw />
                     </ResetButton>
                 )}
             </InputGroup>
 
-            <ValidationInfo>
+            <ValidationInfo $colors={colors}>
                 {error ? (
-                    <ErrorText>{error}</ErrorText>
+                    <ErrorText $colors={colors}>{error}</ErrorText>
                 ) : (
                     showRange && (
-                        <RangeText>
+                        <RangeText $colors={colors}>
                             {t('settings.numericEditor.range', { min, max })}
                         </RangeText>
                     )

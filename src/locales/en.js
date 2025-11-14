@@ -189,6 +189,40 @@ const en = {
             },
             error: 'Could not load user info.'
         },
+        chatWindow: {
+            settings: {
+                title: 'Settings',
+                opacity: 'Window opacity',
+                theme: {
+                    label: 'Theme',
+                    light: 'Light',
+                    dark: 'Dark',
+                },
+                fontScale: 'Font scale',
+            },
+        },
+        moderatorPopup: {
+            title: 'Moderation',
+            loading: 'Loading...',
+            meta: {
+                id: 'ID',
+                created: 'Created',
+                following: 'Following since',
+                loadError: 'Failed to load data',
+            },
+            actions: {
+                deleteMessage: 'Delete message',
+                mute1min: 'Mute 1 min',
+                ban: 'Ban',
+            },
+            errors: {
+                noMessageId: 'No message ID',
+                noUserId: 'No user ID',
+                deleteMessage: 'Error deleting message',
+                mute: 'Error muting user',
+                ban: 'Error banning user',
+            },
+        },
         settings: {
             header: {
                 title: 'Settings',

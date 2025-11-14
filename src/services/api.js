@@ -123,6 +123,10 @@ export async function unbanUser(userId) {
     return ipcRenderer?.invoke('user:unban', {userId});
 }
 
+export async function deleteMessage(messageId) {
+    return ipcRenderer?.invoke('message:delete', {messageId});
+}
+
 export async function getThemes() {
     return ipcRenderer?.invoke('themes:get-all');
 }

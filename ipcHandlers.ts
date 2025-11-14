@@ -15,7 +15,7 @@ import {
   getExtendedUser,
   fetchUser,
   removeModerator, removeTimeoutOrBan,
-  removeVip, timeoutUser
+  removeVip, timeoutUser, deleteMessage
 } from "./services/twitch/authorizedHelixApi";
 import {updateRoles} from "./services/twitch/roleUpdater";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
@@ -49,6 +49,10 @@ export function registerIpcHandlers(
   });
   ipcMain.handle('user:unban', async (event, args) => {
       return await removeTimeoutOrBan(args.userId)
+  });
+  ipcMain.handle('message:delete', async (event, args) => {
+    const { messageId } = args;
+    return await deleteMessage(messageId);
   });
   ipcMain.handle('auth:authorize', async () => authService.authorizeIfNeeded());
   ipcMain.handle('auth:getTokens', async () => authService.getTokens());

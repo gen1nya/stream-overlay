@@ -1,3 +1,49 @@
+# Dependencies
 node_modules/
+
+# Build outputs
 dist/
 dist-backend/
+
+# SQLite databases
+*.db
+
+# IDE
+.idea/
+.vscode/
+
+# Local settings
+.claude/settings.local.json
+
+# Native module build artifacts (keep only .node files)
+native/fft/build/*
+!native/fft/build/Release/
+native/fft/build/Release/*
+!native/fft/build/Release/*.node
+
+native/media/build/*
+!native/media/build/Release/
+native/media/build/Release/*
+!native/media/build/Release/*.node
+
+# Windows-specific build artifacts
+*.exp
+*.iobj
+*.ipdb
+*.lib
+*.pdb
+*.ilk
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.sln
+*.suo
+*.tlog
+*.log
+*.recipe
+*.obj
+*.lastbuildstate
+
+# Build configuration
+native/*/build/config.gypi
+native/*/build/binding.sln
