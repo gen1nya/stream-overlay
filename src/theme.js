@@ -1,3 +1,264 @@
+// Window Mode Theme (Dark) - Focused on readability and UX
+export const windowModeThemeDark = {
+    chatMessage: {
+        backgroundColor: "#1a1a1a",
+        borderColor: "#3a3a3a",
+        shadowColor: "#000000",
+        shadowOpacity: "0",
+        shadowRadius: "0",
+        direction: "column",
+        borderRadius: "6",
+        marginH: "4",
+        marginV: "2",
+        backgroundOpacity: "1",
+        borderOpacity: "0.3",
+        paddingH: "12",
+        paddingV: "8",
+        fontSize: 16,
+        titleFontSize: 16,
+        titleBackgroundMode: "none",
+        titleBackgroundColorConfig: {
+            dark: {
+                color: "#000000",
+                opacity: "0.3",
+                borderColor: "#ffffff",
+                borderOpacity: "0",
+                borderRadius: "4",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            },
+            light: {
+                color: "#ffffff",
+                opacity: "0.3",
+                borderColor: "#ffffff",
+                borderOpacity: "0",
+                borderRadius: "4",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        },
+        titleFont: {
+            family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+            url: null,
+        },
+        messageFont: {
+            family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+            url: null,
+            color: "#e0e0e0",
+            alpha: "1",
+            shadowColor: "#000000",
+            shadowOpacity: "0",
+            shadowRadius: "0"
+        }
+    },
+    followMessage: [
+        {
+            backgroundColor: "#1e5631",
+            borderColor: "#2d7a45",
+            shadowColor: "#000",
+            shadowOpacity: "0",
+            shadowRadius: "0",
+            direction: "column",
+            backgroundOpacity: "1",
+            borderOpacity: "0.5",
+            borderRadius: "6",
+            marginH: "4",
+            marginV: "2",
+            paddingH: "12",
+            paddingV: "8",
+            fontSize: 16,
+            template: "🎉 {userName} подписался!",
+            messageFont: {
+                family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+                url: null,
+                color: "#ffffff",
+                alpha: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        }
+    ],
+    redeemMessage: [
+        {
+            backgroundColor: "#3a2d5a",
+            borderColor: "#5a4a7a",
+            shadowColor: "#000",
+            shadowOpacity: "0",
+            shadowRadius: "0",
+            direction: "column",
+            backgroundOpacity: "1",
+            borderRadius: "6",
+            paddingV: "8",
+            paddingH: "12",
+            marginV: "2",
+            marginH: "4",
+            borderOpacity: "0.5",
+            fontSize: 16,
+            template: "🎉 {userName} потратил {cost} балов на {title}",
+            messageFont: {
+                family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+                url: null,
+                color: "#ffffff",
+                alpha: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        }
+    ],
+    allMessages: {
+        lifetime: 60,
+        textColor: "#e0e0e0",
+        textOpacity: "1",
+        blurRadius: "0",
+        textShadowColor: "#000000",
+        textShadowOpacity: "0",
+        textShadowRadius: "0",
+        textShadowXPosition: 0,
+        textShadowYPosition: 0
+    },
+    overlay: {
+        backgroundType: "none",
+        backgroundColor: null,
+        backgroundImage: null
+    }
+};
+
+// Window Mode Theme (Light) - Focused on readability and UX
+export const windowModeThemeLight = {
+    chatMessage: {
+        backgroundColor: "#ffffff",
+        borderColor: "#d0d0d0",
+        shadowColor: "#000000",
+        shadowOpacity: "0",
+        shadowRadius: "0",
+        direction: "column",
+        borderRadius: "6",
+        marginH: "4",
+        marginV: "2",
+        backgroundOpacity: "1",
+        borderOpacity: "0.4",
+        paddingH: "12",
+        paddingV: "8",
+        fontSize: 16,
+        titleFontSize: 16,
+        titleBackgroundMode: "none",
+        titleBackgroundColorConfig: {
+            dark: {
+                color: "#000000",
+                opacity: "0.1",
+                borderColor: "#000000",
+                borderOpacity: "0",
+                borderRadius: "4",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            },
+            light: {
+                color: "#ffffff",
+                opacity: "0.3",
+                borderColor: "#000000",
+                borderOpacity: "0",
+                borderRadius: "4",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        },
+        titleFont: {
+            family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+            url: null,
+        },
+        messageFont: {
+            family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+            url: null,
+            color: "#1a1a1a",
+            alpha: "1",
+            shadowColor: "#000000",
+            shadowOpacity: "0",
+            shadowRadius: "0"
+        }
+    },
+    followMessage: [
+        {
+            backgroundColor: "#d4f4dd",
+            borderColor: "#7bc993",
+            shadowColor: "#000",
+            shadowOpacity: "0",
+            shadowRadius: "0",
+            direction: "column",
+            backgroundOpacity: "1",
+            borderOpacity: "0.6",
+            borderRadius: "6",
+            marginH: "4",
+            marginV: "2",
+            paddingH: "12",
+            paddingV: "8",
+            fontSize: 16,
+            template: "🎉 {userName} подписался!",
+            messageFont: {
+                family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+                url: null,
+                color: "#1a4d2e",
+                alpha: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        }
+    ],
+    redeemMessage: [
+        {
+            backgroundColor: "#e8e0f5",
+            borderColor: "#9b74ff",
+            shadowColor: "#000",
+            shadowOpacity: "0",
+            shadowRadius: "0",
+            direction: "column",
+            backgroundOpacity: "1",
+            borderRadius: "6",
+            paddingV: "8",
+            paddingH: "12",
+            marginV: "2",
+            marginH: "4",
+            borderOpacity: "0.6",
+            fontSize: 16,
+            template: "🎉 {userName} потратил {cost} балов на {title}",
+            messageFont: {
+                family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+                url: null,
+                color: "#3a2d5a",
+                alpha: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "0",
+                shadowRadius: "0"
+            }
+        }
+    ],
+    allMessages: {
+        lifetime: 60,
+        textColor: "#1a1a1a",
+        textOpacity: "1",
+        blurRadius: "0",
+        textShadowColor: "#000000",
+        textShadowOpacity: "0",
+        textShadowRadius: "0",
+        textShadowXPosition: 0,
+        textShadowYPosition: 0
+    },
+    overlay: {
+        backgroundType: "none",
+        backgroundColor: null,
+        backgroundImage: null
+    }
+};
+
+// Legacy export for backward compatibility
+export const windowModeTheme = windowModeThemeDark;
+
 export const defaultTheme = {
     chatMessage: {
         backgroundColor: "#422434",
