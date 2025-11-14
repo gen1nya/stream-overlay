@@ -3,16 +3,22 @@ import AddNewStyleButton from "../../../../utils/AddNewStyleButton";
 import {Accordion} from "../../../../utils/AccordionComponent";
 import React from "react";
 import {CollapsedPreview} from "../../SettingBloks";
+import { useTranslation, Trans } from 'react-i18next';
 
 export default function ProtectedUsersMessagesComponent({ botConfig, apply }) {
+    const { t } = useTranslation();
     const messages = botConfig.roulette.protectedUsersMessages;
 
     return (
-        <Accordion title="Для защищенных пользователей (Редакторы)">
+        <Accordion title={t('settings.bot.roulette.messages.protected.title')}>
             <CollapsedPreview>
-                  <span>
-                      {'В сообщения можно вставлять переменную ${user}; В ответе будет видно имя чатерса'}
-                  </span>
+                  <Trans
+                      i18nKey="settings.bot.shared.variablesHint"
+                      components={{
+                          highlight: <span className="highlight" />,
+                          br: <br />
+                      }}
+                  />
             </CollapsedPreview>
             {messages.map((msg, index) => (
                 <SmallTemplateEditor
@@ -61,7 +67,7 @@ export default function ProtectedUsersMessagesComponent({ botConfig, apply }) {
                                 ...cfg.roulette,
                                 protectedUsersMessages: [
                                     ...cfg.roulette.protectedUsersMessages,
-                                    "Ты победил, ${user}! 🎉",
+                                    t('settings.bot.roulette.messages.protected.defaultTemplate'),
                                 ],
 
                             },

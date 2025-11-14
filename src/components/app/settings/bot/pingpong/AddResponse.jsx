@@ -1,6 +1,7 @@
 import React, {Fragment, useState} from "react";
 import {Row} from "../../../SettingsComponent";
 import {Button, TextInput} from "./PingPongActionEditorComponent";
+import { useTranslation } from 'react-i18next';
 
 // -----------------------------------------------------------------------------
 // Add‑new‑response component
@@ -10,6 +11,7 @@ export default function AddResponse({
                          apply,
                          updateConfig,
 }) {
+    const { t } = useTranslation();
     const [value, setValue] = useState('');
     const [error, setError] = useState(false);
 
@@ -22,7 +24,6 @@ export default function AddResponse({
 
         apply((prev) =>
             updateConfig(prev, (cfg) => {
-                console.log(cfg);
                 const commands = cfg.pingpong.commands.map((cmd, i) =>
                     i === commandIndex
                         ? { ...cmd, responses: [...cmd.responses, trimmed] }
@@ -56,7 +57,7 @@ export default function AddResponse({
                 <TextInput
                     style={{  }}
                     $error={error}
-                    placeholder="Новый ответ"
+                    placeholder={t('settings.bot.pingpong.addResponse.placeholder')}
                     value={value}
                     onChange={(e) => {
                         setValue(e.target.value);
@@ -69,7 +70,7 @@ export default function AddResponse({
                         border: 'rgba(136, 83, 242, 0.64) 2px solid'
                     }}
                     $ml={8} onClick={handleAdd}>
-                    Добавить
+                    {t('settings.bot.pingpong.actions.add')}
                 </Button>
             </Row>
         </Fragment>

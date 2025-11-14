@@ -71,6 +71,30 @@ export const openExternalLink = (url) => {
     return ipcRenderer?.invoke('utils:open_url', url);
 };
 
+export const getAvailableLocales = async () => {
+    if (!ipcRenderer) {
+        return [
+            { code: 'ru', name: 'Русский' },
+            { code: 'en', name: 'English' },
+        ];
+    }
+    return ipcRenderer.invoke('locale:list');
+};
+
+export const getCurrentLocale = async () => {
+    if (!ipcRenderer) {
+        return 'ru';
+    }
+    return ipcRenderer.invoke('locale:get');
+};
+
+export const setLocale = async (localeCode) => {
+    if (!ipcRenderer) {
+        return localeCode;
+    }
+    return ipcRenderer.invoke('locale:set', localeCode);
+};
+
 export const saveImageBuffer = (buffer, name) => {
     return ipcRenderer?.invoke('utils:save_image_buffer', buffer, name);
 };

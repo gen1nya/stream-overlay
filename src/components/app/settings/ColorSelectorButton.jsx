@@ -2,6 +2,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import {hexToRgba} from "../../../utils";
+import { useTranslation } from "react-i18next";
 
 const Container = styled.div`
     width: 150px;
@@ -75,6 +76,8 @@ export default function ColorSelectorButton({
                                                 getInitial = () => ({ color: hex, alpha }),
                                                 openColorPopup
                                             }) {
+    const { t } = useTranslation();
+    const resolvedTitle = title ?? t('settings.colorPicker.title');
     const rgbaStr = hexToRgba(hex, alpha);
     const solidStr = hexToRgba(hex, 1);
 
@@ -83,7 +86,7 @@ export default function ColorSelectorButton({
         openColorPopup({
             initialColor: getInitial().color,
             initialAlpha: getInitial().alpha,
-            title: title ?? 'Выбор цвета',
+            title: resolvedTitle,
             onChange: (e) => {
                 if (onColorChange) {
                     onColorChange(e);
@@ -95,7 +98,7 @@ export default function ColorSelectorButton({
 
     return (
         <Container>
-            <Title>{title}</Title>
+            <Title>{resolvedTitle}</Title>
             <Button onClick={handleClick} title={rgbaStr}>
                 <AlphaLayer>
                     <Overlay color={rgbaStr} />

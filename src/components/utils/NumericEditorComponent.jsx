@@ -1,6 +1,7 @@
 import React, {useEffect, useState, useRef} from 'react';
 import styled from 'styled-components';
 import {FiMinus, FiPlus, FiRotateCcw} from 'react-icons/fi';
+import { useTranslation } from 'react-i18next';
 
 const Container = styled.div`
     display: flex;
@@ -184,6 +185,7 @@ export default function NumericEditorComponent({
                                                    showReset = false,
                                                    disabled = false,
                                                }) {
+    const { t } = useTranslation();
     const [inputValue, setInputValue] = useState(String(value || ''));
     const [error, setError] = useState('');
     const [isFocused, setIsFocused] = useState(false);
@@ -198,17 +200,17 @@ export default function NumericEditorComponent({
         const numValue = Number(newValue);
 
         if (newValue === '' || isNaN(numValue)) {
-            setError('Введите корректное число');
+            setError(t('settings.numericEditor.errors.invalid'));
             return false;
         }
 
         if (numValue < min) {
-            setError(`Минимальное значение: ${min}`);
+            setError(t('settings.numericEditor.errors.min', { value: min }));
             return false;
         }
 
         if (numValue > max) {
-            setError(`Максимальное значение: ${max}`);
+            setError(t('settings.numericEditor.errors.max', { value: max }));
             return false;
         }
 
@@ -307,7 +309,7 @@ export default function NumericEditorComponent({
                 <StepButton
                     className={!canStepDown ? 'disabled' : ''}
                     onMouseDown={handleStepDown}
-                    title={`Уменьшить на ${step}`}
+                    title={t('settings.numericEditor.tooltips.decrease', { step })}
                 >
                     <FiMinus />
                 </StepButton>
@@ -327,7 +329,7 @@ export default function NumericEditorComponent({
                 <StepButton
                     className={!canStepUp ? 'disabled' : ''}
                     onMouseDown={handleStepUp}
-                    title={`Увеличить на ${step}`}
+                    title={t('settings.numericEditor.tooltips.increase', { step })}
                 >
                     <FiPlus />
                 </StepButton>
@@ -336,7 +338,7 @@ export default function NumericEditorComponent({
                     <ResetButton
                         className={disabled ? 'disabled' : ''}
                         onMouseDown={handleReset}
-                        title="Сбросить значение"
+                        title={t('settings.numericEditor.tooltips.reset')}
                     >
                         <FiRotateCcw />
                     </ResetButton>
@@ -347,7 +349,11 @@ export default function NumericEditorComponent({
                 {error ? (
                     <ErrorText>{error}</ErrorText>
                 ) : (
-                    showRange && <RangeText>от {min} до {max}</RangeText>
+                    showRange && (
+                        <RangeText>
+                            {t('settings.numericEditor.range', { min, max })}
+                        </RangeText>
+                    )
                 )}
             </ValidationInfo>
         </Container>

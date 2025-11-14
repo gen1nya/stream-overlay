@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { FiShield, FiSettings, FiGlobe, FiLock, FiUnlock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import {
     SettingsCard,
@@ -136,6 +137,7 @@ const TestButton = styled(ActionButton)`
 `;
 
 export default function Socks5ProxyComponent() {
+    const { t } = useTranslation();
     const [proxyEnabled, setProxyEnabled] = useState(false);
     const [proxyConfig, setProxyConfigState] = useState({
         enabled: false,
@@ -165,7 +167,7 @@ export default function Socks5ProxyComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка загрузки конфигурации прокси:', err);
-            setError('Не удалось загрузить конфигурацию прокси');
+            setError('settings.socks5Proxy.errors.loadConfig');
         }
     };
 
@@ -177,14 +179,14 @@ export default function Socks5ProxyComponent() {
             console.log('Proxy config saved:', proxyConfig);
         } catch (err) {
             console.error('Ошибка сохранения конфигурации прокси:', err);
-            setError('Не удалось сохранить конфигурацию прокси');
+            setError('settings.socks5Proxy.errors.saveConfig');
         }
     };
 
     // Тестирование подключения
     const testConnection = async () => {
         if (!proxyConfig.host || !proxyConfig.port) {
-            setError('Укажите хост и порт прокси-сервера');
+            setError('settings.socks5Proxy.errors.missingFields');
             return;
         }
 
@@ -199,12 +201,12 @@ export default function Socks5ProxyComponent() {
                 setConnectionStatus('connected');
             } else {
                 setConnectionStatus('error');
-                setError(result?.error || 'Не удалось подключиться к прокси-серверу');
+                setError(result?.error || 'settings.socks5Proxy.errors.connectionFailed');
             }
         } catch (err) {
             console.error('Ошибка при тестировании подключения:', err);
             setConnectionStatus('error');
-            setError('Ошибка при тестировании подключения');
+            setError('settings.socks5Proxy.errors.test');
         } finally {
             setIsTesting(false);
         }
@@ -229,7 +231,7 @@ export default function Socks5ProxyComponent() {
             }
         } catch (err) {
             console.error('Ошибка переключения прокси:', err);
-            setError('Не удалось переключить прокси');
+            setError('settings.socks5Proxy.errors.toggle');
         }
     };
 
@@ -261,11 +263,11 @@ export default function Socks5ProxyComponent() {
     };
 
     const getStatusText = () => {
-        if (isTesting) return 'Тестирование...';
-        if (error) return 'Ошибка';
-        if (proxyEnabled && connectionStatus === 'connected') return 'Подключен';
-        if (proxyEnabled) return 'Включен';
-        return 'Отключен';
+        if (isTesting) return t('settings.socks5Proxy.status.testing');
+        if (error) return t('settings.socks5Proxy.status.error');
+        if (proxyEnabled && connectionStatus === 'connected') return t('settings.socks5Proxy.status.connected');
+        if (proxyEnabled) return t('settings.socks5Proxy.status.enabled');
+        return t('settings.socks5Proxy.status.disabled');
     };
 
     const getStatusIcon = () => {
@@ -286,9 +288,9 @@ export default function Socks5ProxyComponent() {
                 <CardHeader>
                     <CardTitle>
                         <FiShield />
-                        SOCKS5 Прокси
+                        {t('settings.socks5Proxy.title')}
                     </CardTitle>
-                    <InfoBadge>Загрузка...</InfoBadge>
+                    <InfoBadge>{t('common.loading')}</InfoBadge>
                 </CardHeader>
             </SettingsCard>
         );
@@ -299,7 +301,7 @@ export default function Socks5ProxyComponent() {
             <CardHeader>
                 <CardTitle>
                     <FiShield />
-                    SOCKS5 Прокси
+                    {t('settings.socks5Proxy.title')}
                 </CardTitle>
                 <StatusIndicator status={getStatus()}>
                     <StatusIcon className="status-icon" />
@@ -313,14 +315,14 @@ export default function Socks5ProxyComponent() {
                     <SectionHeader>
                         <SectionTitle>
                             <FiSettings />
-                            Основные настройки
+                            {t('settings.socks5Proxy.sections.general.title')}
                         </SectionTitle>
                     </SectionHeader>
 
                     <Row gap="16px">
                         <ControlGroup>
                             <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px' }}>
-                                Использовать SOCKS5 прокси
+                                {t('settings.socks5Proxy.sections.general.toggleLabel')}
                             </label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Switch
@@ -328,7 +330,7 @@ export default function Socks5ProxyComponent() {
                                     onChange={(e) => handleProxyToggle(e.target.checked)}
                                 />
                                 <span style={{ fontSize: '0.85rem', color: '#999' }}>
-                                    {proxyEnabled ? 'Включен' : 'Выключен'}
+                                    {proxyEnabled ? t('settings.shared.toggle.enabled') : t('settings.shared.toggle.disabled')}
                                 </span>
                             </div>
                         </ControlGroup>
@@ -336,7 +338,7 @@ export default function Socks5ProxyComponent() {
 
                     {error && (
                         <WarningBadge style={{ marginTop: '8px' }}>
-                            {error}
+                            {t(error, { defaultValue: error })}
                         </WarningBadge>
                     )}
                 </Section>
@@ -346,24 +348,24 @@ export default function Socks5ProxyComponent() {
                     <SectionHeader>
                         <SectionTitle>
                             <FiGlobe />
-                            Настройки прокси-сервера
+                            {t('settings.socks5Proxy.sections.server.title')}
                         </SectionTitle>
                     </SectionHeader>
 
                     <ProxyGrid>
                         <ProxyField>
-                            <FieldLabel>Хост / IP адрес</FieldLabel>
+                            <FieldLabel>{t('settings.socks5Proxy.sections.server.hostLabel')}</FieldLabel>
                             <ProxyInput
                                 type="text"
                                 value={proxyConfig.host}
                                 onChange={(e) => updateConfig('host', e.target.value)}
-                                placeholder="example.com или 192.168.1.1"
+                                placeholder={t('settings.socks5Proxy.sections.server.hostPlaceholder')}
                                 disabled={!proxyEnabled}
                             />
                         </ProxyField>
 
                         <ProxyField>
-                            <FieldLabel>Порт</FieldLabel>
+                            <FieldLabel>{t('settings.socks5Proxy.sections.server.portLabel')}</FieldLabel>
                             <NumericEditorComponent
                                 value={proxyConfig.port}
                                 min={1}
@@ -375,23 +377,23 @@ export default function Socks5ProxyComponent() {
                         </ProxyField>
 
                         <ProxyField>
-                            <FieldLabel>Логин (опционально)</FieldLabel>
+                            <FieldLabel>{t('settings.socks5Proxy.sections.server.usernameLabel')}</FieldLabel>
                             <ProxyInput
                                 type="text"
                                 value={proxyConfig.username || ''}
                                 onChange={(e) => updateConfig('username', e.target.value)}
-                                placeholder="username"
+                                placeholder={t('settings.socks5Proxy.sections.server.usernamePlaceholder')}
                                 disabled={!proxyEnabled}
                             />
                         </ProxyField>
 
                         <ProxyField>
-                            <FieldLabel>Пароль (опционально)</FieldLabel>
+                            <FieldLabel>{t('settings.socks5Proxy.sections.server.passwordLabel')}</FieldLabel>
                             <ProxyInput
                                 type="password"
                                 value={proxyConfig.password || ''}
                                 onChange={(e) => updateConfig('password', e.target.value)}
-                                placeholder="password"
+                                placeholder={t('settings.socks5Proxy.sections.server.passwordPlaceholder')}
                                 disabled={!proxyEnabled}
                             />
                         </ProxyField>
@@ -403,7 +405,7 @@ export default function Socks5ProxyComponent() {
                             disabled={!proxyEnabled || !isConfigValid || isTesting}
                         >
                             <FiGlobe />
-                            {isTesting ? 'Тестирование...' : 'Тест подключения'}
+                            {isTesting ? t('settings.socks5Proxy.sections.server.buttons.testing') : t('settings.socks5Proxy.sections.server.buttons.test')}
                         </TestButton>
 
                         <ActionButton
@@ -411,19 +413,19 @@ export default function Socks5ProxyComponent() {
                             disabled={!proxyEnabled || !isConfigValid}
                         >
                             <FiSettings />
-                            Сохранить настройки
+                            {t('settings.socks5Proxy.sections.server.buttons.save')}
                         </ActionButton>
                     </Row>
 
                     {connectionStatus === 'connected' && (
                         <SuccessBadge style={{ marginTop: '8px' }}>
-                            ✓ Подключение к прокси-серверу успешно установлено
+                            {t('settings.socks5Proxy.sections.server.connectionSuccess')}
                         </SuccessBadge>
                     )}
 
                     {!proxyEnabled && (
                         <InfoBadge style={{ marginTop: '8px' }}>
-                            SOCKS5 прокси используется для обхода блокировок YouTube в регионах, где надзорный орган<br/>в сферах связи, информационных технологий и массовых коммуникаций не уважает ваши права и свободы
+                            {t('settings.socks5Proxy.sections.server.info')}
                         </InfoBadge>
                     )}
                 </Section>

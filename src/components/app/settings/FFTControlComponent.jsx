@@ -27,6 +27,7 @@ import {openExternalLink} from "../../../services/api";
 import {Row} from "../SettingsComponent";
 import FFTBars from "../../player/FFTBars";
 import {Spacer} from "../../utils/Separator";
+import { Trans, useTranslation } from "react-i18next";
 
 // Специфичные стили для FFT компонента
 const StatusIndicator = styled.div`
@@ -197,6 +198,7 @@ const LoadingHeader = styled(CardHeader)`
 `;
 
 export default function FFTControlComponent() {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const [fftConfig, setFftConfig] = useState({
         dbFloor: -60,
@@ -234,7 +236,7 @@ export default function FFTControlComponent() {
             setSelectedDevice(config.device);
         } catch (err) {
             console.error('Ошибка загрузки конфигурации FFT:', err);
-            setError('Не удалось загрузить конфигурацию FFT');
+            setError(t('settings.fft.errors.loadConfig'));
         }
     };
 
@@ -247,7 +249,7 @@ export default function FFTControlComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка загрузки устройств:', err);
-            setError('Не удалось загрузить список аудиоустройств');
+            setError(t('settings.fft.errors.loadDevices'));
         } finally {
             setIsRefreshing(false);
         }
@@ -271,7 +273,7 @@ export default function FFTControlComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка переключения FFT:', err);
-            setError(err.message || 'Не удалось переключить FFT');
+            setError(err.message || t('settings.fft.errors.toggle'));
         }
     };
 
@@ -293,7 +295,7 @@ export default function FFTControlComponent() {
             }
         } catch (err) {
             console.error('Ошибка установки устройства:', err);
-            setError('Не удалось установить аудиоустройство');
+            setError(t('settings.fft.errors.setDevice'));
         }
     };
 
@@ -304,7 +306,7 @@ export default function FFTControlComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка установки усиления FFT:', err);
-            setError('Не удалось установить усиление FFT');
+            setError(t('settings.fft.errors.setGain'));
         }
     }
 
@@ -315,7 +317,7 @@ export default function FFTControlComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка установки нижнего порога FFT:', err);
-            setError('Не удалось установить нижний порог FFT');
+            setError(t('settings.fft.errors.setDbFloor'));
         }
     }
 
@@ -326,7 +328,7 @@ export default function FFTControlComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка установки наклона FFT:', err);
-            setError('Не удалось установить наклон FFT');
+            setError(t('settings.fft.errors.setTilt'));
         }
     }
 
@@ -338,11 +340,13 @@ export default function FFTControlComponent() {
     };
 
     const getStatusText = () => {
-        if (error) return 'Ошибка';
-        if (fftConfig.enabled && selectedDevice) return 'Активен';
-        if (fftConfig.enabled && !selectedDevice) return 'Нет устройства';
-        return 'Отключен';
+        if (error) return t('settings.fft.status.error');
+        if (fftConfig.enabled && selectedDevice) return t('settings.fft.status.active');
+        if (fftConfig.enabled && !selectedDevice) return t('settings.fft.status.noDevice');
+        return t('settings.fft.status.disabled');
     };
+
+    const deviceName = selectedDevice ? selectedDevice.name : t('settings.fft.device.notSelected');
 
     if (isLoading) {
         return (
@@ -350,9 +354,9 @@ export default function FFTControlComponent() {
                 <LoadingHeader>
                     <CardTitle>
                         <FiActivity />
-                        FFT Анализатор
+                        {t('settings.fft.title')}
                     </CardTitle>
-                    <InfoBadge>Загрузка...</InfoBadge>
+                    <InfoBadge>{t('common.loading')}</InfoBadge>
                 </LoadingHeader>
             </SettingsCard>
         );
@@ -364,7 +368,7 @@ export default function FFTControlComponent() {
                 <Row gap="12px">
                     <CardTitle>
                         <FiActivity />
-                        FFT Анализатор
+                        {t('settings.fft.title')}
                     </CardTitle>
 
                     <StatusIndicator status={getStatus()}>
@@ -386,7 +390,7 @@ export default function FFTControlComponent() {
                     </FFTWrapper>
 
                     <CollapseToggle>
-                        {isOpen ? 'Свернуть' : 'Настроить'}
+                        {isOpen ? t('settings.fft.collapse') : t('settings.fft.expand')}
                         {isOpen ? <FiChevronUp /> : <FiSettings />}
                     </CollapseToggle>
                 </Row>
@@ -395,9 +399,14 @@ export default function FFTControlComponent() {
             {/* Свернутое описание */}
             {!isOpen && (
                 <CollapsedPreview onClick={toggleOpen}>
-                    Анализатор аудиочастот в реальном времени для создания визуальных эффектов. Захватывает звук с выбранного устройства и предоставляет данные FFT для визуализаций.
-                    <br /><br />
-                    <span className="highlight">Устройство:</span> {selectedDevice ? selectedDevice.name : 'Не выбрано'}<br />
+                    <Trans
+                        i18nKey="settings.fft.preview.description"
+                        components={{
+                            br: <br />,
+                            highlight: <span className="highlight" />
+                        }}
+                        values={{ device: deviceName }}
+                    />
                 </CollapsedPreview>
             )}
 
@@ -408,14 +417,14 @@ export default function FFTControlComponent() {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiSettings />
-                                Основные настройки
+                                {t('settings.fft.sections.general')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="16px">
                             <ControlGroup>
                                 <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px' }}>
-                                    Включить FFT анализ
+                                    {t('settings.fft.controls.enable')}
                                 </label>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <Switch
@@ -423,7 +432,7 @@ export default function FFTControlComponent() {
                                         onChange={(e) => handleFFTToggle(e.target.checked)}
                                     />
                                     <span style={{ fontSize: '0.85rem', color: '#999' }}>
-                                        {fftConfig.enabled ? 'Включен' : 'Выключен'}
+                                        {fftConfig.enabled ? t('settings.fft.controls.enabled') : t('settings.fft.controls.disabled')}
                                     </span>
                                 </div>
                             </ControlGroup>
@@ -441,7 +450,7 @@ export default function FFTControlComponent() {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiMic />
-                                Аудиоустройство
+                                {t('settings.fft.sections.device')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -451,7 +460,7 @@ export default function FFTControlComponent() {
                                 onChange={handleDeviceChange}
                                 disabled={devices.length === 0}
                             >
-                                <option value="">Выберите устройство</option>
+                                <option value="">{t('settings.fft.device.placeholder')}</option>
                                 {devices.map((device) => (
                                     <option key={device.id} value={device.id}>
                                         {device.name} ({device.flow})
@@ -462,7 +471,7 @@ export default function FFTControlComponent() {
                             <RefreshButton
                                 onClick={loadDevices}
                                 disabled={isRefreshing}
-                                title="Обновить список устройств"
+                                title={t('settings.fft.device.refresh')}
                             >
                                 <FiRefreshCw style={{
                                     animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
@@ -472,7 +481,7 @@ export default function FFTControlComponent() {
 
                         {selectedDevice && (
                             <InfoBadge style={{ marginTop: '8px' }}>
-                                Выбрано: {selectedDevice.name}
+                                {t('settings.fft.device.selected', { name: selectedDevice.name })}
                             </InfoBadge>
                         )}
                     </Section>
@@ -483,13 +492,13 @@ export default function FFTControlComponent() {
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiVolume2 />
-                                    Параметры анализатора
+                                    {t('settings.fft.sections.parameters')}
                                 </SectionTitle>
                             </SectionHeader>
 
                             <ParameterGrid>
                                 <SeekbarComponent
-                                    title="Нижний порог (dB)"
+                                    title={t('settings.fft.sliders.dbFloor')}
                                     min={-100}
                                     max={-20}
                                     value={fftConfig.dbFloor}
@@ -499,7 +508,7 @@ export default function FFTControlComponent() {
                                 />
 
                                 <SeekbarComponent
-                                    title="Основное усиление"
+                                    title={t('settings.fft.sliders.masterGain')}
                                     min={0.1}
                                     max={100}
                                     value={fftConfig.masterGain}
@@ -511,7 +520,7 @@ export default function FFTControlComponent() {
                                 />
 
                                 <SeekbarComponent
-                                    title="Наклон частот"
+                                    title={t('settings.fft.sliders.tilt')}
                                     min={-2}
                                     max={2}
                                     value={fftConfig.tilt}
@@ -528,29 +537,29 @@ export default function FFTControlComponent() {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiEye />
-                                Демонстрация FFT
+                                {t('settings.fft.sections.demo')}
                             </SectionTitle>
                         </SectionHeader>
 
                         <Row gap="12px">
                             <DemoButton onClick={openDemoFFTColumns}>
                                 <FiExternalLink />
-                                Демо FFT (столбцы)
+                                {t('settings.fft.demo.columns')}
                             </DemoButton>
 
                             <DemoButton onClick={openDemoFFTRing}>
                                 <FiExternalLink />
-                                Демо FFT (кольцо)
+                                {t('settings.fft.demo.ring')}
                             </DemoButton>
 
                             <DemoButton onClick={openDemoWaveform}>
                                 <FiExternalLink />
-                                Демо волна
+                                {t('settings.fft.demo.waveform')}
                             </DemoButton>
                         </Row>
 
                         <InfoBadge style={{ marginTop: '8px' }}>
-                            Откроются в новом окне для тестирования визуализации
+                            {t('settings.fft.demo.hint')}
                         </InfoBadge>
                     </Section>
                 </CardContent>

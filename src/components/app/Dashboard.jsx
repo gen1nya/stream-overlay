@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import styled from 'styled-components';
 import {
     logout,
@@ -31,6 +31,7 @@ import ThemePopup from "./settings/ThemePopup";
 import {useWebSocket} from "../../context/WebSocketContext";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
+import { useTranslation } from 'react-i18next';
 
 const Wrapper = styled.div`
     position: relative;
@@ -323,6 +324,8 @@ export default function Dashboard() {
     const [logs, setLogs] = useState([]);
     const logPanelRef = useRef(null);
     const [isOnline, setIsOnline] = useState(false);
+    const { t, i18n } = useTranslation();
+    const [headerMessage, setHeaderMessage] = useState(null);
 
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
@@ -366,16 +369,10 @@ export default function Dashboard() {
         setShowUsersPopup(false);
     };
 
-    const streamers = [
-        'ellis_leaf',
-        'kururun_chan',
-        'fox1k_ru',
-        'sonamint',
-        'kigudi',
-        'kurosakissora',
-        'qvik_l',
-        'gena_zogii'
-    ];
+    const streamers = useMemo(() => {
+        const testers = t('dashboard.betaTesters', { returnObjects: true });
+        return Array.isArray(testers) ? testers : [];
+    }, [t, i18n.language]);
 
     const ExternalLink = ({ href, children }) => (
         <span
@@ -386,56 +383,72 @@ export default function Dashboard() {
                 cursor: 'pointer'
             }}
         >
-        {children}
-    </span>
+            {children}
+        </span>
     );
 
-    const headerTexts = [
-        'Ну шо?',
-        '\"Боты + в чат\"',
-        'Кто здесь?!',
-        'Срочно! Поправь монитор!',
-        '[ПЕКО]',
-        'Привет... чем могу помочь?',
-        'Молочный UwU\'н',
-        'Emotional Damage!',
-        'Опять забыл настроить?',
-        'ФЫР-ФЫР-ФЫР',
-        '!roulette',
-        'Вращайте барабан',
-        'Я Олег, мне 42 года',
-        'Мы тыкаем палочками',
-        'Когда ДРГ?',
-        'Good luck, have fun!',
-        'Ну, удачной охоты, сталкер!',
-        'Хорошего стрима ;)',
-        'Хихи-Хаха',
-        '…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ…ᘛ⁐̤ᕐᐷ',
-        'Ты рыбак?',
-        'undefined',
-        'Евготаро Пекорский',
-        'Гоу ту хорни джейл',
-        'Кuwuwuн',
-        '[ДАННЫЕ УДАЛЕНЫ]',
-        '[Здесь могла быть ваша паста]',
-        'Лисонад',
-        'Silly-cat натрия',
-        'Пуэра в горшок мне!',
-        '\<Удалено модератором\>',
-        'Киси-киси мяу-мяу',
-        'Пуэра в горшок мне!',
-        'ЛисDuke Nukem',
-        'TheIlluminati',
-        'Ррррыба!',
-        'Вставай самурай - стрим упал',
-        <span>also try <ExternalLink href='https://streamiverse.io'>streamiverse.io</ExternalLink></span>,
-        <ExternalLink href='https://tools.rus.ebatel.online/'>Ebatel.online</ExternalLink>,
-        'Здорова солнышки!',
-        'Ты сейсо или хорни?',
-        <span onClick={openTerminal}>NEPTUNE INTELLIGENZA</span>,
-    ];
+    useEffect(() => {
+        const messages = t('dashboard.headerMessages', { returnObjects: true });
+        if (Array.isArray(messages) && messages.length > 0) {
+            setHeaderMessage(messages[Math.floor(Math.random() * messages.length)]);
+        } else {
+            setHeaderMessage(null);
+        }
+    }, [t, i18n.language]);
 
-    const [headerText] = useState(() => headerTexts[Math.floor(Math.random() * headerTexts.length)]);
+    const renderHeaderContent = useCallback(() => {
+        if (!headerMessage) {
+            return null;
+        }
+
+        if (headerMessage.type === 'text') {
+            return headerMessage.text;
+        }
+
+        if (headerMessage.type === 'link' && headerMessage.href) {
+            return (
+                <ExternalLink href={headerMessage.href}>
+                    {headerMessage.text}
+                </ExternalLink>
+            );
+        }
+
+        if (headerMessage.type === 'inlineLink' && headerMessage.href) {
+            return (
+                <span>
+                    {headerMessage.text}
+                    {' '}
+                    <ExternalLink href={headerMessage.href}>
+                        {headerMessage.linkText}
+                    </ExternalLink>
+                    {headerMessage.suffix ? ` ${headerMessage.suffix}` : ''}
+                </span>
+            );
+        }
+
+        if (headerMessage.type === 'action') {
+            if (headerMessage.action === 'openTerminal') {
+                return (
+                    <span
+                        onClick={openTerminal}
+                        style={{ cursor: 'pointer', textDecoration: 'underline' }}
+                    >
+                        {headerMessage.text}
+                    </span>
+                );
+            }
+
+            if (headerMessage.action === 'openLink' && headerMessage.href) {
+                return (
+                    <ExternalLink href={headerMessage.href}>
+                        {headerMessage.text}
+                    </ExternalLink>
+                );
+            }
+        }
+
+        return headerMessage.text ?? '';
+    }, [headerMessage, openTerminal]);
 
     useEffect(() => {
         if (logPanelRef.current) {
@@ -490,7 +503,6 @@ export default function Dashboard() {
             getAccountInfo().then(info => {
                 const { accountInfo } = info;
                 setAccount(accountInfo);
-                document.title = `Оверлеешная - ${accountInfo.displayName || accountInfo.login}`;
             });
         }
         const update = async () => {
@@ -500,7 +512,14 @@ export default function Dashboard() {
         update();
         const interval = setInterval(update, 1000);
         return () => clearInterval(interval);
-    }, []);
+    }, [navigate]);
+
+    useEffect(() => {
+        if (account) {
+            const name = account.displayName || account.login || '';
+            document.title = t('dashboard.windowTitle', { name });
+        }
+    }, [account, t, i18n.language]);
 
     // Подключаемся к WebSocket и подписываемся на каналы (кроме тем - они в useThemeManager)
     useEffect(() => {
@@ -581,23 +600,23 @@ export default function Dashboard() {
                 <Content>
                     <Header>
                         <HeaderLeft>
-                            <HeaderTitle>{headerText}</HeaderTitle>
+                            <HeaderTitle>{renderHeaderContent()}</HeaderTitle>
                         </HeaderLeft>
 
                         <HeaderActions>
                             <ThemeIndicator onClick={openThemeSelector}>
                                 <FiLayers/>
-                                Тема: <span className="theme-name">{selectedThemeName}</span>
+                                {t('common.theme')}: <span className="theme-name">{selectedThemeName}</span>
                             </ThemeIndicator>
 
                             <ThemeIndicator onClick={openBotConfig}>
                                 <AiFillRobot/>
-                                Бот: <span className="theme-name">{botName}</span>
+                                {t('common.bot')}: <span className="theme-name">{botName}</span>
                             </ThemeIndicator>
 
                             <ActionButton onClick={handlerOpenSettings}>
                                 <FiSettings/>
-                                Настройки
+                                {t('common.settings')}
                             </ActionButton>
 
                         </HeaderActions>
@@ -605,10 +624,10 @@ export default function Dashboard() {
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
-                                Аккаунт
+                                {t('dashboard.cards.account.title')}
                                 <OnlineIndicator
                                     $isOnline={isOnline}
-                                    title={isOnline ? "Трансляция идёт в прямом эфире" : "Трансляция не ведётся"}
+                                    title={isOnline ? t('dashboard.cards.account.status.online') : t('dashboard.cards.account.status.offline')}
                                 >
                                     <span className="live-name">LIVE</span>
                                 </OnlineIndicator>
@@ -617,23 +636,25 @@ export default function Dashboard() {
                         <CardContent>
                             <Row>
                                 {account ? (
-                                    <AccountRow>
-                                        <Avatar src={account.avatar} alt="avatar" />
-                                        <AccountInfo>
-                                            <AccountName>{account.displayName || account.login}</AccountName>
-                                            <FollowersCounter onClick={handleOpenUsersPopup}>Фолловеров: {account.followerCount}</FollowersCounter>
-                                        </AccountInfo>
-                                    </AccountRow>
-                                ) : (
-                                    <p>Загрузка информации...</p>
-                                )}
-                                <Spacer />
-                                <AccountActions>
-                                    <LogoutButton onClick={handleLogout}>
-                                        <FiLogOut />
-                                        Выйти
-                                    </LogoutButton>
-                                </AccountActions>
+                                        <AccountRow>
+                                            <Avatar src={account.avatar} alt="avatar" />
+                                            <AccountInfo>
+                                                <AccountName>{account.displayName || account.login}</AccountName>
+                                            <FollowersCounter onClick={handleOpenUsersPopup}>
+                                                {t('dashboard.cards.account.followers', { count: account.followerCount })}
+                                            </FollowersCounter>
+                                            </AccountInfo>
+                                        </AccountRow>
+                                    ) : (
+                                    <p>{t('dashboard.cards.account.loading')}</p>
+                                    )}
+                                    <Spacer />
+                                    <AccountActions>
+                                        <LogoutButton onClick={handleLogout}>
+                                            <FiLogOut />
+                                            {t('common.logout')}
+                                        </LogoutButton>
+                                    </AccountActions>
 
                             </Row>
                         </CardContent>
@@ -642,27 +663,27 @@ export default function Dashboard() {
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
-                                Чат-оверлей
+                                {t('dashboard.cards.chat.title')}
                             </CardTitle>
                         </DashboardCardHeader>
                         <CardContent>
                             <ButtonsRow>
                                 <button onClick={handleOpenOverlay}>
                                     <FiExternalLink />
-                                    Открыть чат
+                                    {t('dashboard.cards.chat.open')}
                                 </button>
                                 <LinkGroup>
                                     <LinkButton onClick={handleCopyChatLink}>
                                         <FiCopy />
-                                        Скопировать ссылку
+                                        {t('dashboard.cards.chat.copyLink')}
                                     </LinkButton>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                        <ThemeLabel>тема:</ThemeLabel>
+                                        <ThemeLabel>{t('dashboard.cards.chat.themeLabel')}:</ThemeLabel>
                                         <ThemeSelector
                                             value={selectedThemeName}
                                             onChange={(e) => setSelectedThemeName(e.target.value)}
                                         >
-                                            <option value="">По умолчанию</option>
+                                            <option value="">{t('dashboard.cards.chat.defaultThemeOption')}</option>
                                             {themes && Object.keys(themes).map((themeName) => (
                                                 <option key={themeName} value={themeName}>
                                                     {themeName}
@@ -677,22 +698,22 @@ export default function Dashboard() {
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
-                            Виджеты
+                            {t('dashboard.cards.widgets.title')}
                             </CardTitle>
                         </DashboardCardHeader>
                         <CardContent>
                             <ButtonsRow>
                                 <button onClick={openPlayer1}>
                                     <FiExternalLink/>
-                                    Плеер-карточка
+                                    {t('dashboard.cards.widgets.playerCard')}
                                 </button>
                                 <button onClick={openPlayer2}>
                                     <FiExternalLink/>
-                                    Плеер-пластинка
+                                    {t('dashboard.cards.widgets.playerVinyl')}
                                 </button>
                                 <button onClick={openFollowersCounter}>
                                     <FiExternalLink/>
-                                    Цель фолловеров/стрим
+                                    {t('dashboard.cards.widgets.followersGoal')}
                                 </button>
                             </ButtonsRow>
                         </CardContent>
@@ -700,7 +721,7 @@ export default function Dashboard() {
                 </Content>
 
                 <LogPanel>
-                    <LogHeader>Логи</LogHeader>
+                    <LogHeader>{t('dashboard.logs.title')}</LogHeader>
                     <LogContent ref={logPanelRef}>
                         {logs.map((log, index) => (
                             <LogLine key={index}>
@@ -722,15 +743,15 @@ export default function Dashboard() {
             </MainArea>
 
             <StatusBlock>
-                <span style={{ color: '#b0b0b0' }}>Аптайм: {formatDuration(uptime)}</span>
-                <span style={{ color: eventSubColor }}>EventSub: {formatDuration(sinceEventSub)}</span>
-                <span style={{ color: ircColor }}>IRC: {formatDuration(sinceIRC)}</span>
-                <button onClick={handleReconnect}>Reconnect</button>
+                <span style={{ color: '#b0b0b0' }}>{t('dashboard.status.uptime', { duration: formatDuration(uptime) })}</span>
+                <span style={{ color: eventSubColor }}>{t('dashboard.status.eventSub', { duration: formatDuration(sinceEventSub) })}</span>
+                <span style={{ color: ircColor }}>{t('dashboard.status.irc', { duration: formatDuration(sinceIRC) })}</span>
+                <button onClick={handleReconnect}>{t('dashboard.status.reconnect')}</button>
             </StatusBlock>
 
             <Footer>
                 <Marquee style={{ fontSize: '14px' }}>
-                    Бета-тест:&nbsp;
+                    {t('dashboard.footer.betaTest')} &nbsp;
                     {streamers.map((name, index) => (
                         <React.Fragment key={name}>
                             <span

@@ -22,6 +22,7 @@ import {
 } from "./SharedSettingsStyles";
 import {Spacer} from "../../utils/Separator";
 import {Row} from "../SettingsComponent";
+import { useTranslation } from "react-i18next";
 
 // Специфичные стили для этого компонента
 const CollapsibleHeader = styled(CardHeader)`
@@ -92,9 +93,9 @@ const DeleteButton = styled(ActionButton)`
 `;
 
 const BACKGROUND_OPTIONS = [
-    {key: 'color', text: 'цвет'},
-    {key: 'image', text: 'картинки'},
-    {key: 'gradient', text: 'градиент'},
+    {key: 'color', labelKey: 'settings.follow.background.options.color'},
+    {key: 'image', labelKey: 'settings.follow.background.options.image'},
+    {key: 'gradient', labelKey: 'settings.follow.background.options.gradient'},
 ];
 
 export default function FollowSettingsBlock({
@@ -105,6 +106,7 @@ export default function FollowSettingsBlock({
                                                 onRemove,
                                                 disableRemove = false,
                                             }) {
+    const { t } = useTranslation();
     const [isOpen, setIsOpen] = useState(false);
     const message = current.followMessage?.[index] ?? {};
 
@@ -153,15 +155,20 @@ export default function FollowSettingsBlock({
 
     const toggleOpen = () => setIsOpen((prev) => !prev);
 
+    const backgroundOptions = BACKGROUND_OPTIONS.map((option) => ({
+        key: option.key,
+        text: t(option.labelKey),
+    }));
+
     return (
         <SettingsCard>
             <CollapsibleHeader onClick={toggleOpen}>
                 <CardTitle>
                     <FiHeart />
-                    Follow вариант #{index + 1}
+                    {t('settings.follow.title', { index: index + 1 })}
                 </CardTitle>
                 <CollapseToggle>
-                    {isOpen ? 'Свернуть' : 'Развернуть'}
+                    {isOpen ? t('settings.follow.collapse') : t('settings.follow.expand')}
                     {isOpen ? <FiChevronUp /> : <FiChevronDown />}
                 </CollapseToggle>
             </CollapsibleHeader>
@@ -181,13 +188,13 @@ export default function FollowSettingsBlock({
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiType />
-                                    Шаблон сообщения
+                                    {t('settings.follow.template.title')}
                                 </SectionTitle>
                             </SectionHeader>
 
                             <TemplateEditor
-                                hint="Доступные плейсхолдеры: {userName}"
-                                label="Шаблон для новых фолловеров"
+                                hint={t('settings.follow.template.hint')}
+                                label={t('settings.follow.template.label')}
                                 value={template}
                                 onChange={(v) => updateField('template', v)}
                                 fontSize={`${fontSize}px`}
@@ -205,7 +212,7 @@ export default function FollowSettingsBlock({
                             <Row gap="20px">
                                 <ControlGroup>
                                     <ColorSelectorButton
-                                        title="Цвет текста:"
+                                        title={t('settings.follow.template.textColor')}
                                         hex={messageFont.color || '#ffffff'}
                                         alpha={messageFont.opacity || 1}
                                         openColorPopup={openColorPopup}
@@ -219,7 +226,7 @@ export default function FollowSettingsBlock({
 
                                 <ControlGroup>
                                     <ColorSelectorButton
-                                        title="Цвет тени текста:"
+                                        title={t('settings.follow.template.shadowColor')}
                                         hex={messageFont?.shadowColor ?? "#000000"}
                                         alpha={messageFont?.shadowOpacity ?? 0}
                                         openColorPopup={openColorPopup}
@@ -231,7 +238,7 @@ export default function FollowSettingsBlock({
 
                                 <ControlGroup flex="1 1 200px">
                                     <SeekbarComponent
-                                        title={`Радиус тени`}
+                                        title={t('settings.follow.template.shadowRadius')}
                                         min="0"
                                         max="20"
                                         step="1"
@@ -250,16 +257,16 @@ export default function FollowSettingsBlock({
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiImage />
-                                    Настройки фона
+                                    {t('settings.follow.background.title')}
                                 </SectionTitle>
                             </SectionHeader>
 
                             <Row gap="20px">
                                 <ControlGroup>
                                     <RadioGroup
-                                        title="Тип фона:"
+                                        title={t('settings.follow.background.type')}
                                         defaultSelected={backgroundMode}
-                                        items={BACKGROUND_OPTIONS}
+                                        items={backgroundOptions}
                                         direction="horizontal"
                                         itemWidth="120px"
                                         onChange={(v) => updateField('backgroundMode', v)}
@@ -270,7 +277,7 @@ export default function FollowSettingsBlock({
 
                                 <ControlGroup flex="1 1 200px">
                                     <SeekbarComponent
-                                        title={`Скругление углов`}
+                                        title={t('settings.follow.background.radius')}
                                         min="0"
                                         max="20"
                                         step="1"
@@ -321,7 +328,7 @@ export default function FollowSettingsBlock({
                             <SectionHeader>
                                 <SectionTitle>
                                     <FiLayout />
-                                    Отступы и позиционирование
+                                    {t('settings.follow.layout.title')}
                                 </SectionTitle>
                             </SectionHeader>
 
@@ -340,10 +347,10 @@ export default function FollowSettingsBlock({
                         <DeleteButton
                             onClick={() => onRemove?.(index)}
                             disabled={disableRemove}
-                            title={disableRemove ? 'Нельзя удалить последний элемент' : 'Удалить вариант'}
+                            title={disableRemove ? t('settings.follow.delete.disabledTooltip') : t('settings.follow.delete.tooltip')}
                         >
                             <FiTrash2 />
-                            Удалить вариант
+                            {t('settings.follow.delete.action')}
                         </DeleteButton>
                     </DeleteSection>
                 </>

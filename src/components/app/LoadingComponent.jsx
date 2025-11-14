@@ -1,10 +1,12 @@
 import React, {useEffect, useRef} from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { getTokens, onAccountReady } from "../../services/api";
 
 export default function LoadingComponent() {
 
     const navigate = useNavigate();
+    const { t } = useTranslation();
 
     const called = useRef(false);
 
@@ -29,7 +31,7 @@ export default function LoadingComponent() {
 
     return(
         <div style={{ textAlign: 'center', margin: '0 auto' }} >
-            <h2>loading...</h2>
+            <h2>{t('loading.title')}</h2>
         </div>
     )
 }

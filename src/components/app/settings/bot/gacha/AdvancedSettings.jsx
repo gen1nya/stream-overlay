@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { FiAlertCircle } from 'react-icons/fi';
 import Switch from '../../../../utils/Switch';
 import { ParameterCard, ParameterTitle } from '../SharedBotStyles';
+import { useTranslation } from 'react-i18next';
 
 const SettingsGrid = styled.div`
     display: grid;
@@ -86,6 +87,7 @@ const RateLabel = styled.span`
 `;
 
 export default function AdvancedSettings({ banner, updateConfig }) {
+    const { t } = useTranslation();
     const [settings, setSettings] = useState({
         hardPity5Star: banner.hardPity5Star || 90,
         hardPity4Star: banner.hardPity4Star || 10,
@@ -95,6 +97,11 @@ export default function AdvancedSettings({ banner, updateConfig }) {
         featuredRate4Star: banner.featuredRate4Star || 0.5,
         hasCapturingRadiance: banner.hasCapturingRadiance !== false
     });
+
+    const warningLines = useMemo(
+        () => t('settings.bot.gacha.advanced.warning', { returnObjects: true }),
+        [t]
+    );
 
     const handleNumberChange = (key, value) => {
         const numValue = parseFloat(value);
@@ -136,8 +143,12 @@ export default function AdvancedSettings({ banner, updateConfig }) {
             <WarningBox>
                 <FiAlertCircle />
                 <WarningText>
-                    ⚠️ Внимание! Изменение этих параметров может нарушить баланс системы.
-                    Рекомендуется использовать стандартные значения из игр Hoyoverse.
+                    {Array.isArray(warningLines) && warningLines.map((line, index) => (
+                        <React.Fragment key={index}>
+                            {index > 0 && <br />}
+                            {line}
+                        </React.Fragment>
+                    ))}
                 </WarningText>
             </WarningBox>
 
@@ -147,11 +158,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Capturing Radiance
+                                {t('settings.bot.gacha.advanced.fields.specialGuarantee.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                Механика из версии 5.0 Genshin Impact. При проигрыше 50/50 есть 5% шанс
-                                все равно получить featured персонажа.
+                                {t('settings.bot.gacha.advanced.fields.specialGuarantee.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <Switch
@@ -166,11 +176,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Hard Pity для 5★
+                                {t('settings.bot.gacha.advanced.fields.hardPity5Star.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                Гарантированный 5★ предмет после указанного количества pulls.
-                                Стандарт: 90 для персонажей, 80 для оружия.
+                                {t('settings.bot.gacha.advanced.fields.hardPity5Star.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <NumberInput
@@ -189,11 +198,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Начало Soft Pity
+                                {t('settings.bot.gacha.advanced.fields.softPityStart.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                С какого pull начинает расти шанс получить 5★.
-                                Стандарт: 74 для персонажей, 64 для оружия.
+                                {t('settings.bot.gacha.advanced.fields.softPityStart.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <NumberInput
@@ -212,11 +220,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Hard Pity для 4★
+                                {t('settings.bot.gacha.advanced.fields.hardPity4Star.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                Гарантированный 4★ предмет после указанного количества pulls.
-                                Стандарт: 10 pulls.
+                                {t('settings.bot.gacha.advanced.fields.hardPity4Star.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <NumberInput
@@ -235,11 +242,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Базовый шанс 5★
+                                {t('settings.bot.gacha.advanced.fields.baseRate5Star.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                Базовая вероятность получить 5★ до достижения soft pity.
-                                Стандарт: 0.6% (0.006).
+                                {t('settings.bot.gacha.advanced.fields.baseRate5Star.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -262,11 +268,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Базовый шанс 4★
+                                {t('settings.bot.gacha.advanced.fields.baseRate4Star.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                Базовая вероятность получить 4★ предмет.
-                                Стандарт: 5.1% (0.051).
+                                {t('settings.bot.gacha.advanced.fields.baseRate4Star.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -289,11 +294,10 @@ export default function AdvancedSettings({ banner, updateConfig }) {
                     <ParameterRow>
                         <ParameterInfo>
                             <ParameterTitle>
-                                Шанс featured 4★
+                                {t('settings.bot.gacha.advanced.fields.featuredRate4Star.title')}
                             </ParameterTitle>
                             <ParameterDescription>
-                                Вероятность получить featured 4★ при выпадении любого 4★.
-                                Стандарт: 50% (0.5).
+                                {t('settings.bot.gacha.advanced.fields.featuredRate4Star.description')}
                             </ParameterDescription>
                         </ParameterInfo>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>

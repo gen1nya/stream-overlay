@@ -35,6 +35,7 @@ import {
     TableScrollContainer,
     Title
 } from "../../../../utils/tablePopupSharedStyles";
+import { useTranslation } from 'react-i18next';
 
 // Edit Modal Styles
 const EditModalOverlay = styled.div`
@@ -189,6 +190,7 @@ const SaveButton = styled(Button)`
 const ITEMS_PER_PAGE = 50;
 
 export default function GachaUsersPopup({ onClose }) {
+    const { t } = useTranslation();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
@@ -331,14 +333,14 @@ export default function GachaUsersPopup({ onClose }) {
             handleCloseEdit();
         } catch (error) {
             console.error('Failed to update user:', error);
-            alert('Ошибка при сохранении изменений');
+            alert(t('settings.bot.gacha.users.notifications.saveError'));
         } finally {
             setSaving(false);
         }
     };
 
     const handleDeleteUser = async (userId) => {
-        if (!confirm('Вы уверены, что хотите удалить данные этого пользователя?')) {
+        if (!confirm(t('settings.bot.gacha.users.confirmDelete'))) {
             return;
         }
 
@@ -348,7 +350,7 @@ export default function GachaUsersPopup({ onClose }) {
             setTotalCount(prev => prev - 1);
         } catch (error) {
             console.error('Failed to delete user:', error);
-            alert('Ошибка при удалении пользователя');
+            alert(t('settings.bot.gacha.users.notifications.deleteError'));
         }
     };
 
@@ -360,7 +362,7 @@ export default function GachaUsersPopup({ onClose }) {
         <Popup onClose={onClose}>
             <PopupContent>
                 <Header>
-                    <Title>Управление пользователями Gacha</Title>
+                    <Title>{t('settings.bot.gacha.users.title')}</Title>
                     <CloseButton onClick={onClose}>
                         <FiX />
                     </CloseButton>
@@ -373,7 +375,7 @@ export default function GachaUsersPopup({ onClose }) {
                         </SearchIcon>
                         <SearchInput
                             type="text"
-                            placeholder="Поиск по имени пользователя..."
+                            placeholder={t('settings.bot.gacha.users.search.placeholder')}
                             value={searchQuery}
                             onChange={handleSearchChange}
                             onKeyDown={handleSearchKeyDown}
@@ -381,7 +383,7 @@ export default function GachaUsersPopup({ onClose }) {
                         <ClearButton
                             visible={searchQuery.length > 0}
                             onClick={handleClearSearch}
-                            title="Очистить поиск (ESC)"
+                            title={t('settings.bot.gacha.users.search.clearTooltip')}
                         >
                             <FiX />
                         </ClearButton>
@@ -393,12 +395,12 @@ export default function GachaUsersPopup({ onClose }) {
                         <Table>
                             <TableHeader>
                                 <tr>
-                                    <TableHeaderCell>Пользователь</TableHeaderCell>
-                                    <TableHeaderCell>5★ Pity</TableHeaderCell>
-                                    <TableHeaderCell>4★ Pity</TableHeaderCell>
-                                    <TableHeaderCell>4★ Failed</TableHeaderCell>
-                                    <TableHeaderCell>Гарантия 5★</TableHeaderCell>
-                                    <TableHeaderCell>Действия</TableHeaderCell>
+                                    <TableHeaderCell>{t('settings.bot.gacha.users.table.headers.user')}</TableHeaderCell>
+                                    <TableHeaderCell>{t('settings.bot.gacha.users.table.headers.pity5')}</TableHeaderCell>
+                                    <TableHeaderCell>{t('settings.bot.gacha.users.table.headers.pity4')}</TableHeaderCell>
+                                    <TableHeaderCell>{t('settings.bot.gacha.users.table.headers.failed4')}</TableHeaderCell>
+                                    <TableHeaderCell>{t('settings.bot.gacha.users.table.headers.guaranteed')}</TableHeaderCell>
+                                    <TableHeaderCell>{t('settings.bot.gacha.users.table.headers.actions')}</TableHeaderCell>
                                 </tr>
                             </TableHeader>
                             <TableBody>
@@ -406,7 +408,7 @@ export default function GachaUsersPopup({ onClose }) {
                                     <tr>
                                         <td colSpan="6">
                                             <LoadingContainer>
-                                                Загрузка...
+                                                {t('common.loading')}
                                             </LoadingContainer>
                                         </td>
                                     </tr>
@@ -415,8 +417,8 @@ export default function GachaUsersPopup({ onClose }) {
                                         <td colSpan="6">
                                             <EmptyContainer>
                                                 <FiUsers />
-                                                <h3>Пользователи не найдены</h3>
-                                                <p>Попробуйте изменить критерии поиска</p>
+                                                <h3>{t('settings.bot.gacha.users.empty.title')}</h3>
+                                                <p>{t('settings.bot.gacha.users.empty.subtitle')}</p>
                                             </EmptyContainer>
                                         </td>
                                     </tr>
@@ -434,24 +436,24 @@ export default function GachaUsersPopup({ onClose }) {
                                                     {user.pity.isGuaranteed5Star ? (
                                                         <>
                                                             <FiCheck />
-                                                            Да
+                                                            {t('settings.bot.gacha.users.table.guaranteed.yes')}
                                                         </>
                                                     ) : (
-                                                        'Нет'
+                                                        t('settings.bot.gacha.users.table.guaranteed.no')
                                                     )}
                                                 </GuaranteedBadge>
                                             </TableCell>
                                             <TableCell>
                                                 <ActionButton
                                                     onClick={() => handleEditUser(user)}
-                                                    title="Редактировать"
+                                                    title={t('settings.bot.gacha.users.actions.editTooltip')}
                                                 >
                                                     <FiEdit3 />
                                                 </ActionButton>
                                                 <ActionButton
                                                     danger
                                                     onClick={() => handleDeleteUser(user.userId)}
-                                                    title="Удалить"
+                                                    title={t('settings.bot.gacha.users.actions.deleteTooltip')}
                                                 >
                                                     <FiTrash2 />
                                                 </ActionButton>
@@ -465,7 +467,7 @@ export default function GachaUsersPopup({ onClose }) {
 
                     <PaginationContainer>
                         <PaginationInfo>
-                            Показано {users.length} из {totalCount} пользователей
+                            {t('settings.bot.gacha.users.pagination.info', { shown: users.length, total: totalCount })}
                         </PaginationInfo>
 
                         <PaginationControls>
@@ -477,7 +479,7 @@ export default function GachaUsersPopup({ onClose }) {
                             </PaginationButton>
 
                             <span style={{ color: '#d6d6d6', fontSize: '0.9rem', margin: '0 12px' }}>
-                                Страница {currentPage + 1}
+                                {t('settings.bot.gacha.users.pagination.current', { page: currentPage + 1 })}
                             </span>
 
                             <PaginationButton
@@ -495,14 +497,14 @@ export default function GachaUsersPopup({ onClose }) {
                     <EditModalOverlay onClick={handleCloseEdit}>
                         <EditModalContent onClick={(e) => e.stopPropagation()}>
                             <EditModalHeader>
-                                <EditModalTitle>Редактировать пользователя</EditModalTitle>
+                                <EditModalTitle>{t('settings.bot.gacha.users.edit.title')}</EditModalTitle>
                                 <CloseButton onClick={handleCloseEdit}>
                                     <FiX />
                                 </CloseButton>
                             </EditModalHeader>
 
                             <FormGroup>
-                                <Label>Имя пользователя</Label>
+                                <Label>{t('settings.bot.gacha.users.edit.fields.userName')}</Label>
                                 <Input
                                     type="text"
                                     value={editForm.userName}
@@ -511,7 +513,7 @@ export default function GachaUsersPopup({ onClose }) {
                             </FormGroup>
 
                             <FormGroup>
-                                <Label>Попытки с последней 5★</Label>
+                                <Label>{t('settings.bot.gacha.users.edit.fields.pullsSince5')}</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -521,7 +523,7 @@ export default function GachaUsersPopup({ onClose }) {
                             </FormGroup>
 
                             <FormGroup>
-                                <Label>Попытки с последней 4★</Label>
+                                <Label>{t('settings.bot.gacha.users.edit.fields.pullsSince4')}</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -531,7 +533,7 @@ export default function GachaUsersPopup({ onClose }) {
                             </FormGroup>
 
                             <FormGroup>
-                                <Label>Количество неудачных 4★ rate-up</Label>
+                                <Label>{t('settings.bot.gacha.users.edit.fields.pity4Fails')}</Label>
                                 <Input
                                     type="number"
                                     min="0"
@@ -547,18 +549,18 @@ export default function GachaUsersPopup({ onClose }) {
                                         checked={editForm.isGuaranteed5Star}
                                         onChange={(e) => handleFormChange('isGuaranteed5Star', e.target.checked)}
                                     />
-                                    <CheckboxLabel>Гарантированная 5★ на следующей попытке</CheckboxLabel>
+                                    <CheckboxLabel>{t('settings.bot.gacha.users.edit.fields.isGuaranteed')}</CheckboxLabel>
                                 </CheckboxWrapper>
                             </FormGroup>
 
                             <EditModalButtons>
                                 <CancelButton onClick={handleCloseEdit}>
                                     <FiX />
-                                    Отмена
+                                    {t('settings.bot.gacha.users.actions.cancel')}
                                 </CancelButton>
                                 <SaveButton onClick={handleSaveEdit} disabled={saving}>
                                     <FiSave />
-                                    {saving ? 'Сохранение...' : 'Сохранить'}
+                                    {saving ? t('settings.bot.gacha.users.actions.saving') : t('settings.bot.gacha.users.actions.save')}
                                 </SaveButton>
                             </EditModalButtons>
                         </EditModalContent>

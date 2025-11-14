@@ -33,6 +33,7 @@ import {
     StatusBadge, VariableItem,
     VariablesList
 } from "../SharedBotStyles";
+import { useTranslation, Trans } from 'react-i18next';
 
 
 const CollapseToggle = styled.div`
@@ -56,6 +57,7 @@ const CollapseToggle = styled.div`
 
 
 export default function Roulette({ botConfig, apply }) {
+    const { t } = useTranslation();
     const [config, setConfig] = useState(botConfig);
     const [enabled, setEnabled] = useState(config.roulette.enabled);
     const [allowToBanEditors, setAllowToBanEditors] = useState(config.roulette.allowToBanEditors);
@@ -99,19 +101,23 @@ export default function Roulette({ botConfig, apply }) {
                             }}
                         />
                         <StatusBadge enabled={enabled}>
-                            {enabled ? 'Включено' : 'Выключено'}
+                            {enabled
+                                ? t('settings.bot.shared.status.enabled')
+                                : t('settings.bot.shared.status.disabled')}
                         </StatusBadge>
                     </EnabledToggle>
 
                     <CardTitle>
                         <FiTarget />
-                        Русская рулетка (mute)
+                        {t('settings.bot.roulette.title')}
                     </CardTitle>
 
                     <Spacer />
 
                     <CollapseToggle>
-                        {isOpen ? 'Свернуть' : 'Развернуть'}
+                        {isOpen
+                            ? t('settings.bot.shared.collapse.close')
+                            : t('settings.bot.shared.collapse.open')}
                         {isOpen ? <FiChevronUp /> : <FiChevronDown />}
                     </CollapseToggle>
                 </Row>
@@ -120,13 +126,14 @@ export default function Roulette({ botConfig, apply }) {
             {/* Свернутое описание */}
             {!isOpen && (
                 <CollapsedPreview onClick={toggleOpen}>
-                    Бот будет мутить чатерсов, которые используют команды русской рулетки с заданным шансом на заданное время
-                    <br /><br />
-                    <span className="warning">⚠️ Внимание!</span> Если перезапустить приложение во время мута - роли чата (VIP, mod) не восстановятся.
-                    <br /><br />
-                    В сообщения можно вставлять переменные:<br />
-                    <span className="highlight">${'{user}'}</span> - имя пользователя<br />
-                    <span className="highlight">${'{random(1000,9999)}'}</span> - случайное число в диапазоне
+                    <Trans
+                        i18nKey="settings.bot.roulette.preview"
+                        components={{
+                            br: <br />,
+                            warning: <span className="warning" />,
+                            highlight: <span className="highlight" />
+                        }}
+                    />
                 </CollapsedPreview>
             )}
 
@@ -137,11 +144,11 @@ export default function Roulette({ botConfig, apply }) {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiSettings />
-                                Основные параметры
+                                {t('settings.bot.roulette.sections.main')}
                             </SectionTitle>
                             <WarningBadge>
                                 <FiAlertTriangle />
-                                Роли не восстанавливаются после перезапуска
+                                {t('settings.bot.roulette.warning.roles')}
                             </WarningBadge>
                         </SectionHeader>
 
@@ -150,7 +157,7 @@ export default function Roulette({ botConfig, apply }) {
                                 <ParameterCard>
                                     <ParameterTitle>
                                         <FiClock />
-                                        Время мута (сек)
+                                        {t('settings.bot.roulette.parameters.muteDuration')}
                                     </ParameterTitle>
                                     <NumericEditorComponent
                                         width="150px"
@@ -168,7 +175,7 @@ export default function Roulette({ botConfig, apply }) {
                                 <ParameterCard>
                                     <ParameterTitle>
                                         <FiClock />
-                                        Перезарядка (сек)
+                                        {t('settings.bot.roulette.parameters.cooldown')}
                                     </ParameterTitle>
                                     <NumericEditorComponent
                                         width="150px"
@@ -186,7 +193,7 @@ export default function Roulette({ botConfig, apply }) {
                                 <ParameterCard>
                                     <ParameterTitle>
                                         <FiPercent />
-                                        Вероятность (%)
+                                        {t('settings.bot.roulette.parameters.chance')}
                                     </ParameterTitle>
                                     <NumericEditorComponent
                                         width="150px"
@@ -204,7 +211,7 @@ export default function Roulette({ botConfig, apply }) {
                         <Row gap="20px">
                             <ControlGroup>
                                 <EnabledToggle enabled={allowToBanEditors}>
-                                    <span>Мьютить Редакторов</span>
+                                    <span>{t('settings.bot.roulette.parameters.allowEditors')}</span>
                                     <Switch
                                         checked={allowToBanEditors}
                                         onChange={(e) => {
@@ -223,7 +230,7 @@ export default function Roulette({ botConfig, apply }) {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiTarget />
-                                Команды рулетки
+                                {t('settings.bot.roulette.sections.commands')}
                             </SectionTitle>
                         </SectionHeader>
 
@@ -233,7 +240,7 @@ export default function Roulette({ botConfig, apply }) {
                                 const commands = value.split(",").map((cmd) => cmd.trim()).filter(cmd => cmd);
                                 updateRouletteConfig(() => ({ commands }));
                             }}
-                            placeholder="Введите команды через запятую (например: !rr, !roulette, !русскаярулетка)"
+                            placeholder={t('settings.bot.roulette.commands.placeholder')}
                         />
                     </Section>
 
@@ -242,7 +249,7 @@ export default function Roulette({ botConfig, apply }) {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiMessageSquare />
-                                Настройки сообщений
+                                {t('settings.bot.roulette.sections.messages')}
                             </SectionTitle>
                         </SectionHeader>
 

@@ -2,6 +2,7 @@ import {Row} from "../app/SettingsComponent";
 import SeekbarComponent from "./SeekbarComponent";
 import React from "react";
 import {SmallSubTitle} from "../app/settings/SettingBloks";
+import { useTranslation } from "react-i18next";
 
 export default function PaddingEditorComponent({
                                                     message,
@@ -10,14 +11,15 @@ export default function PaddingEditorComponent({
                                                     onVerticalMarginChange,
                                                     onHorizontalMarginChange,
 }) {
+    const { t } = useTranslation();
 
     return (
         <>
             <div>
-                <SmallSubTitle>Отступы снаружи:</SmallSubTitle>
+                <SmallSubTitle>{t('settings.shared.paddingEditor.outerTitle')}</SmallSubTitle>
                 <Row align="center" gap="0.5rem">
                     <SeekbarComponent
-                        title={`По горизонтали`}
+                        title={t('settings.shared.paddingEditor.horizontal')}
                         min="0"
                         max="100"
                         width={"150px"}
@@ -27,7 +29,7 @@ export default function PaddingEditorComponent({
                     />
 
                     <SeekbarComponent
-                        title={`По вертикали`}
+                        title={t('settings.shared.paddingEditor.vertical')}
                         min="0"
                         max="50"
                         width={"150px"}
@@ -39,10 +41,10 @@ export default function PaddingEditorComponent({
             </div>
 
             <div>
-                <span>Отступы внутри:</span>
+                <span>{t('settings.shared.paddingEditor.innerTitle')}</span>
                 <Row>
                     <SeekbarComponent
-                        title={`По горизонтали`}
+                        title={t('settings.shared.paddingEditor.horizontal')}
                         min="0"
                         max="100"
                         width={"150px"}
@@ -52,7 +54,7 @@ export default function PaddingEditorComponent({
                     />
 
                     <SeekbarComponent
-                        title={`По вертикали`}
+                        title={t('settings.shared.paddingEditor.vertical')}
                         min="0"
                         max="50"
                         value={message.paddingV ?? 0}

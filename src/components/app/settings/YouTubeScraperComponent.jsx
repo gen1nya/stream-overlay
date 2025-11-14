@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import { FiYoutube, FiSettings, FiRefreshCw, FiList, FiExternalLink, FiClock } from 'react-icons/fi';
 import {
     enableYouTubeScraper,
@@ -199,6 +200,7 @@ const UpdateTimer = styled.div`
 `;
 
 export default function YouTubeScraperComponent() {
+    const { t } = useTranslation();
     const [scraperEnabled, setScraperEnabled] = useState(false);
     const [channelInput, setChannelInput] = useState('');
     const [currentChannelId, setCurrentChannelId] = useState('');
@@ -220,7 +222,7 @@ export default function YouTubeScraperComponent() {
             setChannelInput(config.channelId || '');
         } catch (err) {
             console.error('Ошибка загрузки конфигурации YouTube:', err);
-            setError('Не удалось загрузить конфигурацию YouTube');
+            setError('settings.youtubeScraper.errors.loadConfig');
         }
     };
 
@@ -235,7 +237,7 @@ export default function YouTubeScraperComponent() {
             setError('');
         } catch (err) {
             console.error('Ошибка загрузки трансляций:', err);
-            setError('Не удалось загрузить список трансляций');
+            setError('settings.youtubeScraper.errors.loadStreams');
         } finally {
             setIsRefreshing(false);
         }
@@ -255,7 +257,7 @@ export default function YouTubeScraperComponent() {
             }
         } catch (err) {
             console.error('Ошибка установки канала:', err);
-            setError('Не удалось установить канал');
+            setError('settings.youtubeScraper.errors.setChannel');
         }
     };
 
@@ -271,7 +273,7 @@ export default function YouTubeScraperComponent() {
             }
         } catch (err) {
             console.error('Ошибка переключения скрапера:', err);
-            setError(err.message || 'Не удалось переключить скрапер');
+            setError(err?.message || 'settings.youtubeScraper.errors.toggle');
         }
     };
 
@@ -329,10 +331,12 @@ export default function YouTubeScraperComponent() {
     };
 
     const getStatusText = () => {
-        if (error) return 'Ошибка';
-        if (scraperEnabled && streams.length > 0) return `Активен (${streams.length} в эфире)`;
-        if (scraperEnabled) return 'Активен';
-        return 'Отключен';
+        if (error) return t('settings.youtubeScraper.status.error');
+        if (scraperEnabled && streams.length > 0) {
+            return t('settings.youtubeScraper.status.activeWithCount', { count: streams.length });
+        }
+        if (scraperEnabled) return t('settings.youtubeScraper.status.active');
+        return t('settings.youtubeScraper.status.disabled');
     };
 
     const formatViewers = (count) => {
@@ -348,9 +352,9 @@ export default function YouTubeScraperComponent() {
                 <CardHeader>
                     <CardTitle>
                         <FiYoutube />
-                        YouTube Скрапер
+                        {t('settings.youtubeScraper.title')}
                     </CardTitle>
-                    <InfoBadge>Загрузка...</InfoBadge>
+                    <InfoBadge>{t('common.loading')}</InfoBadge>
                 </CardHeader>
             </SettingsCard>
         );
@@ -361,7 +365,7 @@ export default function YouTubeScraperComponent() {
             <CardHeader>
                 <CardTitle>
                     <FiYoutube />
-                    YouTube Скрапер
+                    {t('settings.youtubeScraper.title')}
                 </CardTitle>
                 <StatusIndicator status={getStatus()}>
                     <FiYoutube className="status-icon" />
@@ -375,14 +379,14 @@ export default function YouTubeScraperComponent() {
                     <SectionHeader>
                         <SectionTitle>
                             <FiSettings />
-                            Основные настройки
+                            {t('settings.youtubeScraper.sections.general.title')}
                         </SectionTitle>
                     </SectionHeader>
 
                     <Row gap="16px">
                         <ControlGroup>
                             <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#e0e0e0', marginBottom: '8px' }}>
-                                Включить захват чата
+                                {t('settings.youtubeScraper.sections.general.toggleLabel')}
                             </label>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Switch
@@ -390,7 +394,7 @@ export default function YouTubeScraperComponent() {
                                     onChange={(e) => handleScraperToggle(e.target.checked)}
                                 />
                                 <span style={{ fontSize: '0.85rem', color: '#999' }}>
-                                    {scraperEnabled ? 'Включен' : 'Выключен'}
+                                    {scraperEnabled ? t('settings.shared.toggle.enabled') : t('settings.shared.toggle.disabled')}
                                 </span>
                             </div>
                         </ControlGroup>
@@ -398,7 +402,7 @@ export default function YouTubeScraperComponent() {
 
                     {error && (
                         <WarningBadge style={{ marginTop: '8px' }}>
-                            {error}
+                            {t(error, { defaultValue: error })}
                         </WarningBadge>
                     )}
                 </Section>
@@ -408,7 +412,7 @@ export default function YouTubeScraperComponent() {
                     <SectionHeader>
                         <SectionTitle>
                             <FiYoutube />
-                            Канал для мониторинга
+                            {t('settings.youtubeScraper.sections.channel.title')}
                         </SectionTitle>
                     </SectionHeader>
 
@@ -417,7 +421,7 @@ export default function YouTubeScraperComponent() {
                             type="text"
                             value={channelInput}
                             onChange={(e) => setChannelInput(e.target.value)}
-                            placeholder="Введите ID канала (например: UCxxx или @channelname)"
+                            placeholder={t('settings.youtubeScraper.sections.channel.placeholder')}
                             onKeyPress={(e) => {
                                 if (e.key === 'Enter') {
                                     handleChannelSave();
@@ -429,19 +433,19 @@ export default function YouTubeScraperComponent() {
                             onClick={handleChannelSave}
                             disabled={!channelInput.trim() || channelInput.trim() === currentChannelId}
                         >
-                            {channelInput.trim() === currentChannelId ? 'Сохранено' : 'Сохранить'}
+                            {channelInput.trim() === currentChannelId ? t('settings.youtubeScraper.sections.channel.saved') : t('settings.youtubeScraper.sections.channel.save')}
                         </ActionButton>
                     </Row>
 
                     {currentChannelId && (
                         <SuccessBadge style={{ marginTop: '8px' }}>
-                            Текущий канал: {currentChannelId}
+                            {t('settings.youtubeScraper.sections.channel.current', { channel: currentChannelId })}
                         </SuccessBadge>
                     )}
 
                     {!currentChannelId && (
                         <InfoBadge style={{ marginTop: '8px' }}>
-                            Поддерживаются URL вида youtube.com/c/channel, youtube.com/@channel или ID канала
+                            {t('settings.youtubeScraper.sections.channel.supported')}
                         </InfoBadge>
                     )}
                 </Section>
@@ -452,17 +456,17 @@ export default function YouTubeScraperComponent() {
                         <SectionHeader>
                             <SectionTitle>
                                 <FiList />
-                                Активные трансляции
+                                {t('settings.youtubeScraper.sections.streams.title')}
                             </SectionTitle>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <UpdateTimer>
                                     <FiClock />
-                                    Обновление через {nextUpdate}с
+                                    {t('settings.youtubeScraper.sections.streams.nextUpdate', { seconds: nextUpdate })}
                                 </UpdateTimer>
                                 <RefreshButton
                                     onClick={loadStreams}
                                     disabled={isRefreshing}
-                                    title="Обновить список"
+                                    title={t('settings.youtubeScraper.sections.streams.refreshTitle')}
                                 >
                                     <FiRefreshCw style={{
                                         animation: isRefreshing ? 'spin 1s linear infinite' : 'none'
@@ -473,9 +477,9 @@ export default function YouTubeScraperComponent() {
 
                         {streams.length === 0 ? (
                             <InfoBadge>
-                                {isRefreshing ? 'Загрузка трансляций...' :
-                                    currentChannelId ? 'Активных трансляций не найдено' :
-                                        'Сначала укажите канал для мониторинга'}
+                                {isRefreshing ? t('settings.youtubeScraper.sections.streams.loading') :
+                                    currentChannelId ? t('settings.youtubeScraper.sections.streams.empty') :
+                                        t('settings.youtubeScraper.sections.streams.noChannel')}
                             </InfoBadge>
                         ) : (
                             <StreamsList>
@@ -486,16 +490,16 @@ export default function YouTubeScraperComponent() {
                                             <StreamMeta>
                                                 <ViewerCount>
                                                     <FiYoutube />
-                                                    {formatViewers(stream.viewerCount)} зрителей
+                                                    {t('settings.youtubeScraper.sections.streams.viewers', { count: formatViewers(stream.viewerCount) })}
                                                 </ViewerCount>
                                                 <span>•</span>
-                                                <span>{stream.isLive ? 'В эфире' : (stream.duration || 'Завершена')}</span>
+                                                <span>{stream.isLive ? t('settings.youtubeScraper.sections.streams.live') : (stream.duration || t('settings.youtubeScraper.sections.streams.completed'))}</span>
                                             </StreamMeta>
                                         </StreamInfo>
 
                                         <ActionButton
                                             onClick={() => window.open(stream.url, '_blank')}
-                                            title="Открыть трансляцию"
+                                            title={t('settings.youtubeScraper.sections.streams.openStream')}
                                         >
                                             <FiExternalLink />
                                         </ActionButton>
@@ -506,7 +510,7 @@ export default function YouTubeScraperComponent() {
 
                         {streams.length > 0 && (
                             <SuccessBadge style={{ marginTop: '8px' }}>
-                                Найдено {streams.length} активных трансляций в эфире
+                                {t('settings.youtubeScraper.sections.streams.found', { count: streams.length })}
                             </SuccessBadge>
                         )}
                     </Section>

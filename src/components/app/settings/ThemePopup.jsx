@@ -1,8 +1,8 @@
 // components/popups/ThemePopup.js
 import React, { useRef } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import Popup from '../../utils/PopupComponent';
-import { Row } from "../SettingsComponent";
 import { FiDownload, FiUpload, FiTrash2, FiPlus, FiX, FiCheck } from 'react-icons/fi';
 
 const PopupContent = styled.div`
@@ -259,6 +259,7 @@ export default function ThemePopup({
                                        onImportTheme,
                                        onCreateTheme
                                    }) {
+    const { t } = useTranslation();
     const themeNameRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -304,7 +305,7 @@ export default function ThemePopup({
         <Popup onClose={onClose}>
             <PopupContent>
                 <Header>
-                    <ThemesTitle>Управление темами</ThemesTitle>
+                    <ThemesTitle>{t('settings.themePopup.title')}</ThemesTitle>
                     <CloseButton onClick={onClose}>
                         <FiX />
                     </CloseButton>
@@ -331,7 +332,7 @@ export default function ThemePopup({
                                             e.stopPropagation();
                                             onExportTheme(key);
                                         }}
-                                        title="Экспортировать тему"
+                                        title={t('settings.themePopup.actions.export')}
                                     >
                                         <FiDownload />
                                     </ActionButton>
@@ -341,7 +342,7 @@ export default function ThemePopup({
                                             e.stopPropagation();
                                             onDeleteTheme(key);
                                         }}
-                                        title="Удалить тему"
+                                        title={t('settings.themePopup.actions.delete')}
                                     >
                                         <FiTrash2 />
                                     </ActionButton>
@@ -352,16 +353,16 @@ export default function ThemePopup({
                 </ThemesList>
 
                 <CreateSection>
-                    <CreateHeader>Создать новую тему</CreateHeader>
+                    <CreateHeader>{t('settings.themePopup.create.title')}</CreateHeader>
                     <CreateForm>
                         <NewThemeInput
                             ref={themeNameRef}
-                            placeholder="Введите название темы..."
+                            placeholder={t('settings.themePopup.create.placeholder')}
                             onKeyPress={handleKeyPress}
                         />
                         <CreateButton onClick={handleCreateTheme}>
                             <FiPlus />
-                            Создать
+                            {t('settings.themePopup.create.button')}
                         </CreateButton>
                     </CreateForm>
                 </CreateSection>
@@ -369,7 +370,7 @@ export default function ThemePopup({
                 <BottomActions>
                     <ImportButton onClick={triggerImport}>
                         <FiUpload />
-                        Импортировать тему
+                        {t('settings.themePopup.import')}
                     </ImportButton>
                     <HiddenFileInput
                         ref={fileInputRef}

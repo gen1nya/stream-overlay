@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { useTranslation } from 'react-i18next';
 import Popup from '../../utils/PopupComponent';
 import { FiDownload, FiUpload, FiTrash2, FiPlus, FiX, FiCheck } from 'react-icons/fi';
 import { getBots, updateBot, getCurrentBot, setCurrentBot, deleteBot, selectBot, getByName } from '../../../services/botsApi';
@@ -252,6 +253,7 @@ export default function BotConfigPopup({
                                            onClose,
                                            onBotChange
                                        }) {
+    const { t } = useTranslation();
     const [bots, setBots] = useState({});
     const [currentBot, setCurrentBotState] = useState(null);
     const [loading, setLoading] = useState(true);
@@ -294,16 +296,16 @@ export default function BotConfigPopup({
 
         // Запрещаем удаление если бот единственный
         if (botKeys.length <= 1) {
-            alert('Нельзя удалить единственного бота!');
+            alert(t('settings.botPopup.errors.singleBotDelete'));
             return;
         }
 
         if (botName === 'default') {
-            alert('Нельзя удалить бота по умолчанию!');
+            alert(t('settings.botPopup.errors.defaultDelete'));
             return;
         }
 
-        if (window.confirm(`Вы уверены, что хотите удалить бота "${botName}"?`)) {
+        if (window.confirm(t('settings.botPopup.confirmDelete', { name: botName }))) {
             try {
                 const result = await deleteBot(botName);
                 if (result) {
@@ -313,14 +315,14 @@ export default function BotConfigPopup({
                     await loadBots();
                     onBotChange && onBotChange(nextBot);
                 } else {
-                    alert('Бот не найден или не может быть удален');
+                    alert(t('settings.botPopup.errors.notFound'));
                 }
             } catch (error) {
                 console.error('Ошибка удаления бота:', error);
                 if (error.message.includes('Cannot delete the default bot')) {
-                    alert('Нельзя удалить бота по умолчанию!');
+                    alert(t('settings.botPopup.errors.defaultDelete'));
                 } else {
-                    alert('Произошла ошибка при удалении бота');
+                    alert(t('settings.botPopup.errors.delete'));
                 }
             }
         }
@@ -359,9 +361,9 @@ export default function BotConfigPopup({
                 console.error('Ошибка создания бота:', error);
                 // Показываем ошибку пользователю если бот уже существует
                 if (error.message.includes('already exists')) {
-                    alert(`Бот с именем "${newBotName}" уже существует!`);
+                    alert(t('settings.botPopup.errors.exists', { name: newBotName }));
                 } else {
-                    alert('Произошла ошибка при создании бота');
+                    alert(t('settings.botPopup.errors.create'));
                 }
             }
         }
@@ -391,16 +393,16 @@ export default function BotConfigPopup({
                     if (config.roulette && config.custom && config.pingpong) {
                         await updateBot(name, config);
                         await loadBots(); // Перезагружаем список
-                        alert(`Бот "${name}" успешно импортирован!`);
+                        alert(t('settings.botPopup.success.import', { name }));
                     } else {
-                        alert('Неверный формат файла конфигурации бота');
+                        alert(t('settings.botPopup.errors.invalidFormat'));
                     }
                 } else {
-                    alert('Файл не содержит корректных данных бота');
+                    alert(t('settings.botPopup.errors.noData'));
                 }
             } catch (error) {
                 console.error('Ошибка импорта бота:', error);
-                alert('Ошибка при импорте файла. Проверьте формат файла.');
+                alert(t('settings.botPopup.errors.import'));
             }
         };
         reader.readAsText(file);
@@ -414,7 +416,7 @@ export default function BotConfigPopup({
             <Popup onClose={onClose}>
                 <PopupContent>
                     <div style={{ textAlign: 'center', color: '#fff', padding: '40px' }}>
-                        Загрузка...
+                        {t('common.loading')}
                     </div>
                 </PopupContent>
             </Popup>
@@ -425,7 +427,7 @@ export default function BotConfigPopup({
         <Popup onClose={onClose}>
             <PopupContent>
                 <Header>
-                    <BotsTitle>Управление ботами</BotsTitle>
+                    <BotsTitle>{t('settings.botPopup.title')}</BotsTitle>
                     <CloseButton onClick={onClose}>
                         <FiX />
                     </CloseButton>
@@ -452,7 +454,7 @@ export default function BotConfigPopup({
                                             e.stopPropagation();
                                             handleExportBot(key);
                                         }}
-                                        title="Экспортировать бота"
+                                        title={t('settings.botPopup.actions.export')}
                                     >
                                         <FiDownload />
                                     </ActionButton>
@@ -462,7 +464,7 @@ export default function BotConfigPopup({
                                             e.stopPropagation();
                                             handleDeleteBot(key);
                                         }}
-                                        title="Удалить бота"
+                                        title={t('settings.botPopup.actions.delete')}
                                     >
                                         <FiTrash2 />
                                     </ActionButton>
@@ -473,16 +475,16 @@ export default function BotConfigPopup({
                 </BotsList>
 
                 <CreateSection>
-                    <CreateHeader>Создать нового бота</CreateHeader>
+                    <CreateHeader>{t('settings.botPopup.create.title')}</CreateHeader>
                     <CreateForm>
                         <NewBotInput
                             ref={botNameRef}
-                            placeholder="Введите название бота..."
+                            placeholder={t('settings.botPopup.create.placeholder')}
                             onKeyPress={handleKeyPress}
                         />
                         <CreateButton onClick={handleCreateBot}>
                             <FiPlus />
-                            Создать
+                            {t('settings.botPopup.create.button')}
                         </CreateButton>
                     </CreateForm>
                 </CreateSection>
@@ -490,7 +492,7 @@ export default function BotConfigPopup({
                 <BottomActions>
                     <ImportButton onClick={triggerImport}>
                         <FiUpload />
-                        Импортировать бота
+                        {t('settings.botPopup.import')}
                     </ImportButton>
                     <HiddenFileInput
                         ref={fileInputRef}

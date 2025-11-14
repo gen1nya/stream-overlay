@@ -1,8 +1,12 @@
+import { useTranslation } from 'react-i18next';
+
 export default function () {
+    const { t } = useTranslation();
+
     return (
         <div style={{ textAlign: 'center', margin: '0 auto' }}>
-            <h2>Дружок пирожок, ты выбрал не ту дверь</h2>
-            <p>Кожевенный клуб два блока вниз</p>
+            <h2>{t('notFound.title')}</h2>
+            <p>{t('notFound.hint')}</p>
         </div>
     );
 }

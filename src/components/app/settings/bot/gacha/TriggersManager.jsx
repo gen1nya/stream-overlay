@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { FiPlus, FiTrash2, FiGift, FiRefreshCw } from 'react-icons/fi';
 import { AddButton, ErrorText, FormRow, NameInput } from '../SharedBotStyles';
 import { getTwitchRewards } from '../../../../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const TriggersList = styled.div`
     display: flex;
@@ -161,6 +162,7 @@ const LoadingSpinner = styled.div`
 `;
 
 export default function TriggersManager({ triggers = [], updateConfig }) {
+    const { t } = useTranslation();
     const [isAdding, setIsAdding] = useState(false);
     const [rewards, setRewards] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -196,13 +198,13 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
         const errs = {};
 
         if (!newTrigger.rewardId) {
-            errs.rewardId = 'Выберите награду';
+            errs.rewardId = t('settings.bot.gacha.triggers.errors.rewardRequired');
         } else if (triggers.some(t => t.rewardId === newTrigger.rewardId)) {
-            errs.rewardId = 'Триггер для этой награды уже существует';
+            errs.rewardId = t('settings.bot.gacha.triggers.errors.rewardDuplicate');
         }
 
         if (newTrigger.amount < 1 || newTrigger.amount > 10) {
-            errs.amount = 'Количество должно быть от 1 до 10';
+            errs.amount = t('settings.bot.gacha.triggers.errors.amountRange');
         }
 
         setErrors(errs);
@@ -238,8 +240,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
     return (
         <div>
             <InfoBox style={{ marginBottom: '16px' }}>
-                💡 Триггеры позволяют связать награды канала Twitch с гача-системой.
-                Когда зритель активирует награду, он автоматически получит указанное количество pulls.
+                {t('settings.bot.gacha.triggers.info')}
             </InfoBox>
 
             {/* Кнопка добавления */}
@@ -247,7 +248,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                 <FormRow style={{ marginBottom: '16px' }}>
                     <AddButton onClick={() => setIsAdding(true)}>
                         <FiPlus />
-                        Добавить триггер
+                        {t('settings.bot.gacha.triggers.actions.addTrigger')}
                     </AddButton>
                     <AddButton
                         onClick={loadRewards}
@@ -257,7 +258,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                         }}
                     >
                         <FiRefreshCw />
-                        Обновить награды
+                        {t('settings.bot.gacha.triggers.actions.refreshRewards')}
                     </AddButton>
                 </FormRow>
             )}
@@ -267,12 +268,12 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                 <AddTriggerForm style={{ marginBottom: '16px' }}>
                     <div>
                         <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
-                            Награда Twitch
+                            {t('settings.bot.gacha.triggers.form.reward.label')}
                         </label>
                         {loading ? (
                             <LoadingSpinner>
                                 <FiRefreshCw />
-                                Загрузка наград...
+                                {t('settings.bot.gacha.triggers.loading')}
                             </LoadingSpinner>
                         ) : (
                             <>
@@ -284,12 +285,12 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                                         setErrors({ ...errors, rewardId: null });
                                     }}
                                 >
-                                    <option value="">Выберите награду</option>
+                                    <option value="">{t('settings.bot.gacha.triggers.form.reward.placeholder')}</option>
                                     {rewards
                                         .filter(reward => !triggers.some(t => t.rewardId === reward.id))
                                         .map(reward => (
                                             <option key={reward.id} value={reward.id}>
-                                                {reward.title} ({reward.cost} points)
+                                                {t('settings.bot.gacha.triggers.form.reward.option', { title: reward.title, cost: reward.cost })}
                                             </option>
                                         ))}
                                 </Select>
@@ -300,7 +301,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
 
                     <div>
                         <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
-                            Количество pulls
+                            {t('settings.bot.gacha.triggers.form.amount.label')}
                         </label>
                         <NumberInput
                             type="number"
@@ -319,7 +320,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                     <FormRow>
                         <AddButton onClick={handleAddTrigger}>
                             <FiPlus />
-                            Добавить
+                            {t('settings.bot.gacha.triggers.actions.add')}
                         </AddButton>
                         <AddButton
                             onClick={() => {
@@ -331,7 +332,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                                 borderColor: 'rgba(107, 114, 128, 0.4)'
                             }}
                         >
-                            Отмена
+                            {t('settings.bot.gacha.triggers.actions.cancel')}
                         </AddButton>
                     </FormRow>
                 </AddTriggerForm>
@@ -341,7 +342,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
             <TriggersList>
                 {triggers.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px', color: '#888' }}>
-                        Нет настроенных триггеров. Добавьте первый триггер, чтобы связать награды с гача-системой.
+                        {t('settings.bot.gacha.triggers.empty')}
                     </div>
                 ) : (
                     triggers.map(trigger => {
@@ -353,14 +354,14 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                                 </TriggerIcon>
                                 <TriggerContent>
                                     <TriggerTitle>
-                                        {reward ? reward.title : `Награда ${trigger.rewardId}`}
+                                        {reward ? reward.title : t('settings.bot.gacha.triggers.rewardFallback', { id: trigger.rewardId })}
                                     </TriggerTitle>
                                     <TriggerSubtitle>
-                                        {reward ? `${reward.cost} баллов` : 'Награда не найдена'}
+                                        {reward ? t('settings.bot.gacha.triggers.rewardCost', { cost: reward.cost }) : t('settings.bot.gacha.triggers.rewardMissing')}
                                     </TriggerSubtitle>
                                 </TriggerContent>
                                 <PullsBadge>
-                                    {trigger.amount} {trigger.amount === 1 ? 'pull' : 'pulls'}
+                                    {t('settings.bot.gacha.triggers.pullsBadge', { count: trigger.amount })}
                                 </PullsBadge>
                                 <DeleteButton onClick={() => handleDeleteTrigger(trigger.rewardId)}>
                                     <FiTrash2 />

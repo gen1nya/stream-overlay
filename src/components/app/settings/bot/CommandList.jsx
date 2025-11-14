@@ -8,6 +8,7 @@ import {Accordion} from "../../../utils/AccordionComponent";
 import {FiTrash2} from "react-icons/fi";
 import {Row} from "../../SettingsComponent";
 import {Spacer} from "../../../utils/Separator";
+import { useTranslation } from 'react-i18next';
 
 const CommandListWrapper = styled.div`
   display: flex;
@@ -25,12 +26,13 @@ const StyledInput = styled.input`
 `;
 
 export function CommandList() {
+    const { t } = useTranslation();
     const [commands, setCommands] = useState([])
 
     const addCommand = () => {
         const newCommand = {
             id: crypto.randomUUID(),
-            name: 'Новая команда',
+            name: t('settings.bot.commandList.newCommand'),
             trigger: '!new',
             enabled: true,
             actions: [],
@@ -61,7 +63,7 @@ export function CommandList() {
     return (
         <CommandListWrapper>
             {commands.map(cmd => (
-                <Accordion key={cmd.id} title={cmd.trigger || 'Без триггера'}>
+                <Accordion key={cmd.id} title={cmd.trigger || t('settings.bot.commandList.noTrigger')}>
 
                     <Row>
                         <input
@@ -69,11 +71,11 @@ export function CommandList() {
                             checked={cmd.enabled}
                             onChange={() => toggleCommand(cmd.id)}
                         />
-                        Команда включена
+                        {t('settings.bot.commandList.enabled')}
                     </Row>
 
                     <Row>
-                        Триггер:
+                        {t('settings.bot.commandList.trigger')}
                         <StyledInput
                             type="text"
                             value={cmd.trigger}
@@ -93,7 +95,7 @@ export function CommandList() {
             ))}
 
             <MediumSecondaryButton onClick={addCommand}>
-                + Добавить команду
+                {t('settings.bot.commandList.addCommand')}
             </MediumSecondaryButton>
         </CommandListWrapper>
     )

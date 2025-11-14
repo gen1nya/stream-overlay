@@ -1,5 +1,5 @@
 // components/popups/TwitchUsersPopup.jsx
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import styled from 'styled-components';
 import Popup from '../utils/PopupComponent';
 import {
@@ -40,6 +40,7 @@ import {
     Title
 } from "../utils/tablePopupSharedStyles";
 import {getTwitchUsers, searchTwitchUsers, updateRoles} from '../../services/api';
+import { useTranslation } from 'react-i18next';
 
 const FilterSection = styled.div`
     display: flex;
@@ -206,6 +207,8 @@ export default function TwitchUsersPopup({ onClose }) {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+    const { t, i18n } = useTranslation();
+    const locale = useMemo(() => (i18n.language === 'ru' ? 'ru-RU' : 'en-US'), [i18n.language]);
 
     const handleRoleToggle = async (userId, isVip, isMod, role, set) => {
         setLoadingUsers(prev => new Set([...prev, userId]));
@@ -361,8 +364,8 @@ export default function TwitchUsersPopup({ onClose }) {
         return false;
     });
 
-    const formatLastSeen = (timestamp) => {
-        if (!timestamp) return 'Никогда';
+    const formatLastSeen = useCallback((timestamp) => {
+        if (!timestamp) return t('twitchUsers.lastSeen.never');
 
         const date = new Date(timestamp);
         const now = new Date();
@@ -372,19 +375,19 @@ export default function TwitchUsersPopup({ onClose }) {
         const hours = Math.floor(diff / (1000 * 60 * 60));
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
-        if (minutes < 1) return 'Только что';
-        if (minutes < 60) return `${minutes} мин. назад`;
-        if (hours < 24) return `${hours} ч. назад`;
-        if (days < 7) return `${days} дн. назад`;
+        if (minutes < 1) return t('twitchUsers.lastSeen.justNow');
+        if (minutes < 60) return t('twitchUsers.lastSeen.minutes', { count: minutes });
+        if (hours < 24) return t('twitchUsers.lastSeen.hours', { count: hours });
+        if (days < 7) return t('twitchUsers.lastSeen.days', { count: days });
 
-        return date.toLocaleDateString('ru-RU');
-    };
+        return date.toLocaleDateString(locale);
+    }, [locale, t]);
 
     return (
         <Popup onClose={onClose}>
             <PopupContent>
                 <Header>
-                    <Title>Пользователи Twitch</Title>
+                    <Title>{t('twitchUsers.title')}</Title>
                     <CloseButton onClick={onClose}>
                         <FiX />
                     </CloseButton>
@@ -397,7 +400,7 @@ export default function TwitchUsersPopup({ onClose }) {
                         </SearchIcon>
                         <SearchInput
                             type="text"
-                            placeholder="Поиск пользователей..."
+                            placeholder={t('twitchUsers.search.placeholder')}
                             value={searchQuery}
                             onChange={handleSearchChange}
                             onKeyDown={handleSearchKeyDown}
@@ -405,7 +408,7 @@ export default function TwitchUsersPopup({ onClose }) {
                         <ClearButton
                             visible={searchQuery.length > 0}
                             onClick={handleClearSearch}
-                            title="Очистить поиск (ESC)"
+                            title={t('twitchUsers.search.clear')}
                         >
                             <FiX />
                         </ClearButton>
@@ -413,34 +416,34 @@ export default function TwitchUsersPopup({ onClose }) {
                 </SearchSection>
 
                 <FilterSection>
-                    <FilterLabel>Фильтры:</FilterLabel>
+                    <FilterLabel>{t('twitchUsers.filtersLabel')}</FilterLabel>
                     <FilterButton
                         active={activeFilters.vips}
                         onClick={() => handleFilterToggle('vips')}
                     >
                         <FiStar />
-                        VIP
+                        {t('twitchUsers.filters.vips')}
                     </FilterButton>
                     <FilterButton
                         active={activeFilters.followers}
                         onClick={() => handleFilterToggle('followers')}
                     >
                         <FiUserCheck />
-                        Фолловеры
+                        {t('twitchUsers.filters.followers')}
                     </FilterButton>
                     <FilterButton
                         active={activeFilters.moderators}
                         onClick={() => handleFilterToggle('moderators')}
                     >
                         <FiShield />
-                        Модеры
+                        {t('twitchUsers.filters.moderators')}
                     </FilterButton>
                     <FilterButton
                         active={activeFilters.editors}
                         onClick={() => handleFilterToggle('editors')}
                     >
                         <FiEdit3 />
-                        Редакторы
+                        {t('twitchUsers.filters.editors')}
                     </FilterButton>
                 </FilterSection>
 
@@ -448,10 +451,10 @@ export default function TwitchUsersPopup({ onClose }) {
                     <Table>
                         <TableHeader>
                             <tr>
-                                <TableHeaderCell>Имя</TableHeaderCell>
-                                <TableHeaderCell>Статус</TableHeaderCell>
-                                <TableHeaderCell>Последний визит</TableHeaderCell>
-                                <TableHeaderCell>Фолловер с</TableHeaderCell>
+                                <TableHeaderCell>{t('twitchUsers.table.name')}</TableHeaderCell>
+                                <TableHeaderCell>{t('twitchUsers.table.status')}</TableHeaderCell>
+                                <TableHeaderCell>{t('twitchUsers.table.lastSeen')}</TableHeaderCell>
+                                <TableHeaderCell>{t('twitchUsers.table.followedSince')}</TableHeaderCell>
                             </tr>
                         </TableHeader>
                     </Table>
@@ -463,7 +466,7 @@ export default function TwitchUsersPopup({ onClose }) {
                                     <tr>
                                         <td colSpan="3">
                                             <LoadingContainer>
-                                                Загрузка...
+                                                {t('twitchUsers.states.loading')}
                                             </LoadingContainer>
                                         </td>
                                     </tr>
@@ -472,8 +475,8 @@ export default function TwitchUsersPopup({ onClose }) {
                                         <td colSpan="3">
                                             <EmptyContainer>
                                                 <FiUsers />
-                                                <h3>Пользователи не найдены</h3>
-                                                <p>Попробуйте изменить критерии поиска или фильтры</p>
+                                                <h3>{t('twitchUsers.states.emptyTitle')}</h3>
+                                                <p>{t('twitchUsers.states.emptyDescription')}</p>
                                             </EmptyContainer>
                                         </td>
                                     </tr>
@@ -488,26 +491,26 @@ export default function TwitchUsersPopup({ onClose }) {
                                                     <VipInteractiveIcon
                                                         active={user.isVip}
                                                         $loading={loadingUsers.has(user.id)}
-                                                        title={`${user.isVip ? 'Убрать' : 'Добавить'} VIP (клик для изменения)`}
+                                                        title={t(user.isVip ? 'twitchUsers.statusIcons.vipRemove' : 'twitchUsers.statusIcons.vipAdd')}
                                                         onClick={() => !loadingUsers.has(user.id) && handleRoleToggle(user.id, user.isVip, user.isMod, 'vip', !user.isVip)}
                                                     >
                                                         <FiStar />
                                                     </VipInteractiveIcon>
 
-                                                    <FollowerIcon active={user.isFollower} title="Фоловер">
+                                                    <FollowerIcon active={user.isFollower} title={t('twitchUsers.statusIcons.follower')}>
                                                         <FiUserCheck />
                                                     </FollowerIcon>
 
                                                     <ModInteractiveIcon
                                                         active={user.isMod}
                                                         $loading={loadingUsers.has(user.id)}
-                                                        title={`${user.isMod ? 'Убрать' : 'Добавить'} модератора (клик для изменения)`}
+                                                        title={t(user.isMod ? 'twitchUsers.statusIcons.modRemove' : 'twitchUsers.statusIcons.modAdd')}
                                                         onClick={() => !loadingUsers.has(user.id) && handleRoleToggle(user.id, user.isVip, user.isMod, 'mod', !user.isMod)}
                                                     >
                                                         <FiShield />
                                                     </ModInteractiveIcon>
 
-                                                    <EditorIcon active={user.isEditor} title="Редактор">
+                                                    <EditorIcon active={user.isEditor} title={t('twitchUsers.statusIcons.editor')}>
                                                         <FiEdit3 />
                                                     </EditorIcon>
                                                 </StatusIconsContainer>
@@ -533,7 +536,7 @@ export default function TwitchUsersPopup({ onClose }) {
 
                     <PaginationContainer>
                         <PaginationInfo>
-                            Показано {filteredUsers.length} из {totalCount} пользователей
+                            {t('twitchUsers.pagination.info', { current: filteredUsers.length, total: totalCount })}
                         </PaginationInfo>
 
                         <PaginationControls>
@@ -545,7 +548,7 @@ export default function TwitchUsersPopup({ onClose }) {
                             </PaginationButton>
 
                             <span style={{ color: '#d6d6d6', fontSize: '0.9rem', margin: '0 12px' }}>
-                                Страница {currentPage + 1}
+                                {t('twitchUsers.pagination.page', { page: currentPage + 1 })}
                             </span>
 
                             <PaginationButton
