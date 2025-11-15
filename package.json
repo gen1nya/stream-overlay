@@ -12,7 +12,8 @@
     "build": "vite build",
     "build-electron": "npm run build && npm run build:ts && npm run postbuild && electron-builder",
     "build:ts": "tsc",
-    "postbuild": "node scripts/copy-native.js"
+    "postbuild": "node scripts/copy-native.js",
+    "postinstall": "electron-rebuild -f -w better-sqlite3"
   },
   "build": {
     "appId": "com.twitch.watcher",
@@ -42,6 +43,7 @@
     "axios": "^1.9.0",
     "better-sqlite3": "^12.2.0",
     "colorthief": "^2.6.0",
+    "dbus-next": "^0.10.2",
     "electron-store": "^8.2.0",
     "express": "^5.1.0",
     "framer-motion": "^12.15.0",
@@ -51,6 +53,8 @@
     "lodash": "^4.17.21",
     "lodash.merge": "^4.6.2",
     "lodash.throttle": "^4.1.1",
+    "mime-types": "^3.0.1",
+    "node-fetch": "^3.3.2",
     "node-gyp-build": "^4.8.4",
     "open": "^10.2.0",
     "qrcode.react": "^4.2.0",

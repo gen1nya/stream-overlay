@@ -4,7 +4,7 @@ import ElectronStore from "electron-store";
 import {AudioConfig, AudioDevice, StoreSchema} from "./services/store/StoreSchema";
 import {ipcMain} from "electron";
 
-const {media, fft} = require('./native');
+const {media} = require('./native');
 
 interface MediaMetadata {
     title: string;
@@ -21,7 +21,7 @@ export class AudiosessionManager {
 
     private mediaWss = new WebSocket.Server({port: 5001});
     private gsmtcBridge = new media.GSMTCBridge();
-    private fftbridge = new fft.FftBridge()
+    //private fftbridge = new fft.FftBridge()
     private appStorage: ElectronStore<StoreSchema>;
     private config: AudioConfig;
 
@@ -33,11 +33,11 @@ export class AudiosessionManager {
         this.appStorage = store;
         this.config = this.appStorage.get("audio")
 
-        this.fftbridge.setDbFloor(this.config.fft.dbFloor)
-        this.fftbridge.setMasterGain(this.config.fft.masterGain)
-        this.fftbridge.setTilt(this.config.fft.tilt)
+        //this.fftbridge.setDbFloor(this.config.fft.dbFloor)
+        //this.fftbridge.setMasterGain(this.config.fft.masterGain)
+        //this.fftbridge.setTilt(this.config.fft.tilt)
 
-        const device = this.config.fft.device;
+       /* const device = this.config.fft.device;
         if (device) {
             const devices = this.fftbridge.listDevices()
             const validDevice = devices.find(d => d.id === device.id);
@@ -59,7 +59,7 @@ export class AudiosessionManager {
                 logService.logMessage(`Failed to set audio device: ${device.name}`);
                 console.error(`Failed to set audio device: ${device.name}`);
             }
-        }
+        }*/
 
         this.setupWebSocketServer();
         this.setupMediaBridges();
@@ -106,7 +106,7 @@ export class AudiosessionManager {
     }
 
     private setupMediaBridges() {
-        const vuSource = new Promise((resolve) => {
+        /*const vuSource = new Promise((resolve) => {
             this.fftbridge.onVu((vu: Uint8Array) => {
                 this.mediaWss.clients.forEach((client) => {
                     if (client.readyState === WebSocket.OPEN) {
@@ -135,16 +135,23 @@ export class AudiosessionManager {
                     }
                 });
             })
-        });
+        });*/
 
-        const source = new Promise((resolve) => {
+        const mediaSessionSource = new Promise((resolve) => {
             this.gsmtcBridge.start((s) => {
-                let dataUrl: string | undefined;
-                const status = s.playbackStatus === 4 ? 'Playing' : s.playbackStatus;
-                if (s.thumbnail && s.thumbnail.length) {
+                const status =
+                    s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
+
+                let albumArt: string | undefined = undefined;
+
+                if (s.imageUrl) {
+                    // если Linux дал URL — используем его
+                    albumArt = s.imageUrl;
+                } else if (s.thumbnail && (s.thumbnail as Buffer).length) {
+                    // иначе — Windows thumbnail → base64
                     const mime = this.detectMime(s.thumbnail as Buffer);
-                    const b64 = (s.thumbnail as Buffer).toString('base64');
-                    dataUrl = `data:${mime};base64,${b64}`;
+                    const b64 = (s.thumbnail as Buffer).toString("base64");
+                    albumArt = `data:${mime};base64,${b64}`;
                 }
 
                 const metadata: MediaMetadata = {
@@ -154,23 +161,22 @@ export class AudiosessionManager {
                     appId: s.appId,
                     duration: s.durationMs / 1000,
                     position: s.positionMs / 1000,
-                    status: status,
-                    albumArtBase64: dataUrl
+                    status,
+                    albumArtBase64: albumArt,
                 };
 
-                // Сохраняем текущее состояние
                 this.currentMediaMetadata = metadata;
-                this.broadcastMedia('metadata', metadata);
+                this.broadcastMedia("metadata", metadata);
             });
         });
 
-        source.then(() => {
+        mediaSessionSource.then(() => {
             console.log("GSMTCBridge finished successfully");
         }).catch((err) => {
             console.error("Error starting GSMTCBridge:", err);
         });
 
-        fftSource.then(() => {
+       /* fftSource.then(() => {
             console.log("FftBridge finished successfully");
         }).catch((err) => {
             console.error("Error starting FftBridge:", err);
@@ -186,7 +192,7 @@ export class AudiosessionManager {
             console.log("VU source finished successfully");
         }).catch((err) => {
             console.error("Error in VU source:", err);
-        });
+        });*/
     }
 
     close() {
@@ -204,7 +210,7 @@ export class AudiosessionManager {
 
         try {
             console.log("🛑 Stopping FFT bridge...");
-            this.fftbridge = null;
+            //this.fftbridge = null;
             console.log("🛑 Stopping GSMTC bridge...");
             this.gsmtcBridge.stop();
             this.gsmtcBridge = null;
@@ -221,15 +227,16 @@ export class AudiosessionManager {
     }
 
     getDevices(): AudioDevice[] {
-        return this.fftbridge.listDevices();
+        return [];//return this.fftbridge.listDevices();
     }
 
     setDevice(device: AudioDevice): boolean {
-        const isAlive = this.fftbridge.setDevice(device.id);
+        /*const isAlive = this.fftbridge.setDevice(device.id);
         this.fftbridge.setLoopback(device.flow === 'render');
         this.appStorage.set("audio.fft.device", device);
         this.config.fft.device = device;
-        return isAlive;
+        return isAlive;*/
+        return false
     }
 
     getCurrentMediaState(): { metadata: MediaMetadata | null, spectrum: number[] | null } {
@@ -272,11 +279,11 @@ export class AudiosessionManager {
             const device: AudioDevice = args;
             if (this.setDevice(device)) {
                 // restart the engine to apply the new device
-                this.fftbridge.enable(false);
+               /* this.fftbridge.enable(false);
                 this.fftbridge.enable(true);
                 this.appStorage.set("audio.fft.device", device);
                 this.config.fft.device = device;
-                console.log(`Audio device set to: ${device.name}`);
+                console.log(`Audio device set to: ${device.name}`);*/
                 return true;
             } else {
                 throw new Error(`Failed to set audio device: ${device.name}`);
@@ -289,7 +296,7 @@ export class AudiosessionManager {
 
         ipcMain.handle('audio:setFFTGain', async (event, args) => {
             const masterGain = args;
-            this.fftbridge.setMasterGain(masterGain);
+            //this.fftbridge.setMasterGain(masterGain);
             this.appStorage.set("audio.fft.masterGain", masterGain);
             this.config.fft.masterGain = masterGain;
             return masterGain;
@@ -297,14 +304,14 @@ export class AudiosessionManager {
 
         ipcMain.handle('audio:setFFTDbFloor', async (event, args) => {
             const dbFloor = args;
-            this.fftbridge.setDbFloor(dbFloor);
+            //this.fftbridge.setDbFloor(dbFloor);
             this.appStorage.set("audio.fft.dbFloor", dbFloor);
             this.config.fft.dbFloor = dbFloor;
         })
 
         ipcMain.handle('audio:setFFTTilt', async (event, args) => {
             const tilt = args;
-            this.fftbridge.setTilt(tilt);
+            //this.fftbridge.setTilt(tilt);
             this.appStorage.set("audio.fft.tilt", tilt);
             this.config.fft.tilt = tilt;
             return tilt;
@@ -315,12 +322,12 @@ export class AudiosessionManager {
             if (enabled) {
                 const device = this.config.fft.device;
                 if (device) {
-                    this.fftbridge.enable(true);
+              //      this.fftbridge.enable(true);
                 } else {
                     throw new Error("No audio device set for FFT. Please set a device first.");
                 }
             } else {
-                this.fftbridge.enable(false);
+                //this.fftbridge.enable(false);
             }
             this.appStorage.set("audio.fft.enabled", enabled);
             this.config.fft.enabled = enabled;

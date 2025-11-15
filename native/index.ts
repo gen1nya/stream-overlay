@@ -1,6 +1,6 @@
-// dist-backend/native/index.js (или src/native/index.ts с тем же смыслом)
 import fs from "fs";
 import path from "path";
+import os from 'os';
 
 const nodeGypBuild = require('node-gyp-build');
 
@@ -14,13 +14,24 @@ function loadAddon(dir) {
             if (f) return require(path.join(rel, f));
         }
         e.message += `\nAlso looked in: ${rel} ${fs.existsSync(rel) ? `[${fs.readdirSync(rel).join(', ')}]` : '(missing)'}`;
+
+        if (os.platform() === "linux") {
+            const jsImpl = path.join(dir, "linux-media.js");
+            if (fs.existsSync(jsImpl)) {
+                return require(jsImpl);
+            }
+        }
+
+        e.message += `\nAlso looked in: ${rel} ${
+            fs.existsSync(rel) ? `[${fs.readdirSync(rel).join(", ")}]` : "(missing)"
+        }`;
+
         throw e;
     }
 }
 
-// ВАЖНО: не делай path.join(__dirname, 'native', '...') — __dirname уже указывает на /native
 const mediaDir = path.join(__dirname, 'media');
-const fftDir   = path.join(__dirname, 'fft');
+//const fftDir   = path.join(__dirname, 'fft');
 
 exports.media = loadAddon(mediaDir);
-exports.fft   = loadAddon(fftDir);
+//exports.fft   = loadAddon(fftDir);
