@@ -154,9 +154,9 @@ export function getBackgroundForTextColor(hex) {
     return luminance > 0.179 ? "#0d001a" : "#e7e5ea";
 }
 
-export default function ChatMessage({ message, showSourceChannel }) {
+export default function ChatMessage({ message, showSourceChannel, onClick }) {
     return (
-        <MessageContainer>
+        <MessageContainer onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
             <Content>
             <TitleContainer $tcolor={getBackgroundForTextColor(message.color)}>
                 {message.sourceChannel?.avatarUrl && showSourceChannel && (

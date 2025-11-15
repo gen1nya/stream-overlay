@@ -259,6 +259,16 @@ app.whenReady().then(() => {
             const logs = logService.getLogs();
             broadcast('log:updated', { logs });
             break;
+        case 'chat:messages-request':
+            const overlayCache = messageCache.getCurrentCache();
+            console.log('📦 Client requested overlay cache, sending', overlayCache.messages.length, 'messages');
+            broadcast('chat:messages', overlayCache);
+            break;
+        case 'chat:window-messages-request':
+            const windowCache = messageCache.getCurrentWindowCache();
+            console.log('🪟 Client requested window cache, sending', windowCache.messages.length, 'messages');
+            broadcast('chat:window-messages', windowCache);
+            break;
         default:
           console.log('unknown channel', channel, payload);
       }
@@ -268,6 +278,11 @@ app.whenReady().then(() => {
   messageCache.registerMessageHandler(({ messages, showSourceChannel }) => {
     console.log('📦 Sending cached messages to clients:', messages.map(msg => msg.id));
     broadcast('chat:messages', { messages: Array.from(messages), showSourceChannel });
+  });
+
+  messageCache.registerWindowMessageHandler(({ messages, showSourceChannel }) => {
+    console.log('🪟 Sending window cached messages to clients:', messages.map(msg => msg.id));
+    broadcast('chat:window-messages', { messages: Array.from(messages), showSourceChannel });
   });
 });
 

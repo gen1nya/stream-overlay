@@ -8,9 +8,15 @@ import {CustomRewardResponse} from "./types/CustomRevardData";
 
 const BASE_URL = 'https://api.twitch.tv/helix';
 
+/**
+ * Timeout or ban a user
+ * @param user_id - User ID to timeout/ban
+ * @param duration - Duration in seconds. If null/undefined, user will be permanently banned
+ * @param reason - Reason for timeout/ban
+ */
 export async function timeoutUser(
     user_id: string,
-    duration = 600,
+    duration?: number | null,
     reason = ''
 ): Promise<void> {
     const tokens = await authService.getTokens();
@@ -19,7 +25,20 @@ export async function timeoutUser(
     const moderator_id = broadcaster_id;
     const params = new URLSearchParams({broadcaster_id: String(broadcaster_id), moderator_id: String(moderator_id)});
     const url = `${BASE_URL}/moderation/bans?${params}`;
-    const body = {data: {user_id, duration, reason}};
+
+    // If duration is not provided or null, it's a permanent ban
+    const body: any = {
+        data: {
+            user_id,
+            reason
+        }
+    };
+
+    // Only add duration if it's provided (timeout vs ban)
+    if (duration !== null && duration !== undefined) {
+        body.data.duration = duration;
+    }
+
     await axios.post(url, body, {
         headers: {
             Authorization: `Bearer ${tokens.access_token}`,
@@ -39,6 +58,30 @@ export async function removeTimeoutOrBan(userId: string): Promise<void> {
             moderator_id: broadcaster_id,
             user_id: userId,
         },
+        headers: {
+            Authorization: `Bearer ${tokens.access_token}`,
+            'Client-Id': authService.CLIENT_ID,
+        },
+    });
+}
+
+/**
+ * Delete a specific chat message
+ * @param message_id - The ID of the message to delete
+ */
+export async function deleteMessage(message_id: string): Promise<void> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = await authService.getUserId();
+    const moderator_id = broadcaster_id;
+
+    const params = new URLSearchParams({
+        broadcaster_id: String(broadcaster_id),
+        moderator_id: String(moderator_id),
+        message_id: message_id
+    });
+
+    await axios.delete(`${BASE_URL}/moderation/chat?${params.toString()}`, {
         headers: {
             Authorization: `Bearer ${tokens.access_token}`,
             'Client-Id': authService.CLIENT_ID,
