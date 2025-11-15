@@ -137,14 +137,21 @@ export class AudiosessionManager {
             })
         });
 
-        const source = new Promise((resolve) => {
+        const mediaSessionSource = new Promise((resolve) => {
             this.gsmtcBridge.start((s) => {
-                let dataUrl: string | undefined;
-                const status = s.playbackStatus === 4 ? 'Playing' : s.playbackStatus;
-                if (s.thumbnail && s.thumbnail.length) {
+                const status =
+                    s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
+
+                let albumArt: string | undefined = undefined;
+
+                if (s.imageUrl) {
+                    // если Linux дал URL — используем его
+                    albumArt = s.imageUrl;
+                } else if (s.thumbnail && (s.thumbnail as Buffer).length) {
+                    // иначе — Windows thumbnail → base64
                     const mime = this.detectMime(s.thumbnail as Buffer);
-                    const b64 = (s.thumbnail as Buffer).toString('base64');
-                    dataUrl = `data:${mime};base64,${b64}`;
+                    const b64 = (s.thumbnail as Buffer).toString("base64");
+                    albumArt = `data:${mime};base64,${b64}`;
                 }
 
                 const metadata: MediaMetadata = {
@@ -154,17 +161,16 @@ export class AudiosessionManager {
                     appId: s.appId,
                     duration: s.durationMs / 1000,
                     position: s.positionMs / 1000,
-                    status: status,
-                    albumArtBase64: dataUrl
+                    status,
+                    albumArtBase64: albumArt,
                 };
 
-                // Сохраняем текущее состояние
                 this.currentMediaMetadata = metadata;
-                this.broadcastMedia('metadata', metadata);
+                this.broadcastMedia("metadata", metadata);
             });
         });
 
-        source.then(() => {
+        mediaSessionSource.then(() => {
             console.log("GSMTCBridge finished successfully");
         }).catch((err) => {
             console.error("Error starting GSMTCBridge:", err);
@@ -204,6 +210,7 @@ export class AudiosessionManager {
 
         try {
             console.log("🛑 Stopping FFT bridge...");
+            this.fftbridge.stop();
             this.fftbridge = null;
             console.log("🛑 Stopping GSMTC bridge...");
             this.gsmtcBridge.stop();

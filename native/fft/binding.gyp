@@ -4,7 +4,6 @@
       "target_name": "fft_bridge",
       "sources": [
         "src/addon.cc",
-        "src/engine.cpp",
         "src/fft_bands.cpp",
         "src/ringbuffers.h",
         "third_party/kissfft/kiss_fft.c",
@@ -19,19 +18,41 @@
       ],
       "conditions": [
         ["OS=='win'", {
+          "sources": [
+            "src/wasapi_engine.cpp"
+          ],
           "libraries": [
-            "ole32.lib", "uuid.lib", "Mmdevapi.lib", "Avrt.lib"
+            "ole32.lib",
+            "uuid.lib",
+            "Mmdevapi.lib",
+            "Avrt.lib"
+          ],
+          "msvs_settings": {
+            "VCCLCompilerTool": {
+              "ExceptionHandling": 1,
+              "AdditionalOptions": ["/Zc:__cplusplus"]
+            }
+          }
+        }],
+        ["OS=='linux'", {
+          "sources": [
+            "src/pipewire_engine.cpp"
+          ],
+          "libraries": [
+            "<!@(pkg-config --libs libpipewire-0.3)"
+          ],
+          "cflags": [
+            "-std=c++14",
+            "<!@(pkg-config --cflags libpipewire-0.3)"
+          ],
+          "cflags_cc": [
+            "-std=c++14",
+            "<!@(pkg-config --cflags libpipewire-0.3)"
           ]
         }]
       ],
       "cflags!": ["-fno-exceptions"],
-      "cflags_cc!": ["-fno-exceptions"],
-      "msvs_settings": {
-        "VCCLCompilerTool": {
-          "ExceptionHandling": 1,
-          "AdditionalOptions": ["/Zc:__cplusplus"]
-        }
-      }
+      "cflags_cc!": ["-fno-exceptions"]
     }
   ]
 }
