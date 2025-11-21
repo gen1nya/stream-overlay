@@ -232,18 +232,28 @@ class EventSubService {
     const { setStopping = true, ignoreClose = false } = options;
     console.log(`🛑 [${this.connectionId}] Stopping EventSub...`);
 
-    if (this.ws) {
-      this.ignoreClose = ignoreClose;
-      this.ws.close();
-      this.ws = null;
-    }
-
+    // Set stopping flag FIRST to prevent reconnects
     if (setStopping) {
       this.isStopping = true;
     }
 
     this.isConnecting = false;
     this.clearHealthCheck();
+
+    if (this.ws) {
+      this.ignoreClose = ignoreClose;
+      const ws = this.ws;
+      this.ws = null;  // Clear reference BEFORE closing
+
+      try {
+        ws.removeAllListeners();  // Remove listeners to prevent callbacks
+        ws.close();
+      } catch (err) {
+        console.error(`❌ [${this.connectionId}] Error closing WebSocket:`, err);
+      }
+    }
+
+    console.log(`✅ [${this.connectionId}] EventSub stopped`);
   }
 
   getLastEventTimestamp(): number {
