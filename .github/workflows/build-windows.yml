@@ -40,6 +40,32 @@ jobs:
       - name: Install dependencies
         run: npm install
 
+      - name: Install native module dependencies
+        run: |
+          cd native/fft
+          npm install
+          cd ../media
+          npm install
+          cd ../..
+
+      - name: Build native modules for Electron
+        run: |
+          cd native/fft
+          npm run rebuild:electron
+          cd ../media
+          npm run rebuild:electron
+          cd ../..
+
+      - name: List compiled native modules
+        run: |
+          echo "=== FFT module ==="
+          dir native\fft\build\Release /s
+          echo.
+          echo "=== Media module ==="
+          dir native\media\build\Release /s
+        continue-on-error: true
+        shell: cmd
+
       - name: Build application
         run: npm run build-electron
         env:
