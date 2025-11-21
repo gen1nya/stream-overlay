@@ -1,6 +1,26 @@
 const fs = require('fs');
 const path = require('path');
 
+function findNodeFile(buildDir) {
+  // Search for .node files in build/Release directory
+  const releaseDir = path.join(buildDir, 'Release');
+
+  if (!fs.existsSync(releaseDir)) {
+    return null;
+  }
+
+  // Find all .node files (could be electron.napi.node, node.napi.node, or module_name.node)
+  const files = fs.readdirSync(releaseDir);
+  const nodeFiles = files.filter(f => f.endsWith('.node'));
+
+  if (nodeFiles.length > 0) {
+    // Return the first .node file found
+    return path.join(releaseDir, nodeFiles[0]);
+  }
+
+  return null;
+}
+
 function copyNativeModules() {
   const nativeDir = path.join(__dirname, '..', 'native');
   const distBackendNativeDir = path.join(__dirname, '..', 'dist-backend', 'native');
@@ -9,9 +29,12 @@ function copyNativeModules() {
     fs.mkdirSync(distBackendNativeDir, { recursive: true });
   }
 
-  const modules = ['media', 'fft'];
+  const modules = [
+    { name: 'media', binaryName: 'gsmtc' },
+    { name: 'fft', binaryName: 'fft_bridge' }
+  ];
 
-  modules.forEach(moduleName => {
+  modules.forEach(({ name: moduleName, binaryName }) => {
     const moduleSourceDir = path.join(nativeDir, moduleName);
     const moduleDestDir = path.join(distBackendNativeDir, moduleName);
 
@@ -24,15 +47,17 @@ function copyNativeModules() {
       fs.mkdirSync(moduleDestDir, { recursive: true });
     }
 
-    const moduleBinaryName = moduleName === 'fft' ? 'fft_bridge' : moduleName;
-    const builtModulePath = path.join(moduleSourceDir, 'build', 'Release', `${moduleBinaryName}.node`);
+    // Try to find the .node file
+    const buildDir = path.join(moduleSourceDir, 'build');
+    const builtModulePath = findNodeFile(buildDir);
 
-    if (fs.existsSync(builtModulePath)) {
-      const destPath = path.join(moduleDestDir, `${moduleBinaryName}.node`);
+    if (builtModulePath) {
+      // Copy with the expected binary name
+      const destPath = path.join(moduleDestDir, `${binaryName}.node`);
       fs.copyFileSync(builtModulePath, destPath);
-      console.log(`✅ Copied ${moduleName} module to dist-backend`);
+      console.log(`✅ Copied ${moduleName} module (${path.basename(builtModulePath)} -> ${binaryName}.node)`);
     } else {
-      console.warn(`⚠️  Warning: Built ${moduleName} module not found at ${builtModulePath}`);
+      console.warn(`⚠️  Warning: Built ${moduleName} module not found in ${buildDir}`);
     }
 
     const packageJsonPath = path.join(moduleSourceDir, 'package.json');
