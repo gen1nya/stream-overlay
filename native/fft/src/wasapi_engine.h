@@ -56,6 +56,7 @@ private:
   WAVEFORMATEX* wfx_ = nullptr;
   std::thread th_;
   std::atomic<bool> running_{false};
+  HANDLE stopEvent_ = nullptr;
 
   BandPlan plan_{};
   BinMap binmap_{};

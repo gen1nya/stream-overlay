@@ -18,10 +18,12 @@ static void check(HRESULT hr, const char* where){ if(FAILED(hr)) throw std::runt
 WasapiEngine::WasapiEngine(){
   CoInitializeEx(nullptr, COINIT_MULTITHREADED);
   check(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&enumr_)), "MMDeviceEnumerator");
+  stopEvent_ = CreateEvent(nullptr, TRUE, FALSE, nullptr);  // Manual reset event
 }
 
 WasapiEngine::~WasapiEngine(){
   enable(false);
+  if(stopEvent_) CloseHandle(stopEvent_);
   CoUninitialize();
 }
 
@@ -164,6 +166,7 @@ void WasapiEngine::start(){
 
   HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
   check(audioClient_->SetEventHandle(evt), "SetEventHandle");
+  ResetEvent(stopEvent_);  // Reset stop event before starting
   running_ = true;
   th_ = std::thread([&,evt,isFloat,nChannels]{
     DWORD taskIndex = 0; HANDLE task = AvSetMmThreadCharacteristicsW(L"Pro Audio", &taskIndex);
@@ -178,7 +181,13 @@ void WasapiEngine::start(){
       size_t hopFill = 0;
 
       while(running_){
-        WaitForSingleObject(evt, 2000);
+        HANDLE events[2] = {evt, stopEvent_};
+        DWORD result = WaitForMultipleObjects(2, events, FALSE, 2000);
+
+        // If stop event signaled, break immediately
+        if(result == WAIT_OBJECT_0 + 1 || !running_){
+          break;
+        }
         UINT32 p=0; audioClient_->GetCurrentPadding(&p);
 
         for(;;){
@@ -312,7 +321,13 @@ void WasapiEngine::start(){
 void WasapiEngine::stop(){
   if(!running_) return;
   running_=false;
+
+  // Signal stop event to wake up worker thread immediately
+  if(stopEvent_) SetEvent(stopEvent_);
+
+  // Now join will be fast because worker thread will wake up and exit
   if(th_.joinable()) th_.join();
+
   if(kiss_){ kiss_fft_free(kiss_->cfg); delete kiss_; kiss_=nullptr;}
   if(wfx_){ CoTaskMemFree(wfx_); wfx_=nullptr;}
   cap_.Reset();
