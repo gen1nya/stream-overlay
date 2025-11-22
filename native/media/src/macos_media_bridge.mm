@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <mutex>
+#include <dlfcn.h>
+#include "MediaRemote.h"
 
 struct MediaState {
     std::string title;
@@ -149,7 +151,19 @@ private:
     MediaState FetchMediaState() {
         MediaState state;
 
-        // Try different media players in order of priority
+        // NOTE: MediaRemote framework requires special entitlements on macOS 15+
+        // and returns null in sandboxed/unsigned apps. Disabled for now.
+        // If we need artwork in the future, we can try:
+        // 1. Adding proper entitlements to the app
+        // 2. Using AppleScript to get artwork file path
+        // 3. Using NSWorkspace + NSRunningApplication
+
+        // Uncomment to try MediaRemote (won't work without entitlements):
+        // if (TryFetchFromMediaRemote(state)) {
+        //     return state;
+        // }
+
+        // Use AppleScript for specific apps
         const char* players[] = {"Spotify", "Music", "VLC"};
 
         for (const char* playerName : players) {
@@ -235,6 +249,151 @@ private:
             } else {
                 state.playbackStatus = "Stopped";
             }
+
+            return true;
+        }
+    }
+
+    bool TryFetchFromMediaRemote(MediaState& state) {
+        @autoreleasepool {
+            // Try to load MediaRemote framework dynamically
+            static void* mediaRemoteHandle = nullptr;
+            static dispatch_once_t onceToken;
+            static bool mediaRemoteAvailable = false;
+
+            dispatch_once(&onceToken, ^{
+                mediaRemoteHandle = dlopen("/System/Library/PrivateFrameworks/MediaRemote.framework/MediaRemote", RTLD_LAZY);
+                mediaRemoteAvailable = (mediaRemoteHandle != nullptr);
+
+                if (mediaRemoteAvailable) {
+                    NSLog(@"[MacOSMediaBridge] MediaRemote framework loaded successfully");
+                } else {
+                    NSLog(@"[MacOSMediaBridge] MediaRemote framework not available, using AppleScript fallback");
+                }
+            });
+
+            if (!mediaRemoteAvailable) {
+                return false;
+            }
+
+            // Get function pointer for MRMediaRemoteGetNowPlayingInfo
+            typedef void(*MRMediaRemoteGetNowPlayingInfoFunc)(dispatch_queue_t, void(^)(NSDictionary*));
+            MRMediaRemoteGetNowPlayingInfoFunc getNowPlayingInfo =
+                (MRMediaRemoteGetNowPlayingInfoFunc)dlsym(mediaRemoteHandle, "MRMediaRemoteGetNowPlayingInfo");
+
+            if (!getNowPlayingInfo) {
+                return false;
+            }
+
+            // Synchronous fetch using semaphore
+            __block NSDictionary* nowPlayingInfo = nil;
+            __block bool completed = false;
+
+            dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+
+            getNowPlayingInfo(dispatch_get_main_queue(), ^(NSDictionary* info) {
+                nowPlayingInfo = [info copy];
+                completed = true;
+                dispatch_semaphore_signal(semaphore);
+            });
+
+            // Wait max 500ms for response
+            dispatch_time_t timeout = dispatch_time(DISPATCH_TIME_NOW, 500 * NSEC_PER_MSEC);
+            long result = dispatch_semaphore_wait(semaphore, timeout);
+
+            if (result != 0 || !completed || !nowPlayingInfo) {
+                NSLog(@"[MacOSMediaBridge] MediaRemote timeout or no data (result=%ld, completed=%d, info=%@)",
+                      result, completed, nowPlayingInfo);
+                return false; // Timeout or no data
+            }
+
+            // Log all keys in the dictionary to debug
+            NSLog(@"[MacOSMediaBridge] MediaRemote info keys: %@", [nowPlayingInfo allKeys]);
+
+            // Extract title - try different possible keys
+            NSString* title = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoTitle"];
+            if (!title) {
+                // Try without the k prefix (some versions use this)
+                title = nowPlayingInfo[@"MRMediaRemoteNowPlayingInfoTitle"];
+            }
+            if (!title) {
+                // Try simple key
+                title = nowPlayingInfo[@"Title"];
+            }
+
+            if (!title || [title length] == 0) {
+                NSLog(@"[MacOSMediaBridge] MediaRemote: no title found");
+                return false; // No media playing
+            }
+
+            state.title = [title UTF8String] ?: "";
+
+            // Extract artist - try multiple key formats
+            NSString* artist = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoArtist"];
+            if (!artist) artist = nowPlayingInfo[@"MRMediaRemoteNowPlayingInfoArtist"];
+            if (!artist) artist = nowPlayingInfo[@"Artist"];
+            state.artist = artist ? [artist UTF8String] : "";
+
+            // Extract album
+            NSString* album = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoAlbum"];
+            if (!album) album = nowPlayingInfo[@"MRMediaRemoteNowPlayingInfoAlbum"];
+            if (!album) album = nowPlayingInfo[@"Album"];
+            state.album = album ? [album UTF8String] : "";
+
+            // Extract duration
+            NSNumber* duration = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoDuration"];
+            if (!duration) duration = nowPlayingInfo[@"Duration"];
+            state.durationMs = duration ? ([duration doubleValue] * 1000) : 0;
+
+            // Extract elapsed time
+            NSNumber* elapsed = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoElapsedTime"];
+            if (!elapsed) elapsed = nowPlayingInfo[@"ElapsedTime"];
+            if (!elapsed) elapsed = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoElapsed"];
+            state.positionMs = elapsed ? ([elapsed doubleValue] * 1000) : 0;
+
+            // Extract playback rate (0 = paused, 1 = playing)
+            NSNumber* playbackRate = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoPlaybackRate"];
+            if (!playbackRate) playbackRate = nowPlayingInfo[@"PlaybackRate"];
+            if (playbackRate && [playbackRate doubleValue] > 0) {
+                state.playbackStatus = "Playing";
+            } else {
+                state.playbackStatus = "Paused";
+            }
+
+            // Extract artwork data
+            NSData* artworkData = nowPlayingInfo[@"kMRMediaRemoteNowPlayingInfoArtworkData"];
+            if (!artworkData) artworkData = nowPlayingInfo[@"ArtworkData"];
+            if (artworkData && [artworkData length] > 0) {
+                state.thumbnail.resize([artworkData length]);
+                [artworkData getBytes:state.thumbnail.data() length:[artworkData length]];
+            }
+
+            // Try to get app bundle ID
+            typedef void(*MRMediaRemoteGetNowPlayingApplicationDisplayNameFunc)(dispatch_queue_t, void(^)(NSString*));
+            MRMediaRemoteGetNowPlayingApplicationDisplayNameFunc getAppName =
+                (MRMediaRemoteGetNowPlayingApplicationDisplayNameFunc)dlsym(mediaRemoteHandle, "MRMediaRemoteGetNowPlayingApplicationDisplayName");
+
+            if (getAppName) {
+                __block NSString* appName = nil;
+                dispatch_semaphore_t appSemaphore = dispatch_semaphore_create(0);
+
+                getAppName(dispatch_get_main_queue(), ^(NSString* name) {
+                    appName = [name copy];
+                    dispatch_semaphore_signal(appSemaphore);
+                });
+
+                dispatch_time_t appTimeout = dispatch_time(DISPATCH_TIME_NOW, 100 * NSEC_PER_MSEC);
+                if (dispatch_semaphore_wait(appSemaphore, appTimeout) == 0 && appName) {
+                    state.appId = [appName UTF8String] ?: "Unknown";
+                } else {
+                    state.appId = "MediaRemote";
+                }
+            } else {
+                state.appId = "MediaRemote";
+            }
+
+            NSLog(@"[MacOSMediaBridge] MediaRemote: %s - %s (artwork: %zu bytes)",
+                  state.title.c_str(), state.artist.c_str(), state.thumbnail.size());
 
             return true;
         }
