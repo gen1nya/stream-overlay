@@ -62,20 +62,21 @@ jobs:
           # Disable code signing for CI builds
           CSC_IDENTITY_AUTO_DISCOVERY: false
 
+      - name: Get version from package.json
+        id: package-version
+        run: |
+          $version = (Get-Content package.json | ConvertFrom-Json).version
+          echo "version=$version" >> $env:GITHUB_OUTPUT
+          echo "Version: $version"
+        shell: powershell
+
       - name: Upload Windows Installer
         uses: actions/upload-artifact@v4
         with:
-          name: windows-installer
+          name: twitch-watcher-${{ steps.package-version.outputs.version }}-windows-installer
           path: |
             release/*.exe
             release/*.msi
-          if-no-files-found: warn
-
-      - name: Upload Windows Portable
-        uses: actions/upload-artifact@v4
-        with:
-          name: windows-portable
-          path: release/*.zip
           if-no-files-found: warn
 
       - name: Create Release (on tag)
@@ -85,7 +86,6 @@ jobs:
           files: |
             release/*.exe
             release/*.msi
-            release/*.zip
           draft: true
           generate_release_notes: true
         env:
