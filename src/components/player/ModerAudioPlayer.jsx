@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState, useMemo} from "react";
 import styled, {ThemeProvider} from "styled-components";
 import {hexToRgba, lightenColor} from "../../utils.js"
 import FFTBars from "./FFTBars";
@@ -6,6 +6,7 @@ import useReconnectingWebSocket from "../../hooks/useReconnectingWebSocket";
 import ColorThief from "colorthief";
 import WaveForm from "./WaveForm";
 import VUMeter from "./Vumeter";
+import {generateTrackIdenticon} from "../../utils/identicon.js";
 
 const ensureRgba = (color, opacity = 1) => {
     if (color.includes('rgba')) return color;
@@ -398,7 +399,7 @@ function ModernAudioPlayer() {
                 <TopRow>
                     <Cover
                         ref={coverRef}
-                        src={metadata?.albumArtBase64 ? `${metadata.albumArtBase64}` : undefined}
+                        src={metadata?.albumArtBase64 || generateTrackIdenticon(metadata) || undefined}
                         alt=""
                         crossOrigin="anonymous"
                     />

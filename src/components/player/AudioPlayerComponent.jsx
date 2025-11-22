@@ -7,6 +7,7 @@ import Marquee from "react-fast-marquee";
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import FFTDonut from "./FFTDonut";
 import ColorThief from "colorthief";
+import {generateTrackIdenticon} from "../../utils/identicon.js";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -404,7 +405,7 @@ export default function AudioPlayerComponent() {
                     <Disk ref={diskRef} />
                     <AlbumArt
                         ref={albumRef}
-                        src={metadata ? `${metadata.albumArtBase64}` : ""}
+                        src={metadata?.albumArtBase64 || generateTrackIdenticon(metadata) || ""}
                         alt="Album Art"
                     />
                 </DiskContainer>
