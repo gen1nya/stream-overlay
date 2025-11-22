@@ -49,6 +49,16 @@
             "-std=c++14",
             "<!@(pkg-config --cflags libpipewire-0.3)"
           ]
+        }],
+        ["OS=='mac'", {
+          "sources": [],
+          "xcode_settings": {
+            "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+            "CLANG_CXX_LIBRARY": "libc++",
+            "MACOSX_DEPLOYMENT_TARGET": "10.13",
+            "OTHER_CPLUSPLUSFLAGS": ["-std=c++14"],
+            "OTHER_LDFLAGS": []
+          }
         }]
       ],
       "cflags!": ["-fno-exceptions"],

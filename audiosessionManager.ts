@@ -142,6 +142,16 @@ export class AudiosessionManager {
                 const status =
                     s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
 
+                // Sticky state: ignore empty/invalid data from temporary tab switches
+                // Only update if we have valid data (non-empty title)
+                const hasValidData = s.title && s.title.trim().length > 0;
+
+                if (!hasValidData) {
+                    // Invalid/empty data (e.g., tab switch in browser) - keep current state
+                    // This includes "Stopped" with empty appId/title which is just noise
+                    return;
+                }
+
                 let albumArt: string | undefined = undefined;
 
                 if (s.imageUrl) {

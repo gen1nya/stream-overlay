@@ -21,13 +21,14 @@ function loadAddon(dir) {
             if (f) return require(path.join(dir, f));
         }
 
-        // Try linux-media.js fallback
+        // Try platform-specific JS fallback
         if (os.platform() === "linux") {
             const jsImpl = path.join(dir, "linux-media.js");
             if (fs.existsSync(jsImpl)) {
                 return require(jsImpl);
             }
         }
+        // macOS will try native module first, fallback handled below
 
         e.message += `\nAlso looked in: ${rel} ${fs.existsSync(rel) ? `[${fs.readdirSync(rel).join(', ')}]` : '(missing)'}`;
         e.message += `\nAlso looked in: ${dir} ${fs.existsSync(dir) ? `[${fs.readdirSync(dir).join(', ')}]` : '(missing)'}`;

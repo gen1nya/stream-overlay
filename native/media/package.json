@@ -7,6 +7,8 @@
   },
   "scripts": {
     "build": "node-gyp rebuild",
-    "rebuild:electron": "node-gyp rebuild --target=36.2.1 --arch=x64 --dist-url=https://electronjs.org/headers"
+    "rebuild:electron": "node-gyp rebuild --target=36.2.1 --arch=x64 --dist-url=https://electronjs.org/headers",
+    "rebuild:electron:mac:arm64": "node-gyp rebuild --target=36.5.0 --arch=arm64 --dist-url=https://electronjs.org/headers",
+    "rebuild:electron:mac:x64": "node-gyp rebuild --target=36.5.0 --arch=x64 --dist-url=https://electronjs.org/headers"
   }
 }

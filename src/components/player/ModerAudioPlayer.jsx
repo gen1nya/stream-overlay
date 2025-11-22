@@ -1,4 +1,4 @@
-import React, {useEffect, useRef, useState} from "react";
+import React, {useEffect, useRef, useState, useMemo} from "react";
 import styled, {ThemeProvider} from "styled-components";
 import {hexToRgba, lightenColor} from "../../utils.js"
 import FFTBars from "./FFTBars";
@@ -6,6 +6,7 @@ import useReconnectingWebSocket from "../../hooks/useReconnectingWebSocket";
 import ColorThief from "colorthief";
 import WaveForm from "./WaveForm";
 import VUMeter from "./Vumeter";
+import {generateTrackIdenticon} from "../../utils/identicon.js";
 
 const ensureRgba = (color, opacity = 1) => {
     if (color.includes('rgba')) return color;
@@ -285,6 +286,7 @@ function ModernAudioPlayer() {
     const [progressColor, setProgressColor] = useState('#1e1e1e');
     const [spectrumPeakColor, setSpectrumPeakColor] = useState('#1e1e1e');
     const [pendingColorData, setPendingColorData] = useState(null);
+    const [coverSrc, setCoverSrc] = useState(undefined);
     const colorApplyTimeoutRef = useRef(null);
 
     // WebSocket для получения темы
@@ -313,8 +315,9 @@ function ModernAudioPlayer() {
                     if (type !== 'metadata') return;
                     setMetadata(data);
                     setProgress(data.position);
-                    console.log(data.position);
-                    setDuration(data.duration || 1);
+                    console.log("pos:" + data.position);
+                    console.log("dur:" + data.duration);
+                    setDuration(data.duration);
                 } catch (error) {
                     console.warn('Ошибка парсинга JSON:', error);
                 }
@@ -326,7 +329,8 @@ function ModernAudioPlayer() {
     // progress bar update
     useEffect(() => {
         if (timerRef.current) clearInterval(timerRef.current);
-        if (metadata?.status === 'Playing') {
+        // Only start timer if we have valid duration and position
+        if (metadata?.status === 'Playing' && duration > 0 && progress >= 0) {
             timerRef.current = setInterval(() => {
                 setProgress(prev => {
                     const next = prev + 1;
@@ -339,8 +343,46 @@ function ModernAudioPlayer() {
             }, 1000);
         }
         return () => timerRef.current && clearInterval(timerRef.current);
-    }, [metadata, duration]);
+    }, [metadata, duration, progress]);
 
+    // Handle album art or identicon generation
+    useEffect(() => {
+        if (!metadata) {
+            setCoverSrc(undefined);
+            return;
+        }
+
+        // If we have real album art, use it
+        if (metadata.albumArtBase64) {
+            setCoverSrc(metadata.albumArtBase64);
+            return;
+        }
+
+        // Otherwise, generate identicon
+        const identicon = generateTrackIdenticon(metadata);
+        if (identicon) {
+            setCoverSrc(identicon.dataUrl);
+
+            // Apply colors from identicon immediately
+            const color = identicon.mainColor;
+            const shadow = lightenColor(color, 0.2);
+            const spectrum = identicon.palette[1] || color;
+            const spectrumPeak = identicon.palette[2] || color;
+
+            const newColors = {
+                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
+                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
+                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
+                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
+            };
+
+            setPendingColorData(newColors);
+        } else {
+            setCoverSrc(undefined);
+        }
+    }, [metadata]);
+
+    // Extract colors from real album art using ColorThief
     useEffect(() => {
         if (!coverRef.current || !metadata?.albumArtBase64) return;
         const colorThief = new ColorThief();
@@ -392,13 +434,15 @@ function ModernAudioPlayer() {
         return () => clearTimeout(colorApplyTimeoutRef.current);
     }, []);
 
+    const showProgress = duration > 0 && metadata;
+
     return (
         <ThemeProvider theme={theme}>
             <CardWithCSSVars $bgColor={bgColor} $shadowColor={shadowColor}>
                 <TopRow>
                     <Cover
                         ref={coverRef}
-                        src={metadata?.albumArtBase64 ? `${metadata.albumArtBase64}` : undefined}
+                        src={coverSrc}
                         alt=""
                         crossOrigin="anonymous"
                     />
@@ -430,13 +474,15 @@ function ModernAudioPlayer() {
                     </Info>
                 </TopRow>
 
-                <ProgressBarContainer>
-                    <Time>{formatTime(progress)}</Time>
-                    <ProgressTrack>
-                        <Progress $percent={(progress / duration) * 100} $progressColor={progressColor}/>
-                    </ProgressTrack>
-                    <Time>{formatTime(duration)}</Time>
-                </ProgressBarContainer>
+                {showProgress && (
+                    <ProgressBarContainer>
+                        <Time>{formatTime(progress)}</Time>
+                        <ProgressTrack>
+                            <Progress $percent={(progress / duration) * 100} $progressColor={progressColor}/>
+                        </ProgressTrack>
+                        <Time>{formatTime(duration)}</Time>
+                    </ProgressBarContainer>
+                )}
             </CardWithCSSVars>
         </ThemeProvider>
     );

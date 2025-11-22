@@ -11,6 +11,9 @@
 #elif __linux__
   #include "pipewire_engine.h"
   using PlatformEngine = PipeWireEngine;
+#elif __APPLE__
+  #include "mock_engine.h"
+  using PlatformEngine = MockEngine;
 #else
   #error "Unsupported platform"
 #endif
