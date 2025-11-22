@@ -202,6 +202,7 @@ export default function AudioPlayerComponent() {
     const colorApplyTimeoutRef = useRef(null);
     const [spectrumPeakColor, setSpectrumPeakColor] = useState('#1e1e1e');
     const [spectrumColor, setSpectrumColor] = useState('#1e1e1e');
+    const [albumArtSrc, setAlbumArtSrc] = useState(undefined);
 
     const timerRef = useRef(null);
     const diskRef = useRef(null);
@@ -256,6 +257,44 @@ export default function AudioPlayerComponent() {
         onClose: () => console.log('🔴 WebSocket theme отключен'),
     });
 
+    // Handle album art or identicon generation
+    useEffect(() => {
+        if (!metadata) {
+            setAlbumArtSrc(undefined);
+            return;
+        }
+
+        // If we have real album art, use it
+        if (metadata.albumArtBase64) {
+            setAlbumArtSrc(metadata.albumArtBase64);
+            return;
+        }
+
+        // Otherwise, generate identicon
+        const identicon = generateTrackIdenticon(metadata);
+        if (identicon) {
+            setAlbumArtSrc(identicon.dataUrl);
+
+            // Apply colors from identicon immediately
+            const color = identicon.mainColor;
+            const shadow = lightenColor(color, 0.2);
+            const spectrum = identicon.palette[1] || color;
+            const spectrumPeak = identicon.palette[2] || color;
+
+            const newColors = {
+                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
+                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
+                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
+                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
+            };
+
+            setPendingColorData(newColors);
+        } else {
+            setAlbumArtSrc(undefined);
+        }
+    }, [metadata]);
+
+    // Extract colors from real album art using ColorThief
     useEffect(() => {
         if (!albumRef.current || !metadata?.albumArtBase64) return;
         const colorThief = new ColorThief();
@@ -372,7 +411,8 @@ export default function AudioPlayerComponent() {
     // Таймер прогресса
     useEffect(() => {
         if (timerRef.current) clearInterval(timerRef.current);
-        if (metadata?.status === 'Playing') {
+        // Only start timer if we have valid duration and position
+        if (metadata?.status === 'Playing' && duration > 0 && progress >= 0) {
             timerRef.current = setInterval(() => {
                 setProgress(prev => {
                     const next = prev + 1;
@@ -382,9 +422,10 @@ export default function AudioPlayerComponent() {
             }, 1000);
         }
         return () => timerRef.current && clearInterval(timerRef.current);
-    }, [metadata, duration]);
+    }, [metadata, duration, progress]);
 
     const pointerLeft = 20 + (80 - 20) * (Math.min(progress, duration) / duration);
+    const showProgress = duration > 0 && metadata;
 
     return (
         <ThemeProvider theme={theme}>
@@ -405,7 +446,7 @@ export default function AudioPlayerComponent() {
                     <Disk ref={diskRef} />
                     <AlbumArt
                         ref={albumRef}
-                        src={metadata?.albumArtBase64 || generateTrackIdenticon(metadata) || ""}
+                        src={albumArtSrc}
                         alt="Album Art"
                     />
                 </DiskContainer>
@@ -431,18 +472,22 @@ export default function AudioPlayerComponent() {
                     </Artist>
                 </div>
 
-                <Deck>
-                    <svg style={{filter: 'drop-shadow(4px 4px 6px rgba(0,0,0,0.4))'}} width={200} height={100} xmlns="http://www.w3.org/2000/svg">
-                        <path d="M 0,0 L 70,0 A 32,32 0 0 1 70,65 L 0,65 Z M 20,22 L 80,22 L 80,43 L 20,43 Z" fill="#999" fillRule="evenodd" />
-                        <path d="M 20,22 L 80,22 L 80,43 L 20,43 Z" fill="#000" opacity="0.01" />
-                    </svg>
-                </Deck>
+                {showProgress && (
+                    <>
+                        <Deck>
+                            <svg style={{filter: 'drop-shadow(4px 4px 6px rgba(0,0,0,0.4))'}} width={200} height={100} xmlns="http://www.w3.org/2000/svg">
+                                <path d="M 0,0 L 70,0 A 32,32 0 0 1 70,65 L 0,65 Z M 20,22 L 80,22 L 80,43 L 20,43 Z" fill="#999" fillRule="evenodd" />
+                                <path d="M 20,22 L 80,22 L 80,43 L 20,43 Z" fill="#000" opacity="0.01" />
+                            </svg>
+                        </Deck>
 
-                <ProgressPointer $left={pointerLeft}>
-                    <svg style={{filter: 'drop-shadow(4px 4px 6px rgba(255,0,0,1))'}} width={5} height={20} xmlns="http://www.w3.org/2000/svg">
-                        <path d="M 0,0 L 2,15 L 4,0" fill="#ff0000" fillRule="evenodd" />
-                    </svg>
-                </ProgressPointer>
+                        <ProgressPointer $left={pointerLeft}>
+                            <svg style={{filter: 'drop-shadow(4px 4px 6px rgba(255,0,0,1))'}} width={5} height={20} xmlns="http://www.w3.org/2000/svg">
+                                <path d="M 0,0 L 2,15 L 4,0" fill="#ff0000" fillRule="evenodd" />
+                            </svg>
+                        </ProgressPointer>
+                    </>
+                )}
 
             </AudioPlayerContainer>
             {!(metaConnected && themeConnected) && <ConnectionLost>нет связи с источником</ConnectionLost>}

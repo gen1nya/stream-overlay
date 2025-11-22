@@ -238,8 +238,9 @@ private:
             state.title = [[result descriptorAtIndex:1] stringValue].UTF8String ?: "";
             state.artist = [[result descriptorAtIndex:2] stringValue].UTF8String ?: "";
             state.album = [[result descriptorAtIndex:3] stringValue].UTF8String ?: "";
-            state.durationMs = [[result descriptorAtIndex:4] int32Value] * 1000;
-            state.positionMs = [[result descriptorAtIndex:5] doubleValue] * 1000;
+            // AppleScript returns duration and position in seconds, convert to milliseconds
+            state.durationMs = [[result descriptorAtIndex:4] doubleValue];
+            state.positionMs = [[result descriptorAtIndex:5] doubleValue] * 1000.0;
 
             NSString* playerState = [[result descriptorAtIndex:6] stringValue];
             if ([playerState isEqualToString:@"playing"]) {
