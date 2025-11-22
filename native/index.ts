@@ -21,10 +21,16 @@ function loadAddon(dir) {
             if (f) return require(path.join(dir, f));
         }
 
-        // Try linux-media.js fallback
+        // Try platform-specific JS fallback
         if (os.platform() === "linux") {
             const jsImpl = path.join(dir, "linux-media.js");
             if (fs.existsSync(jsImpl)) {
+                return require(jsImpl);
+            }
+        } else if (os.platform() === "darwin") {
+            const jsImpl = path.join(dir, "macos-media.js");
+            if (fs.existsSync(jsImpl)) {
+                console.log(`[native/index] Loading macOS mock for ${path.basename(dir)}`);
                 return require(jsImpl);
             }
         }

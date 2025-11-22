@@ -75,6 +75,11 @@ function copyNativeModules() {
       if (fs.existsSync(linuxMediaPath)) {
         fs.copyFileSync(linuxMediaPath, path.join(moduleDestDir, 'linux-media.js'));
       }
+
+      const macosMediaPath = path.join(moduleSourceDir, 'macos-media.js');
+      if (fs.existsSync(macosMediaPath)) {
+        fs.copyFileSync(macosMediaPath, path.join(moduleDestDir, 'macos-media.js'));
+      }
     }
   });
 
