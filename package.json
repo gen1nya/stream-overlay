@@ -19,6 +19,7 @@
     "appId": "com.twitch.watcher",
     "compression": "maximum",
     "removePackageScripts": true,
+    "publish": null,
     "files": [
       "dist-backend/**/*",
       "channels.js",

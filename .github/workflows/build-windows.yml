@@ -61,6 +61,8 @@ jobs:
         env:
           # Disable code signing for CI builds
           CSC_IDENTITY_AUTO_DISCOVERY: false
+          # Provide GitHub token for electron-builder
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Get version from package.json
         id: package-version
