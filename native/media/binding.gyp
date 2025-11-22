@@ -28,8 +28,19 @@
                     "type": "none"
                 }],
                 ["OS=='mac'", {
-                    "sources": [],
-                    "type": "none"
+                    "sources": [
+                        "src/macos_media_bridge.mm"
+                    ],
+                    "xcode_settings": {
+                        "GCC_ENABLE_CPP_EXCEPTIONS": "YES",
+                        "CLANG_CXX_LIBRARY": "libc++",
+                        "MACOSX_DEPLOYMENT_TARGET": "10.13",
+                        "OTHER_CPLUSPLUSFLAGS": ["-std=c++14", "-stdlib=libc++"],
+                        "OTHER_LDFLAGS": [
+                            "-framework Foundation",
+                            "-framework AppKit"
+                        ]
+                    }
                 }]
             ],
             "dependencies": [

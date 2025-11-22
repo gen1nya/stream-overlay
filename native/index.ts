@@ -27,13 +27,8 @@ function loadAddon(dir) {
             if (fs.existsSync(jsImpl)) {
                 return require(jsImpl);
             }
-        } else if (os.platform() === "darwin") {
-            const jsImpl = path.join(dir, "macos-media.js");
-            if (fs.existsSync(jsImpl)) {
-                console.log(`[native/index] Loading macOS mock for ${path.basename(dir)}`);
-                return require(jsImpl);
-            }
         }
+        // macOS will try native module first, fallback handled below
 
         e.message += `\nAlso looked in: ${rel} ${fs.existsSync(rel) ? `[${fs.readdirSync(rel).join(', ')}]` : '(missing)'}`;
         e.message += `\nAlso looked in: ${dir} ${fs.existsSync(dir) ? `[${fs.readdirSync(dir).join(', ')}]` : '(missing)'}`;
