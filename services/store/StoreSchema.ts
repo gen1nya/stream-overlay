@@ -13,6 +13,11 @@ export interface StoreSchema {
     currentBot?: string | null;
     audio: AudioConfig;
     youtube: YoutubeConfig;
+    irc: IrcConfig;
+}
+
+export interface IrcConfig {
+    useWebSocket: boolean;
 }
 
 export interface AudioConfig {

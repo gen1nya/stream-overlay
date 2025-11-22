@@ -52,6 +52,9 @@ const store = new Store<StoreSchema>({
         enabled: false,
         channelId: '',
         videoId: '',
+    },
+    irc: {
+        useWebSocket: false,  // Default to TCP
     }
   },
 });
@@ -132,7 +135,8 @@ const twitchClient = new TwitchClient(
   () => {
     console.log('Twitch client logged out');
     mainWindow?.webContents?.send("logout:success");
-  }
+  },
+  proxy  // Pass ProxyService to TwitchClient
 );
 
 const botService = new BotConfigService(

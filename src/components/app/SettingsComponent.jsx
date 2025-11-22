@@ -385,6 +385,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     <AppearanceSettingsCard />
+                    <Socks5ProxyComponent/>
                     <UnifiedSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
@@ -397,7 +398,6 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
         case "youtube":
             return (
                 <Content>
-                    <Socks5ProxyComponent/>
                     <YouTubeScraperComponent/>
                 </Content>
             );

@@ -1,20 +1,26 @@
 import net from 'net';
+import WebSocket from 'ws';
 import * as authService from './authService';
 import * as messageParser from './messageParser';
 import {AppEvent, ChatEvent} from "./messageParser";
 import {LogService} from "../logService";
+import {ProxyService} from "../ProxyService";
 
-const HOST = 'irc.chat.twitch.tv';
-const PORT = 6667;
+const IRC_TCP_HOST = 'irc.chat.twitch.tv';
+const IRC_TCP_PORT = 6667;
+const IRC_WS_URL = 'wss://irc-ws.chat.twitch.tv:443';
 
 class ChatService {
   private client: net.Socket | null = null;
+  private wsClient: WebSocket | null = null;
+  private useWebSocket = false; // Default to TCP
   private messageHandler: ((msg: AppEvent) => Promise<void>) | null = null;
   private isStopping = false;
   private isConnecting = false;
   private ignoreClose = false; // ← ДОБАВЛЕНО: флаг для контроля автореконнекта
   private lastEventTimestamp = Date.now();
   private logger: LogService | null = null;
+  private proxyService: ProxyService | null = null;
 
   // Health check - ДОБАВЛЕНО
   private healthCheckTimer: NodeJS.Timeout | null = null;
@@ -73,6 +79,30 @@ class ChatService {
     return this.safeReconnect();
   }
 
+  private handleSocketConnected(socket: net.Socket, epoch: number, accessToken: string, username: string, channel: string): void {
+    if (epoch !== this.connectEpoch) {
+      try { socket.destroy(); } catch {}
+      return;
+    }
+
+    this.isConnecting = false;
+    this.lastEventTimestamp = Date.now();
+    console.log('🟢 Connected to Twitch IRC');
+
+    this.logger?.log({
+      timestamp: new Date().toISOString(),
+      message: 'Подключено к IRC',
+      userName: username
+    });
+
+    socket.write('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n');
+    socket.write(`PASS oauth:${accessToken}\r\n`);
+    socket.write(`NICK ${username}\r\n`);
+    socket.write(`JOIN #${channel}\r\n`);
+
+    this.startHealthCheck();
+  }
+
   private async safeReconnect(): Promise<void> {
     // Coalesce concurrent reconnect requests
     if (this.reconnecting) {
@@ -126,30 +156,33 @@ class ChatService {
     }
 
     const accessToken = tokens.access_token;
-    const username = tokens.login;
-    const channel = username?.toLowerCase() ?? "unknown";
-    const socket = new net.Socket();
-    this.client = socket;
+    const username = tokens.login ?? "unknown";
+    const channel = username.toLowerCase();
 
-    socket.connect(PORT, HOST, () => {
-      if (myEpoch !== this.connectEpoch) { try { socket.destroy(); } catch {}; return; }
+    // Try to create connection via proxy if enabled
+    let socket: net.Socket;
+    try {
+      if (this.proxyService?.isEnabled()) {
+        console.log('🔧 IRC connecting via SOCKS proxy...');
+        socket = await this.proxyService.createTcpConnection(IRC_TCP_HOST, IRC_TCP_PORT);
+        this.client = socket;
+
+        // For proxy connection, we need to manually trigger the connection callback
+        this.handleSocketConnected(socket, myEpoch, accessToken, username, channel);
+      } else {
+        // Normal direct connection
+        socket = new net.Socket();
+        this.client = socket;
+
+        socket.connect(IRC_TCP_PORT, IRC_TCP_HOST, () => {
+          this.handleSocketConnected(socket, myEpoch, accessToken, username, channel);
+        });
+      }
+    } catch (error) {
+      console.error('❌ Failed to create IRC connection:', error);
       this.isConnecting = false;
-      this.lastEventTimestamp = Date.now();
-      console.log('🟢 Connected to Twitch IRC');
-
-      this.logger?.log({
-        timestamp: new Date().toISOString(),
-        message: 'Подключено к IRC',
-        userName: username
-      });
-
-      socket.write('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n');
-      socket.write(`PASS oauth:${accessToken}\r\n`);
-      socket.write(`NICK ${username}\r\n`);
-      socket.write(`JOIN #${channel}\r\n`);
-
-      this.startHealthCheck();
-    });
+      return;
+    }
 
     socket.on('data', async (data) => {
       if (myEpoch !== this.connectEpoch) { return; }
@@ -299,6 +332,22 @@ class ChatService {
     this.logger = logger;
   }
 
+  setProxyService(proxyService: ProxyService) {
+    this.proxyService = proxyService;
+    console.log('🔧 IRC ProxyService set');
+  }
+
+  setUseWebSocket(useWebSocket: boolean) {
+    if (this.useWebSocket !== useWebSocket) {
+      console.log(`🔧 IRC transport changed to: ${useWebSocket ? 'WebSocket' : 'TCP'}`);
+      this.useWebSocket = useWebSocket;
+    }
+  }
+
+  getUseWebSocket(): boolean {
+    return this.useWebSocket;
+  }
+
   registerLogoutHandler(handler: () => void) {
     authService.onLogout(() => {
       handler();
@@ -311,6 +360,9 @@ const instance = new ChatService();
 export const startChat = () => instance.startChat();
 export const stopChat = () => instance.stopChat();
 export const setLogger = (logger: LogService) => instance.setLogger(logger);
+export const setProxyService = (proxyService: ProxyService) => instance.setProxyService(proxyService);
+export const setUseWebSocket = (useWebSocket: boolean) => instance.setUseWebSocket(useWebSocket);
+export const getUseWebSocket = () => instance.getUseWebSocket();
 export const sendMessage = (msg: string) => instance.sendMessage(msg);
 export const registerMessageHandler = (handler: (msg: any) => Promise<void>) => instance.registerMessageHandler(handler);
 export const registerLogoutHandler = (handler: () => void) => instance.registerLogoutHandler(handler);
