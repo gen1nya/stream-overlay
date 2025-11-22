@@ -316,7 +316,7 @@ export class YouTubeChatReader {
                 headers['cookie'] = cookieString;
             }
 
-            return this.proxyService.fetchText(url, {
+            return this.proxyService.fetchYouTube(url, {
                 ...options,
                 headers
             }, maxRedirects);

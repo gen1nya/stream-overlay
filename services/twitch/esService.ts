@@ -5,6 +5,7 @@ import { Tokens } from './authService';
 import MESSAGE_TYPES from './types/eventSubMessageTypes';
 import { AppEvent, FollowEvent, RedeemEvent } from './messageParser';
 import { LogService } from '../logService';
+import { ProxyService } from '../ProxyService';
 
 // ============================================================================
 // Configuration
@@ -167,6 +168,7 @@ class EventSubService {
   private ws: WebSocket | null = null;
   private eventHandler: ((dest: string, payload: any) => void) | null = null;
   private logger: LogService | null = null;
+  private proxyService: ProxyService | null = null;
 
   private isStopping = false;
   private isConnecting = false;
@@ -184,11 +186,12 @@ class EventSubService {
 
   private seenMessageIds = new Map<string, number>();
 
-  constructor() {
+  constructor(proxyService?: ProxyService) {
     if (globalInstance) {
       throw new Error('EventSubService already started!');
     }
     globalInstance = this;
+    this.proxyService = proxyService || null;
     this.connectionId = generateConnectionId();
     console.log(`🔷 EventSub instance created with ID: ${this.connectionId}`);
 
@@ -206,6 +209,11 @@ class EventSubService {
 
   setLogger(logger: LogService): void {
     this.logger = logger;
+  }
+
+  setProxyService(proxyService: ProxyService): void {
+    this.proxyService = proxyService;
+    console.log(`🔷 [${this.connectionId}] ProxyService set`);
   }
 
   async start(url = CONFIG.WS_URL, skipSub = false): Promise<void> {
@@ -313,7 +321,14 @@ class EventSubService {
       return;
     }
 
-    const ws = new WebSocket(this.connectUrl);
+    // Get proxy options if proxy is enabled
+    const wsOptions = this.proxyService?.getWebSocketOptions() || {};
+
+    if (wsOptions.agent) {
+      console.log(`🔷 [${this.connectionId}] Connecting via proxy...`);
+    }
+
+    const ws = new WebSocket(this.connectUrl, wsOptions);
     this.ws = ws;
 
     this.setupWebSocketHandlers(ws, myEpoch);
@@ -865,6 +880,7 @@ export const registerEventHandlers = (handler: (dest: string, payload: AppEvent)
 export const registerLogoutHandler = (handler: () => void) => instance?.registerLogoutHandler(handler);
 export const getLastEventTimestamp = () => instance?.getLastEventTimestamp();
 export const setLogger = (logger: LogService) => instance?.setLogger(logger);
+export const setProxyService = (proxyService: ProxyService) => instance?.setProxyService(proxyService);
 export const getConnectionId = () => instance?.getConnectionId();
 export const getInstance = () => instance;
 export const hasActiveInstance = () => EventSubService.hasActiveInstance();

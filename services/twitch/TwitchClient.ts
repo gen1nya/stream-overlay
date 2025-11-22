@@ -10,6 +10,7 @@ import {fetchCustomRewards, fetchFollower, fetchModerators, fetchStreams, fetchV
 import {DbRepository} from "../db/DbRepository";
 import {ipcMain} from "electron";
 import {EVENT_BROADCASTING} from "./esService";
+import {ProxyService} from "../ProxyService";
 
 export class TwitchClient extends EventEmitter {
   private userState: UserStateHolder;
@@ -21,6 +22,7 @@ export class TwitchClient extends EventEmitter {
     private logService: LogService,
     private onEditorsFetched: (editors: UserData[]) => void = () => {},
     private onLogout: () => void = () => {},
+    proxyService?: ProxyService,
   ) {
     super();
     this.onLogoutCallback = this.onLogout;
@@ -35,6 +37,13 @@ export class TwitchClient extends EventEmitter {
 
     chatService.setLogger(logService);
     eventSubService.setLogger(logService);
+
+    // Set proxy service if provided
+    if (proxyService) {
+      eventSubService.setProxyService(proxyService);
+      chatService.setProxyService(proxyService);
+    }
+
     this.registerIpcHandlers()
   }
 
