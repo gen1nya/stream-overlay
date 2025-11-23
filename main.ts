@@ -21,6 +21,7 @@ import {ProxyService} from "./services/ProxyService";
 import {BotConfigService} from "./services/BotConfigService";
 import {DbRepository} from "./services/db/DbRepository";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
+import {BackendLogService} from "./services/BackendLogService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -52,6 +53,9 @@ const store = new Store<StoreSchema>({
         enabled: false,
         channelId: '',
         videoId: '',
+    },
+    irc: {
+        useWebSocket: false,  // Default to TCP
     }
   },
 });
@@ -61,6 +65,13 @@ const wss = new WebSocket.Server({ port: 42001 });
 const logService = new LogService((logs) => {
   broadcast('log:updated', { logs });
 }, 100);
+
+const backendLogService = new BackendLogService({
+  enabled: true,
+  broadcastViaWebSocket: true,
+  writeToFile: false,
+  maxBufferSize: 1000,
+});
 
 const audiosessionManager = new AudiosessionManager(store, logService);
 const proxy = new ProxyService();
@@ -132,7 +143,8 @@ const twitchClient = new TwitchClient(
   () => {
     console.log('Twitch client logged out');
     mainWindow?.webContents?.send("logout:success");
-  }
+  },
+  proxy  // Pass ProxyService to TwitchClient
 );
 
 const botService = new BotConfigService(
@@ -177,6 +189,10 @@ function broadcast(channel: string, payload: any) {
     }
   });
 }
+
+backendLogService.setBroadcastCallback((logs) => {
+  broadcast('backend-logs:update', logs);
+});
 
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
@@ -224,7 +240,8 @@ app.whenReady().then(() => {
 
 
       },
-      localeRepository
+      localeRepository,
+      backendLogService
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();

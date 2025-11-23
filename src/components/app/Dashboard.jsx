@@ -7,7 +7,9 @@ import {
     getStats,
     reconnect,
     openExternalLink,
-    openTerminal, onLogout
+    openTerminal,
+    onLogout,
+    openBackendLogs
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
@@ -237,6 +239,25 @@ const LogHeader = styled.div`
     padding: 6px 10px;
     font-weight: bold;
     border-bottom: 1px solid #333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+`;
+
+const BackendLogsButton = styled.button`
+    background: #444;
+    border: none;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 11px;
+    transition: background 0.2s;
+    font-weight: normal;
+
+    &:hover {
+        background: #555;
+    }
 `;
 
 const LogContent = styled.div`
@@ -722,7 +743,12 @@ export default function Dashboard() {
                 </Content>
 
                 <LogPanel>
-                    <LogHeader>{t('dashboard.logs.title')}</LogHeader>
+                    <LogHeader>
+                        <span>{t('dashboard.logs.title')}</span>
+                        <BackendLogsButton onClick={openBackendLogs}>
+                            Backend
+                        </BackendLogsButton>
+                    </LogHeader>
                     <LogContent ref={logPanelRef}>
                         {logs.map((log, index) => (
                             <LogLine key={index}>

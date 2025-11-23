@@ -5,6 +5,7 @@ export let mainWindow: BrowserWindow | null = null;
 export let chatWindow: BrowserWindow | null = null;
 export let previewWindow: BrowserWindow | null = null;
 export let terminalWindow: BrowserWindow | null = null;
+export let backendLogsWindow: BrowserWindow | null = null;
 
 export function createTerminalWindow(): void {
     terminalWindow = new BrowserWindow({
@@ -75,4 +76,27 @@ export function createPreviewWindow(): void {
     icon: path.join(__dirname, 'assets', 'icon.png'),
   });
   previewWindow.loadURL('http://localhost:5173/preview');
+}
+
+export function createBackendLogsWindow(): void {
+  if (backendLogsWindow && !backendLogsWindow.isDestroyed()) {
+    backendLogsWindow.focus();
+    return;
+  }
+  backendLogsWindow = new BrowserWindow({
+    width: 1000,
+    height: 700,
+    title: 'Backend Logs',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+  });
+  backendLogsWindow.setMenuBarVisibility(false);
+  backendLogsWindow.loadURL('http://localhost:5173/backend-logs');
+
+  backendLogsWindow.on('closed', () => {
+    backendLogsWindow = null;
+  });
 }

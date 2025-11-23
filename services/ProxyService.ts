@@ -1,9 +1,11 @@
 import { ipcMain } from "electron";
 import * as keytar from "keytar";
 import { SocksProxyAgent } from "socks-proxy-agent";
+import { SocksClient } from "socks";
 import { request as httpsRequest } from "node:https";
 import { request as httpRequest } from "node:http";
 import type { RequestOptions } from "node:https";
+import type { Socket } from "node:net";
 
 export type ProxyKind = 'socks5';
 
@@ -146,6 +148,7 @@ class ProxyService {
 
     /**
      * Выполняет HTTP запрос через прокси (если включен) или напрямую
+     * Универсальный метод для любых HTTP/HTTPS запросов
      */
     async fetch(url: string, options: FetchOptions = {}): Promise<Response> {
         const fetchOptions: RequestInit = {
@@ -174,15 +177,27 @@ class ProxyService {
     }
 
     /**
-     * Специальный метод для совместимости с существующим кодом chat-reader
+     * Специализированный метод для YouTube с кастомными заголовками
+     * Используется YouTube парсером
      */
-    async fetchText(url: string, options: FetchOptions = {}, maxRedirects = 5): Promise<ProxyFetchResponse> {
+    async fetchYouTube(url: string, options: FetchOptions = {}, maxRedirects = 5): Promise<ProxyFetchResponse> {
+        // Добавляем YouTube-специфичные заголовки
+        const youtubeHeaders = {
+            'accept': '*/*',
+            'accept-language': 'en-US,en;q=0.8',
+            'origin': 'https://www.youtube.com',
+            'referer': 'https://www.youtube.com/',
+            'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123 Safari/537.36',
+            ...options.headers
+        };
+
+        const youtubeOptions = { ...options, headers: youtubeHeaders };
+
         if (this.agent && this.proxyConfig?.enabled) {
-            return this.fetchTextThroughProxy(url, options, maxRedirects);
+            return this.fetchTextThroughProxy(url, youtubeOptions, maxRedirects);
         }
 
-        // Если прокси не используется, вызываем стандартную логику
-        return this.fetchTextDirect(url, options, maxRedirects);
+        return this.fetchTextDirect(url, youtubeOptions, maxRedirects);
     }
 
     /**
@@ -241,11 +256,6 @@ class ProxyService {
 
                 const u = new URL(currentUrl);
                 const headers = {
-                    'accept': '*/*',
-                    'accept-language': 'en-US,en;q=0.8',
-                    'origin': 'https://www.youtube.com',
-                    'referer': 'https://www.youtube.com/',
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123 Safari/537.36',
                     ...options.headers
                 };
 
@@ -326,11 +336,6 @@ class ProxyService {
 
                 const u = new URL(currentUrl);
                 const headers = {
-                    'accept': '*/*',
-                    'accept-language': 'en-US,en;q=0.8',
-                    'origin': 'https://www.youtube.com',
-                    'referer': 'https://www.youtube.com/',
-                    'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123 Safari/537.36',
                     ...options.headers
                 };
 
@@ -469,6 +474,57 @@ class ProxyService {
      */
     getAgent(): any {
         return this.agent;
+    }
+
+    /**
+     * Получить опции для WebSocket соединения с прокси
+     * Используется для ws.WebSocket(url, options)
+     */
+    getWebSocketOptions(): { agent?: any } {
+        if (this.agent && this.proxyConfig?.enabled) {
+            return { agent: this.agent };
+        }
+        return {};
+    }
+
+    /**
+     * Создать TCP соединение через SOCKS прокси
+     * Используется для IRC и других TCP-based протоколов
+     */
+    async createTcpConnection(host: string, port: number): Promise<Socket> {
+        if (!this.proxyConfig?.enabled || !this.proxyConfig.host || !this.proxyConfig.port) {
+            throw new Error('Proxy not enabled or not configured');
+        }
+
+        console.log(`[PROXY] Creating TCP connection to ${host}:${port} via SOCKS5 proxy ${this.proxyConfig.host}:${this.proxyConfig.port}`);
+
+        const socksOptions: any = {
+            proxy: {
+                host: this.proxyConfig.host,
+                port: this.proxyConfig.port,
+                type: 5, // SOCKS5
+            },
+            command: 'connect',
+            destination: {
+                host,
+                port,
+            },
+        };
+
+        // Add authentication if provided
+        if (this.proxyConfig.username && this.proxyConfig.password) {
+            socksOptions.proxy.userId = this.proxyConfig.username;
+            socksOptions.proxy.password = this.proxyConfig.password;
+        }
+
+        try {
+            const info = await SocksClient.createConnection(socksOptions);
+            console.log(`[PROXY] TCP connection established to ${host}:${port}`);
+            return info.socket;
+        } catch (error) {
+            console.error(`[PROXY] Failed to create TCP connection:`, error);
+            throw error;
+        }
     }
 }
 

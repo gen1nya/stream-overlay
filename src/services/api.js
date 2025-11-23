@@ -306,3 +306,24 @@ export const removeAuthListeners = () => {
     ipcRenderer.removeAllListeners('auth:error');
     ipcRenderer.removeAllListeners('auth:cancelled');
 };
+
+// Backend logs API
+export const openBackendLogs = () => {
+    return ipcRenderer?.invoke('backend-logs:open');
+};
+
+export const getBackendLogsBuffer = () => {
+    return ipcRenderer?.invoke('backend-logs:get-buffer');
+};
+
+export const clearBackendLogs = () => {
+    return ipcRenderer?.invoke('backend-logs:clear');
+};
+
+export const getBackendLogsConfig = () => {
+    return ipcRenderer?.invoke('backend-logs:get-config');
+};
+
+export const updateBackendLogsConfig = (config) => {
+    return ipcRenderer?.invoke('backend-logs:update-config', config);
+};

@@ -7,7 +7,8 @@ import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import {createChatWindow, createPreviewWindow, createTerminalWindow} from './windowsManager';
+import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow} from './windowsManager';
+import {BackendLogService} from './services/BackendLogService';
 import {LogService} from "./services/logService";
 import {
   addModerator,
@@ -32,6 +33,7 @@ export function registerIpcHandlers(
     twitchClient: TwitchClient,
     onAccountReady: () => void,
     localeRepository: AppLocaleRepository,
+    backendLogService?: BackendLogService,
 ) {
   ipcMain.handle('user:getById', async ( event, args) => {
     return await getExtendedUser({ id: args.userId });
@@ -161,4 +163,25 @@ export function registerIpcHandlers(
     return `file://${fullPath}`;
   });
   ipcMain.handle('utils:get_image_url', (_e, fileName) => `/images/${encodeURIComponent(fileName)}`);
+
+  // Backend logs handlers
+  ipcMain.handle('backend-logs:open', () => createBackendLogsWindow());
+  ipcMain.handle('backend-logs:get-buffer', () => {
+    return backendLogService ? backendLogService.getBuffer() : [];
+  });
+  ipcMain.handle('backend-logs:clear', () => {
+    if (backendLogService) {
+      backendLogService.clearBuffer();
+    }
+  });
+  ipcMain.handle('backend-logs:get-config', () => {
+    return backendLogService ? backendLogService.getConfig() : null;
+  });
+  ipcMain.handle('backend-logs:update-config', (_e, config) => {
+    if (backendLogService) {
+      backendLogService.updateConfig(config);
+      return backendLogService.getConfig();
+    }
+    return null;
+  });
 }
