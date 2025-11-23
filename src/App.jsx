@@ -18,6 +18,7 @@ import WaveformDemo from "./components/player/WaveformDemo";
 import FollowersGoalWidget from "./components/followers/FollowersGoalWidget";
 import {WebSocketProvider} from "./context/WebSocketContext";
 import Terminal from "./components/app/SonaARG";
+import BackendLogs from "./components/app/BackendLogs";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -55,6 +56,7 @@ export default function App() {
                         <Route path="/dashboard" element={<Dashboard/>} />
                         <Route path="/auth" element={<AuthScreen/>} />
                         <Route path="/tty" element={<Terminal/>} />
+                        <Route path="/backend-logs" element={<BackendLogs/>} />
                         <Route path="*" element={ <WrongPageComponent/> }/>
                     </Routes>
                 </BrowserRouter>
