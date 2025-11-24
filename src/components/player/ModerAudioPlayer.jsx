@@ -308,19 +308,18 @@ function ModernAudioPlayer() {
     const {isConnected: metaConnected} = useReconnectingWebSocket('ws://localhost:5001/ws', {
         onOpen: () => console.log('🟢 WebSocket metadata подключен'),
         onMessage: (event) => {
-            if (typeof event.data === 'string') {
-                // Это текстовое сообщение (JSON)
-                try {
-                    const {type, data} = JSON.parse(event.data);
-                    if (type !== 'metadata') return;
-                    setMetadata(data);
-                    setProgress(data.position);
-                    console.log("pos:" + data.position);
-                    console.log("dur:" + data.duration);
-                    setDuration(data.duration);
-                } catch (error) {
-                    console.warn('Ошибка парсинга JSON:', error);
-                }
+            if (typeof event.data !== 'string') return;
+            // Это текстовое сообщение (JSON)
+            try {
+                const {type, data} = JSON.parse(event.data);
+                if (type !== 'metadata') return;
+                setMetadata(data);
+                setProgress(data.position);
+                console.log("pos:" + data.position);
+                console.log("dur:" + data.duration);
+                setDuration(data.duration);
+            } catch (error) {
+                console.warn('Ошибка парсинга JSON:', error);
             }
         },
         onClose: () => console.log('🔴 WebSocket metadata отключен'),

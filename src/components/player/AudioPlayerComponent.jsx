@@ -234,6 +234,7 @@ export default function AudioPlayerComponent() {
     const { isConnected: metaConnected } = useReconnectingWebSocket('ws://localhost:5001/ws', {
         onOpen: () => console.log('🟢 WebSocket metadata подключен'),
         onMessage: (event) => {
+            if (typeof event.data !== 'string') return;
             const { type, data } = JSON.parse(event.data);
             if (type !== 'metadata') return;
             setMetadata(data);
