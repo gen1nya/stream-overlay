@@ -6,8 +6,8 @@ import {hexToRgba, lightenColor} from "../../utils.js";
 import Marquee from "react-fast-marquee";
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import FFTDonut from "./FFTDonut";
-import ColorThief from "colorthief";
 import {generateTrackIdenticon} from "../../utils/identicon.js";
+import {usePaletteExtraction} from "../../hooks/usePaletteExtraction.js";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -198,10 +198,6 @@ export default function AudioPlayerComponent() {
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(1);
     const [shouldArtistScroll, setShouldArtistScroll] = useState(false);
-    const [pendingColorData, setPendingColorData] = useState(null);
-    const colorApplyTimeoutRef = useRef(null);
-    const [spectrumPeakColor, setSpectrumPeakColor] = useState('#1e1e1e');
-    const [spectrumColor, setSpectrumColor] = useState('#1e1e1e');
     const [albumArtSrc, setAlbumArtSrc] = useState(undefined);
 
     const timerRef = useRef(null);
@@ -213,6 +209,13 @@ export default function AudioPlayerComponent() {
     const lastStatus = useRef(null);
 
     const marqueeWrapperRef = useRef(null);
+
+    // Use the palette extraction hook for real album art
+    const paletteColors = usePaletteExtraction(
+        metadata?.albumArtBase64,
+        albumRef,
+        { paletteSize: 6 }
+    );
 
     useLayoutEffect(() => {
         const container = marqueeWrapperRef.current;
@@ -265,7 +268,7 @@ export default function AudioPlayerComponent() {
             return;
         }
 
-        // If we have real album art, use it
+        // If we have real album art, use it (palette extraction handled by hook)
         if (metadata.albumArtBase64) {
             setAlbumArtSrc(metadata.albumArtBase64);
             return;
@@ -275,73 +278,10 @@ export default function AudioPlayerComponent() {
         const identicon = generateTrackIdenticon(metadata);
         if (identicon) {
             setAlbumArtSrc(identicon.dataUrl);
-
-            // Apply colors from identicon immediately
-            const color = identicon.mainColor;
-            const shadow = lightenColor(color, 0.2);
-            const spectrum = identicon.palette[1] || color;
-            const spectrumPeak = identicon.palette[2] || color;
-
-            const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
-                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
-                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
-                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
-            };
-
-            setPendingColorData(newColors);
         } else {
             setAlbumArtSrc(undefined);
         }
     }, [metadata]);
-
-    // Extract colors from real album art using ColorThief
-    useEffect(() => {
-        if (!albumRef.current || !metadata?.albumArtBase64) return;
-        const colorThief = new ColorThief();
-        const img = albumRef.current;
-
-        const onLoad = () => {
-            const palette = colorThief.getPalette(img, 6);
-            const color = colorThief.getColor(img);
-            const shadow = lightenColor(color, 0.2);
-            const spectrum = palette[1];
-            const spectrumPeak = palette[2];
-
-            const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
-                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
-                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
-                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
-            };
-
-            setPendingColorData(newColors);
-        };
-
-        if (img.complete) {
-            onLoad();
-        } else {
-            img.addEventListener('load', onLoad);
-        }
-        return () => img.removeEventListener('load', onLoad);
-    }, [metadata?.albumArtBase64]);
-
-    useEffect(() => {
-        if (!pendingColorData) return;
-
-        if (colorApplyTimeoutRef.current) {
-            clearTimeout(colorApplyTimeoutRef.current);
-        }
-
-        colorApplyTimeoutRef.current = setTimeout(() => {
-            setSpectrumColor(pendingColorData.spectrum);
-            setSpectrumPeakColor(pendingColorData.peak);
-        }, 150); // задержка
-    }, [pendingColorData]);
-
-    useEffect(() => {
-        return () => clearTimeout(colorApplyTimeoutRef.current);
-    }, []);
 
 
     // Инициализация Web Animations API для Disk и AlbumArt
@@ -439,8 +379,8 @@ export default function AudioPlayerComponent() {
                         innerRadiusRatio={0.87}
                         startAngle={-Math.PI}
                         backgroundColor={"rgba(0,0,0,0.00)"}
-                        barColor={spectrumColor}
-                        peakColor={spectrumPeakColor}
+                        barColor={paletteColors.spectrum}
+                        peakColor={paletteColors.peak}
                     />
                 </FFTWrapper>
                 <DiskContainer>
