@@ -118,6 +118,25 @@ const Title = styled.div`
         if (bottomRightRadius <= 40) return '0px';
         return Math.pow(bottomRightRadius, 0.78) + 1;
     }}px;
+    position: relative;
+
+    /* Gradient fade on edges - apply to marquee container */
+    .rfm-marquee-container {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+    }
 `;
 
 const Artist = styled.div`
@@ -141,6 +160,25 @@ const Artist = styled.div`
         return Math.pow(bottomRightRadius, 0.87) + 1;
     }}px;
     width: 100%;
+    position: relative;
+
+    /* Gradient fade on edges - apply to marquee container */
+    .rfm-marquee-container {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+    }
 `;
 
 const Deck = styled.div`
