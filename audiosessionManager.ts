@@ -47,17 +47,40 @@ export class AudiosessionManager {
                 logService.logMessage(`Saved audio device not found: ${device.name}; Reset`);
                 this.appStorage.set("audio.fft.device", null);
             }
-            if (validDevice && this.fftbridge.setDevice(device.id)) {
-                this.fftbridge.setLoopback(device.flow === 'render');
-                console.log(`Audio device set to: ${device.name}`);
-                logService.logMessage(`Audio device set to: ${device.name}`);
-                if (this.config.fft.enabled) {
-                    this.fftbridge.enable(true);
-                    console.log("FFT enabled");
+            if (validDevice) {
+                // setDevice might be sync or async depending on module version
+                const setDeviceResult = this.fftbridge.setDevice(device.id);
+                const handleSuccess = (success: boolean) => {
+                    if (success) {
+                        this.fftbridge.setLoopback(device.flow === 'render');
+                        console.log(`Audio device set to: ${device.name}`);
+                        logService.logMessage(`Audio device set to: ${device.name}`);
+                        if (this.config.fft.enabled) {
+                            const enableResult = this.fftbridge.enable(true);
+                            if (enableResult && typeof enableResult.then === 'function') {
+                                enableResult.then(() => {
+                                    console.log("FFT enabled");
+                                }).catch((err) => {
+                                    console.error("Failed to enable FFT:", err);
+                                });
+                            } else {
+                                console.log("FFT enabled");
+                            }
+                        }
+                    } else {
+                        logService.logMessage(`Failed to set audio device: ${device.name}`);
+                        console.error(`Failed to set audio device: ${device.name}`);
+                    }
+                };
+
+                if (setDeviceResult && typeof setDeviceResult.then === 'function') {
+                    setDeviceResult.then(handleSuccess).catch((err) => {
+                        logService.logMessage(`Error setting audio device: ${err.message}`);
+                        console.error(`Error setting audio device:`, err);
+                    });
+                } else {
+                    handleSuccess(setDeviceResult as boolean);
                 }
-            } else {
-                logService.logMessage(`Failed to set audio device: ${device.name}`);
-                console.error(`Failed to set audio device: ${device.name}`);
             }
         }
 
@@ -206,43 +229,73 @@ export class AudiosessionManager {
     }
 
     close() {
-        console.log("🛑 Stopping AudiosessionManager...");
+        console.log("🛑 [AudiosessionManager] Stopping AudiosessionManager...");
 
+        console.log("🛑 [AudiosessionManager] Closing WebSocket server...");
         this.mediaWss.close(() => {
-            console.log("✅ Media WebSocket server closed");
+            console.log("✅ [AudiosessionManager] Media WebSocket server closed");
         });
 
+        console.log("🛑 [AudiosessionManager] Closing WebSocket clients...");
         this.mediaWss.clients.forEach((client) => {
             if (client.readyState === WebSocket.OPEN) {
                 client.close();
             }
         });
+        console.log("✅ [AudiosessionManager] All WebSocket clients closed");
 
         try {
-            console.log("🛑 Stopping FFT bridge...");
-            this.fftbridge.stop();
-            this.fftbridge = null;
-            console.log("🛑 Stopping GSMTC bridge...");
+            console.log("🛑 [AudiosessionManager] Stopping GSMTC bridge...");
             this.gsmtcBridge.stop();
+            console.log("✅ [AudiosessionManager] GSMTC bridge stopped, setting to null...");
             this.gsmtcBridge = null;
+            console.log("✅ [AudiosessionManager] GSMTC bridge set to null");
 
-            console.log("✅ Native bridges stopped");
+            console.log("🛑 [AudiosessionManager] Stopping FFT bridge...");
+            console.log("🛑 [AudiosessionManager] FFT bridge object:", this.fftbridge);
+            console.log("🛑 [AudiosessionManager] FFT bridge type:", typeof this.fftbridge);
+            console.log("🛑 [AudiosessionManager] FFT bridge stop type:", typeof this.fftbridge?.stop);
+
+            if (this.fftbridge && typeof this.fftbridge.stop === 'function') {
+                console.log("🛑 [AudiosessionManager] Calling FFT bridge stop()...");
+                const stopResult = this.fftbridge.stop();
+                if (stopResult && typeof stopResult.then === 'function') {
+                    // Async version
+                    stopResult.then(() => {
+                        console.log("✅ [AudiosessionManager] FFT bridge stop() completed (async)");
+                    }).catch((err) => {
+                        console.error("❌ [AudiosessionManager] FFT bridge stop() error:", err);
+                    });
+                    console.log("✅ [AudiosessionManager] FFT bridge stop() called (will complete async)");
+                } else {
+                    // Sync version
+                    console.log("✅ [AudiosessionManager] FFT bridge stop() completed (sync)");
+                }
+            } else {
+                console.log("⚠️ [AudiosessionManager] FFT bridge or stop() method not available");
+            }
+
+            console.log("✅ [AudiosessionManager] FFT bridge stopped, setting to null...");
+            this.fftbridge = null;
+            console.log("✅ [AudiosessionManager] FFT bridge set to null");
+
+            console.log("✅ [AudiosessionManager] Native bridges stopped");
         } catch (error) {
-            console.error("❌ Error stopping native bridges:", error);
+            console.error("❌ [AudiosessionManager] Error stopping native bridges:", error);
         }
 
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
 
-        console.log("✅ AudiosessionManager closed");
+        console.log("✅ [AudiosessionManager] AudiosessionManager closed");
     }
 
     getDevices(): AudioDevice[] {
         return this.fftbridge.listDevices();
     }
 
-    setDevice(device: AudioDevice): boolean {
-        const isAlive = this.fftbridge.setDevice(device.id);
+    async setDevice(device: AudioDevice): Promise<boolean> {
+        const isAlive = await this.fftbridge.setDevice(device.id);
         this.fftbridge.setLoopback(device.flow === 'render');
         this.appStorage.set("audio.fft.device", device);
         this.config.fft.device = device;
@@ -287,15 +340,21 @@ export class AudiosessionManager {
         ipcMain.handle('audio:setDevice', async (event, args) => {
             console.log("Setting audio device:", args);
             const device: AudioDevice = args;
-            if (this.setDevice(device)) {
-                // restart the engine to apply the new device
-                this.fftbridge.enable(false);
-                this.fftbridge.enable(true);
-                this.appStorage.set("audio.fft.device", device);
-                this.config.fft.device = device;
-                console.log(`Audio device set to: ${device.name}`);
-                return true;
-            } else {
+            try {
+                const success = await this.setDevice(device);
+                if (success) {
+                    // restart the engine to apply the new device (both are now async)
+                    await this.fftbridge.enable(false);
+                    await this.fftbridge.enable(true);
+                    this.appStorage.set("audio.fft.device", device);
+                    this.config.fft.device = device;
+                    console.log(`Audio device set to: ${device.name}`);
+                    return true;
+                } else {
+                    throw new Error(`Failed to set audio device: ${device.name}`);
+                }
+            } catch (err) {
+                console.error("Error in audio:setDevice:", err);
                 throw new Error(`Failed to set audio device: ${device.name}`);
             }
         });
@@ -329,19 +388,24 @@ export class AudiosessionManager {
 
         ipcMain.handle('audio:enableFFT', async (event, args) => {
             const enabled = args.enabled;
-            if (enabled) {
-                const device = this.config.fft.device;
-                if (device) {
-                    this.fftbridge.enable(true);
+            try {
+                if (enabled) {
+                    const device = this.config.fft.device;
+                    if (device) {
+                        await this.fftbridge.enable(true);
+                    } else {
+                        throw new Error("No audio device set for FFT. Please set a device first.");
+                    }
                 } else {
-                    throw new Error("No audio device set for FFT. Please set a device first.");
+                    await this.fftbridge.enable(false);
                 }
-            } else {
-                this.fftbridge.enable(false);
+                this.appStorage.set("audio.fft.enabled", enabled);
+                this.config.fft.enabled = enabled;
+                return enabled;
+            } catch (err) {
+                console.error("Error in audio:enableFFT:", err);
+                throw err;
             }
-            this.appStorage.set("audio.fft.enabled", enabled);
-            this.config.fft.enabled = enabled;
-            return enabled;
         });
 
         ipcMain.handle('audio:getFFTConfig', async () => {

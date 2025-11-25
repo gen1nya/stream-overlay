@@ -22,9 +22,11 @@ WasapiEngine::WasapiEngine(){
 }
 
 WasapiEngine::~WasapiEngine(){
+  std::cout << "[WasapiEngine] Destructor called" << std::endl;
   enable(false);
   if(stopEvent_) CloseHandle(stopEvent_);
   CoUninitialize();
+  std::cout << "[WasapiEngine] Destructor finished" << std::endl;
 }
 
 std::wstring WasapiEngine::stringToWstring(const std::string& str) {
@@ -121,7 +123,11 @@ void WasapiEngine::setCallback(FftCallback cb){ cb_ = std::move(cb); }
 void WasapiEngine::setWaveCallback(WaveCallback cb) { waveCb_ = std::move(cb); }
 void WasapiEngine::setVuCallback(VuCallback cb) { vuCb_ = std::move(cb); }
 
-void WasapiEngine::enable(bool on){ if(on){ start(); } else { stop(); } }
+void WasapiEngine::enable(bool on){
+  std::cout << "[WasapiEngine] enable(" << (on ? "true" : "false") << ")" << std::endl;
+  std::cout.flush();
+  if(on){ start(); } else { stop(); }
+}
 
 void WasapiEngine::start(){
   if(running_) return;
@@ -319,19 +325,45 @@ void WasapiEngine::start(){
 }
 
 void WasapiEngine::stop(){
-  if(!running_) return;
+  std::cout << "[WasapiEngine] ===== stop() called =====" << std::endl;
+  std::cout.flush();
+  if(!running_) {
+    std::cout << "[WasapiEngine] stop: already stopped (running_ = false)" << std::endl;
+    std::cout.flush();
+    return;
+  }
+
+  std::cout << "[WasapiEngine] stop: setting running_ = false" << std::endl;
+  std::cout.flush();
   running_=false;
 
   // Signal stop event to wake up worker thread immediately
-  if(stopEvent_) SetEvent(stopEvent_);
+  if(stopEvent_) {
+    std::cout << "[WasapiEngine] stop: signaling stopEvent_" << std::endl;
+    std::cout.flush();
+    SetEvent(stopEvent_);
+  }
 
   // Now join will be fast because worker thread will wake up and exit
-  if(th_.joinable()) th_.join();
+  std::cout << "[WasapiEngine] stop: waiting for worker thread to join..." << std::endl;
+  std::cout.flush();
+  if(th_.joinable()) {
+    th_.join();
+    std::cout << "[WasapiEngine] stop: worker thread joined" << std::endl;
+    std::cout.flush();
+  } else {
+    std::cout << "[WasapiEngine] stop: worker thread was not joinable" << std::endl;
+    std::cout.flush();
+  }
 
+  std::cout << "[WasapiEngine] stop: cleaning up resources..." << std::endl;
+  std::cout.flush();
   if(kiss_){ kiss_fft_free(kiss_->cfg); delete kiss_; kiss_=nullptr;}
   if(wfx_){ CoTaskMemFree(wfx_); wfx_=nullptr;}
   cap_.Reset();
   audioClient_.Reset();
+  std::cout << "[WasapiEngine] ===== stop: completed =====" << std::endl;
+  std::cout.flush();
 }
 
 void WasapiEngine::publishWaveform(){
