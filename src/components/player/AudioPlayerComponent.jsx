@@ -215,6 +215,7 @@ export default function AudioPlayerComponent() {
     const [metadata, setMetadata] = useState(null);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(1);
+    const [shouldTitleScroll, setShouldTitleScroll] = useState(false);
     const [shouldArtistScroll, setShouldArtistScroll] = useState(false);
     const [albumArtSrc, setAlbumArtSrc] = useState(undefined);
 
@@ -226,7 +227,8 @@ export default function AudioPlayerComponent() {
     const rampInterval = useRef(null);
     const lastStatus = useRef(null);
 
-    const marqueeWrapperRef = useRef(null);
+    const titleWrapperRef = useRef(null);
+    const artistWrapperRef = useRef(null);
 
     // Use the palette extraction hook for real album art
     const paletteColors = usePaletteExtraction(
@@ -235,22 +237,52 @@ export default function AudioPlayerComponent() {
         { paletteSize: 6 }
     );
 
+    // Helper functions to calculate padding based on border radius (same as in styled-components)
+    const calculateTitlePadding = (radius) => {
+        if (radius <= 40) return 0;
+        return Math.pow(radius, 0.78) + 1;
+    };
+
+    const calculateArtistPadding = (radius) => {
+        if (radius <= 40) return 0;
+        return Math.pow(radius, 0.87) + 1;
+    };
+
     useLayoutEffect(() => {
-        const container = marqueeWrapperRef.current;
-        if (!container) return;
+        if (!metadata || !theme.player?.borderRadius) return;
 
-        const realContent = container.querySelector(".rfm-initial-child-container");
-        if (!realContent) return;
+        // Check Title scroll
+        const titleContainer = titleWrapperRef.current;
+        if (titleContainer) {
+            const realTitleContent = titleContainer.querySelector(".rfm-initial-child-container");
+            if (realTitleContent) {
+                const rawWidth = titleContainer.clientWidth;
+                const bottomLeftRadius = theme.player.borderRadius.bottomLeft || 0;
+                const bottomRightRadius = theme.player.borderRadius.bottomRight || 0;
+                const paddingLeft = calculateTitlePadding(bottomLeftRadius);
+                const paddingRight = calculateTitlePadding(bottomRightRadius);
+                const availableWidth = rawWidth - paddingLeft - paddingRight;
+                const textWidth = realTitleContent.scrollWidth;
+                setShouldTitleScroll(textWidth > availableWidth);
+            }
+        }
 
-        const rawClientWidth = container.clientWidth;
-        const styles = getComputedStyle(container);
-        const paddingLeft = parseFloat(styles.paddingLeft || "0");
-        const paddingRight = parseFloat(styles.paddingRight || "0");
-        const contentWidth = rawClientWidth - paddingLeft - paddingRight;
-        const textWidth = realContent.scrollWidth;
-        console .log(`Container width: ${contentWidth}, Text width: ${textWidth}`);
-        setShouldArtistScroll(textWidth > contentWidth);
-    }, [metadata]);
+        // Check Artist scroll
+        const artistContainer = artistWrapperRef.current;
+        if (artistContainer) {
+            const realArtistContent = artistContainer.querySelector(".rfm-initial-child-container");
+            if (realArtistContent) {
+                const rawWidth = artistContainer.clientWidth;
+                const bottomLeftRadius = theme.player.borderRadius.bottomLeft || 0;
+                const bottomRightRadius = theme.player.borderRadius.bottomRight || 0;
+                const paddingLeft = calculateArtistPadding(bottomLeftRadius);
+                const paddingRight = calculateArtistPadding(bottomRightRadius);
+                const availableWidth = rawWidth - paddingLeft - paddingRight;
+                const textWidth = realArtistContent.scrollWidth;
+                setShouldArtistScroll(textWidth > availableWidth);
+            }
+        }
+    }, [metadata, theme]);
 
     const { isConnected: metaConnected } = useReconnectingWebSocket('ws://localhost:5001/ws', {
         onOpen: () => console.log('🟢 WebSocket metadata подключен'),
@@ -417,16 +449,16 @@ export default function AudioPlayerComponent() {
                 </DiskContainer>
 
                 <div>
-                    <Title ref={marqueeWrapperRef}>
+                    <Title ref={titleWrapperRef}>
                         <FixedMarquee
                             pauseOnHover={true}
-                            play={shouldArtistScroll}
-                            key={metadata?.artist}
+                            play={shouldTitleScroll}
+                            key={metadata?.title}
                         >
                             <TitleContainer>{metadata ? metadata.title : ""}</TitleContainer>
                         </FixedMarquee>
                     </Title>
-                    <Artist ref={marqueeWrapperRef}>
+                    <Artist ref={artistWrapperRef}>
                         <FixedMarquee
                             pauseOnHover={true}
                             play={shouldArtistScroll}
