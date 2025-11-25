@@ -21,14 +21,13 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:42001' }) =>
         isUnmountingRef.current = false;
 
         ws.onopen = () => {
-            console.log('🟢 WebSocket подключен');
+            console.log('🟢 WebSocket подключен: ', url);
             setIsConnected(true);
             wsRef.current = ws;
         };
 
         ws.onmessage = (event) => {
             const { channel, payload } = JSON.parse(event.data);
-            console.log('WS message:', channel, payload);
             const channelListeners = listenersRef.current.get(channel) || [];
             channelListeners.forEach(callback => callback(payload));
         };
@@ -38,7 +37,7 @@ export const WebSocketProvider = ({ children, url = 'ws://localhost:42001' }) =>
         };
 
         ws.onclose = () => {
-            console.log('🔴 WebSocket отключен');
+            console.log('🔴 WebSocket отключен: ', url);
             setIsConnected(false);
             wsRef.current = null;
         };

@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
 import diskImg from "../../assets/disk.png";
 import { defaultTheme } from '../../theme';
@@ -137,12 +137,15 @@ const Deck = styled.div`
     z-index: 1;
 `;
 
-const ProgressPointer = styled.div`
+const ProgressPointer = styled.div.attrs(({ $left }) => ({
+    style: {
+        left: `${$left}px`,
+    },
+}))`
     position: absolute;
     top: 137px;
     width: auto;
     height: auto;
-    left: ${({ $left }) => $left}px;
     transition: left 0.25s linear;
 `;
 
@@ -368,6 +371,12 @@ export default function AudioPlayerComponent() {
     const pointerLeft = 20 + (80 - 20) * (Math.min(progress, duration) / duration);
     const showProgress = duration > 0 && metadata;
 
+    // Memoize FFT colors to prevent unnecessary re-renders
+    const fftColors = useMemo(() => ({
+        barColor: paletteColors.spectrum,
+        peakColor: paletteColors.peak,
+    }), [paletteColors.spectrum, paletteColors.peak]);
+
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
@@ -379,8 +388,8 @@ export default function AudioPlayerComponent() {
                         innerRadiusRatio={0.87}
                         startAngle={-Math.PI}
                         backgroundColor={"rgba(0,0,0,0.00)"}
-                        barColor={paletteColors.spectrum}
-                        peakColor={paletteColors.peak}
+                        barColor={fftColors.barColor}
+                        peakColor={fftColors.peakColor}
                     />
                 </FFTWrapper>
                 <DiskContainer>

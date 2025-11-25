@@ -315,8 +315,6 @@ function ModernAudioPlayer() {
                 if (type !== 'metadata') return;
                 setMetadata(data);
                 setProgress(data.position);
-                console.log("pos:" + data.position);
-                console.log("dur:" + data.duration);
                 setDuration(data.duration);
             } catch (error) {
                 console.warn('Ошибка парсинга JSON:', error);
