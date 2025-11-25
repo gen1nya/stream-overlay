@@ -98,11 +98,26 @@ const AlbumArt = styled.img`
 `;
 
 const Title = styled.div`
+    box-sizing: border-box;
     width: 100%;
     text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
     font-weight: ${({theme}) => theme.player?.text?.title?.fontWeight || 'bold'};
     font-size: ${({theme}) => theme.player?.text?.title?.fontSize || '14'}px;
-    color: ${({theme}) => theme.player?.text?.title?.color || '#ffffff'};;
+    color: ${({theme}) => theme.player?.text?.title?.color || '#ffffff'};
+    overflow: hidden;
+    min-width: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-left: ${({theme}) => {
+        const bottomLeftRadius = theme.player?.borderRadius?.bottomLeft || 0;
+        if (bottomLeftRadius <= 40) return '0px';
+        return Math.pow(bottomLeftRadius, 0.78) + 1;
+    }}px;
+    padding-right: ${({theme}) => {
+        const bottomRightRadius = theme.player?.borderRadius?.bottomRight || 0;
+        if (bottomRightRadius <= 40) return '0px';
+        return Math.pow(bottomRightRadius, 0.78) + 1;
+    }}px;
 `;
 
 const Artist = styled.div`
@@ -118,12 +133,12 @@ const Artist = styled.div`
     padding-left: ${({theme}) => {
         const bottomLeftRadius = theme.player?.borderRadius?.bottomLeft || 0;
         if (bottomLeftRadius <= 40) return '0px';
-        return Math.pow(bottomLeftRadius, 0.85) + 1;
+        return Math.pow(bottomLeftRadius, 0.87) + 1;
     }}px;
     padding-right: ${({theme}) => {
         const bottomRightRadius = theme.player?.borderRadius?.bottomRight || 0;
         if (bottomRightRadius <= 40) return '0px';
-        return Math.pow(bottomRightRadius, 0.85) + 1;
+        return Math.pow(bottomRightRadius, 0.87) + 1;
     }}px;
     width: 100%;
 `;
