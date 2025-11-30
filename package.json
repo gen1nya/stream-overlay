@@ -17,7 +17,7 @@
   },
   "build": {
     "appId": "com.twitch.watcher",
-    "compression": "maximum",
+    "compression": "normal",
     "removePackageScripts": true,
     "publish": null,
     "files": [
