@@ -345,6 +345,11 @@ app.on('before-quit', async (event) => {
         try { extra = JSON.stringify(h.address()); } catch {}
       }
       console.log(`[handle ${idx}] ${name} ${extra}`);
+
+      // Force-close any lingering sockets to avoid hanging the process
+      if (name === 'Socket' && typeof h.destroy === 'function') {
+        try { h.destroy(); } catch {}
+      }
     });
     process.exit(0);
   }, 500);
