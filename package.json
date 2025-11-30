@@ -28,6 +28,10 @@
       "dist/**/*"
     ],
     "asar": true,
+    "asarUnpack": [
+      "**/*.node",
+      "native/**"
+    ],
     "npmRebuild": true,
     "directories": {
       "buildResources": "assets",
