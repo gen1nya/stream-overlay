@@ -11,6 +11,7 @@ const FONT_ROUTE   = '/font';
 const FONT_CACHE_DIR = path.join(app.getPath('userData'), 'fonts');
 
 const activeServers = new Set<Server>();
+const activeFontStreams = new Set<fs.WriteStream>();
 
 function resolveDistPath(): string {
   const packagedCandidates = [
@@ -77,6 +78,12 @@ function handleFontProxy(req: express.Request, res: express.Response) {
       }
 
       const tmpFile = fs.createWriteStream(tmpPath);
+      activeFontStreams.add(tmpFile);
+      const cleanupStream = () => {
+        activeFontStreams.delete(tmpFile);
+      };
+      tmpFile.on('close', cleanupStream);
+      tmpFile.on('error', cleanupStream);
       https
           .get(cdnUrl, (response) => {
             if (response.statusCode !== 200) {
@@ -90,11 +97,11 @@ function handleFontProxy(req: express.Request, res: express.Response) {
             tmpFile.on('finish', () => {
               tmpFile.close(() => {
                 try {
-                  fs.renameSync(tmpPath, localPath); // атомарно переименовываем
-                  console.log(`[font] cached -> ${localPath}`);
-                  streamFont(localPath);
-                } catch (err) {
-                  console.error('❌ Rename error:', err, 'tmp=', tmpPath, 'local=', localPath);
+                fs.renameSync(tmpPath, localPath); // атомарно переименовываем
+                console.log(`[font] cached -> ${localPath}`);
+                streamFont(localPath);
+              } catch (err) {
+                console.error('❌ Rename error:', err, 'tmp=', tmpPath, 'local=', localPath);
                   if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
                   res.status(500).send('Font file move error');
                 }
@@ -223,6 +230,15 @@ export async function stopAllServers(): Promise<void> {
 
   await Promise.all(closePromises);
   activeServers.clear();
+
+  // Force-close any in-flight font streams to avoid lingering handles on exit
+  if (activeFontStreams.size > 0) {
+    console.log(`🧹 Closing ${activeFontStreams.size} active font streams...`);
+    for (const stream of Array.from(activeFontStreams)) {
+      try { stream.destroy(); } catch {}
+      activeFontStreams.delete(stream);
+    }
+  }
 
   console.log('✅ All servers stopped');
 }
