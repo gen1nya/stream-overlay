@@ -46,6 +46,7 @@ private:
   static void streamStateCallback(pa_stream* s, void* userdata);
 
   // PulseAudio objects
+  bool mainloopRunning_ = false;
   pa_threaded_mainloop* mainloop_ = nullptr;
   pa_context* context_ = nullptr;
   pa_stream* stream_ = nullptr;

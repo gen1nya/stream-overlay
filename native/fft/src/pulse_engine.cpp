@@ -46,6 +46,7 @@ PulseAudioEngine::PulseAudioEngine() {
     pa_threaded_mainloop_unlock(mainloop_);
     throw std::runtime_error("Failed to start PulseAudio mainloop");
   }
+  mainloopRunning_ = true;
 
   pa_threaded_mainloop_unlock(mainloop_);
 
@@ -57,8 +58,9 @@ PulseAudioEngine::PulseAudioEngine() {
 PulseAudioEngine::~PulseAudioEngine() {
   enable(false);
 
-  if (mainloop_) {
+  if (mainloop_ && mainloopRunning_) {
     pa_threaded_mainloop_stop(mainloop_);
+    mainloopRunning_ = false;
   }
 
   if (context_) {
@@ -276,6 +278,13 @@ void PulseAudioEngine::streamReadCallback(pa_stream* s, size_t nbytes, void* use
 void PulseAudioEngine::start() {
   if (running_ || !contextReady_) return;
 
+  if (mainloop_ && !mainloopRunning_) {
+    if (pa_threaded_mainloop_start(mainloop_) < 0) {
+      throw std::runtime_error("Failed to restart PulseAudio mainloop");
+    }
+    mainloopRunning_ = true;
+  }
+
   if (currentDeviceId_.empty()) {
     // Use default source
     currentDeviceId_ = "@DEFAULT_SOURCE@";
@@ -384,6 +393,12 @@ void PulseAudioEngine::stop() {
   }
 
   pa_threaded_mainloop_unlock(mainloop_);
+
+  // Stop mainloop thread to avoid lingering thread blocking shutdown
+  if (mainloop_ && mainloopRunning_) {
+    pa_threaded_mainloop_stop(mainloop_);
+    mainloopRunning_ = false;
+  }
 
   // Clean up FFT
   if (kiss_) {
