@@ -104,8 +104,17 @@ public:
 
   void Execute() override {
     try {
-      // Stop engine (this will join worker thread)
-      engine_->enable(false);
+      // Stop engine (this can block on platform threads); add timeout to avoid hanging shutdown
+      auto future = std::async(std::launch::async, [this]() {
+        engine_->enable(false);
+      });
+
+      if (future.wait_for(std::chrono::seconds(2)) == std::future_status::timeout) {
+        SetError("Stopping FFT engine timed out");
+        return;
+      }
+
+      future.get(); // rethrow exceptions if any
     } catch (const std::exception& e) {
       SetError(e.what());
     }
