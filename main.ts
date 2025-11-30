@@ -346,7 +346,7 @@ app.on('before-quit', async (event) => {
       }
       console.log(`[handle ${idx}] ${name} ${extra}`);
     });
-    app.exit(0);
+    process.exit(0);
   }, 500);
 });
 
