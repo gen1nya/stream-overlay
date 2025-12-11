@@ -768,7 +768,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.6.9-beta</Version>
+                <Version>v0.7.0-beta</Version>
                 <ConnectionStatus stats={stats} onReconnect={reconnect} />
             </Footer>
         </Wrapper>
