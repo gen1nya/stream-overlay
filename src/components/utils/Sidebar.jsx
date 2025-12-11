@@ -1,10 +1,11 @@
-import React from "react";
+import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
+import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 
 const Wrapper = styled.div`
     width: ${(props) => (props.open ? "240px" : "70px")};
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
     border: 1px solid #333;
     display: flex;
@@ -13,7 +14,25 @@ const Wrapper = styled.div`
     box-shadow:
             0 4px 20px rgba(0, 0, 0, 0.3),
             0 0 0 1px rgba(255, 255, 255, 0.05);
-    overflow: hidden;
+    overflow-x: hidden;
+    overflow-y: auto;
+
+    &::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    &::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #444;
+        border-radius: 2px;
+    }
+
+    &::-webkit-scrollbar-thumb:hover {
+        background: #555;
+    }
 `;
 
 const Item = styled.div`
@@ -27,14 +46,14 @@ const Item = styled.div`
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     border: 1px solid transparent;
     justify-content: ${(props) => (props.open ? "flex-start" : "center")};
-    
+
     background: ${(props) => {
     if (props.active) {
         return "linear-gradient(135deg, rgba(100, 108, 255, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)";
     }
     return "transparent";
 }};
-    
+
     border-color: ${(props) => {
     if (props.active) {
         return "rgba(100, 108, 255, 0.3)";
@@ -72,6 +91,25 @@ const Item = styled.div`
     }
 `;
 
+const ParentItem = styled(Item)`
+    background: ${(props) => {
+    if (props.hasActiveChild) {
+        return "rgba(100, 108, 255, 0.05)";
+    }
+    return "transparent";
+}};
+`;
+
+const ChildItem = styled(Item)`
+    padding-left: ${(props) => (props.open ? "36px" : "14px")};
+    padding-right: ${(props) => (props.open ? "12px" : "14px")};
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+`;
+
 const Label = styled.span`
     font-size: 0.95rem;
     font-weight: 500;
@@ -81,8 +119,9 @@ const Label = styled.span`
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     white-space: nowrap;
     overflow: hidden;
+    flex: 1;
 
-    ${Item}:hover & {
+    ${Item}:hover &, ${ParentItem}:hover &, ${ChildItem}:hover & {
         color: ${(props) => (props.active ? "#fff" : "#e0e0e0")};
     }
 `;
@@ -133,7 +172,7 @@ const Tooltip = styled.div`
         border-right: 5px solid #333;
     }
 
-    ${Item}:hover & {
+    ${Item}:hover &, ${ParentItem}:hover &, ${ChildItem}:hover & {
         opacity: ${(props) => (props.showTooltip ? 1 : 0)};
         transform: translateY(-50%) translateX(0);
     }
@@ -165,10 +204,129 @@ const HeaderTitle = styled.h3`
     transition: opacity 0.2s ease;
 `;
 
+const ExpandIcon = styled.div`
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+    opacity: ${(props) => (props.open ? 1 : 0)};
+    transition: all 0.2s ease;
+
+    svg {
+        width: 16px;
+        height: 16px;
+        margin-right: 0;
+        color: #666;
+        transition: transform 0.2s ease;
+        transform: ${(props) => (props.expanded ? "rotate(0deg)" : "rotate(0deg)")};
+    }
+`;
+
+const ChildrenWrapper = styled.div`
+    display: grid;
+    grid-template-rows: ${(props) => (props.expanded ? "1fr" : "0fr")};
+    opacity: ${(props) => (props.expanded ? 1 : 0)};
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+`;
+
+const ChildrenInner = styled.div`
+    overflow: hidden;
+    padding-right: 4px;
+`;
+
 export const Sidebar = ({ open, active, onSelect, items }) => {
-    // Группируем элементы (можно добавить логику группировки)
     const { t } = useTranslation();
-    const mainItems = items || [];
+    const [expandedItems, setExpandedItems] = useState({});
+
+    // Auto-expand parent if child is active
+    React.useEffect(() => {
+        items.forEach(item => {
+            if (item.children) {
+                const hasActiveChild = item.children.some(child => child.key === active);
+                if (hasActiveChild && !expandedItems[item.key]) {
+                    setExpandedItems(prev => ({ ...prev, [item.key]: true }));
+                }
+            }
+        });
+    }, [active, items]);
+
+    const toggleExpand = (key) => {
+        setExpandedItems(prev => ({ ...prev, [key]: !prev[key] }));
+    };
+
+    const handleItemClick = (item) => {
+        if (item.children) {
+            toggleExpand(item.key);
+        } else {
+            onSelect(item.key);
+        }
+    };
+
+    const renderItem = (item) => {
+        const hasChildren = item.children && item.children.length > 0;
+        const isExpanded = expandedItems[item.key];
+        const hasActiveChild = hasChildren && item.children.some(child => child.key === active);
+
+        if (hasChildren) {
+            return (
+                <React.Fragment key={item.key}>
+                    <ParentItem
+                        active={false}
+                        hasActiveChild={hasActiveChild}
+                        open={open}
+                        onClick={() => handleItemClick(item)}
+                    >
+                        {item.icon}
+                        <Label open={open} active={hasActiveChild}>
+                            {item.label}
+                        </Label>
+                        <ExpandIcon open={open} expanded={isExpanded}>
+                            {isExpanded ? <FiChevronDown /> : <FiChevronRight />}
+                        </ExpandIcon>
+                        <Tooltip showTooltip={!open}>
+                            {item.label}
+                        </Tooltip>
+                    </ParentItem>
+                    <ChildrenWrapper expanded={isExpanded && open}>
+                        <ChildrenInner>
+                            {item.children.map(child => (
+                                <ChildItem
+                                    key={child.key}
+                                    active={active === child.key}
+                                    open={open}
+                                    onClick={() => onSelect(child.key)}
+                                >
+                                    <ActiveIndicator active={active === child.key} />
+                                    {child.icon}
+                                    <Label open={open} active={active === child.key}>
+                                        {child.label}
+                                    </Label>
+                                </ChildItem>
+                            ))}
+                        </ChildrenInner>
+                    </ChildrenWrapper>
+                </React.Fragment>
+            );
+        }
+
+        return (
+            <Item
+                key={item.key}
+                active={active === item.key}
+                open={open}
+                onClick={() => handleItemClick(item)}
+            >
+                <ActiveIndicator active={active === item.key} />
+                {item.icon}
+                <Label open={open} active={active === item.key}>
+                    {item.label}
+                </Label>
+                <Tooltip showTooltip={!open}>
+                    {item.label}
+                </Tooltip>
+            </Item>
+        );
+    };
 
     return (
         <Wrapper open={open}>
@@ -178,23 +336,7 @@ export const Sidebar = ({ open, active, onSelect, items }) => {
 
             <Divider />
 
-            {mainItems.map((item, index) => (
-                <Item
-                    key={item.key}
-                    active={active === item.key}
-                    open={open}
-                    onClick={() => onSelect(item.key)}
-                >
-                    <ActiveIndicator active={active === item.key} />
-                    {item.icon}
-                    <Label open={open} active={active === item.key}>
-                        {item.label}
-                    </Label>
-                    <Tooltip showTooltip={!open}>
-                        {item.label}
-                    </Tooltip>
-                </Item>
-            ))}
+            {items.map(item => renderItem(item))}
         </Wrapper>
     );
 };
