@@ -6,7 +6,7 @@
     "node-addon-api": "^7"
   },
   "scripts": {
-    "build": "node-gyp rebuild",
-    "rebuild:electron": "node-gyp rebuild --target=36.2.1 --arch=x64 --dist-url=https://electronjs.org/headers"
+    "fft:build": "node-gyp rebuild",
+    "fft:rebuild:electron": "node-gyp rebuild --target=36.2.1 --arch=x64 --dist-url=https://electronjs.org/headers"
   }
 }

@@ -125,7 +125,8 @@ const ru = {
                 'kigudi',
                 'kurosakissora',
                 'qvik_l',
-                'gena_zogii'
+                'gena_zogii',
+                'spiritusunite'
             ],
             cards: {
                 account: {
@@ -232,6 +233,8 @@ const ru = {
             },
             pages: {
                 general: { title: 'Общие настройки', label: 'Общие' },
+                chatGroup: { label: 'Чат' },
+                chatAppearance: { title: 'Внешний вид чата', label: 'Внешний вид' },
                 chat: { title: 'Настройки сообщений', label: 'Сообщения' },
                 follow: { title: 'Настройки подписок', label: 'Follow' },
                 channelPoints: { title: 'Настройки баллов канала', label: 'Баллы' },

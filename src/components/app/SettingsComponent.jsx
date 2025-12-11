@@ -27,7 +27,9 @@ import {
     FiEye,
     FiLayers,
     FiYoutube,
-    FiAlertCircle, FiTarget
+    FiAlertCircle,
+    FiTarget,
+    FiLayout
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -43,7 +45,8 @@ import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
-import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import {ActionButton, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import HolidayHeader from "../seasonal/HolidayHeader";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
@@ -198,6 +201,7 @@ export default function Settings() {
 
     const pageInfoConfig = useMemo(() => ({
         general: {title: t('settings.pages.general.title'), icon: <FiSettings/>},
+        chat_appearance: {title: t('settings.pages.chatAppearance.title'), icon: <FiLayout/>},
         chat: {title: t('settings.pages.chat.title'), icon: <FiMessageCircle/>},
         follow: {title: t('settings.pages.follow.title'), icon: <FiHeart/>},
         channel_points: {title: t('settings.pages.channelPoints.title'), icon: <FiAward/>},
@@ -309,7 +313,7 @@ export default function Settings() {
                 />
             )}
 
-            <Header>
+            <HolidayHeader>
                 <HeaderLeft>
                     <BackButton onClick={handleBackButton}>
                         <FiArrowLeft/>
@@ -335,7 +339,7 @@ export default function Settings() {
                     </ActionButton>
 
                 </HeaderActions>
-            </Header>
+            </HolidayHeader>
 
             <ContentWrapper>
                 <Sidebar
@@ -344,9 +348,17 @@ export default function Settings() {
                     onSelect={setActivePage}
                     items={[
                         {key: "general", icon: <FiSettings/>, label: t('settings.pages.general.label')},
-                        {key: "chat", icon: <FiMessageCircle/>, label: t('settings.pages.chat.label')},
-                        {key: "follow", icon: <FiHeart/>, label: t('settings.pages.follow.label')},
-                        {key: "channel_points", icon: <FiAward/>, label: t('settings.pages.channelPoints.label')},
+                        {
+                            key: "chat_group",
+                            icon: <FiMessageCircle/>,
+                            label: t('settings.pages.chatGroup.label'),
+                            children: [
+                                {key: "chat_appearance", icon: <FiLayout/>, label: t('settings.pages.chatAppearance.label')},
+                                {key: "chat", icon: <FiMessageCircle/>, label: t('settings.pages.chat.label')},
+                                {key: "follow", icon: <FiHeart/>, label: t('settings.pages.follow.label')},
+                                {key: "channel_points", icon: <FiAward/>, label: t('settings.pages.channelPoints.label')},
+                            ]
+                        },
                         {key: "bot", icon: <AiFillRobot/>, label: t('settings.pages.bot.label')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
@@ -386,12 +398,17 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 <Content>
                     <AppearanceSettingsCard />
                     <Socks5ProxyComponent/>
+                </Content>
+            );
+
+        case "chat_appearance":
+            return (
+                <Content>
                     <UnifiedSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}
                     />
-
                 </Content>
             );
 

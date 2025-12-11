@@ -9,6 +9,7 @@ import {
     openExternalLink,
     openTerminal,
     onLogout,
+    onAccountUpdated,
     openBackendLogs
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -21,11 +22,13 @@ import {
     FiCopy,
     FiLayers,
 } from 'react-icons/fi';
+import ConnectionStatus from './ConnectionStatus';
 import {Row} from "./SettingsComponent";
 import {Spacer} from "../utils/Separator";
 import TwitchUsersPopup from "./TwitchUsersPopup";
 import {OnlineIndicator} from "../utils/OnlineIndicator";
-import {Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import {HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import HolidayHeader from "../seasonal/HolidayHeader";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./settings/SharedSettingsStyles";
 import BotConfigPopup from "./settings/BotConfigPopup";
@@ -280,26 +283,6 @@ const LogLine = styled.div`
     }
 `;
 
-const StatusBlock = styled.div`
-    position: absolute;
-    right: 12px;
-    bottom: 40px;
-    background: #2e2e2e;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    border: 1px solid #444;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.3);
-    opacity: 0.7;
-    transition: opacity 0.2s ease;
-    &:hover {
-        opacity: 1;
-    }
-`;
-
 const Footer = styled.div`
     height: 28px;
     background: #1e1e1e;
@@ -312,13 +295,13 @@ const Footer = styled.div`
 `;
 
 const Version = styled.span`
-    width: 80px;
+    width: 60px;
     text-align: start;
+    padding: 0 6px;
     font-size: 12px;
     color: #b0b0b0;
     white-space: nowrap;
     overflow: hidden;
-    padding-right: 6px;
 `;
 
 const AccountName = styled.div`
@@ -520,11 +503,25 @@ export default function Dashboard() {
             navigate('/auth', { replace: true });
         });
 
+        // Подписываемся на обновления аккаунта через IPC callback
+        onAccountUpdated((data) => {
+            console.log('Account updated via IPC:', data);
+            if (data.accountInfo) {
+                setAccount(data.accountInfo);
+            }
+        });
+
+        // Также пытаемся загрузить сразу (fallback если данные уже готовы)
         if (!called.current) {
             called.current = true;
             getAccountInfo().then(info => {
                 const { accountInfo } = info;
-                setAccount(accountInfo);
+                if (accountInfo) {
+                    setAccount(accountInfo);
+                }
+            }).catch(err => {
+                console.warn('Failed to get account info immediately:', err);
+                // Не критично, данные придут через callback
             });
         }
         const update = async () => {
@@ -568,24 +565,6 @@ export default function Dashboard() {
         };
     }, [isConnected, send, subscribe]);
 
-    const now = Date.now();
-    const uptime = now - stats.startTime;
-    const sinceEventSub = now - stats.lastEventSub;
-    const sinceIRC = now - stats.lastIRC;
-
-    const formatDuration = (ms) => {
-        const totalSeconds = Math.floor(ms / 1000);
-        const h = Math.floor(totalSeconds / 3600);
-        const m = Math.floor((totalSeconds % 3600) / 60);
-        const s = totalSeconds % 60;
-        return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
-    };
-
-    const eventSubColor = sinceEventSub > 120000 ? 'red' : sinceEventSub > 30000 ? 'yellow' : '#b0b0b0';
-    const ircColor = sinceIRC > 360000 ? 'red' : sinceIRC > 300000 ? 'yellow' : '#b0b0b0';
-
-    const handleReconnect = () => reconnect();
-
     return (
         <Wrapper>
             {userInfoPopup.open && (
@@ -620,7 +599,7 @@ export default function Dashboard() {
             )}
             <MainArea>
                 <Content>
-                    <Header>
+                    <HolidayHeader>
                         <HeaderLeft>
                             <HeaderTitle>{renderHeaderContent()}</HeaderTitle>
                         </HeaderLeft>
@@ -642,7 +621,7 @@ export default function Dashboard() {
                             </ActionButton>
 
                         </HeaderActions>
-                    </Header>
+                    </HolidayHeader>
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
@@ -769,15 +748,8 @@ export default function Dashboard() {
                 </LogPanel>
             </MainArea>
 
-            <StatusBlock>
-                <span style={{ color: '#b0b0b0' }}>{t('dashboard.status.uptime', { duration: formatDuration(uptime) })}</span>
-                <span style={{ color: eventSubColor }}>{t('dashboard.status.eventSub', { duration: formatDuration(sinceEventSub) })}</span>
-                <span style={{ color: ircColor }}>{t('dashboard.status.irc', { duration: formatDuration(sinceIRC) })}</span>
-                <button onClick={handleReconnect}>{t('dashboard.status.reconnect')}</button>
-            </StatusBlock>
-
             <Footer>
-                <Marquee style={{ fontSize: '14px' }}>
+                <Marquee style={{ fontSize: '14px', flex: 1 }}>
                     {t('dashboard.footer.betaTest')} &nbsp;
                     {streamers.map((name, index) => (
                         <React.Fragment key={name}>
@@ -797,6 +769,7 @@ export default function Dashboard() {
                     ))}
                 </Marquee>
                 <Version>v0.6.9-beta</Version>
+                <ConnectionStatus stats={stats} onReconnect={reconnect} />
             </Footer>
         </Wrapper>
     );

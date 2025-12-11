@@ -12,7 +12,7 @@ export interface GsmtcState {
 export interface Device { id: string; name: string; flow: 'render'|'capture' }
 export interface FftBridge {
     listDevices(): Device[]
-    setDevice(id: string): boolean
+    setDevice(id: string): Promise<boolean>
     getCurrentDevice(): Device
     setBufferSize(fftSize: number): void
     setHopSize(hopSize: number): void
@@ -21,8 +21,11 @@ export interface FftBridge {
     setMasterGain(gain: number): void
     setTilt(exp: number): void
     setLoopback(on: boolean): void
-    enable(on: boolean): void
+    enable(on: boolean): Promise<void>
+    stop(): Promise<void>
     onFft(cb: (spectrum: Float32Array)=>void): void
+    onWave(cb: (waveform: Int16Array)=>void): void
+    onVu(cb: (vu: Uint8Array)=>void): void
 }
 
 declare const native: {

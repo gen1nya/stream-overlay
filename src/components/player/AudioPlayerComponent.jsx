@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import React, { useEffect, useLayoutEffect, useRef, useState, useMemo } from "react";
 import styled, { createGlobalStyle, ThemeProvider } from "styled-components";
 import diskImg from "../../assets/disk.png";
 import { defaultTheme } from '../../theme';
@@ -6,8 +6,8 @@ import {hexToRgba, lightenColor} from "../../utils.js";
 import Marquee from "react-fast-marquee";
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import FFTDonut from "./FFTDonut";
-import ColorThief from "colorthief";
 import {generateTrackIdenticon} from "../../utils/identicon.js";
+import {usePaletteExtraction} from "../../hooks/usePaletteExtraction.js";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -98,11 +98,45 @@ const AlbumArt = styled.img`
 `;
 
 const Title = styled.div`
+    box-sizing: border-box;
     width: 100%;
     text-align: ${({theme}) => theme.player?.text?.textAlign || 'left'};
     font-weight: ${({theme}) => theme.player?.text?.title?.fontWeight || 'bold'};
     font-size: ${({theme}) => theme.player?.text?.title?.fontSize || '14'}px;
-    color: ${({theme}) => theme.player?.text?.title?.color || '#ffffff'};;
+    color: ${({theme}) => theme.player?.text?.title?.color || '#ffffff'};
+    overflow: hidden;
+    min-width: 0;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    padding-left: ${({theme}) => {
+        const bottomLeftRadius = theme.player?.borderRadius?.bottomLeft || 0;
+        if (bottomLeftRadius <= 40) return '0px';
+        return Math.pow(bottomLeftRadius, 0.78) + 1;
+    }}px;
+    padding-right: ${({theme}) => {
+        const bottomRightRadius = theme.player?.borderRadius?.bottomRight || 0;
+        if (bottomRightRadius <= 40) return '0px';
+        return Math.pow(bottomRightRadius, 0.78) + 1;
+    }}px;
+    position: relative;
+
+    /* Gradient fade on edges - apply to marquee container */
+    .rfm-marquee-container {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+    }
 `;
 
 const Artist = styled.div`
@@ -118,14 +152,33 @@ const Artist = styled.div`
     padding-left: ${({theme}) => {
         const bottomLeftRadius = theme.player?.borderRadius?.bottomLeft || 0;
         if (bottomLeftRadius <= 40) return '0px';
-        return Math.pow(bottomLeftRadius, 0.85) + 1;
+        return Math.pow(bottomLeftRadius, 0.87) + 1;
     }}px;
     padding-right: ${({theme}) => {
         const bottomRightRadius = theme.player?.borderRadius?.bottomRight || 0;
         if (bottomRightRadius <= 40) return '0px';
-        return Math.pow(bottomRightRadius, 0.85) + 1;
+        return Math.pow(bottomRightRadius, 0.87) + 1;
     }}px;
     width: 100%;
+    position: relative;
+
+    /* Gradient fade on edges - apply to marquee container */
+    .rfm-marquee-container {
+        mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+        -webkit-mask-image: linear-gradient(
+            to right,
+            transparent 0%,
+            black 8%,
+            black 92%,
+            transparent 100%
+        );
+    }
 `;
 
 const Deck = styled.div`
@@ -137,12 +190,15 @@ const Deck = styled.div`
     z-index: 1;
 `;
 
-const ProgressPointer = styled.div`
+const ProgressPointer = styled.div.attrs(({ $left }) => ({
+    style: {
+        left: `${$left}px`,
+    },
+}))`
     position: absolute;
     top: 137px;
     width: auto;
     height: auto;
-    left: ${({ $left }) => $left}px;
     transition: left 0.25s linear;
 `;
 
@@ -197,11 +253,8 @@ export default function AudioPlayerComponent() {
     const [metadata, setMetadata] = useState(null);
     const [progress, setProgress] = useState(0);
     const [duration, setDuration] = useState(1);
+    const [shouldTitleScroll, setShouldTitleScroll] = useState(false);
     const [shouldArtistScroll, setShouldArtistScroll] = useState(false);
-    const [pendingColorData, setPendingColorData] = useState(null);
-    const colorApplyTimeoutRef = useRef(null);
-    const [spectrumPeakColor, setSpectrumPeakColor] = useState('#1e1e1e');
-    const [spectrumColor, setSpectrumColor] = useState('#1e1e1e');
     const [albumArtSrc, setAlbumArtSrc] = useState(undefined);
 
     const timerRef = useRef(null);
@@ -212,28 +265,67 @@ export default function AudioPlayerComponent() {
     const rampInterval = useRef(null);
     const lastStatus = useRef(null);
 
-    const marqueeWrapperRef = useRef(null);
+    const titleWrapperRef = useRef(null);
+    const artistWrapperRef = useRef(null);
+
+    // Use the palette extraction hook for real album art
+    const paletteColors = usePaletteExtraction(
+        metadata?.albumArtBase64,
+        albumRef,
+        { paletteSize: 6 }
+    );
+
+    // Helper functions to calculate padding based on border radius (same as in styled-components)
+    const calculateTitlePadding = (radius) => {
+        if (radius <= 40) return 0;
+        return Math.pow(radius, 0.78) + 1;
+    };
+
+    const calculateArtistPadding = (radius) => {
+        if (radius <= 40) return 0;
+        return Math.pow(radius, 0.87) + 1;
+    };
 
     useLayoutEffect(() => {
-        const container = marqueeWrapperRef.current;
-        if (!container) return;
+        if (!metadata || !theme.player?.borderRadius) return;
 
-        const realContent = container.querySelector(".rfm-initial-child-container");
-        if (!realContent) return;
+        // Check Title scroll
+        const titleContainer = titleWrapperRef.current;
+        if (titleContainer) {
+            const realTitleContent = titleContainer.querySelector(".rfm-initial-child-container");
+            if (realTitleContent) {
+                const rawWidth = titleContainer.clientWidth;
+                const bottomLeftRadius = theme.player.borderRadius.bottomLeft || 0;
+                const bottomRightRadius = theme.player.borderRadius.bottomRight || 0;
+                const paddingLeft = calculateTitlePadding(bottomLeftRadius);
+                const paddingRight = calculateTitlePadding(bottomRightRadius);
+                const availableWidth = rawWidth - paddingLeft - paddingRight;
+                const textWidth = realTitleContent.scrollWidth;
+                setShouldTitleScroll(textWidth > availableWidth);
+            }
+        }
 
-        const rawClientWidth = container.clientWidth;
-        const styles = getComputedStyle(container);
-        const paddingLeft = parseFloat(styles.paddingLeft || "0");
-        const paddingRight = parseFloat(styles.paddingRight || "0");
-        const contentWidth = rawClientWidth - paddingLeft - paddingRight;
-        const textWidth = realContent.scrollWidth;
-        console .log(`Container width: ${contentWidth}, Text width: ${textWidth}`);
-        setShouldArtistScroll(textWidth > contentWidth);
-    }, [metadata]);
+        // Check Artist scroll
+        const artistContainer = artistWrapperRef.current;
+        if (artistContainer) {
+            const realArtistContent = artistContainer.querySelector(".rfm-initial-child-container");
+            if (realArtistContent) {
+                const rawWidth = artistContainer.clientWidth;
+                const bottomLeftRadius = theme.player.borderRadius.bottomLeft || 0;
+                const bottomRightRadius = theme.player.borderRadius.bottomRight || 0;
+                const paddingLeft = calculateArtistPadding(bottomLeftRadius);
+                const paddingRight = calculateArtistPadding(bottomRightRadius);
+                const availableWidth = rawWidth - paddingLeft - paddingRight;
+                const textWidth = realArtistContent.scrollWidth;
+                setShouldArtistScroll(textWidth > availableWidth);
+            }
+        }
+    }, [metadata, theme]);
 
     const { isConnected: metaConnected } = useReconnectingWebSocket('ws://localhost:5001/ws', {
         onOpen: () => console.log('🟢 WebSocket metadata подключен'),
         onMessage: (event) => {
+            if (typeof event.data !== 'string') return;
             const { type, data } = JSON.parse(event.data);
             if (type !== 'metadata') return;
             setMetadata(data);
@@ -264,7 +356,7 @@ export default function AudioPlayerComponent() {
             return;
         }
 
-        // If we have real album art, use it
+        // If we have real album art, use it (palette extraction handled by hook)
         if (metadata.albumArtBase64) {
             setAlbumArtSrc(metadata.albumArtBase64);
             return;
@@ -274,73 +366,10 @@ export default function AudioPlayerComponent() {
         const identicon = generateTrackIdenticon(metadata);
         if (identicon) {
             setAlbumArtSrc(identicon.dataUrl);
-
-            // Apply colors from identicon immediately
-            const color = identicon.mainColor;
-            const shadow = lightenColor(color, 0.2);
-            const spectrum = identicon.palette[1] || color;
-            const spectrumPeak = identicon.palette[2] || color;
-
-            const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
-                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
-                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
-                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
-            };
-
-            setPendingColorData(newColors);
         } else {
             setAlbumArtSrc(undefined);
         }
     }, [metadata]);
-
-    // Extract colors from real album art using ColorThief
-    useEffect(() => {
-        if (!albumRef.current || !metadata?.albumArtBase64) return;
-        const colorThief = new ColorThief();
-        const img = albumRef.current;
-
-        const onLoad = () => {
-            const palette = colorThief.getPalette(img, 6);
-            const color = colorThief.getColor(img);
-            const shadow = lightenColor(color, 0.2);
-            const spectrum = palette[1];
-            const spectrumPeak = palette[2];
-
-            const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]}, 0.25)`,
-                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
-                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
-                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
-            };
-
-            setPendingColorData(newColors);
-        };
-
-        if (img.complete) {
-            onLoad();
-        } else {
-            img.addEventListener('load', onLoad);
-        }
-        return () => img.removeEventListener('load', onLoad);
-    }, [metadata?.albumArtBase64]);
-
-    useEffect(() => {
-        if (!pendingColorData) return;
-
-        if (colorApplyTimeoutRef.current) {
-            clearTimeout(colorApplyTimeoutRef.current);
-        }
-
-        colorApplyTimeoutRef.current = setTimeout(() => {
-            setSpectrumColor(pendingColorData.spectrum);
-            setSpectrumPeakColor(pendingColorData.peak);
-        }, 150); // задержка
-    }, [pendingColorData]);
-
-    useEffect(() => {
-        return () => clearTimeout(colorApplyTimeoutRef.current);
-    }, []);
 
 
     // Инициализация Web Animations API для Disk и AlbumArt
@@ -427,6 +456,12 @@ export default function AudioPlayerComponent() {
     const pointerLeft = 20 + (80 - 20) * (Math.min(progress, duration) / duration);
     const showProgress = duration > 0 && metadata;
 
+    // Memoize FFT colors to prevent unnecessary re-renders
+    const fftColors = useMemo(() => ({
+        barColor: paletteColors.spectrum,
+        peakColor: paletteColors.peak,
+    }), [paletteColors.spectrum, paletteColors.peak]);
+
     return (
         <ThemeProvider theme={theme}>
             <GlobalStyle />
@@ -438,8 +473,8 @@ export default function AudioPlayerComponent() {
                         innerRadiusRatio={0.87}
                         startAngle={-Math.PI}
                         backgroundColor={"rgba(0,0,0,0.00)"}
-                        barColor={spectrumColor}
-                        peakColor={spectrumPeakColor}
+                        barColor={fftColors.barColor}
+                        peakColor={fftColors.peakColor}
                     />
                 </FFTWrapper>
                 <DiskContainer>
@@ -452,16 +487,16 @@ export default function AudioPlayerComponent() {
                 </DiskContainer>
 
                 <div>
-                    <Title ref={marqueeWrapperRef}>
+                    <Title ref={titleWrapperRef}>
                         <FixedMarquee
                             pauseOnHover={true}
-                            play={shouldArtistScroll}
-                            key={metadata?.artist}
+                            play={shouldTitleScroll}
+                            key={metadata?.title}
                         >
                             <TitleContainer>{metadata ? metadata.title : ""}</TitleContainer>
                         </FixedMarquee>
                     </Title>
-                    <Artist ref={marqueeWrapperRef}>
+                    <Artist ref={artistWrapperRef}>
                         <FixedMarquee
                             pauseOnHover={true}
                             play={shouldArtistScroll}

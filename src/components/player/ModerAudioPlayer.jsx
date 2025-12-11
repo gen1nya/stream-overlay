@@ -3,10 +3,10 @@ import styled, {ThemeProvider} from "styled-components";
 import {hexToRgba, lightenColor} from "../../utils.js"
 import FFTBars from "./FFTBars";
 import useReconnectingWebSocket from "../../hooks/useReconnectingWebSocket";
-import ColorThief from "colorthief";
 import WaveForm from "./WaveForm";
 import VUMeter from "./Vumeter";
 import {generateTrackIdenticon} from "../../utils/identicon.js";
+import {usePaletteExtraction} from "../../hooks/usePaletteExtraction.js";
 
 const ensureRgba = (color, opacity = 1) => {
     if (color.includes('rgba')) return color;
@@ -280,14 +280,14 @@ function ModernAudioPlayer() {
     const timerRef = useRef(null);
     const coverRef = useRef();
 
-    const [shadowColor, setShadowColor] = useState('#1e1e1e');
-    const [bgColor, setBgColor] = useState('#1e1e1e');
-    const [spectrumColor, setSpectrumColor] = useState('#1e1e1e');
-    const [progressColor, setProgressColor] = useState('#1e1e1e');
-    const [spectrumPeakColor, setSpectrumPeakColor] = useState('#1e1e1e');
-    const [pendingColorData, setPendingColorData] = useState(null);
     const [coverSrc, setCoverSrc] = useState(undefined);
-    const colorApplyTimeoutRef = useRef(null);
+
+    // Use the palette extraction hook for real album art
+    const paletteColors = usePaletteExtraction(
+        metadata?.albumArtBase64,
+        coverRef,
+        { paletteSize: 6 }
+    );
 
     // WebSocket для получения темы
     const {isConnected: themeConnected} = useReconnectingWebSocket('ws://localhost:42001', {
@@ -308,19 +308,16 @@ function ModernAudioPlayer() {
     const {isConnected: metaConnected} = useReconnectingWebSocket('ws://localhost:5001/ws', {
         onOpen: () => console.log('🟢 WebSocket metadata подключен'),
         onMessage: (event) => {
-            if (typeof event.data === 'string') {
-                // Это текстовое сообщение (JSON)
-                try {
-                    const {type, data} = JSON.parse(event.data);
-                    if (type !== 'metadata') return;
-                    setMetadata(data);
-                    setProgress(data.position);
-                    console.log("pos:" + data.position);
-                    console.log("dur:" + data.duration);
-                    setDuration(data.duration);
-                } catch (error) {
-                    console.warn('Ошибка парсинга JSON:', error);
-                }
+            if (typeof event.data !== 'string') return;
+            // Это текстовое сообщение (JSON)
+            try {
+                const {type, data} = JSON.parse(event.data);
+                if (type !== 'metadata') return;
+                setMetadata(data);
+                setProgress(data.position);
+                setDuration(data.duration);
+            } catch (error) {
+                console.warn('Ошибка парсинга JSON:', error);
             }
         },
         onClose: () => console.log('🔴 WebSocket metadata отключен'),
@@ -352,7 +349,7 @@ function ModernAudioPlayer() {
             return;
         }
 
-        // If we have real album art, use it
+        // If we have real album art, use it (palette extraction handled by hook)
         if (metadata.albumArtBase64) {
             setCoverSrc(metadata.albumArtBase64);
             return;
@@ -362,83 +359,16 @@ function ModernAudioPlayer() {
         const identicon = generateTrackIdenticon(metadata);
         if (identicon) {
             setCoverSrc(identicon.dataUrl);
-
-            // Apply colors from identicon immediately
-            const color = identicon.mainColor;
-            const shadow = lightenColor(color, 0.2);
-            const spectrum = identicon.palette[1] || color;
-            const spectrumPeak = identicon.palette[2] || color;
-
-            const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
-                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
-                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
-                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
-            };
-
-            setPendingColorData(newColors);
         } else {
             setCoverSrc(undefined);
         }
     }, [metadata]);
 
-    // Extract colors from real album art using ColorThief
-    useEffect(() => {
-        if (!coverRef.current || !metadata?.albumArtBase64) return;
-        const colorThief = new ColorThief();
-        const img = coverRef.current;
-
-        const onLoad = () => {
-            const palette = colorThief.getPalette(img, 6);
-            const color = colorThief.getColor(img);
-            const shadow = lightenColor(color, 0.2);
-            const spectrum = palette[1];
-            const spectrumPeak = palette[2];
-
-            const newColors = {
-                bg: `rgb(${color[0]}, ${color[1]}, ${color[2]})`,
-                shadow: `rgb(${shadow[0]}, ${shadow[1]}, ${shadow[2]})`,
-                spectrum: `rgb(${spectrum[0]}, ${spectrum[1]}, ${spectrum[2]})`,
-                peak: `rgb(${spectrumPeak[0]}, ${spectrumPeak[1]}, ${spectrumPeak[2]})`,
-            };
-
-            setPendingColorData(newColors);
-        };
-
-        if (img.complete) {
-            onLoad();
-        } else {
-            img.addEventListener('load', onLoad);
-        }
-        return () => img.removeEventListener('load', onLoad);
-    }, [metadata?.albumArtBase64]);
-
-    useEffect(() => {
-        if (!pendingColorData) return;
-
-        if (colorApplyTimeoutRef.current) {
-            clearTimeout(colorApplyTimeoutRef.current);
-        }
-
-        colorApplyTimeoutRef.current = setTimeout(() => {
-            setBgColor(pendingColorData.bg);
-            setShadowColor(pendingColorData.shadow);
-            setSpectrumColor(pendingColorData.spectrum);
-            setProgressColor(pendingColorData.spectrum);
-            setSpectrumPeakColor(pendingColorData.peak);
-            setPendingColorData(null);
-        }, 150);
-    }, [pendingColorData]);
-
-    useEffect(() => {
-        return () => clearTimeout(colorApplyTimeoutRef.current);
-    }, []);
-
     const showProgress = duration > 0 && metadata;
 
     return (
         <ThemeProvider theme={theme}>
-            <CardWithCSSVars $bgColor={bgColor} $shadowColor={shadowColor}>
+            <CardWithCSSVars $bgColor={paletteColors.bg} $shadowColor={paletteColors.shadow}>
                 <TopRow>
                     <Cover
                         ref={coverRef}
@@ -455,14 +385,14 @@ function ModernAudioPlayer() {
                                 <FFTBars
                                     bars={48}
                                     backgroundColor={"rgba(255,255,255,0.02)"}
-                                    barColor={spectrumColor}
-                                    peakColor={spectrumPeakColor}
+                                    barColor={paletteColors.spectrum}
+                                    peakColor={paletteColors.peak}
                                 />
                             )}
                             {(theme.modernPlayer?.visualization === 'waveform' || !theme.modernPlayer?.visualization) && (
                                 <WaveForm
                                     backgroundColor={"rgba(255,255,255,0.02)"}
-                                    lineColor={spectrumPeakColor}
+                                    lineColor={paletteColors.peak}
                                     showCenterLine={false}
                                     showGrid={false}
                                 />
@@ -478,7 +408,7 @@ function ModernAudioPlayer() {
                     <ProgressBarContainer>
                         <Time>{formatTime(progress)}</Time>
                         <ProgressTrack>
-                            <Progress $percent={(progress / duration) * 100} $progressColor={progressColor}/>
+                            <Progress $percent={(progress / duration) * 100} $progressColor={paletteColors.progress}/>
                         </ProgressTrack>
                         <Time>{formatTime(duration)}</Time>
                     </ProgressBarContainer>
