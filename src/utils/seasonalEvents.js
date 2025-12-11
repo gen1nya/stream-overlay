@@ -22,7 +22,7 @@ export const SEASONAL_EVENTS = [
         startDay: 12,
         endMonth: 1,
         endDay: 14,
-        effects: ['snowfall'],
+        effects: ['snowfall', 'padoru'],
     },
     // Future events can be added here:
     // {

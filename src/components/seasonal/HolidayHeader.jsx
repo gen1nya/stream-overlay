@@ -3,6 +3,7 @@ import styled from 'styled-components';
 import { Header } from '../app/SharedStyles';
 import { isEffectActive } from '../../utils/seasonalEvents';
 import Snowfall from './Snowfall';
+import PadoruRunner from './PadoruRunner';
 
 const StyledHeader = styled(Header)`
     position: relative;
@@ -31,10 +32,12 @@ const HeaderContent = styled.div`
  */
 export default function HolidayHeader({ children, className }) {
     const showSnowfall = useMemo(() => isEffectActive('snowfall'), []);
+    const showPadoru = useMemo(() => isEffectActive('padoru'), []);
 
     return (
         <StyledHeader className={className}>
-            {showSnowfall && <Snowfall count={20} />}
+            {showSnowfall && <Snowfall maxSnowflakes={100} spawnRate={100} />}
+            {showPadoru && <PadoruRunner interval={120000} />}
             <HeaderContent>
                 {children}
             </HeaderContent>

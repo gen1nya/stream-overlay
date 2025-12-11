@@ -5,8 +5,9 @@ export const ThemeIndicator = styled.div`
     align-items: center;
     gap: 8px;
     padding: 8px 12px;
-    background: #2a2a2a;
-    border: 1px solid #444;
+    background: rgba(42, 42, 42, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(68, 68, 68, 0.6);
     border-radius: 8px;
     font-size: 13px;
     color: #ccc;
@@ -17,9 +18,9 @@ export const ThemeIndicator = styled.div`
         font-weight: 600;
         color: #fff;
     }
-    
+
     &:hover {
-        background: #333;
+        background: rgba(51, 51, 51, 0.8);
         border-color: #646cff;
     }
 
@@ -67,8 +68,9 @@ export const HeaderActions = styled.div`
 
 
 export const ActionButton = styled.button`
-    background: #2a2a2a;
-    border: 1px solid #444;
+    background: rgba(42, 42, 42, 0.7);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(68, 68, 68, 0.6);
     color: #fff;
     padding: 10px 16px;
     border-radius: 8px;
@@ -81,24 +83,24 @@ export const ActionButton = styled.button`
     transition: all 0.2s ease;
 
     &:hover {
-        background: #333;
+        background: rgba(51, 51, 51, 0.8);
         border-color: #555;
         transform: translateY(-1px);
     }
 
     &.primary {
-        background: #646cff;
+        background: rgba(100, 108, 255, 0.8);
         border-color: #646cff;
 
         &:hover {
-            background: #5a5acf;
+            background: rgba(90, 90, 207, 0.9);
             border-color: #5a5acf;
         }
     }
 
     &.secondary {
-        background: rgba(5, 150, 105, 0.2);
-        border-color: #059669;
+        background: rgba(5, 150, 105, 0.25);
+        border-color: rgba(5, 150, 105, 0.6);
 
         &:hover {
             background: rgba(4, 120, 87, 0.7);
