@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
 import { FiInfo, FiGithub, FiGlobe } from 'react-icons/fi';
 import {
@@ -11,9 +11,12 @@ import {
 import appicon from "../../../assets/icon.png";
 import sora_1 from "../../../assets/sora_silent.png";
 import sora_2 from "../../../assets/sora_speak.png";
+import hny_sora_1 from "../../../assets/hny_sora_silent.png";
+import hny_sora_2 from "../../../assets/hny_sora_speak.png";
 import {openExternalLink, openTerminal} from "../../../services/api";
 import {AiFillTwitch} from "react-icons/ai";
 import { Trans, useTranslation } from "react-i18next";
+import { isEventActive } from "../../../utils/seasonalEvents";
 
 const AboutCardWrapper = styled(SettingsCard)`
     position: relative;
@@ -27,7 +30,7 @@ const BackgroundImage = styled.div`
     width: 300px;
     height: 300px;
     opacity: 0.5;
-    background-image: url(${sora_1});
+    background-image: url(${props => props.$silent});
     background-size: contain;
     background-repeat: no-repeat;
     background-position: center;
@@ -36,9 +39,8 @@ const BackgroundImage = styled.div`
     transition: all 0.2s ease;
 
     &:hover {
-        background-image: url(${sora_2});
+        background-image: url(${props => props.$speak});
     }
-    
 `;
 
 const ContentWrapper = styled.div`
@@ -177,9 +179,13 @@ const InfoValue = styled.div`
 export default function AboutCard() {
     const { t } = useTranslation();
 
+    const isNewYear = useMemo(() => isEventActive('new_year'), []);
+    const silentImage = isNewYear ? hny_sora_1 : sora_1;
+    const speakImage = isNewYear ? hny_sora_2 : sora_2;
+
     return (
         <AboutCardWrapper>
-            <BackgroundImage />
+            <BackgroundImage $silent={silentImage} $speak={speakImage} />
 
             <ContentWrapper>
                 <CardContent>
