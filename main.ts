@@ -140,6 +140,10 @@ const twitchClient = new TwitchClient(
   (editors: UserData[]) => {
     middlewareProcessor.setEditors(editors);
   },
+  (user) => {
+    console.log('User data fetched:', user);
+    mainWindow?.webContents?.send("auth:accountUpdated", { accountInfo: user });
+  },
   () => {
     console.log('Twitch client logged out');
     mainWindow?.webContents?.send("logout:success");

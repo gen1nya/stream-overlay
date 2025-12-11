@@ -21,6 +21,7 @@ export class TwitchClient extends EventEmitter {
   constructor(
     private logService: LogService,
     private onEditorsFetched: (editors: UserData[]) => void = () => {},
+    private onUserFetched: (user: UserState) => void = () => {},
     private onLogout: () => void = () => {},
     proxyService?: ProxyService,
   ) {
@@ -31,6 +32,10 @@ export class TwitchClient extends EventEmitter {
       (editors: UserData[]) => {
         this.onEditorsFetched(editors);
         this.emit('editors', editors);
+      },
+      (user: UserState) => {
+        this.onUserFetched(user);
+        this.emit('user', user);
       },
       null
     );

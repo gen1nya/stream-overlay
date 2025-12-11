@@ -258,6 +258,10 @@ export const onLogout = (callback) => {
     ipcRenderer.on('logout:success', callback);
 }
 
+export const onAccountUpdated = (callback) => {
+    ipcRenderer?.on('auth:accountUpdated', (event, data) => callback(data));
+}
+
 export const authorize = async () => {
     const result = await ipcRenderer.invoke('auth:start');
     return result.success;

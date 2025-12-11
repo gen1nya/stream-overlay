@@ -28,16 +28,19 @@ export class UserStateHolder {
     private logger: LogService;
 
     private onEditorsFetched: (editors: UserData[]) => void;
+    private onUserFetched: (user: UserState) => void;
 
     constructor(
         logger: LogService,
         onEditorsFetched: (editors: UserData[]) => void,
+        onUserFetched: (user: UserState) => void,
         userId?: string | null
 
     ) {
         this.userId = userId ?? null;
         this.logger = logger;
         this.onEditorsFetched = onEditorsFetched
+        this.onUserFetched = onUserFetched
     }
 
     public async getEditors(): Promise<UserData[]> {
@@ -91,13 +94,15 @@ export class UserStateHolder {
                 message: `Fetched user ${userResponse.display_name} (${userResponse.id}) with ${followerCount} followers`,
             });
             this.lastFetchTime = Date.now();
-            return {
+            const userState = {
                 displayName: userResponse.display_name,
                 login: userResponse.login,
                 avatar: userResponse.profile_image_url,
                 userId: userResponse.id,
                 followerCount: followerCount || 0,
             };
+            this.onUserFetched(userState);
+            return userState;
         });
     }
 
