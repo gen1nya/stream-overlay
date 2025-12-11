@@ -1,4 +1,3 @@
-import net from 'net';
 import WebSocket from 'ws';
 import * as authService from './authService';
 import * as messageParser from './messageParser';
@@ -6,14 +5,10 @@ import {AppEvent, ChatEvent} from "./messageParser";
 import {LogService} from "../logService";
 import {ProxyService} from "../ProxyService";
 
-const IRC_TCP_HOST = 'irc.chat.twitch.tv';
-const IRC_TCP_PORT = 6667;
 const IRC_WS_URL = 'wss://irc-ws.chat.twitch.tv:443';
 
 class ChatService {
-  private client: net.Socket | null = null;
   private wsClient: WebSocket | null = null;
-  private useWebSocket = false; // Default to TCP
   private messageHandler: ((msg: AppEvent) => Promise<void>) | null = null;
   private isStopping = false;
   private isConnecting = false;
@@ -34,7 +29,7 @@ class ChatService {
 
   constructor() {
     authService.onTokenRefreshed(() => {
-      if (this.client && !this.isStopping) {
+      if (this.wsClient && this.wsClient.readyState === WebSocket.OPEN && !this.isStopping) {
         console.log('🔄 Tokens refreshed (on auth service), reconnecting IRC...');
         this.handleAuthFailure(false);
       }
@@ -47,12 +42,12 @@ class ChatService {
 
   async startChat(): Promise<void> {
     this.isStopping = false;
-    if (this.client && !this.client.destroyed) {
-      console.log('ℹ️ IRC already connected.');
+    if (this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
+      console.log('ℹ️ IRC WebSocket already connected.');
       return;
     }
     if (this.isConnecting) {
-      console.log('⏳ IRC connection already in progress.');
+      console.log('⏳ IRC WebSocket connection already in progress.');
       return;
     }
     await this.connect();
@@ -79,26 +74,26 @@ class ChatService {
     return this.safeReconnect();
   }
 
-  private handleSocketConnected(socket: net.Socket, epoch: number, accessToken: string, username: string, channel: string): void {
+  private handleWebSocketConnected(ws: WebSocket, epoch: number, accessToken: string, username: string, channel: string): void {
     if (epoch !== this.connectEpoch) {
-      try { socket.destroy(); } catch {}
+      try { ws.close(); } catch {}
       return;
     }
 
     this.isConnecting = false;
     this.lastEventTimestamp = Date.now();
-    console.log('🟢 Connected to Twitch IRC');
+    console.log('🟢 Connected to Twitch chat via WebSocket');
 
     this.logger?.log({
       timestamp: new Date().toISOString(),
-      message: 'Подключено к IRC',
+      message: 'Подключено к чату через WebSocket',
       userName: username
     });
 
-    socket.write('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n');
-    socket.write(`PASS oauth:${accessToken}\r\n`);
-    socket.write(`NICK ${username}\r\n`);
-    socket.write(`JOIN #${channel}\r\n`);
+    ws.send('CAP REQ :twitch.tv/tags twitch.tv/commands twitch.tv/membership\r\n');
+    ws.send(`PASS oauth:${accessToken}\r\n`);
+    ws.send(`NICK ${username}\r\n`);
+    ws.send(`JOIN #${channel}\r\n`);
 
     this.startHealthCheck();
   }
@@ -111,17 +106,17 @@ class ChatService {
     }
     this.reconnecting = true;
     try {
-      // Force-stop current socket if any
-      if (this.client) {
+      // Force-stop current WebSocket if any
+      if (this.wsClient) {
         this.ignoreClose = true;
-        try { this.client.removeAllListeners(); } catch {}
-        try { this.client.destroy(); } catch {}
-        this.client = null;
+        try { this.wsClient.removeAllListeners(); } catch {}
+        try { this.wsClient.close(); } catch {}
+        this.wsClient = null;
       }
       // Very important: clear connecting flag so a fresh connect can proceed
       this.isConnecting = false;
       if (!this.isStopping) {
-        // small delay to let OS release the port/socket
+        // small delay to let OS release the socket
         await new Promise(res => setTimeout(res, 300));
         await this.connect();
       }
@@ -135,12 +130,12 @@ class ChatService {
   }
 
   private async connect(): Promise<void> {
-    if (this.client && !this.client.destroyed) {
-      console.log('ℹ️ IRC already connected.');
+    if (this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
+      console.log('ℹ️ Chat WebSocket already connected.');
       return;
     }
     if (this.isConnecting) {
-      console.log('⏳ IRC connection already in progress.');
+      console.log('⏳ Chat WebSocket connection already in progress.');
       return;
     }
     this.isConnecting = true;
@@ -150,7 +145,7 @@ class ChatService {
 
     const tokens = await authService.getTokens();
     if (!tokens) {
-      console.error('❌ No tokens found. Cannot connect to IRC.');
+      console.error('❌ No tokens found. Cannot connect to chan WebSocket.');
       this.isConnecting = false;
       return;
     }
@@ -159,45 +154,47 @@ class ChatService {
     const username = tokens.login ?? "unknown";
     const channel = username.toLowerCase();
 
-    // Try to create connection via proxy if enabled
-    let socket: net.Socket;
+    // Create WebSocket connection with optional proxy support
+    let ws: WebSocket;
     try {
+      const wsOptions = this.proxyService?.isEnabled()
+        ? this.proxyService.getWebSocketOptions()
+        : {};
+
       if (this.proxyService?.isEnabled()) {
-        console.log('🔧 IRC connecting via SOCKS proxy...');
-        socket = await this.proxyService.createTcpConnection(IRC_TCP_HOST, IRC_TCP_PORT);
-        this.client = socket;
-
-        // For proxy connection, we need to manually trigger the connection callback
-        this.handleSocketConnected(socket, myEpoch, accessToken, username, channel);
-      } else {
-        // Normal direct connection
-        socket = new net.Socket();
-        this.client = socket;
-
-        socket.connect(IRC_TCP_PORT, IRC_TCP_HOST, () => {
-          this.handleSocketConnected(socket, myEpoch, accessToken, username, channel);
-        });
+        console.log('🔧 Chat WebSocket connecting via SOCKS proxy...');
       }
+
+      ws = new WebSocket(IRC_WS_URL, wsOptions);
+      this.wsClient = ws;
     } catch (error) {
-      console.error('❌ Failed to create IRC connection:', error);
+      console.error('❌ Failed to create Chat WebSocket connection:', error);
       this.isConnecting = false;
       return;
     }
 
-    socket.on('data', async (data) => {
+    ws.on('open', () => {
+      this.handleWebSocketConnected(ws, myEpoch, accessToken, username, channel);
+    });
+
+    ws.on('message', async (data: WebSocket.RawData) => {
       if (myEpoch !== this.connectEpoch) { return; }
       this.lastEventTimestamp = Date.now();
-      const messages = data.toString().split('\r\n');
+
+      const rawData = data.toString();
+      const messages = rawData.split('\r\n');
+
       for (const message of messages) {
         if (!message) continue;
 
         if (message.startsWith('PING')) {
-          socket.write('PONG :tmi.twitch.tv\r\n');
+          console.log('🏓 Chat PING received, sending PONG');
+          ws.send('PONG :tmi.twitch.tv\r\n');
           continue;
         }
 
         if (/authentication failed/i.test(message)) {
-          console.warn('⚠️ IRC authentication failed. message is :', message);
+          console.warn('⚠️ Chat authentication failed. message is :', message);
           await this.handleAuthFailure(true);
           return;
         }
@@ -229,41 +226,42 @@ class ChatService {
       }
     });
 
-    socket.on('close', () => {
+    ws.on('close', (code: number, reason: Buffer) => {
       if (myEpoch !== this.connectEpoch) { return; }
       this.isConnecting = false;
+      const reasonStr = reason.toString() || 'unknown';
       this.logger?.log({
         timestamp: new Date().toISOString(),
-        message: 'Соединение с IRC закрыто',
+        message: `Соединение с Chat WebSocket закрыто (code: ${code}, reason: ${reasonStr})`,
         userId: null,
         userName: null
       });
-      console.log('🔴 IRC Connection closed.');
+      console.log(`🔴 Chat WebSocket Connection closed. Code: ${code}, Reason: ${reasonStr}`);
 
       if (!this.ignoreClose && !this.isStopping) {
-        console.log('🔄 Attempting to reconnect IRC in 5 seconds...');
+        console.log('🔄 Attempting to reconnect Chat WebSocket in 5 seconds...');
         setTimeout(() => this.safeReconnect(), 5000);
       }
       this.ignoreClose = false;
     });
 
-    socket.on('error', (err) => {
+    ws.on('error', (err: Error) => {
       if (myEpoch !== this.connectEpoch) { return; }
       this.isConnecting = false;
       this.logger?.log({
         timestamp: new Date().toISOString(),
-        message: `Ошибка IRC: ${err.message}`,
+        message: `Ошибка Chat WebSocket: ${err.message}`,
         userId: null,
         userName: null
       });
-      console.error('❌ IRC Error:', err.message);
+      console.error('❌ Chat WebSocket Error:', err.message);
     });
   }
 
   private startHealthCheck(): void {
     this.clearHealthCheck();
 
-    console.log('🔍 IRC Health check started');
+    console.log('🔍 Chat Health check started');
 
     this.healthCheckTimer = setInterval(() => {
       const inactivity = Date.now() - this.lastEventTimestamp;
@@ -287,13 +285,13 @@ class ChatService {
   stopChat(): void {
     this.ignoreClose = true;
     this.clearHealthCheck();
-    if (this.client) {
-      try { this.client.end(); } catch {}; try { this.client.destroy(); } catch {};
-      this.client = null;
-      console.log('🛑 IRC Connection terminated.');
+    if (this.wsClient) {
+      try { this.wsClient.close(); } catch {}
+      this.wsClient = null;
+      console.log('🛑 Chat WebSocket Connection terminated.');
       this.logger?.log({
         timestamp: new Date().toISOString(),
-        message: 'Соединение с IRC завершено',
+        message: 'Соединение с чатом через WebSocket завершено',
         userId: null,
         userName: null
       });
@@ -320,11 +318,11 @@ class ChatService {
   }
 
   async sendMessage(message: string): Promise<void> {
-    if (this.client && !this.client.destroyed) {
+    if (this.wsClient && this.wsClient.readyState === WebSocket.OPEN) {
       const sanitizedRaw = message.replace(/[\r\n]+/g, ' ');
       const sanitized = this.truncateToUtf8Bytes(sanitizedRaw, 500);
       const channel = (await authService.getCurrentLogin())?.toLowerCase();
-      this.client.write(`PRIVMSG #${channel} :${sanitized}\r\n`);
+      this.wsClient.send(`PRIVMSG #${channel} :${sanitized}\r\n`);
     }
   }
 
@@ -334,18 +332,7 @@ class ChatService {
 
   setProxyService(proxyService: ProxyService) {
     this.proxyService = proxyService;
-    console.log('🔧 IRC ProxyService set');
-  }
-
-  setUseWebSocket(useWebSocket: boolean) {
-    if (this.useWebSocket !== useWebSocket) {
-      console.log(`🔧 IRC transport changed to: ${useWebSocket ? 'WebSocket' : 'TCP'}`);
-      this.useWebSocket = useWebSocket;
-    }
-  }
-
-  getUseWebSocket(): boolean {
-    return this.useWebSocket;
+    console.log('🔧 Chat ProxyService set');
   }
 
   registerLogoutHandler(handler: () => void) {
@@ -361,8 +348,6 @@ export const startChat = () => instance.startChat();
 export const stopChat = () => instance.stopChat();
 export const setLogger = (logger: LogService) => instance.setLogger(logger);
 export const setProxyService = (proxyService: ProxyService) => instance.setProxyService(proxyService);
-export const setUseWebSocket = (useWebSocket: boolean) => instance.setUseWebSocket(useWebSocket);
-export const getUseWebSocket = () => instance.getUseWebSocket();
 export const sendMessage = (msg: string) => instance.sendMessage(msg);
 export const registerMessageHandler = (handler: (msg: any) => Promise<void>) => instance.registerMessageHandler(handler);
 export const registerLogoutHandler = (handler: () => void) => instance.registerLogoutHandler(handler);
