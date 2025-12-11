@@ -45,7 +45,8 @@ import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
-import {ActionButton, Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import {ActionButton, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import HolidayHeader from "../seasonal/HolidayHeader";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
@@ -312,7 +313,7 @@ export default function Settings() {
                 />
             )}
 
-            <Header>
+            <HolidayHeader>
                 <HeaderLeft>
                     <BackButton onClick={handleBackButton}>
                         <FiArrowLeft/>
@@ -338,7 +339,7 @@ export default function Settings() {
                     </ActionButton>
 
                 </HeaderActions>
-            </Header>
+            </HolidayHeader>
 
             <ContentWrapper>
                 <Sidebar

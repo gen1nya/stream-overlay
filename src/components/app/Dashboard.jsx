@@ -27,7 +27,8 @@ import {Row} from "./SettingsComponent";
 import {Spacer} from "../utils/Separator";
 import TwitchUsersPopup from "./TwitchUsersPopup";
 import {OnlineIndicator} from "../utils/OnlineIndicator";
-import {Header, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import {HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import HolidayHeader from "../seasonal/HolidayHeader";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./settings/SharedSettingsStyles";
 import BotConfigPopup from "./settings/BotConfigPopup";
@@ -598,7 +599,7 @@ export default function Dashboard() {
             )}
             <MainArea>
                 <Content>
-                    <Header>
+                    <HolidayHeader>
                         <HeaderLeft>
                             <HeaderTitle>{renderHeaderContent()}</HeaderTitle>
                         </HeaderLeft>
@@ -620,7 +621,7 @@ export default function Dashboard() {
                             </ActionButton>
 
                         </HeaderActions>
-                    </Header>
+                    </HolidayHeader>
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
