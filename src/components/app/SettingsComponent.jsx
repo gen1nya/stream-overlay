@@ -50,6 +50,7 @@ import HolidayHeader from "../seasonal/HolidayHeader";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
+import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
@@ -522,6 +523,10 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                             <GachaComponent
                                 apply={applyBotConfig}
                                 gachaConfig={botConfig.gacha}
+                            />
+                            <LotteryComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
                             />
                         </>
                     ) : (

@@ -1,4 +1,5 @@
 import {GachaStoreSchema} from "../middleware/gacha/types";
+import {LotteryBotConfig} from "../middleware/lottery/types";
 
 
 export interface StoreSchema {
@@ -236,4 +237,5 @@ export interface BotConfig {
     custom: CustomBotConfig;
     pingpong: PingPongBotConfig;
     gacha: GachaStoreSchema;
+    lottery: LotteryBotConfig;
 }

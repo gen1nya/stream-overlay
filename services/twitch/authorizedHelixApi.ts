@@ -456,3 +456,67 @@ export async function fetchStreams(): Promise<TwitchStreamResponseType> {
 
     return response.data;
 }
+
+// ==================== Chatters ====================
+
+export interface Chatter {
+    user_id: string;
+    user_login: string;
+    user_name: string;
+}
+
+export interface ChattersResponse {
+    data: Chatter[];
+    pagination: {
+        cursor?: string;
+    };
+    total: number;
+}
+
+/**
+ * Fetch chatters (users currently in chat)
+ * Requires scope: moderator:read:chatters
+ * @param cursor - Pagination cursor
+ */
+export async function fetchChatters(cursor: string | null = null): Promise<ChattersResponse> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = await authService.getUserId();
+
+    const params = new URLSearchParams({
+        broadcaster_id: String(broadcaster_id),
+        moderator_id: String(broadcaster_id),
+        first: '1000', // Max allowed
+    });
+    if (cursor) {
+        params.append('after', cursor);
+    }
+
+    const response = await axios.get<ChattersResponse>(
+        `${BASE_URL}/chat/chatters?${params.toString()}`,
+        {
+            headers: {
+                Authorization: `Bearer ${tokens.access_token}`,
+                'Client-Id': authService.CLIENT_ID,
+            },
+        }
+    );
+
+    return response.data;
+}
+
+/**
+ * Fetch all chatters (handles pagination)
+ */
+export async function fetchAllChatters(): Promise<Chatter[]> {
+    const allChatters: Chatter[] = [];
+    let cursor: string | null = null;
+
+    do {
+        const response = await fetchChatters(cursor);
+        allChatters.push(...response.data);
+        cursor = response.pagination?.cursor || null;
+    } while (cursor);
+
+    return allChatters;
+}

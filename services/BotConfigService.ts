@@ -143,6 +143,27 @@ export class BotConfigService {
                     triggerType: "contains"
                 }
             ]
+        },
+        lottery: {
+            enabled: false,
+            command: '!розыгрыш',
+            cancelCommand: '!отмена',
+            commandCooldownSec: 60,
+            entryTrigger: '+',
+            channelPointRewardIds: [],
+            timerDurationSec: 60,
+            enforceUniqueChildUser: false,
+            messages: {
+                start: 'Розыгрыш {{child_user}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
+                warmup: [],
+                winner: 'Победитель: {{winner}}! Поздравляем с {{child_user}}!',
+                noParticipants: 'Никто не захотел участвовать в розыгрыше {{child_user}}',
+                alreadyUsed: '{{child_user}} уже разыгрывался ранее!',
+                alreadyRunning: 'Розыгрыш уже идёт! Пиши {{trigger}} чтобы участвовать.',
+                cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
+                cancelled: 'Розыгрыш {{child_user}} отменён.',
+                userNotInChat: '{{child_user}} не найден в чате!'
+            }
         }
     }
 

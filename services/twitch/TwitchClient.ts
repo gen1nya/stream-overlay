@@ -11,12 +11,15 @@ import {DbRepository} from "../db/DbRepository";
 import {ipcMain} from "electron";
 import {EVENT_BROADCASTING} from "./esService";
 import {ProxyService} from "../ProxyService";
+import {ChattersService} from "./ChattersService";
 
 export class TwitchClient extends EventEmitter {
   private userState: UserStateHolder;
   private dbRepository: DbRepository | null = null;
   private newFollowers: Set<string> = new Set();
   private readonly onLogoutCallback: () => void = () => {};
+  private chattersService: ChattersService;
+  private chattersRefreshInterval: NodeJS.Timeout | null = null;
 
   constructor(
     private logService: LogService,
@@ -42,6 +45,7 @@ export class TwitchClient extends EventEmitter {
 
     chatService.setLogger(logService);
     eventSubService.setLogger(logService);
+    this.chattersService = ChattersService.getInstance();
 
     // Set proxy service if provided
     if (proxyService) {
@@ -76,6 +80,21 @@ export class TwitchClient extends EventEmitter {
     chatService.registerMessageHandler(async (parsedMessage: AppEvent) => {
         console.log('chat', parsedMessage);
         this.emit('chat', parsedMessage);
+
+        // Обновляем список chatters по событиям
+        if (parsedMessage.type === 'join' && parsedMessage.userNameRaw) {
+            this.chattersService.onUserJoin(parsedMessage.userNameRaw, parsedMessage.userName || undefined);
+        } else if (parsedMessage.type === 'part' && parsedMessage.userNameRaw) {
+            this.chattersService.onUserPart(parsedMessage.userNameRaw);
+        } else if (parsedMessage.type === 'chat' && parsedMessage.userNameRaw) {
+            // Обычное сообщение - добавляем/обновляем пользователя
+            this.chattersService.onUserMessage(
+                parsedMessage.userId || '',
+                parsedMessage.userNameRaw,
+                parsedMessage.userName || parsedMessage.userNameRaw
+            );
+        }
+
         if (parsedMessage.userId) {
             this.dbRepository?.users.updateLastSeen(parsedMessage.userId, parsedMessage.timestamp);
         } else if (parsedMessage.userNameRaw) {
@@ -90,6 +109,18 @@ export class TwitchClient extends EventEmitter {
     await chatService.startChat();
     await this.refreshUser();
     await this.checkBroadcastingStatus();
+
+    // Инициализируем список chatters из Helix API
+    this.chattersService.initialize().catch(err => {
+      console.warn('ChattersService initialization failed, will use JOIN/PART events:', err?.message);
+    });
+
+    // Периодическое обновление chatters каждые 5 минут
+    this.chattersRefreshInterval = setInterval(() => {
+      this.chattersService.initialize().catch(err => {
+        console.warn('ChattersService refresh failed:', err?.message);
+      });
+    }, 5 * 60 * 1000);
 
     this.dbRepository = DbRepository.getInstance(this.userState.getUserId() || 'default');
 
@@ -141,11 +172,20 @@ export class TwitchClient extends EventEmitter {
   async logout(): Promise<void> {
     this.userState.logout()
     this.dbRepository = null;
+    this.chattersService.clear();
+    if (this.chattersRefreshInterval) {
+      clearInterval(this.chattersRefreshInterval);
+      this.chattersRefreshInterval = null;
+    }
     eventSubService.stop();
     chatService.stopChat();
   }
 
   stop(): void {
+    if (this.chattersRefreshInterval) {
+      clearInterval(this.chattersRefreshInterval);
+      this.chattersRefreshInterval = null;
+    }
     eventSubService.stop({ setStopping: true } as any);
     chatService.stopChat();
   }
