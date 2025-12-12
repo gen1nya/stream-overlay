@@ -42,6 +42,7 @@ PipeWireEngine::PipeWireEngine() {
     pw_thread_loop_destroy(loop_);
     throw std::runtime_error("Failed to start PipeWire thread loop");
   }
+  loopRunning_ = true;
 
   pw_thread_loop_lock(loop_);
 
@@ -64,8 +65,9 @@ PipeWireEngine::PipeWireEngine() {
 PipeWireEngine::~PipeWireEngine() {
   enable(false);
 
-  if (loop_) {
+  if (loop_ && loopRunning_) {
     pw_thread_loop_stop(loop_);
+    loopRunning_ = false;
   }
 
   if (core_) {
@@ -264,6 +266,13 @@ void PipeWireEngine::onStreamProcess(void* data) {
 void PipeWireEngine::start() {
   if (running_ || !coreReady_) return;
 
+  if (loop_ && !loopRunning_) {
+    if (pw_thread_loop_start(loop_) < 0) {
+      throw std::runtime_error("Failed to restart PipeWire thread loop");
+    }
+    loopRunning_ = true;
+  }
+
   pw_thread_loop_lock(loop_);
 
   // Create audio stream
@@ -388,6 +397,12 @@ void PipeWireEngine::stop() {
 
   if (loop_) {
     pw_thread_loop_unlock(loop_);
+  }
+
+  // Stop thread loop to allow clean shutdown of the process (avoids lingering thread)
+  if (loop_ && loopRunning_) {
+    pw_thread_loop_stop(loop_);
+    loopRunning_ = false;
   }
 
   // Clean up FFT

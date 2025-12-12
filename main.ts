@@ -331,8 +331,26 @@ app.on('before-quit', async (event) => {
   await stopAllServers();
 
   setTimeout(() => {
-    const remaining = (process as any)._getActiveHandles?.()?.length || 0;
-    console.log(`Final check: ${remaining} handles remaining`);
+    const handles = (process as any)._getActiveHandles?.() || [];
+    console.log(`Final check: ${handles.length} handles remaining`);
+    handles.forEach((h: any, idx: number) => {
+      const name = h?.constructor?.name || typeof h;
+      let extra = '';
+      // Best-effort hints for common handle types
+      if (name === 'Socket' && h?.address) {
+        try { extra = JSON.stringify(h.address()); } catch {}
+      } else if (name === 'Timeout' && h?._idleTimeout) {
+        extra = `timeout=${h._idleTimeout}`;
+      } else if (name === 'Server' && h?.listening && h?.address) {
+        try { extra = JSON.stringify(h.address()); } catch {}
+      }
+      console.log(`[handle ${idx}] ${name} ${extra}`);
+
+      // Force-close any lingering sockets to avoid hanging the process
+      if (name === 'Socket' && typeof h.destroy === 'function') {
+        try { h.destroy(); } catch {}
+      }
+    });
     process.exit(0);
   }, 500);
 });

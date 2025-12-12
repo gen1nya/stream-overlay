@@ -56,6 +56,7 @@ private:
   void computeFftAndPublish(const float* frame);
 
   // PipeWire state
+  bool loopRunning_ = false;
   struct pw_thread_loop* loop_ = nullptr;
   struct pw_context* context_ = nullptr;
   struct pw_core* core_ = nullptr;

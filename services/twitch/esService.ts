@@ -256,6 +256,12 @@ class EventSubService {
       try {
         ws.removeAllListeners();  // Remove listeners to prevent callbacks
         ws.close();
+        // Force-close if the graceful close doesn't complete quickly to avoid hanging sockets on exit
+        setTimeout(() => {
+          if (ws.readyState !== ws.CLOSED) {
+            try { ws.terminate?.(); } catch {}
+          }
+        }, 200);
       } catch (err) {
         console.error(`❌ [${this.connectionId}] Error closing WebSocket:`, err);
       }
