@@ -2,6 +2,7 @@ import Database from 'better-sqlite3';
 import { UserRepository } from './UserRepository';
 import { ActionRepository } from './ActionRepository';
 import { PityRepository } from './PityRepository';
+import { LotteryRepository } from './LotteryRepository';
 import fs from "fs";
 import path from "path";
 
@@ -14,6 +15,7 @@ export class DbRepository {
     public users: UserRepository;
     public actions: ActionRepository;
     public pity: PityRepository;
+    public lottery: LotteryRepository;
 
     private constructor(user: string) {
         this.user = user;
@@ -29,6 +31,7 @@ export class DbRepository {
         this.users = new UserRepository(this.db);
         this.actions = new ActionRepository(this.db);
         this.pity = new PityRepository(this.db);
+        this.lottery = new LotteryRepository(this.db);
     }
 
     public static getInstance(user: string): DbRepository {
@@ -77,6 +80,43 @@ export class DbRepository {
                 pulls_since_4_star INTEGER DEFAULT 0,
                 pity_4_star_failed_rate_up INTEGER DEFAULT 0,
                 is_guaranteed_5_star INTEGER DEFAULT 0
+            )
+        `).run();
+
+        // Lottery tables
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS lottery_draws (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                child_user TEXT NOT NULL,
+                initiator_id TEXT NOT NULL,
+                initiator_name TEXT NOT NULL,
+                started_at INTEGER NOT NULL,
+                ended_at INTEGER NOT NULL,
+                winner_id TEXT,
+                winner_name TEXT,
+                participant_count INTEGER NOT NULL DEFAULT 0,
+                status TEXT DEFAULT 'pending'
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS lottery_used_subjects (
+                child_user TEXT PRIMARY KEY,
+                draw_id INTEGER NOT NULL,
+                used_at INTEGER NOT NULL,
+                FOREIGN KEY (draw_id) REFERENCES lottery_draws(id)
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS lottery_stats (
+                user_id TEXT PRIMARY KEY,
+                user_name TEXT NOT NULL,
+                total_entries INTEGER DEFAULT 0,
+                total_wins INTEGER DEFAULT 0,
+                total_initiated INTEGER DEFAULT 0,
+                last_win_at INTEGER,
+                updated_at INTEGER NOT NULL
             )
         `).run();
     }

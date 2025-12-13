@@ -14,6 +14,8 @@ const Container = styled.div`
     flex-wrap: wrap;
     gap: 4px;
     align-items: center;
+    box-sizing: border-box;
+    width: 100%;
 
     &:focus-within {
         border-color: #3b82f6;

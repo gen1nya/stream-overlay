@@ -1,26 +1,17 @@
 import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
-import Switch from '../../../../utils/Switch';
 import {
-    FiGift, FiSettings, FiChevronDown, FiChevronUp, FiInfo, FiPlus, FiStar, FiPackage, FiZap
+    FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap
 } from 'react-icons/fi';
 import {
-    CardContent,
-    CardTitle,
     Section,
     SectionHeader,
-    SectionTitle,
-    SettingsCard,
+    SectionTitle
 } from "../../SharedSettingsStyles";
 import {Row} from "../../../SettingsComponent";
 import {Spacer} from "../../../../utils/Separator";
 import {
-    CollapsibleHeader,
-    CollapsedPreview,
-    EnabledToggle,
-    StatusBadge,
-    VariableItem,
-    VariablesList,
+    HelpInfoPopup
 } from "../SharedBotStyles";
 import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
@@ -29,25 +20,6 @@ import AdvancedSettings from './AdvancedSettings';
 import {ActionButton} from "../../../SharedStyles";
 import GachaUsersPopup from "./GachaUsersPopup";
 import {useTranslation} from 'react-i18next';
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
 
 const InfoCard = styled.div`
     background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(136, 83, 242, 0.1) 100%);
@@ -138,7 +110,7 @@ const createDefaultConfig = (defaultBannerName) => ({
     triggers: []
 });
 
-export default function GachaComponent({gachaConfig, apply}) {
+export default function GachaComponent({gachaConfig, apply, showHelp, setShowHelp}) {
 
     const {t} = useTranslation();
 
@@ -160,15 +132,7 @@ export default function GachaComponent({gachaConfig, apply}) {
             return gachaConfig
         }
     });
-    const [isOpen, setIsOpen] = useState(false);
-    const [enabled, setEnabled] = useState(config.enabled);
     const [showUsersPopup, setShowUsersPopup] = useState(false);
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
-
-    useEffect(() => {
-        setEnabled(config.enabled ?? false);
-    }, [config.enabled]);
 
     useEffect(() => {
         if (gachaConfig) {
@@ -203,166 +167,129 @@ export default function GachaComponent({gachaConfig, apply}) {
         <>
             {showUsersPopup && <GachaUsersPopup onClose={() => setShowUsersPopup(false)}/>}
 
-            <SettingsCard>
-                <CollapsibleHeader onClick={toggleOpen}>
-                    <Row gap="12px">
-                        <EnabledToggle enabled={enabled}>
-                            <Switch
-                                checked={enabled}
-                                onChange={(e) => {
-                                    const newState = e.target.checked;
-                                    setEnabled(newState);
-                                    updateGachaConfig({enabled: newState});
-                                }}
-                            />
-                            <StatusBadge enabled={enabled}>
-                                {enabled ? t('settings.bot.shared.status.enabled') : t('settings.bot.shared.status.disabled')}
-                            </StatusBadge>
-                        </EnabledToggle>
+            <HelpInfoPopup
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={t('settings.bot.gacha.component.title')}
+                icon={<FiGift />}
+            >
+                <p>{t('settings.bot.gacha.component.collapsedDescription')}</p>
+                <StatsGrid>
+                    <StatCard $color="#fbbf24">
+                        <FiStar/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.totalItems')}</StatLabel>
+                            <StatValue>{stats.totalItems}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                    <StatCard $color="#8853f2">
+                        <FiZap/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.fiveStar')}</StatLabel>
+                            <StatValue>{stats.fiveStarCount}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                    <StatCard $color="#646cff">
+                        <FiPackage/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.fourStar')}</StatLabel>
+                            <StatValue>{stats.fourStarCount}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                    <StatCard $color="#22c55e">
+                        <FiGift/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.triggers')}</StatLabel>
+                            <StatValue>{stats.triggersCount}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                </StatsGrid>
+            </HelpInfoPopup>
 
-                        <CardTitle>
-                            <FiGift/>
-                            {t('settings.bot.gacha.component.title')}
-                        </CardTitle>
+            {/* Информация о системе */}
+            <Section>
+                <InfoCard>
+                    <InfoTitle>
+                        <FiInfo/>
+                        {t('settings.bot.gacha.component.info.title')}
+                    </InfoTitle>
+                    <InfoText>
+                        {t('settings.bot.gacha.component.info.description')}
+                        {Array.isArray(infoDetails) && infoDetails.map((detail, index) => (
+                            <React.Fragment key={detail.title || index}>
+                                <br/>• <strong>{detail.title}</strong>: {detail.text}
+                            </React.Fragment>
+                        ))}
+                    </InfoText>
+                </InfoCard>
+            </Section>
 
-                        <Spacer/>
+            <Row>
+                <ActionButton
+                    className={"secondary"}
+                    onClick={() => setShowUsersPopup(true)}
+                >
+                    {t('settings.bot.gacha.component.actions.manageUsers')}
+                </ActionButton>
+                <Spacer/>
+            </Row>
 
-                        <CollapseToggle>
-                            {isOpen ? t('settings.bot.shared.collapse.close') : t('settings.bot.shared.collapse.open')}
-                            {isOpen ? <FiChevronUp/> : <FiChevronDown/>}
-                        </CollapseToggle>
-                    </Row>
-                </CollapsibleHeader>
+            {/* Настройки баннера */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiStar/>
+                        {t('settings.bot.gacha.component.sections.banner')}
+                    </SectionTitle>
+                </SectionHeader>
+                <BannerSettingsEditor
+                    banner={config.banner}
+                    items={config.items}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
 
-                {/* Свернутое описание */}
-                {!isOpen && (
-                    <CollapsedPreview onClick={toggleOpen}>
-                        {t('settings.bot.gacha.component.collapsedDescription')}
-                        <br/><br/>
-                        <StatsGrid>
-                            <StatCard $color="#fbbf24">
-                                <FiStar/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.totalItems')}</StatLabel>
-                                    <StatValue>{stats.totalItems}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                            <StatCard $color="#8853f2">
-                                <FiZap/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.fiveStar')}</StatLabel>
-                                    <StatValue>{stats.fiveStarCount}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                            <StatCard $color="#646cff">
-                                <FiPackage/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.fourStar')}</StatLabel>
-                                    <StatValue>{stats.fourStarCount}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                            <StatCard $color="#22c55e">
-                                <FiGift/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.triggers')}</StatLabel>
-                                    <StatValue>{stats.triggersCount}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                        </StatsGrid>
-                    </CollapsedPreview>
-                )}
+            {/* Управление предметами */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiPackage/>
+                        {t('settings.bot.gacha.component.sections.items')}
+                    </SectionTitle>
+                </SectionHeader>
+                <ItemsManager
+                    items={config.items}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
 
-                {isOpen && (
-                    <CardContent>
-                        {/* Информация о системе */}
-                        <Section>
-                            <InfoCard>
-                                <InfoTitle>
-                                    <FiInfo/>
-                                    {t('settings.bot.gacha.component.info.title')}
-                                </InfoTitle>
-                                <InfoText>
-                                    {t('settings.bot.gacha.component.info.description')}
-                                    {Array.isArray(infoDetails) && infoDetails.map((detail, index) => (
-                                        <React.Fragment key={detail.title || index}>
-                                            <br/>• <strong>{detail.title}</strong>: {detail.text}
-                                        </React.Fragment>
-                                    ))}
-                                </InfoText>
-                            </InfoCard>
-                        </Section>
+            {/* Триггеры (Twitch награды) */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiGift/>
+                        {t('settings.bot.gacha.component.sections.triggers')}
+                    </SectionTitle>
+                </SectionHeader>
+                <TriggersManager
+                    triggers={config.triggers}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
 
-                        <Row>
-                            <ActionButton
-                                className={"secondary"}
-                                onClick={() => setShowUsersPopup(true)}
-                            >
-                                {t('settings.bot.gacha.component.actions.manageUsers')}
-                            </ActionButton>
-                            <Spacer/>
-
-                        </Row>
-
-
-                        {/* Настройки баннера */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiStar/>
-                                    {t('settings.bot.gacha.component.sections.banner')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <BannerSettingsEditor
-                                banner={config.banner}
-                                items={config.items}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-
-                        {/* Управление предметами */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiPackage/>
-                                    {t('settings.bot.gacha.component.sections.items')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <ItemsManager
-                                items={config.items}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-
-                        {/* Триггеры (Twitch награды) */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiGift/>
-                                    {t('settings.bot.gacha.component.sections.triggers')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <TriggersManager
-                                triggers={config.triggers}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-
-                        {/* Продвинутые настройки */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiSettings/>
-                                    {t('settings.bot.gacha.component.sections.advanced')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <AdvancedSettings
-                                banner={config.banner}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-                    </CardContent>
-                )}
-            </SettingsCard>
+            {/* Продвинутые настройки */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiSettings/>
+                        {t('settings.bot.gacha.component.sections.advanced')}
+                    </SectionTitle>
+                </SectionHeader>
+                <AdvancedSettings
+                    banner={config.banner}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
         </>
     );
 }

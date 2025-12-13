@@ -143,6 +143,45 @@ export class BotConfigService {
                     triggerType: "contains"
                 }
             ]
+        },
+        lottery: {
+            enabled: false,
+            command: '!розыгрыш',
+            cancelCommand: '!отмена',
+            statsCommand: '!статистика',
+            commandCooldownSec: 60,
+            allowChatEntry: true,
+            entryTrigger: '+',
+            channelPointRewardIds: [],
+            timerDurationSec: 60,
+            requireSubjectInChat: true,
+            enforceUniqueSubject: false,
+            subjectBlacklist: [
+                'streamelements',
+                'nightbot',
+                'fossabot',
+                'streamlabs',
+                'wizebot',
+                'moobot',
+                'coebot',
+                'phantombot',
+                'stayhydratedbot',
+                'botisimo'
+            ],
+            messages: {
+                start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
+                warmup: [],
+                winner: 'Победитель: {{winner}}! Поздравляем с {{subject}}!',
+                noParticipants: 'Никто не захотел участвовать в розыгрыше {{subject}}',
+                alreadyUsed: '{{subject}} уже разыгрывался ранее!',
+                alreadyRunning: 'Розыгрыш уже идёт! Пиши {{trigger}} чтобы участвовать.',
+                cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
+                cancelled: 'Розыгрыш {{subject}} отменён.',
+                userNotInChat: '{{subject}} не найден в чате!',
+                subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз',
+                subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша',
+                statsResponse: '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}'
+            }
         }
     }
 
@@ -159,6 +198,7 @@ export class BotConfigService {
             configs['default'] = this.bot;
             this.appStorage.set('bots', configs);
         }
+
         const currentBot = configs[name] || configs['default'];
         if (currentBot) {
             onConfigurationChanged(currentBot);

@@ -8,6 +8,7 @@ import {UserData} from "../twitch/types/UserData";
 import {BotConfig, StoreSchema} from "../store/StoreSchema";
 import ElectronStore from "electron-store";
 import {GachaMiddleware} from "./gacha/GachaMiddleware";
+import {LotteryMiddleware} from "./lottery/LotteryMiddleware";
 import type * as Database from "better-sqlite3";
 import {DbRepository} from "../db/DbRepository";
 
@@ -24,10 +25,15 @@ export class MiddlewareProcessor {
   ) {
     this.applyAction = applyAction;
     this.logService = logService;
+
+    const lotteryMiddleware = new LotteryMiddleware(store, this.logService);
+    lotteryMiddleware.setApplyAction(applyAction);
+
     this.middlewares = [
       new RouletteService(this.logService),
       new GreetingMiddleware(this.logService),
-      new GachaMiddleware(store)
+      new GachaMiddleware(store),
+      lotteryMiddleware
     ];
   }
 

@@ -29,7 +29,8 @@ import {
     FiYoutube,
     FiAlertCircle,
     FiTarget,
-    FiLayout
+    FiLayout,
+    FiGift
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -50,9 +51,13 @@ import HolidayHeader from "../seasonal/HolidayHeader";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
+import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
+import Switch from "../utils/Switch";
+import { EnabledToggle, StatusBadge, HelpButton, HelpInfoPopup } from "./settings/bot/SharedBotStyles";
+import { Spacer } from "../utils/Separator";
 
 const Panel = styled.div`
     position: fixed;
@@ -195,6 +200,16 @@ export const Row = styled.div`
     gap: ${({gap = "0.5rem"}) => gap};
 `;
 
+// Wrapper for bot page content (replaces CardContent styles)
+const BotPageContent = styled.div`
+    width: 100%;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+`;
+
 export default function Settings() {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -205,7 +220,10 @@ export default function Settings() {
         chat: {title: t('settings.pages.chat.title'), icon: <FiMessageCircle/>},
         follow: {title: t('settings.pages.follow.title'), icon: <FiHeart/>},
         channel_points: {title: t('settings.pages.channelPoints.title'), icon: <FiAward/>},
-        bot: {title: t('settings.pages.bot.title'), icon: <AiFillRobot/>},
+        bot_pingpong: {title: t('settings.pages.botPingpong.title'), icon: <FiMessageCircle/>},
+        bot_roulette: {title: t('settings.pages.botRoulette.title'), icon: <FiTarget/>},
+        bot_gacha: {title: t('settings.pages.botGacha.title'), icon: <FiAward/>},
+        bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
@@ -240,6 +258,42 @@ export default function Settings() {
 
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
+    const [showBotHelp, setShowBotHelp] = useState(false);
+
+    // Helper to check if current page is a bot page
+    const isBotPage = activePage.startsWith('bot_');
+
+    // Get bot enabled state based on active page
+    const getBotEnabled = () => {
+        if (!botConfig) return false;
+        switch (activePage) {
+            case 'bot_pingpong': return botConfig.pingpong?.enabled ?? false;
+            case 'bot_roulette': return botConfig.roulette?.enabled ?? false;
+            case 'bot_gacha': return botConfig.gacha?.enabled ?? false;
+            case 'bot_lottery': return botConfig.lottery?.enabled ?? false;
+            default: return false;
+        }
+    };
+
+    // Toggle bot enabled state
+    const toggleBotEnabled = (newState) => {
+        switch (activePage) {
+            case 'bot_pingpong':
+                applyBotConfig(prev => ({ ...prev, pingpong: { ...prev.pingpong, enabled: newState } }));
+                break;
+            case 'bot_roulette':
+                applyBotConfig(prev => ({ ...prev, roulette: { ...prev.roulette, enabled: newState } }));
+                break;
+            case 'bot_gacha':
+                applyBotConfig(prev => ({ ...prev, gacha: { ...prev.gacha, enabled: newState } }));
+                break;
+            case 'bot_lottery':
+                applyBotConfig(prev => ({ ...prev, lottery: { ...prev.lottery, enabled: newState } }));
+                break;
+        }
+    };
+
+    const botEnabled = getBotEnabled();
 
     const [colorPopup, setColorPopup] = useState({
         open: false,
@@ -359,7 +413,17 @@ export default function Settings() {
                                 {key: "channel_points", icon: <FiAward/>, label: t('settings.pages.channelPoints.label')},
                             ]
                         },
-                        {key: "bot", icon: <AiFillRobot/>, label: t('settings.pages.bot.label')},
+                        {
+                            key: "bot_group",
+                            icon: <AiFillRobot/>,
+                            label: t('settings.pages.botGroup.label'),
+                            children: [
+                                {key: "bot_pingpong", icon: <FiMessageCircle/>, label: t('settings.pages.botPingpong.label'), enabled: botConfig?.pingpong?.enabled},
+                                {key: "bot_roulette", icon: <FiTarget/>, label: t('settings.pages.botRoulette.label'), enabled: botConfig?.roulette?.enabled},
+                                {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label'), enabled: botConfig?.gacha?.enabled},
+                                {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label'), enabled: botConfig?.lottery?.enabled},
+                            ]
+                        },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                         {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},
@@ -369,10 +433,35 @@ export default function Settings() {
 
                 <MainContainer>
                     <ContentHeader>
-                        <PageTitle>
-                            {currentPageInfo.icon}
-                            {currentPageInfo.title}
-                        </PageTitle>
+                        {isBotPage && botConfig ? (
+                            <Row gap="12px" style={{ flex: 1 }}>
+                                <EnabledToggle enabled={botEnabled}>
+                                    <Switch
+                                        checked={botEnabled}
+                                        onChange={(e) => toggleBotEnabled(e.target.checked)}
+                                    />
+                                    <StatusBadge enabled={botEnabled}>
+                                        {botEnabled
+                                            ? t('settings.bot.shared.status.enabled')
+                                            : t('settings.bot.shared.status.disabled')}
+                                    </StatusBadge>
+                                </EnabledToggle>
+
+                                <PageTitle style={{ margin: 0 }}>
+                                    {currentPageInfo.icon}
+                                    {currentPageInfo.title}
+                                </PageTitle>
+
+                                <Spacer />
+
+                                <HelpButton onClick={() => setShowBotHelp(true)} />
+                            </Row>
+                        ) : (
+                            <PageTitle>
+                                {currentPageInfo.icon}
+                                {currentPageInfo.title}
+                            </PageTitle>
+                        )}
                     </ContentHeader>
 
                     <MainContent
@@ -383,6 +472,8 @@ export default function Settings() {
                         botName={botName}
                         openColorPopup={openColorPopup}
                         applyBotConfig={applyBotConfig}
+                        showBotHelp={showBotHelp}
+                        setShowBotHelp={setShowBotHelp}
                     />
                 </MainContainer>
             </ContentWrapper>
@@ -390,7 +481,7 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig}) => {
+const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp}) => {
     const { t } = useTranslation();
     switch (page) {
         case "general":
@@ -505,25 +596,96 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 </Content>
             );
 
-        case "bot":
+        case "bot_pingpong":
             return (
                 <Content>
                     {botConfig ? (
-                        <>
+                        <BotPageContent>
                             <PingPongComponent
                                 apply={applyBotConfig}
                                 botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
                             />
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
 
+        case "bot_roulette":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
                             <Roulette
                                 botConfig={botConfig}
                                 apply={applyBotConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
                             />
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
+        case "bot_gacha":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
                             <GachaComponent
                                 apply={applyBotConfig}
                                 gachaConfig={botConfig.gacha}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
                             />
-                        </>
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
+        case "bot_lottery":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
+                            <LotteryComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>

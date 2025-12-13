@@ -16,16 +16,8 @@ release/
 # Local settings
 .claude/settings.local.json
 
-# Native module build artifacts (keep only .node files)
-native/fft/build/*
-!native/fft/build/Release/
-native/fft/build/Release/*
-!native/fft/build/Release/*.node
-
-native/media/build/*
-!native/media/build/Release/
-native/media/build/Release/*
-!native/media/build/Release/*.node
+# Native module build artifacts
+native/*/build/
 
 # Windows-specific build artifacts
 *.exp

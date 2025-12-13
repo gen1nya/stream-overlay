@@ -1,81 +1,123 @@
-import React, { useState, useRef, useLayoutEffect } from "react";
+import React, { useState } from "react";
 import styled from "styled-components";
+import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 
 const AccordionWrapper = styled.div`
-    border: 1px solid #ccc;
-    border-radius: 8px;
+    border: 1px solid #333;
+    border-radius: 12px;
     width: 100%;
+    background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
+    overflow: hidden;
+    transition: border-color 0.2s ease;
+
+    &:hover {
+        border-color: #444;
+    }
 `;
 
 const AccordionHeader = styled.button`
-    padding: 8px 12px 8px 8px;
-    background: #252525;
+    padding: 12px 16px;
+    background: transparent;
     cursor: pointer;
-    font-weight: bold;
     width: 100%;
     border: none;
+    outline: none;
+    border-radius: ${props => props.$isOpen ? '11px 11px 0 0' : '11px'};
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: ${props => props.$isOpen ? '#fff' : '#ccc'};
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.03);
+        color: #fff;
+    }
+
+    &:focus {
+        outline: none;
+    }
+
+    &:focus-visible {
+        box-shadow: inset 0 0 0 2px rgba(100, 108, 255, 0.5);
+    }
+
+    &:active {
+        background: rgba(255, 255, 255, 0.05);
+    }
+`;
+
+const IconWrapper = styled.span`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    color: ${props => props.$isOpen ? '#646cff' : '#666'};
+    transition: color 0.2s ease;
+
+    ${AccordionHeader}:hover & {
+        color: ${props => props.$isOpen ? '#7c7cff' : '#888'};
+    }
+
+    svg {
+        width: 16px;
+        height: 16px;
+    }
+`;
+
+const TitleWrapper = styled.span`
+    flex: 1;
     text-align: left;
     display: flex;
-    justify-content: space-between;
-    font-size: 1rem;
+    align-items: center;
 `;
 
 const AccordionContent = styled.div`
-    overflow: hidden;
-    transition: max-height 0.3s ease;
-    max-height: ${({ isOpen, height }) => (isOpen ? `${height}px` : "0")};
+    display: grid;
+    grid-template-rows: ${({ $isOpen }) => ($isOpen ? "1fr" : "0fr")};
+    transition: grid-template-rows 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 `;
 
 const AccordionInner = styled.div`
-    padding: 1rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
+    overflow: hidden;
 `;
 
-export const Accordion = ({ title, children }) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const [height, setHeight] = useState(0);
-    const contentRef = useRef(null);
-    const observerRef = useRef(null);
+const AccordionDivider = styled.div`
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(100, 108, 255, 0.2), transparent);
+    margin: 0 16px;
+`;
 
-    const updateHeight = () => {
-        if (contentRef.current) {
-            setHeight(contentRef.current.scrollHeight);
-        }
-    };
+const AccordionPadding = styled.div`
+    padding: 12px 16px 16px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+`;
+
+export const Accordion = ({ title, children, defaultOpen = false }) => {
+    const [isOpen, setIsOpen] = useState(defaultOpen);
 
     const toggle = () => {
-        if (!isOpen) {
-            updateHeight();
-        }
         setIsOpen(prev => !prev);
     };
 
-    // observe size changes inside the accordion
-    useLayoutEffect(() => {
-        if (!isOpen || !contentRef.current) return;
-
-        const resizeObserver = new ResizeObserver(() => {
-            updateHeight();
-        });
-
-        resizeObserver.observe(contentRef.current);
-        observerRef.current = resizeObserver;
-
-        return () => {
-            resizeObserver.disconnect();
-        };
-    }, [isOpen]);
-
     return (
         <AccordionWrapper>
-            <AccordionHeader onClick={toggle}>
-                {title}
-                <span>{isOpen ? "▲" : "▼"}</span>
+            <AccordionHeader onClick={toggle} $isOpen={isOpen}>
+                <IconWrapper $isOpen={isOpen}>
+                    {isOpen ? <FiChevronDown /> : <FiChevronRight />}
+                </IconWrapper>
+                <TitleWrapper>{title}</TitleWrapper>
             </AccordionHeader>
-            <AccordionContent isOpen={isOpen} height={height}>
-                <AccordionInner ref={contentRef}>{children}</AccordionInner>
+            <AccordionContent $isOpen={isOpen}>
+                <AccordionInner>
+                    <AccordionDivider />
+                    <AccordionPadding>{children}</AccordionPadding>
+                </AccordionInner>
             </AccordionContent>
         </AccordionWrapper>
     );
