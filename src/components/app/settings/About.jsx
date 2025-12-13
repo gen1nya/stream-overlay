@@ -17,6 +17,7 @@ import {openExternalLink, openTerminal} from "../../../services/api";
 import {AiFillTwitch} from "react-icons/ai";
 import { Trans, useTranslation } from "react-i18next";
 import { isEventActive } from "../../../utils/seasonalEvents";
+import { APP_VERSION, BUILD_DATE } from "../../../config/version";
 
 const AboutCardWrapper = styled(SettingsCard)`
     position: relative;
@@ -143,9 +144,6 @@ const ExternalLink = ({ href, children }) => (
         {children}
     </SocialLink>
 );
-
-const APP_VERSION = '0.6.0-beta';
-const BUILD_DATE = '08.10.2025';
 
 const InfoGrid = styled.div`
     display: flex;

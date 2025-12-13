@@ -28,6 +28,7 @@ import {Spacer} from "../utils/Separator";
 import TwitchUsersPopup from "./TwitchUsersPopup";
 import {OnlineIndicator} from "../utils/OnlineIndicator";
 import {HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import { APP_VERSION } from "../../config/version";
 import HolidayHeader from "../seasonal/HolidayHeader";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./settings/SharedSettingsStyles";
@@ -768,7 +769,7 @@ export default function Dashboard() {
                         </React.Fragment>
                     ))}
                 </Marquee>
-                <Version>v0.7.0-beta</Version>
+                <Version>v{APP_VERSION}</Version>
                 <ConnectionStatus stats={stats} onReconnect={reconnect} />
             </Footer>
         </Wrapper>
