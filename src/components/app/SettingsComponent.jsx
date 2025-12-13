@@ -206,7 +206,10 @@ export default function Settings() {
         chat: {title: t('settings.pages.chat.title'), icon: <FiMessageCircle/>},
         follow: {title: t('settings.pages.follow.title'), icon: <FiHeart/>},
         channel_points: {title: t('settings.pages.channelPoints.title'), icon: <FiAward/>},
-        bot: {title: t('settings.pages.bot.title'), icon: <AiFillRobot/>},
+        bot_pingpong: {title: t('settings.pages.botPingpong.title'), icon: <FiMessageCircle/>},
+        bot_roulette: {title: t('settings.pages.botRoulette.title'), icon: <FiTarget/>},
+        bot_gacha: {title: t('settings.pages.botGacha.title'), icon: <FiAward/>},
+        bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
@@ -360,7 +363,17 @@ export default function Settings() {
                                 {key: "channel_points", icon: <FiAward/>, label: t('settings.pages.channelPoints.label')},
                             ]
                         },
-                        {key: "bot", icon: <AiFillRobot/>, label: t('settings.pages.bot.label')},
+                        {
+                            key: "bot_group",
+                            icon: <AiFillRobot/>,
+                            label: t('settings.pages.botGroup.label'),
+                            children: [
+                                {key: "bot_pingpong", icon: <FiMessageCircle/>, label: t('settings.pages.botPingpong.label')},
+                                {key: "bot_roulette", icon: <FiTarget/>, label: t('settings.pages.botRoulette.label')},
+                                {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label')},
+                                {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label')},
+                            ]
+                        },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                         {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},
@@ -506,29 +519,80 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 </Content>
             );
 
-        case "bot":
+        case "bot_pingpong":
             return (
                 <Content>
                     {botConfig ? (
-                        <>
-                            <PingPongComponent
-                                apply={applyBotConfig}
-                                botConfig={botConfig}
-                            />
+                        <PingPongComponent
+                            apply={applyBotConfig}
+                            botConfig={botConfig}
+                        />
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
 
-                            <Roulette
-                                botConfig={botConfig}
-                                apply={applyBotConfig}
-                            />
-                            <GachaComponent
-                                apply={applyBotConfig}
-                                gachaConfig={botConfig.gacha}
-                            />
-                            <LotteryComponent
-                                apply={applyBotConfig}
-                                botConfig={botConfig}
-                            />
-                        </>
+        case "bot_roulette":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <Roulette
+                            botConfig={botConfig}
+                            apply={applyBotConfig}
+                        />
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
+        case "bot_gacha":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <GachaComponent
+                            apply={applyBotConfig}
+                            gachaConfig={botConfig.gacha}
+                        />
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
+        case "bot_lottery":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <LotteryComponent
+                            apply={applyBotConfig}
+                            botConfig={botConfig}
+                        />
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>

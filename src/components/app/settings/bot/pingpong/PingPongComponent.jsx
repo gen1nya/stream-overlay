@@ -1,27 +1,23 @@
 import React, {useState, useCallback, useEffect} from 'react';
-import styled from 'styled-components';
 import Switch from '../../../../utils/Switch';
 import PingPongActionEditorComponent from './PingPongActionEditorComponent';
-import {FiMessageCircle, FiPlus, FiSettings, FiChevronDown, FiChevronUp, FiInfo} from 'react-icons/fi';
+import {FiMessageCircle, FiPlus, FiSettings, FiInfo} from 'react-icons/fi';
 import {
     CardContent,
-    CardHeader,
     CardTitle,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
-    InfoBadge,
-    ActionButton
+    SettingsCard
 } from "../../SharedSettingsStyles";
 import {Row} from "../../../SettingsComponent";
 import {Spacer} from "../../../../utils/Separator";
 import {
     AddButton,
     AddCommandForm,
-    CollapsedPreview,
-
-    CollapsibleHeader,
+    StaticCardHeader,
+    HelpButton,
+    HelpInfoPopup,
     EnabledToggle, ErrorText, FormRow, NameInput,
     StatusBadge, VariableItem,
     VariablesList
@@ -29,35 +25,13 @@ import {
 import { useTranslation, Trans } from 'react-i18next';
 
 
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
-
-
 export default function PingPongComponent({ botConfig, apply }) {
     const { t } = useTranslation();
     const [config, setConfig] = useState(botConfig);
-    const [isOpen, setIsOpen] = useState(false);
     const [enabled, setEnabled] = useState(config.pingpong.enabled);
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
+    const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
         setEnabled(config.pingpong.enabled);
@@ -127,7 +101,22 @@ export default function PingPongComponent({ botConfig, apply }) {
 
     return (
         <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
+            <HelpInfoPopup
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={t('settings.bot.pingpong.title')}
+                icon={<FiMessageCircle />}
+            >
+                <Trans
+                    i18nKey="settings.bot.pingpong.preview"
+                    components={{
+                        br: <br />,
+                        highlight: <span className="highlight" />
+                    }}
+                />
+            </HelpInfoPopup>
+
+            <StaticCardHeader>
                 <Row gap="12px">
                     <EnabledToggle enabled={enabled}>
                         <Switch
@@ -152,30 +141,11 @@ export default function PingPongComponent({ botConfig, apply }) {
 
                     <Spacer />
 
-                    <CollapseToggle>
-                        {isOpen
-                            ? t('settings.bot.shared.collapse.close')
-                            : t('settings.bot.shared.collapse.open')}
-                        {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                    </CollapseToggle>
+                    <HelpButton onClick={() => setShowHelp(true)} />
                 </Row>
-            </CollapsibleHeader>
+            </StaticCardHeader>
 
-            {/* Свернутое описание */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    <Trans
-                        i18nKey="settings.bot.pingpong.preview"
-                        components={{
-                            br: <br />,
-                            highlight: <span className="highlight" />
-                        }}
-                    />
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <CardContent>
+            <CardContent>
                     {/* Информация о переменных */}
                     <Section>
                         <SectionHeader>
@@ -246,7 +216,6 @@ export default function PingPongComponent({ botConfig, apply }) {
                         />
                     </Section>
                 </CardContent>
-            )}
         </SettingsCard>
     );
 }

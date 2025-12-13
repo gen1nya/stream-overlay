@@ -5,34 +5,31 @@ import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import { useTranslation } from 'react-i18next';
 import {
     FiGift, FiPlay, FiUsers, FiClock, FiMessageSquare,
-    FiChevronDown, FiChevronUp, FiPlus, FiTrash2, FiSettings,
+    FiChevronDown, FiPlus, FiTrash2, FiSettings,
     FiAward, FiSlash, FiRefreshCw, FiDatabase
 } from 'react-icons/fi';
 import {
     CardContent,
     CardTitle,
-    ControlGroup,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
-    InfoBadge
+    SettingsCard
 } from "../../SharedSettingsStyles";
 import { Spacer } from "../../../../utils/Separator";
 import { Row } from "../../../SettingsComponent";
 import {
     AddButton,
-    CollapsedPreview,
-    CollapsibleHeader,
+    StaticCardHeader,
+    HelpButton,
+    HelpInfoPopup,
     EnabledToggle,
     ParameterCard,
     ParameterTitle,
     StatusBadge,
     VariableItem,
     VariablesList,
-    NameInput,
-    FormRow,
-    ErrorText
+    NameInput
 } from "../SharedBotStyles";
 import { TagInput } from "../roulette/TagInput";
 import { getTwitchRewards } from "../../../../../services/api";
@@ -207,24 +204,6 @@ const Select = styled.select`
     }
 `;
 
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-
-    svg {
-        width: 18px;
-        height: 18px;
-    }
-
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
-
 const RewardSelector = styled.div`
     display: flex;
     flex-wrap: wrap;
@@ -298,10 +277,10 @@ const DEFAULT_LOTTERY_CONFIG = {
 
 export default function LotteryComponent({ botConfig, apply }) {
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
     const [rewards, setRewards] = useState([]);
     const [loadingRewards, setLoadingRewards] = useState(false);
     const [showHistoryPopup, setShowHistoryPopup] = useState(false);
+    const [showHelp, setShowHelp] = useState(false);
 
     // Merge with defaults
     const config = {
@@ -316,10 +295,8 @@ export default function LotteryComponent({ botConfig, apply }) {
     const enabled = config.enabled;
 
     useEffect(() => {
-        if (isOpen) {
-            loadRewards();
-        }
-    }, [isOpen]);
+        loadRewards();
+    }, []);
 
     const loadRewards = async () => {
         setLoadingRewards(true);
@@ -419,14 +396,22 @@ export default function LotteryComponent({ botConfig, apply }) {
                 <LotteryHistoryPopup onClose={() => setShowHistoryPopup(false)} />
             )}
 
+            <HelpInfoPopup
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={t('settings.bot.lottery.title')}
+                icon={<FiGift />}
+            >
+                <p>{t('settings.bot.lottery.preview')}</p>
+            </HelpInfoPopup>
+
             <SettingsCard>
-            <CollapsibleHeader onClick={() => setIsOpen(!isOpen)}>
+            <StaticCardHeader>
                 <Row gap="12px">
                     <EnabledToggle enabled={enabled}>
                         <Switch
                             checked={enabled}
                             onChange={(e) => {
-                                e.stopPropagation();
                                 updateConfig(() => ({ enabled: e.target.checked }));
                             }}
                         />
@@ -444,23 +429,11 @@ export default function LotteryComponent({ botConfig, apply }) {
 
                     <Spacer />
 
-                    <CollapseToggle>
-                        {isOpen
-                            ? t('settings.bot.shared.collapse.close')
-                            : t('settings.bot.shared.collapse.open')}
-                        {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                    </CollapseToggle>
+                    <HelpButton onClick={() => setShowHelp(true)} />
                 </Row>
-            </CollapsibleHeader>
+            </StaticCardHeader>
 
-            {!isOpen && (
-                <CollapsedPreview onClick={() => setIsOpen(true)}>
-                    {t('settings.bot.lottery.preview')}
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <CardContent>
+            <CardContent>
                     {/* STEP 1: START */}
                     <FlowStep>
                         <FlowStepHeader $color="rgba(100, 108, 255, 0.1)" $iconColor="#646cff">
@@ -896,7 +869,6 @@ export default function LotteryComponent({ botConfig, apply }) {
                         </FlowStepContent>
                     </FlowStep>
                 </CardContent>
-            )}
         </SettingsCard>
         </>
     );

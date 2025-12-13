@@ -2,7 +2,7 @@ import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
 import Switch from '../../../../utils/Switch';
 import {
-    FiGift, FiSettings, FiChevronDown, FiChevronUp, FiInfo, FiPlus, FiStar, FiPackage, FiZap
+    FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap
 } from 'react-icons/fi';
 import {
     CardContent,
@@ -15,12 +15,11 @@ import {
 import {Row} from "../../../SettingsComponent";
 import {Spacer} from "../../../../utils/Separator";
 import {
-    CollapsibleHeader,
-    CollapsedPreview,
+    StaticCardHeader,
+    HelpButton,
+    HelpInfoPopup,
     EnabledToggle,
     StatusBadge,
-    VariableItem,
-    VariablesList,
 } from "../SharedBotStyles";
 import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
@@ -29,25 +28,6 @@ import AdvancedSettings from './AdvancedSettings';
 import {ActionButton} from "../../../SharedStyles";
 import GachaUsersPopup from "./GachaUsersPopup";
 import {useTranslation} from 'react-i18next';
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
 
 const InfoCard = styled.div`
     background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(136, 83, 242, 0.1) 100%);
@@ -160,11 +140,9 @@ export default function GachaComponent({gachaConfig, apply}) {
             return gachaConfig
         }
     });
-    const [isOpen, setIsOpen] = useState(false);
     const [enabled, setEnabled] = useState(config.enabled);
     const [showUsersPopup, setShowUsersPopup] = useState(false);
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
+    const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
         setEnabled(config.enabled ?? false);
@@ -203,8 +181,47 @@ export default function GachaComponent({gachaConfig, apply}) {
         <>
             {showUsersPopup && <GachaUsersPopup onClose={() => setShowUsersPopup(false)}/>}
 
+            <HelpInfoPopup
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={t('settings.bot.gacha.component.title')}
+                icon={<FiGift />}
+            >
+                <p>{t('settings.bot.gacha.component.collapsedDescription')}</p>
+                <StatsGrid>
+                    <StatCard $color="#fbbf24">
+                        <FiStar/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.totalItems')}</StatLabel>
+                            <StatValue>{stats.totalItems}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                    <StatCard $color="#8853f2">
+                        <FiZap/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.fiveStar')}</StatLabel>
+                            <StatValue>{stats.fiveStarCount}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                    <StatCard $color="#646cff">
+                        <FiPackage/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.fourStar')}</StatLabel>
+                            <StatValue>{stats.fourStarCount}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                    <StatCard $color="#22c55e">
+                        <FiGift/>
+                        <StatContent>
+                            <StatLabel>{t('settings.bot.gacha.component.stats.triggers')}</StatLabel>
+                            <StatValue>{stats.triggersCount}</StatValue>
+                        </StatContent>
+                    </StatCard>
+                </StatsGrid>
+            </HelpInfoPopup>
+
             <SettingsCard>
-                <CollapsibleHeader onClick={toggleOpen}>
+                <StaticCardHeader>
                     <Row gap="12px">
                         <EnabledToggle enabled={enabled}>
                             <Switch
@@ -227,53 +244,11 @@ export default function GachaComponent({gachaConfig, apply}) {
 
                         <Spacer/>
 
-                        <CollapseToggle>
-                            {isOpen ? t('settings.bot.shared.collapse.close') : t('settings.bot.shared.collapse.open')}
-                            {isOpen ? <FiChevronUp/> : <FiChevronDown/>}
-                        </CollapseToggle>
+                        <HelpButton onClick={() => setShowHelp(true)} />
                     </Row>
-                </CollapsibleHeader>
+                </StaticCardHeader>
 
-                {/* Свернутое описание */}
-                {!isOpen && (
-                    <CollapsedPreview onClick={toggleOpen}>
-                        {t('settings.bot.gacha.component.collapsedDescription')}
-                        <br/><br/>
-                        <StatsGrid>
-                            <StatCard $color="#fbbf24">
-                                <FiStar/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.totalItems')}</StatLabel>
-                                    <StatValue>{stats.totalItems}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                            <StatCard $color="#8853f2">
-                                <FiZap/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.fiveStar')}</StatLabel>
-                                    <StatValue>{stats.fiveStarCount}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                            <StatCard $color="#646cff">
-                                <FiPackage/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.fourStar')}</StatLabel>
-                                    <StatValue>{stats.fourStarCount}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                            <StatCard $color="#22c55e">
-                                <FiGift/>
-                                <StatContent>
-                                    <StatLabel>{t('settings.bot.gacha.component.stats.triggers')}</StatLabel>
-                                    <StatValue>{stats.triggersCount}</StatValue>
-                                </StatContent>
-                            </StatCard>
-                        </StatsGrid>
-                    </CollapsedPreview>
-                )}
-
-                {isOpen && (
-                    <CardContent>
+                <CardContent>
                         {/* Информация о системе */}
                         <Section>
                             <InfoCard>
@@ -361,7 +336,6 @@ export default function GachaComponent({gachaConfig, apply}) {
                             />
                         </Section>
                     </CardContent>
-                )}
             </SettingsCard>
         </>
     );

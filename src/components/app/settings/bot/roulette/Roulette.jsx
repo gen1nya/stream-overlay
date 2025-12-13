@@ -1,5 +1,4 @@
 import React, {useEffect, useState} from "react";
-import styled from "styled-components";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import Switch from "../../../../utils/Switch";
 import { mergeWithDefaults } from "../../../../utils/defaultBotConfig";
@@ -8,52 +7,27 @@ import WinnerMessagesComponent from "./WinnerMessagesComponent";
 import CooldownMessagesComponent from "./CooldownMessagesComponent";
 import ProtectedUsersMessagesComponent from "./ProtectedUsersMessagesComponent";
 import {TagInput} from "./TagInput";
-import {FiTarget, FiSettings, FiClock, FiPercent, FiMessageSquare, FiChevronDown, FiChevronUp, FiAlertTriangle} from 'react-icons/fi';
+import {FiTarget, FiSettings, FiClock, FiPercent, FiMessageSquare, FiAlertTriangle} from 'react-icons/fi';
 import {
     CardContent,
-    CardHeader,
     CardTitle,
     ControlGroup,
     Section,
     SectionHeader,
     SectionTitle,
     SettingsCard,
-    InfoBadge,
     WarningBadge
 } from "../../SharedSettingsStyles";
 import {Spacer} from "../../../../utils/Separator";
 import {Row} from "../../../SettingsComponent";
 import {
-    AddButton,
-    AddCommandForm,
-    CollapsedPreview,
-
-    CollapsibleHeader,
-    EnabledToggle, ErrorText, FormRow, NameInput, ParameterCard, ParameterTitle,
-    StatusBadge, VariableItem,
-    VariablesList
+    StaticCardHeader,
+    HelpButton,
+    HelpInfoPopup,
+    EnabledToggle, ParameterCard, ParameterTitle,
+    StatusBadge
 } from "../SharedBotStyles";
 import { useTranslation, Trans } from 'react-i18next';
-
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
 
 
 export default function Roulette({ botConfig, apply }) {
@@ -61,9 +35,7 @@ export default function Roulette({ botConfig, apply }) {
     const [config, setConfig] = useState(botConfig);
     const [enabled, setEnabled] = useState(config.roulette.enabled);
     const [allowToBanEditors, setAllowToBanEditors] = useState(config.roulette.allowToBanEditors);
-    const [isOpen, setIsOpen] = useState(false);
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
+    const [showHelp, setShowHelp] = useState(false);
 
     useEffect(() => {
         if (botConfig) {setConfig(botConfig);}
@@ -89,7 +61,23 @@ export default function Roulette({ botConfig, apply }) {
 
     return (
         <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
+            <HelpInfoPopup
+                isOpen={showHelp}
+                onClose={() => setShowHelp(false)}
+                title={t('settings.bot.roulette.title')}
+                icon={<FiTarget />}
+            >
+                <Trans
+                    i18nKey="settings.bot.roulette.preview"
+                    components={{
+                        br: <br />,
+                        warning: <span className="warning" />,
+                        highlight: <span className="highlight" />
+                    }}
+                />
+            </HelpInfoPopup>
+
+            <StaticCardHeader>
                 <Row gap="12px">
                     <EnabledToggle enabled={enabled}>
                         <Switch
@@ -114,31 +102,11 @@ export default function Roulette({ botConfig, apply }) {
 
                     <Spacer />
 
-                    <CollapseToggle>
-                        {isOpen
-                            ? t('settings.bot.shared.collapse.close')
-                            : t('settings.bot.shared.collapse.open')}
-                        {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                    </CollapseToggle>
+                    <HelpButton onClick={() => setShowHelp(true)} />
                 </Row>
-            </CollapsibleHeader>
+            </StaticCardHeader>
 
-            {/* Свернутое описание */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    <Trans
-                        i18nKey="settings.bot.roulette.preview"
-                        components={{
-                            br: <br />,
-                            warning: <span className="warning" />,
-                            highlight: <span className="highlight" />
-                        }}
-                    />
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <CardContent>
+            <CardContent>
                     {/* Основные параметры */}
                     <Section>
                         <SectionHeader>
@@ -261,7 +229,6 @@ export default function Roulette({ botConfig, apply }) {
                         </div>
                     </Section>
                 </CardContent>
-            )}
         </SettingsCard>
     );
 }
