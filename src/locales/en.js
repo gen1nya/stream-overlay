@@ -1050,6 +1050,7 @@ const en = {
                             commandHint: 'Usage: !giveaway @prize',
                             cancelCommand: 'Cancel command',
                             cancelCommandHint: 'Only broadcaster or moderator',
+                            statsCommand: 'Stats command',
                             cooldown: 'Cooldown between giveaways (sec)',
                             startMessage: 'Start message',
                         },
@@ -1082,6 +1083,11 @@ const en = {
                             winnerMessage: 'Winner message',
                             noParticipantsMessage: 'No participants message',
                         },
+                        stats: {
+                            title: 'Statistics',
+                            command: 'Stats command',
+                            response: 'Response message',
+                        },
                         additional: {
                             title: 'Additional',
                             requireSubjectInChat: 'Only users in chat (subject must be online)',
@@ -1109,6 +1115,11 @@ const en = {
                         trigger: 'entry trigger',
                         cooldown: 'cooldown remaining',
                         command: 'lottery command',
+                        topPlayers: 'top players by wins',
+                        topSubjects: 'top prizes',
+                        user: 'user name (who requested stats)',
+                        userWins: 'user win count',
+                        userSubjects: 'prizes won by user',
                     },
                 },
                 commandList: {

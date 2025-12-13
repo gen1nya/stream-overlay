@@ -29,6 +29,7 @@ export interface LotteryMessages {
     userNotInChat: string;   // "{{subject}} не найден в чате!"
     subjectRequired: string; // "Укажите предмет розыгрыша!"
     subjectBlacklisted: string; // "{{subject}} в чёрном списке!"
+    statsResponse: string;   // Шаблон ответа статистики
 }
 
 /** Конфигурация бота лотереи (для store) */
@@ -38,6 +39,7 @@ export interface LotteryBotConfig {
     // Команды
     command: string;                   // "!розыгрыш"
     cancelCommand: string;             // "!отмена"
+    statsCommand: string;              // "!статистика"
     commandCooldownSec: number;        // кулдаун между розыгрышами (глобальный)
 
     // Способы входа
@@ -117,6 +119,11 @@ export interface LotteryTemplateVars {
     trigger?: string;
     cooldown?: number;
     user?: string;
+    // Stats-specific variables
+    topPlayers?: string;
+    topSubjects?: string;
+    userWins?: number;
+    userSubjects?: string;
 }
 
 /** Дефолтная конфигурация */
@@ -124,6 +131,7 @@ export const DEFAULT_LOTTERY_CONFIG: LotteryBotConfig = {
     enabled: false,
     command: '!розыгрыш',
     cancelCommand: '!отмена',
+    statsCommand: '!статистика',
     commandCooldownSec: 60,
     allowChatEntry: true,
     entryTrigger: '+',
@@ -154,6 +162,7 @@ export const DEFAULT_LOTTERY_CONFIG: LotteryBotConfig = {
         cancelled: 'Розыгрыш {{subject}} отменён.',
         userNotInChat: '{{subject}} не найден в чате!',
         subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз',
-        subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша'
+        subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша',
+        statsResponse: '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}'
     }
 };

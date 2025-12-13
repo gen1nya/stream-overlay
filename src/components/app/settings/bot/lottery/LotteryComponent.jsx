@@ -259,6 +259,7 @@ const DEFAULT_LOTTERY_CONFIG = {
     enabled: false,
     command: '!розыгрыш',
     cancelCommand: '!отмена',
+    statsCommand: '!статистика',
     commandCooldownSec: 60,
     allowChatEntry: true,
     entryTrigger: '+',
@@ -288,7 +289,8 @@ const DEFAULT_LOTTERY_CONFIG = {
         cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
         cancelled: 'Розыгрыш {{subject}} отменён.',
         subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз',
-        subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша'
+        subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша',
+        statsResponse: '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}'
     }
 };
 
@@ -486,6 +488,9 @@ export default function LotteryComponent({ botConfig, apply }) {
                                     </span>
                                 </ParameterCard>
 
+                            </Row>
+
+                            <Row gap="20px">
                                 <ParameterCard>
                                     <ParameterTitle>
                                         <FiClock />
@@ -705,7 +710,49 @@ export default function LotteryComponent({ botConfig, apply }) {
                         <FiChevronDown />
                     </FlowConnector>
 
-                    {/* STEP 5: ADDITIONAL */}
+                    {/* STEP 5: STATISTICS */}
+                    <FlowStep>
+                        <FlowStepHeader $color="rgba(59, 130, 246, 0.1)" $iconColor="#3b82f6">
+                            <FiAward />
+                            <h4>{t('settings.bot.lottery.flow.stats.title')}</h4>
+                        </FlowStepHeader>
+                        <FlowStepContent>
+                            <ParameterCard>
+                                <ParameterTitle>
+                                    <FiMessageSquare />
+                                    {t('settings.bot.lottery.flow.stats.command')}
+                                </ParameterTitle>
+                                <NameInput
+                                    value={config.statsCommand}
+                                    onChange={(e) => updateConfig(() => ({ statsCommand: e.target.value }))}
+                                    placeholder="!статистика"
+                                />
+                            </ParameterCard>
+
+                            <div>
+                                <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
+                                    {t('settings.bot.lottery.flow.stats.response')}
+                                </label>
+                                <MessageInput
+                                    value={config.messages.statsResponse}
+                                    onChange={(e) => updateMessage('statsResponse', e.target.value)}
+                                />
+                                <VariablesList style={{ marginTop: '8px' }}>
+                                    <VariableItem><span className="var">{'{{topPlayers}}'}</span><span className="desc">{t('settings.bot.lottery.variables.topPlayers')}</span></VariableItem>
+                                    <VariableItem><span className="var">{'{{topSubjects}}'}</span><span className="desc">{t('settings.bot.lottery.variables.topSubjects')}</span></VariableItem>
+                                    <VariableItem><span className="var">{'{{user}}'}</span><span className="desc">{t('settings.bot.lottery.variables.user')}</span></VariableItem>
+                                    <VariableItem><span className="var">{'{{userWins}}'}</span><span className="desc">{t('settings.bot.lottery.variables.userWins')}</span></VariableItem>
+                                    <VariableItem><span className="var">{'{{userSubjects}}'}</span><span className="desc">{t('settings.bot.lottery.variables.userSubjects')}</span></VariableItem>
+                                </VariablesList>
+                            </div>
+                        </FlowStepContent>
+                    </FlowStep>
+
+                    <FlowConnector>
+                        <FiChevronDown />
+                    </FlowConnector>
+
+                    {/* STEP 6: ADDITIONAL */}
                     <FlowStep>
                         <FlowStepHeader $color="rgba(107, 114, 128, 0.1)" $iconColor="#6b7280">
                             <FiSettings />

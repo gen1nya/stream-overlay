@@ -148,6 +148,7 @@ export class BotConfigService {
             enabled: false,
             command: '!розыгрыш',
             cancelCommand: '!отмена',
+            statsCommand: '!статистика',
             commandCooldownSec: 60,
             allowChatEntry: true,
             entryTrigger: '+',
@@ -177,7 +178,9 @@ export class BotConfigService {
                 cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
                 cancelled: 'Розыгрыш {{subject}} отменён.',
                 userNotInChat: '{{subject}} не найден в чате!',
-                subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз'
+                subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз',
+                subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша',
+                statsResponse: '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}'
             }
         }
     }

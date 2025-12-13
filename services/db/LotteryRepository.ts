@@ -383,4 +383,49 @@ export class LotteryRepository {
             .pluck()
             .get() as number;
     }
+
+    /**
+     * Получить топ разыгрываемых предметов (subjects)
+     * Возвращает subjects с количеством розыгрышей
+     */
+    getTopSubjects(limit: number = 5): { subject: string; count: number }[] {
+        const rows = this.db
+            .prepare(
+                `
+                SELECT
+                    child_user AS subject,
+                    COUNT(*) AS count
+                FROM lottery_draws
+                WHERE status = 'completed' AND winner_id IS NOT NULL
+                GROUP BY child_user
+                ORDER BY count DESC
+                LIMIT @limit
+                `
+            )
+            .all({ limit }) as any[];
+
+        return rows.map(row => ({
+            subject: row.subject,
+            count: row.count
+        }));
+    }
+
+    /**
+     * Получить предметы, выигранные конкретным пользователем
+     */
+    getUserWonSubjects(userId: string, limit: number = 10): string[] {
+        const rows = this.db
+            .prepare(
+                `
+                SELECT child_user AS subject
+                FROM lottery_draws
+                WHERE status = 'completed' AND winner_id = @userId
+                ORDER BY ended_at DESC
+                LIMIT @limit
+                `
+            )
+            .all({ userId, limit }) as any[];
+
+        return rows.map(row => row.subject);
+    }
 }

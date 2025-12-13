@@ -57,13 +57,29 @@ export class LotteryMiddleware extends Middleware {
         const bots = this.store.get('bots') || {};
         const bot = bots[botName];
         if (bot?.lottery) {
-            this.config = bot.lottery;
+            // Merge with defaults to ensure new fields are available
+            this.config = {
+                ...DEFAULT_LOTTERY_CONFIG,
+                ...bot.lottery,
+                messages: {
+                    ...DEFAULT_LOTTERY_CONFIG.messages,
+                    ...bot.lottery.messages
+                }
+            };
         }
     }
 
     updateConfig(botConfig: BotConfig): void {
         if (botConfig?.lottery) {
-            this.config = botConfig.lottery;
+            // Merge with defaults to ensure new fields are available
+            this.config = {
+                ...DEFAULT_LOTTERY_CONFIG,
+                ...botConfig.lottery,
+                messages: {
+                    ...DEFAULT_LOTTERY_CONFIG.messages,
+                    ...botConfig.lottery.messages
+                }
+            };
             this.log('LotteryMiddleware config updated');
         }
     }
@@ -102,7 +118,12 @@ export class LotteryMiddleware extends Middleware {
             return this.handleCancelCommand(message);
         }
 
-        // 3. Проверяем триггер входа
+        // 3. Проверяем команду статистики
+        if (this.isStatsCommand(text)) {
+            return this.handleStatsCommand(message);
+        }
+
+        // 4. Проверяем триггер входа
         if (this.isEntryTrigger(text)) {
             return this.handleEntryTrigger(message);
         }
@@ -148,6 +169,12 @@ export class LotteryMiddleware extends Middleware {
         // Проверяем, что вход через чат разрешён
         if (!this.config.allowChatEntry) return false;
         return text === this.config.entryTrigger;
+    }
+
+    private isStatsCommand(text: string): boolean {
+        const command = this.config.statsCommand?.toLowerCase();
+        if (!command) return false;
+        return text.toLowerCase() === command;
     }
 
     private handleStartCommand(message: ChatEvent, text: string): { message: ChatEvent; actions: any[]; accepted: boolean } {
@@ -280,6 +307,57 @@ export class LotteryMiddleware extends Middleware {
 
         const actions = this.cancelLottery();
         return { message, actions, accepted: true };
+    }
+
+    private handleStatsCommand(message: ChatEvent): { message: ChatEvent; actions: any[]; accepted: boolean } {
+        const userId = message.userId;
+        const userName = message.userName || 'Unknown';
+
+        if (!userId || !this.userId) {
+            return { message, actions: [], accepted: false };
+        }
+
+        const db = DbRepository.getInstance(this.userId);
+
+        // Получаем данные для статистики
+        const topWinners = db.lottery.getTopWinners(5);
+        const topSubjects = db.lottery.getTopSubjects(5);
+        const userStats = db.lottery.getStats(userId);
+        const userWonSubjects = db.lottery.getUserWonSubjects(userId, 10);
+
+        // Форматируем топ игроков: "user1(3), user2(2), user3(1)"
+        const topPlayersStr = topWinners.length > 0
+            ? topWinners.map(w => `${w.userName}(${w.totalWins})`).join(', ')
+            : 'нет данных';
+
+        // Форматируем топ предметов: "приз1(3), приз2(2)"
+        const topSubjectsStr = topSubjects.length > 0
+            ? topSubjects.map(s => `${s.subject}(${s.count})`).join(', ')
+            : 'нет данных';
+
+        // Форматируем выигранные предметы пользователя
+        const userSubjectsStr = userWonSubjects.length > 0
+            ? userWonSubjects.join(', ')
+            : 'ничего';
+
+        const userWins = userStats?.totalWins || 0;
+
+        const template = this.config.messages.statsResponse ||
+            '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}';
+
+        const responseMsg = this.applyTemplate(template, {
+            user: userName,
+            topPlayers: topPlayersStr,
+            topSubjects: topSubjectsStr,
+            userWins: userWins,
+            userSubjects: userSubjectsStr
+        });
+
+        return {
+            message,
+            actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+            accepted: true
+        };
     }
 
     private handleEntryTrigger(message: ChatEvent): { message: ChatEvent; actions: any[]; accepted: boolean } {
@@ -571,6 +649,19 @@ export class LotteryMiddleware extends Middleware {
         }
         if (vars.user !== undefined) {
             result = result.replace(/\{\{user\}\}/g, vars.user);
+        }
+        // Stats-specific variables
+        if (vars.topPlayers !== undefined) {
+            result = result.replace(/\{\{topPlayers\}\}/g, vars.topPlayers);
+        }
+        if (vars.topSubjects !== undefined) {
+            result = result.replace(/\{\{topSubjects\}\}/g, vars.topSubjects);
+        }
+        if (vars.userWins !== undefined) {
+            result = result.replace(/\{\{userWins\}\}/g, String(vars.userWins));
+        }
+        if (vars.userSubjects !== undefined) {
+            result = result.replace(/\{\{userSubjects\}\}/g, vars.userSubjects);
         }
 
         return result;
