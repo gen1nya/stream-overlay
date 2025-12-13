@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FiGift, FiPlay, FiUsers, FiClock, FiMessageSquare,
     FiChevronDown, FiChevronUp, FiPlus, FiTrash2, FiSettings,
-    FiAward, FiSlash, FiRefreshCw
+    FiAward, FiSlash, FiRefreshCw, FiDatabase
 } from 'react-icons/fi';
 import {
     CardContent,
@@ -36,6 +36,8 @@ import {
 } from "../SharedBotStyles";
 import { TagInput } from "../roulette/TagInput";
 import { getTwitchRewards } from "../../../../../services/api";
+import LotteryHistoryPopup from "./LotteryHistoryPopup";
+import { ActionButton } from "../../../SharedStyles";
 
 // Flow step connector
 const FlowConnector = styled.div`
@@ -299,6 +301,7 @@ export default function LotteryComponent({ botConfig, apply }) {
     const [isOpen, setIsOpen] = useState(false);
     const [rewards, setRewards] = useState([]);
     const [loadingRewards, setLoadingRewards] = useState(false);
+    const [showHistoryPopup, setShowHistoryPopup] = useState(false);
 
     // Merge with defaults
     const config = {
@@ -411,7 +414,12 @@ export default function LotteryComponent({ botConfig, apply }) {
     };
 
     return (
-        <SettingsCard>
+        <>
+            {showHistoryPopup && (
+                <LotteryHistoryPopup onClose={() => setShowHistoryPopup(false)} />
+            )}
+
+            <SettingsCard>
             <CollapsibleHeader onClick={() => setIsOpen(!isOpen)}>
                 <Row gap="12px">
                     <EnabledToggle enabled={enabled}>
@@ -745,6 +753,16 @@ export default function LotteryComponent({ botConfig, apply }) {
                                     <VariableItem><span className="var">{'{{userSubjects}}'}</span><span className="desc">{t('settings.bot.lottery.variables.userSubjects')}</span></VariableItem>
                                 </VariablesList>
                             </div>
+
+                            <Row style={{ marginTop: '12px' }}>
+                                <ActionButton
+                                    className="secondary"
+                                    onClick={() => setShowHistoryPopup(true)}
+                                >
+                                    <FiDatabase style={{ marginRight: '8px' }} />
+                                    {t('settings.bot.lottery.history.openButton')}
+                                </ActionButton>
+                            </Row>
                         </FlowStepContent>
                     </FlowStep>
 
@@ -880,5 +898,6 @@ export default function LotteryComponent({ botConfig, apply }) {
                 </CardContent>
             )}
         </SettingsCard>
+        </>
     );
 }

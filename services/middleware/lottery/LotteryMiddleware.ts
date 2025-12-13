@@ -5,6 +5,7 @@ import { BotConfig, StoreSchema } from '../../store/StoreSchema';
 import { LogService } from '../../logService';
 import { DbRepository } from '../../db/DbRepository';
 import ElectronStore from 'electron-store';
+import { ipcMain } from 'electron';
 import {
     LotteryBotConfig,
     ActiveLottery,
@@ -43,6 +44,63 @@ export class LotteryMiddleware extends Middleware {
         this.logService = logService;
         this.chattersService = ChattersService.getInstance();
         this.loadConfig();
+        this.registerIpcHandlers();
+    }
+
+    /**
+     * Регистрирует IPC хэндлеры для работы с данными лотереи из UI
+     */
+    private registerIpcHandlers(): void {
+        // Получить список доступных месяцев
+        ipcMain.handle('lottery:get-months', () => {
+            if (!this.userId) return [];
+            const db = DbRepository.getInstance(this.userId);
+            return db.lottery.getAvailableMonths();
+        });
+
+        // Получить розыгрыши за месяц
+        ipcMain.handle('lottery:get-draws-by-month', (_e, { year, month }) => {
+            if (!this.userId) return [];
+            const db = DbRepository.getInstance(this.userId);
+            return db.lottery.getDrawsByMonth(year, month);
+        });
+
+        // Получить статистику по месяцам
+        ipcMain.handle('lottery:get-monthly-stats', () => {
+            if (!this.userId) return [];
+            const db = DbRepository.getInstance(this.userId);
+            return db.lottery.getMonthlyStats();
+        });
+
+        // Получить историю (с пагинацией)
+        ipcMain.handle('lottery:get-history', (_e, { limit, offset }) => {
+            if (!this.userId) return { draws: [], total: 0 };
+            const db = DbRepository.getInstance(this.userId);
+            const draws = db.lottery.getDrawHistory(limit, offset);
+            const total = db.lottery.countDraws();
+            return { draws, total };
+        });
+
+        // Экспорт всех данных
+        ipcMain.handle('lottery:export', () => {
+            if (!this.userId) return [];
+            const db = DbRepository.getInstance(this.userId);
+            return db.lottery.exportAllDraws();
+        });
+
+        // Очистить все данные
+        ipcMain.handle('lottery:clear-all', () => {
+            if (!this.userId) return { draws: 0, usedSubjects: 0, stats: 0 };
+            const db = DbRepository.getInstance(this.userId);
+            return db.lottery.clearAllData();
+        });
+
+        // Очистить данные за месяц
+        ipcMain.handle('lottery:clear-month', (_e, { year, month }) => {
+            if (!this.userId) return 0;
+            const db = DbRepository.getInstance(this.userId);
+            return db.lottery.clearMonth(year, month);
+        });
     }
 
     /**
@@ -319,15 +377,15 @@ export class LotteryMiddleware extends Middleware {
 
         const db = DbRepository.getInstance(this.userId);
 
-        // Получаем данные для статистики
-        const topWinners = db.lottery.getTopWinners(5);
-        const topSubjects = db.lottery.getTopSubjects(5);
-        const userStats = db.lottery.getStats(userId);
-        const userWonSubjects = db.lottery.getUserWonSubjects(userId, 10);
+        // Получаем данные для статистики ЗА ТЕКУЩИЙ МЕСЯЦ
+        const topWinners = db.lottery.getTopWinnersThisMonth(5);
+        const topSubjects = db.lottery.getTopSubjectsThisMonth(5);
+        const userWins = db.lottery.getUserWinsThisMonth(userId);
+        const userWonSubjects = db.lottery.getUserWonSubjectsThisMonth(userId, 10);
 
         // Форматируем топ игроков: "user1(3), user2(2), user3(1)"
         const topPlayersStr = topWinners.length > 0
-            ? topWinners.map(w => `${w.userName}(${w.totalWins})`).join(', ')
+            ? topWinners.map(w => `${w.userName}(${w.wins})`).join(', ')
             : 'нет данных';
 
         // Форматируем топ предметов: "приз1(3), приз2(2)"
@@ -339,8 +397,6 @@ export class LotteryMiddleware extends Middleware {
         const userSubjectsStr = userWonSubjects.length > 0
             ? userWonSubjects.join(', ')
             : 'ничего';
-
-        const userWins = userStats?.totalWins || 0;
 
         const template = this.config.messages.statsResponse ||
             '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}';

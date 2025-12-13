@@ -253,6 +253,35 @@ export const updateGachaUser = async (userId, userName, pityData) => {
     });
 };
 
+// lottery api
+export const getLotteryMonths = async () => {
+    return await ipcRenderer?.invoke('lottery:get-months');
+};
+
+export const getLotteryDrawsByMonth = async (year, month) => {
+    return await ipcRenderer?.invoke('lottery:get-draws-by-month', { year, month });
+};
+
+export const getLotteryMonthlyStats = async () => {
+    return await ipcRenderer?.invoke('lottery:get-monthly-stats');
+};
+
+export const getLotteryHistory = async (limit = 50, offset = 0) => {
+    return await ipcRenderer?.invoke('lottery:get-history', { limit, offset });
+};
+
+export const exportLotteryData = async () => {
+    return await ipcRenderer?.invoke('lottery:export');
+};
+
+export const clearAllLotteryData = async () => {
+    return await ipcRenderer?.invoke('lottery:clear-all');
+};
+
+export const clearLotteryMonth = async (year, month) => {
+    return await ipcRenderer?.invoke('lottery:clear-month', { year, month });
+};
+
 // listener
 export const onLogout = (callback) => {
     ipcRenderer.on('logout:success', callback);

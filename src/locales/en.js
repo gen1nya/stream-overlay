@@ -48,6 +48,8 @@ const en = {
             open: 'Open',
             close: 'Close',
             loading: 'Loading...',
+            cancel: 'Cancel',
+            delete: 'Delete',
         },
         sidebar: {
             title: 'Navigation',
@@ -1120,6 +1122,51 @@ const en = {
                         user: 'user name (who requested stats)',
                         userWins: 'user win count',
                         userSubjects: 'prizes won by user',
+                    },
+                    history: {
+                        openButton: 'History & Statistics',
+                        title: 'Lottery History',
+                        selectMonth: 'Select month...',
+                        table: {
+                            date: 'Date',
+                            subject: 'Prize',
+                            initiator: 'Initiator',
+                            winner: 'Winner',
+                            participants: 'Participants',
+                            status: 'Status',
+                        },
+                        status: {
+                            completed: 'Completed',
+                            cancelled: 'Cancelled',
+                        },
+                        pagination: {
+                            info: 'Showing {{shown}} of {{total}}',
+                        },
+                        empty: {
+                            title: 'No lotteries',
+                            subtitle: 'No lottery data for selected month',
+                            selectMonth: 'Select a month',
+                            selectMonthHint: 'Choose a month from the list above to view history',
+                        },
+                        export: {
+                            button: 'Export CSV',
+                            noData: 'No data to export',
+                            error: 'Error exporting data',
+                        },
+                        clear: {
+                            button: 'Clear all',
+                            confirmTitle: 'Clear all data?',
+                            confirmText: 'This will delete ALL lottery history, statistics and used subjects list. This action cannot be undone.',
+                            success: 'Deleted: {{draws}} lotteries, {{stats}} statistics records',
+                            error: 'Error clearing data',
+                        },
+                        clearMonth: {
+                            button: 'Delete month',
+                            confirmTitle: 'Delete month data?',
+                            confirmText: 'This will delete all lotteries for {{month}} {{year}}. This action cannot be undone.',
+                            success: 'Deleted {{count}} lotteries',
+                            error: 'Error deleting data',
+                        },
                     },
                 },
                 commandList: {
