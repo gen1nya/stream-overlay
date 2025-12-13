@@ -10,10 +10,11 @@
     "start-react": "vite",
     "start-electron": "wait-on http://localhost:5173 && npm run build:ts && npm run postbuild && electron .",
     "build": "vite build",
-    "build-electron": "npm run build && npm run build:ts && npm run postbuild && electron-builder",
+    "build-electron": "npm run sync-version && npm run build && npm run build:ts && npm run postbuild && electron-builder",
     "build:ts": "tsc",
     "postbuild": "node scripts/copy-native.js",
-    "postinstall": "electron-rebuild -f -w better-sqlite3"
+    "postinstall": "electron-rebuild -f -w better-sqlite3",
+    "sync-version": "node scripts/sync-version.js"
   },
   "build": {
     "appId": "com.twitch.watcher",
@@ -42,7 +43,9 @@
       "target": [
         {
           "target": "nsis",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ]
     },
