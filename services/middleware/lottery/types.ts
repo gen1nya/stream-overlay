@@ -28,6 +28,7 @@ export interface LotteryMessages {
     cancelled: string;       // "Розыгрыш отменён"
     userNotInChat: string;   // "{{subject}} не найден в чате!"
     subjectRequired: string; // "Укажите предмет розыгрыша!"
+    subjectBlacklisted: string; // "{{subject}} в чёрном списке!"
 }
 
 /** Конфигурация бота лотереи (для store) */
@@ -52,6 +53,9 @@ export interface LotteryBotConfig {
 
     // Уникальность subject
     enforceUniqueSubject: boolean;
+
+    // Чёрный список (боты и др.)
+    subjectBlacklist: string[];
 
     // Сообщения
     messages: LotteryMessages;
@@ -127,6 +131,18 @@ export const DEFAULT_LOTTERY_CONFIG: LotteryBotConfig = {
     timerDurationSec: 60,
     requireSubjectInChat: true,
     enforceUniqueSubject: false,
+    subjectBlacklist: [
+        'streamelements',
+        'nightbot',
+        'fossabot',
+        'streamlabs',
+        'wizebot',
+        'moobot',
+        'coebot',
+        'phantombot',
+        'stayhydratedbot',
+        'botisimo'
+    ],
     messages: {
         start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
         warmup: [],
@@ -137,6 +153,7 @@ export const DEFAULT_LOTTERY_CONFIG: LotteryBotConfig = {
         cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
         cancelled: 'Розыгрыш {{subject}} отменён.',
         userNotInChat: '{{subject}} не найден в чате!',
-        subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз'
+        subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз',
+        subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша'
     }
 };

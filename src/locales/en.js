@@ -1093,6 +1093,10 @@ const en = {
                             cancelledMessage: 'Cancelled message',
                             userNotInChatMessage: 'User not in chat message',
                             subjectRequired: 'Subject not specified message',
+                            blacklist: 'Blacklist',
+                            blacklistHint: 'These accounts cannot be used as prize (e.g., bots)',
+                            blacklistPlaceholder: 'Enter name...',
+                            subjectBlacklisted: 'If subject is blacklisted',
                         },
                     },
                     variables: {

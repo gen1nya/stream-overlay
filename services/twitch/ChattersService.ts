@@ -155,14 +155,21 @@ export class ChattersService {
     /**
      * Получение случайного пользователя из чата
      * @param excludeUserId - исключить пользователя по userId (опционально)
+     * @param blacklist - список логинов для исключения (опционально)
      * @returns login случайного пользователя или null
      */
-    getRandomChatter(excludeUserId?: string): string | null {
+    getRandomChatter(excludeUserId?: string, blacklist?: string[]): string | null {
         let chatters = this.getAllChatters();
 
         // Исключаем пользователя если указан excludeUserId
         if (excludeUserId) {
             chatters = chatters.filter(c => c.userId !== excludeUserId);
+        }
+
+        // Исключаем blacklist
+        if (blacklist && blacklist.length > 0) {
+            const lowerBlacklist = blacklist.map(b => b.toLowerCase());
+            chatters = chatters.filter(c => !lowerBlacklist.includes(c.login.toLowerCase()));
         }
 
         if (chatters.length === 0) return null;

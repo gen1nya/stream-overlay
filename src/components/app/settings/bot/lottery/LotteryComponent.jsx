@@ -266,6 +266,18 @@ const DEFAULT_LOTTERY_CONFIG = {
     timerDurationSec: 60,
     requireSubjectInChat: true,
     enforceUniqueSubject: false,
+    subjectBlacklist: [
+        'streamelements',
+        'nightbot',
+        'fossabot',
+        'streamlabs',
+        'wizebot',
+        'moobot',
+        'coebot',
+        'phantombot',
+        'stayhydratedbot',
+        'botisimo'
+    ],
     messages: {
         start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
         warmup: [],
@@ -275,7 +287,8 @@ const DEFAULT_LOTTERY_CONFIG = {
         alreadyRunning: 'Розыгрыш уже идёт! Пиши {{trigger}} чтобы участвовать.',
         cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
         cancelled: 'Розыгрыш {{subject}} отменён.',
-        subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз'
+        subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз',
+        subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша'
     }
 };
 
@@ -714,6 +727,37 @@ export default function LotteryComponent({ botConfig, apply }) {
                                 />
                                 <span>{t('settings.bot.lottery.flow.additional.uniqueSubject')}</span>
                             </EnabledToggle>
+
+                            <div>
+                                <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
+                                    {t('settings.bot.lottery.flow.additional.blacklist')}
+                                </label>
+                                <span style={{ fontSize: '0.8rem', color: '#888', display: 'block', marginBottom: '8px' }}>
+                                    {t('settings.bot.lottery.flow.additional.blacklistHint')}
+                                </span>
+                                <TagInput
+                                    value={(config.subjectBlacklist || []).join(', ')}
+                                    onChange={(value) => {
+                                        const newBlacklist = value
+                                            .split(',')
+                                            .map(s => s.trim().toLowerCase())
+                                            .filter(s => s.length > 0);
+                                        updateConfig(() => ({ subjectBlacklist: newBlacklist }));
+                                    }}
+                                    placeholder={t('settings.bot.lottery.flow.additional.blacklistPlaceholder')}
+                                />
+                            </div>
+
+                            <div>
+                                <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
+                                    {t('settings.bot.lottery.flow.additional.subjectBlacklisted')}
+                                </label>
+                                <MessageInput
+                                    value={config.messages.subjectBlacklisted}
+                                    onChange={(e) => updateMessage('subjectBlacklisted', e.target.value)}
+                                    style={{ minHeight: '60px' }}
+                                />
+                            </div>
 
                             <div>
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>

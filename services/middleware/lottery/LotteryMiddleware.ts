@@ -170,7 +170,8 @@ export class LotteryMiddleware extends Middleware {
         if (!subject) {
             if (this.config.requireSubjectInChat) {
                 // Режим "только чатерсы" - выбираем случайного пользователя из чата
-                const randomChatter = this.chattersService.getRandomChatter(userId); // исключаем инициатора
+                const blacklist = this.config.subjectBlacklist || [];
+                const randomChatter = this.chattersService.getRandomChatter(userId, blacklist); // исключаем инициатора и blacklist
                 if (!randomChatter) {
                     this.log('No chatters available for random selection', userId, userName);
                     return { message, actions: [], accepted: false };
@@ -194,6 +195,19 @@ export class LotteryMiddleware extends Middleware {
         // Проверяем, что пользователь присутствует в чате (если включена опция)
         if (this.config.requireSubjectInChat && !this.chattersService.isUserInChat(subject)) {
             const template = this.config.messages.userNotInChat || '{{subject}} не найден в чате!';
+            const responseMsg = this.applyTemplate(template, {
+                subject: subject
+            });
+            return {
+                message,
+                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                accepted: true
+            };
+        }
+
+        // Проверяем чёрный список
+        if (this.isSubjectBlacklisted(subject)) {
+            const template = this.config.messages.subjectBlacklisted || '{{subject}} в чёрном списке!';
             const responseMsg = this.applyTemplate(template, {
                 subject: subject
             });
@@ -560,6 +574,12 @@ export class LotteryMiddleware extends Middleware {
         }
 
         return result;
+    }
+
+    private isSubjectBlacklisted(subject: string): boolean {
+        const blacklist = this.config.subjectBlacklist || [];
+        const lowerSubject = subject.toLowerCase();
+        return blacklist.some(blocked => blocked.toLowerCase() === lowerSubject);
     }
 
     private log(message: string, userId?: string | null, userName?: string | null): void {

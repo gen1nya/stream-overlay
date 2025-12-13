@@ -155,6 +155,18 @@ export class BotConfigService {
             timerDurationSec: 60,
             requireSubjectInChat: true,
             enforceUniqueSubject: false,
+            subjectBlacklist: [
+                'streamelements',
+                'nightbot',
+                'fossabot',
+                'streamlabs',
+                'wizebot',
+                'moobot',
+                'coebot',
+                'phantombot',
+                'stayhydratedbot',
+                'botisimo'
+            ],
             messages: {
                 start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
                 warmup: [],
