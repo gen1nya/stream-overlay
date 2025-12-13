@@ -18,7 +18,7 @@ export class LotteryRepository {
      * @returns ID созданного розыгрыша
      */
     createDraw(
-        childUser: string,
+        subject: string,
         initiatorId: string,
         initiatorName: string
     ): number {
@@ -30,11 +30,11 @@ export class LotteryRepository {
                     child_user, initiator_id, initiator_name,
                     started_at, ended_at, participant_count, status
                 )
-                VALUES (@childUser, @initiatorId, @initiatorName, @startedAt, 0, 0, 'pending')
+                VALUES (@subject, @initiatorId, @initiatorName, @startedAt, 0, 0, 'pending')
                 `
             )
             .run({
-                childUser,
+                subject,
                 initiatorId,
                 initiatorName,
                 startedAt: now
@@ -103,7 +103,7 @@ export class LotteryRepository {
                 `
                 SELECT
                     id,
-                    child_user AS childUser,
+                    child_user AS subject,
                     initiator_id AS initiatorId,
                     initiator_name AS initiatorName,
                     started_at AS startedAt,
@@ -122,7 +122,7 @@ export class LotteryRepository {
 
         return {
             id: row.id,
-            childUser: row.childUser,
+            subject: row.subject,
             initiatorId: row.initiatorId,
             initiatorName: row.initiatorName,
             startedAt: row.startedAt,
@@ -143,7 +143,7 @@ export class LotteryRepository {
                 `
                 SELECT
                     id,
-                    child_user AS childUser,
+                    child_user AS subject,
                     initiator_id AS initiatorId,
                     initiator_name AS initiatorName,
                     started_at AS startedAt,
@@ -162,7 +162,7 @@ export class LotteryRepository {
 
         return rows.map(row => ({
             id: row.id,
-            childUser: row.childUser,
+            subject: row.subject,
             initiatorId: row.initiatorId,
             initiatorName: row.initiatorName,
             startedAt: row.startedAt,
@@ -174,71 +174,71 @@ export class LotteryRepository {
         }));
     }
 
-    // ==================== USED SUBJECTS (Уникальность child_user) ====================
+    // ==================== USED SUBJECTS (Уникальность subject) ====================
 
     /**
-     * Проверить, был ли child_user уже использован
+     * Проверить, был ли subject уже использован
      */
-    isChildUserUsed(childUser: string): boolean {
+    isSubjectUsed(subject: string): boolean {
         const row = this.db
             .prepare(
                 `
                 SELECT 1 FROM lottery_used_subjects
-                WHERE child_user = @childUser
+                WHERE child_user = @subject
                 `
             )
-            .get({ childUser: childUser.toLowerCase() });
+            .get({ subject: subject.toLowerCase() });
 
         return !!row;
     }
 
     /**
-     * Отметить child_user как использованный
+     * Отметить subject как использованный
      */
-    markChildUserUsed(childUser: string, drawId: number): void {
+    markSubjectUsed(subject: string, drawId: number): void {
         this.db
             .prepare(
                 `
                 INSERT OR IGNORE INTO lottery_used_subjects (child_user, draw_id, used_at)
-                VALUES (@childUser, @drawId, @usedAt)
+                VALUES (@subject, @drawId, @usedAt)
                 `
             )
             .run({
-                childUser: childUser.toLowerCase(),
+                subject: subject.toLowerCase(),
                 drawId,
                 usedAt: Date.now()
             });
     }
 
     /**
-     * Получить список использованных child_user
+     * Получить список использованных subject
      */
-    getUsedChildUsers(limit: number = 100): string[] {
+    getUsedSubjects(limit: number = 100): string[] {
         const rows = this.db
             .prepare(
                 `
-                SELECT child_user FROM lottery_used_subjects
+                SELECT child_user AS subject FROM lottery_used_subjects
                 ORDER BY used_at DESC
                 LIMIT @limit
                 `
             )
             .all({ limit }) as any[];
 
-        return rows.map(row => row.child_user);
+        return rows.map(row => row.subject);
     }
 
     /**
-     * Удалить child_user из использованных (разблокировать)
+     * Удалить subject из использованных (разблокировать)
      */
-    removeUsedChildUser(childUser: string): void {
+    removeUsedSubject(subject: string): void {
         this.db
             .prepare(
                 `
                 DELETE FROM lottery_used_subjects
-                WHERE child_user = @childUser
+                WHERE child_user = @subject
                 `
             )
-            .run({ childUser: childUser.toLowerCase() });
+            .run({ subject: subject.toLowerCase() });
     }
 
     // ==================== STATS (Статистика пользователей) ====================

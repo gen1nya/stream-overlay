@@ -263,16 +263,18 @@ const DEFAULT_LOTTERY_CONFIG = {
     entryTrigger: '+',
     channelPointRewardIds: [],
     timerDurationSec: 60,
-    enforceUniqueChildUser: false,
+    requireSubjectInChat: true,
+    enforceUniqueSubject: false,
     messages: {
-        start: 'Розыгрыш {{child_user}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
+        start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
         warmup: [],
-        winner: 'Победитель: {{winner}}! Поздравляем с {{child_user}}!',
-        noParticipants: 'Никто не захотел участвовать в розыгрыше {{child_user}}',
-        alreadyUsed: '{{child_user}} уже разыгрывался ранее!',
+        winner: 'Победитель: {{winner}}! Поздравляем с {{subject}}!',
+        noParticipants: 'Никто не захотел участвовать в розыгрыше {{subject}}',
+        alreadyUsed: '{{subject}} уже разыгрывался ранее!',
         alreadyRunning: 'Розыгрыш уже идёт! Пиши {{trigger}} чтобы участвовать.',
         cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
-        cancelled: 'Розыгрыш {{child_user}} отменён.'
+        cancelled: 'Розыгрыш {{subject}} отменён.',
+        subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз'
     }
 };
 
@@ -489,7 +491,7 @@ export default function LotteryComponent({ botConfig, apply }) {
                                     placeholder={t('settings.bot.lottery.flow.start.messagePlaceholder')}
                                 />
                                 <VariablesList style={{ marginTop: '8px' }}>
-                                    <VariableItem><span className="var">{'{{child_user}}'}</span><span className="desc">{t('settings.bot.lottery.variables.child_user')}</span></VariableItem>
+                                    <VariableItem><span className="var">{'{{subject}}'}</span><span className="desc">{t('settings.bot.lottery.variables.subject')}</span></VariableItem>
                                     <VariableItem><span className="var">{'{{initiator}}'}</span><span className="desc">{t('settings.bot.lottery.variables.initiator')}</span></VariableItem>
                                     <VariableItem><span className="var">{'{{timer}}'}</span><span className="desc">{t('settings.bot.lottery.variables.timer')}</span></VariableItem>
                                     <VariableItem><span className="var">{'{{trigger}}'}</span><span className="desc">{t('settings.bot.lottery.variables.trigger')}</span></VariableItem>
@@ -667,7 +669,7 @@ export default function LotteryComponent({ botConfig, apply }) {
                             <VariablesList>
                                 <VariableItem><span className="var">{'{{winner}}'}</span><span className="desc">{t('settings.bot.lottery.variables.winner')}</span></VariableItem>
                                 <VariableItem><span className="var">{'{{count}}'}</span><span className="desc">{t('settings.bot.lottery.variables.count')}</span></VariableItem>
-                                <VariableItem><span className="var">{'{{child_user}}'}</span><span className="desc">{t('settings.bot.lottery.variables.child_user')}</span></VariableItem>
+                                <VariableItem><span className="var">{'{{subject}}'}</span><span className="desc">{t('settings.bot.lottery.variables.subject')}</span></VariableItem>
                                 <VariableItem><span className="var">{'{{initiator}}'}</span><span className="desc">{t('settings.bot.lottery.variables.initiator')}</span></VariableItem>
                             </VariablesList>
                         </FlowStepContent>
@@ -684,12 +686,20 @@ export default function LotteryComponent({ botConfig, apply }) {
                             <h4>{t('settings.bot.lottery.flow.additional.title')}</h4>
                         </FlowStepHeader>
                         <FlowStepContent>
-                            <EnabledToggle enabled={config.enforceUniqueChildUser}>
+                            <EnabledToggle enabled={config.requireSubjectInChat}>
                                 <Switch
-                                    checked={config.enforceUniqueChildUser}
-                                    onChange={(e) => updateConfig(() => ({ enforceUniqueChildUser: e.target.checked }))}
+                                    checked={config.requireSubjectInChat}
+                                    onChange={(e) => updateConfig(() => ({ requireSubjectInChat: e.target.checked }))}
                                 />
-                                <span>{t('settings.bot.lottery.flow.additional.uniqueChildUser')}</span>
+                                <span>{t('settings.bot.lottery.flow.additional.requireSubjectInChat')}</span>
+                            </EnabledToggle>
+
+                            <EnabledToggle enabled={config.enforceUniqueSubject}>
+                                <Switch
+                                    checked={config.enforceUniqueSubject}
+                                    onChange={(e) => updateConfig(() => ({ enforceUniqueSubject: e.target.checked }))}
+                                />
+                                <span>{t('settings.bot.lottery.flow.additional.uniqueSubject')}</span>
                             </EnabledToggle>
 
                             <div>
@@ -736,16 +746,31 @@ export default function LotteryComponent({ botConfig, apply }) {
                                 />
                             </div>
 
-                            <div>
-                                <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
-                                    {t('settings.bot.lottery.flow.additional.userNotInChat')}
-                                </label>
-                                <MessageInput
-                                    value={config.messages.userNotInChat}
-                                    onChange={(e) => updateMessage('userNotInChat', e.target.value)}
-                                    style={{ minHeight: '60px' }}
-                                />
-                            </div>
+                            {config.requireSubjectInChat && (
+                                <div>
+                                    <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
+                                        {t('settings.bot.lottery.flow.additional.userNotInChat')}
+                                    </label>
+                                    <MessageInput
+                                        value={config.messages.userNotInChat}
+                                        onChange={(e) => updateMessage('userNotInChat', e.target.value)}
+                                        style={{ minHeight: '60px' }}
+                                    />
+                                </div>
+                            )}
+
+                            {!config.requireSubjectInChat && (
+                                <div>
+                                    <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
+                                        {t('settings.bot.lottery.flow.additional.subjectRequired')}
+                                    </label>
+                                    <MessageInput
+                                        value={config.messages.subjectRequired}
+                                        onChange={(e) => updateMessage('subjectRequired', e.target.value)}
+                                        style={{ minHeight: '60px' }}
+                                    />
+                                </div>
+                            )}
                         </FlowStepContent>
                     </FlowStep>
                 </CardContent>

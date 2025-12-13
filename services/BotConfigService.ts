@@ -152,17 +152,19 @@ export class BotConfigService {
             entryTrigger: '+',
             channelPointRewardIds: [],
             timerDurationSec: 60,
-            enforceUniqueChildUser: false,
+            requireSubjectInChat: true,
+            enforceUniqueSubject: false,
             messages: {
-                start: 'Розыгрыш {{child_user}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
+                start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
                 warmup: [],
-                winner: 'Победитель: {{winner}}! Поздравляем с {{child_user}}!',
-                noParticipants: 'Никто не захотел участвовать в розыгрыше {{child_user}}',
-                alreadyUsed: '{{child_user}} уже разыгрывался ранее!',
+                winner: 'Победитель: {{winner}}! Поздравляем с {{subject}}!',
+                noParticipants: 'Никто не захотел участвовать в розыгрыше {{subject}}',
+                alreadyUsed: '{{subject}} уже разыгрывался ранее!',
                 alreadyRunning: 'Розыгрыш уже идёт! Пиши {{trigger}} чтобы участвовать.',
                 cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
-                cancelled: 'Розыгрыш {{child_user}} отменён.',
-                userNotInChat: '{{child_user}} не найден в чате!'
+                cancelled: 'Розыгрыш {{subject}} отменён.',
+                userNotInChat: '{{subject}} не найден в чате!',
+                subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз'
             }
         }
     }
@@ -180,6 +182,7 @@ export class BotConfigService {
             configs['default'] = this.bot;
             this.appStorage.set('bots', configs);
         }
+
         const currentBot = configs[name] || configs['default'];
         if (currentBot) {
             onConfigurationChanged(currentBot);

@@ -154,11 +154,21 @@ export class ChattersService {
 
     /**
      * Получение случайного пользователя из чата
+     * @param excludeUserId - исключить пользователя по userId (опционально)
+     * @returns login случайного пользователя или null
      */
-    getRandomChatter(): ChatterInfo | null {
-        const chatters = this.getAllChatters();
+    getRandomChatter(excludeUserId?: string): string | null {
+        let chatters = this.getAllChatters();
+
+        // Исключаем пользователя если указан excludeUserId
+        if (excludeUserId) {
+            chatters = chatters.filter(c => c.userId !== excludeUserId);
+        }
+
         if (chatters.length === 0) return null;
-        return chatters[Math.floor(Math.random() * chatters.length)];
+
+        const randomChatter = chatters[Math.floor(Math.random() * chatters.length)];
+        return randomChatter.login;
     }
 
     /**

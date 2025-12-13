@@ -19,7 +19,7 @@ import { ChattersService } from '../../twitch/ChattersService';
  * Middleware для системы розыгрышей (лотереи)
  *
  * Флоу:
- * 1. Пользователь запускает розыгрыш командой !розыгрыш @child_user
+ * 1. Пользователь запускает розыгрыш командой !розыгрыш @subject
  * 2. Таймер запускается, участники могут войти через чат (+) или баллы канала
  * 3. Во время таймера срабатывают warmup сообщения (по времени/количеству)
  * 4. По завершению выбирается случайный победитель
@@ -161,18 +161,39 @@ export class LotteryMiddleware extends Middleware {
             return { message, actions: [], accepted: false };
         }
 
-        // Извлекаем child_user из команды
-        const childUser = this.extractChildUser(text);
-        if (!childUser) {
-            this.log('Start command without child_user', userId, userName);
-            return { message, actions: [], accepted: false };
+        // Извлекаем subject из команды
+        let subject = this.extractSubject(text);
+
+        // Если subject не указан
+        if (!subject) {
+            if (this.config.requireSubjectInChat) {
+                // Режим "только чатерсы" - выбираем случайного пользователя из чата
+                const randomChatter = this.chattersService.getRandomChatter(userId); // исключаем инициатора
+                if (!randomChatter) {
+                    this.log('No chatters available for random selection', userId, userName);
+                    return { message, actions: [], accepted: false };
+                }
+                subject = randomChatter;
+                this.log(`Random chatter selected: ${subject}`, userId, userName);
+            } else {
+                // Режим "что угодно" - просим указать предмет
+                const template = this.config.messages.subjectRequired || 'Укажите предмет розыгрыша! Пример: {{command}} приз';
+                const responseMsg = this.applyTemplate(template, {
+                    command: this.config.command
+                });
+                return {
+                    message,
+                    actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                    accepted: true
+                };
+            }
         }
 
-        // Проверяем, что пользователь присутствует в чате
-        if (!this.chattersService.isUserInChat(childUser)) {
-            const template = this.config.messages.userNotInChat || '{{child_user}} не найден в чате!';
+        // Проверяем, что пользователь присутствует в чате (если включена опция)
+        if (this.config.requireSubjectInChat && !this.chattersService.isUserInChat(subject)) {
+            const template = this.config.messages.userNotInChat || '{{subject}} не найден в чате!';
             const responseMsg = this.applyTemplate(template, {
-                child_user: childUser
+                subject: subject
             });
             return {
                 message,
@@ -184,7 +205,7 @@ export class LotteryMiddleware extends Middleware {
         // Проверяем, есть ли уже активная лотерея
         if (this.activeLottery) {
             const responseMsg = this.applyTemplate(this.config.messages.alreadyRunning, {
-                child_user: this.activeLottery.childUser,
+                subject: this.activeLottery.subject,
                 trigger: this.config.entryTrigger
             });
             return {
@@ -209,12 +230,12 @@ export class LotteryMiddleware extends Middleware {
             };
         }
 
-        // Проверяем уникальность child_user
-        if (this.config.enforceUniqueChildUser && this.userId) {
+        // Проверяем уникальность subject
+        if (this.config.enforceUniqueSubject && this.userId) {
             const db = DbRepository.getInstance(this.userId);
-            if (db.lottery.isChildUserUsed(childUser)) {
+            if (db.lottery.isSubjectUsed(subject)) {
                 const responseMsg = this.applyTemplate(this.config.messages.alreadyUsed, {
-                    child_user: childUser
+                    subject: subject
                 });
                 return {
                     message,
@@ -225,7 +246,7 @@ export class LotteryMiddleware extends Middleware {
         }
 
         // Запускаем лотерею
-        const actions = this.startLottery(childUser, userId, userName);
+        const actions = this.startLottery(subject, userId, userName);
 
         return { message, actions, accepted: true };
     }
@@ -270,20 +291,20 @@ export class LotteryMiddleware extends Middleware {
 
     // ==================== Логика лотереи ====================
 
-    private extractChildUser(text: string): string | null {
+    private extractSubject(text: string): string | null {
         // Формат: !розыгрыш @username или !розыгрыш username
         const parts = text.split(/\s+/);
         if (parts.length < 2) return null;
 
-        let childUser = parts.slice(1).join(' ').trim();
+        let subject = parts.slice(1).join(' ').trim();
         // Убираем @ если есть
-        if (childUser.startsWith('@')) {
-            childUser = childUser.substring(1);
+        if (subject.startsWith('@')) {
+            subject = subject.substring(1);
         }
-        return childUser || null;
+        return subject || null;
     }
 
-    private startLottery(childUser: string, initiatorId: string, initiatorName: string): any[] {
+    private startLottery(subject: string, initiatorId: string, initiatorName: string): any[] {
         const now = Date.now();
         const endsAt = now + (this.config.timerDurationSec * 1000);
 
@@ -291,7 +312,7 @@ export class LotteryMiddleware extends Middleware {
         let drawId = 0;
         if (this.userId) {
             const db = DbRepository.getInstance(this.userId);
-            drawId = db.lottery.createDraw(childUser, initiatorId, initiatorName);
+            drawId = db.lottery.createDraw(subject, initiatorId, initiatorName);
             db.lottery.updateStats(initiatorId, initiatorName, 'initiated');
         }
 
@@ -304,7 +325,7 @@ export class LotteryMiddleware extends Middleware {
         // Инициализируем активную лотерею
         this.activeLottery = {
             id: drawId,
-            childUser,
+            subject,
             initiatorId,
             initiatorName,
             startedAt: now,
@@ -329,11 +350,11 @@ export class LotteryMiddleware extends Middleware {
             }
         }
 
-        this.log(`Lottery started for "${childUser}" by ${initiatorName}`, initiatorId, initiatorName);
+        this.log(`Lottery started for "${subject}" by ${initiatorName}`, initiatorId, initiatorName);
 
         // Отправляем стартовое сообщение
         const startMsg = this.applyTemplate(this.config.messages.start, {
-            child_user: childUser,
+            subject: subject,
             initiator: initiatorName,
             timer: this.config.timerDurationSec,
             trigger: this.config.entryTrigger
@@ -375,7 +396,7 @@ export class LotteryMiddleware extends Middleware {
             if (trigger.type === 'count' && !trigger.fired && count >= trigger.value) {
                 trigger.fired = true;
                 const msg = this.applyTemplate(trigger.message, {
-                    child_user: this.activeLottery.childUser,
+                    subject: this.activeLottery.subject,
                     count,
                     initiator: this.activeLottery.initiatorName
                 });
@@ -394,7 +415,7 @@ export class LotteryMiddleware extends Middleware {
         const remainingTime = Math.max(0, Math.ceil((this.activeLottery.endsAt - Date.now()) / 1000));
 
         const msg = this.applyTemplate(trigger.message, {
-            child_user: this.activeLottery.childUser,
+            subject: this.activeLottery.subject,
             count,
             timer: remainingTime,
             initiator: this.activeLottery.initiatorName
@@ -424,7 +445,7 @@ export class LotteryMiddleware extends Middleware {
             winnerName = winner.userName;
 
             resultMsg = this.applyTemplate(this.config.messages.winner, {
-                child_user: lottery.childUser,
+                subject: lottery.subject,
                 winner: winnerName,
                 count: participantCount,
                 initiator: lottery.initiatorName
@@ -439,7 +460,7 @@ export class LotteryMiddleware extends Middleware {
             this.log(`Lottery ended. Winner: ${winnerName}`, winnerId, winnerName);
         } else {
             resultMsg = this.applyTemplate(this.config.messages.noParticipants, {
-                child_user: lottery.childUser,
+                subject: lottery.subject,
                 count: 0,
                 initiator: lottery.initiatorName
             });
@@ -452,9 +473,9 @@ export class LotteryMiddleware extends Middleware {
             const db = DbRepository.getInstance(this.userId);
             db.lottery.completeDraw(lottery.id, winnerId, winnerName, participantCount);
 
-            // Отмечаем child_user как использованный (если включено)
-            if (this.config.enforceUniqueChildUser && winnerId) {
-                db.lottery.markChildUserUsed(lottery.childUser, lottery.id);
+            // Отмечаем subject как использованный (если включено)
+            if (this.config.enforceUniqueSubject && winnerId) {
+                db.lottery.markSubjectUsed(lottery.subject, lottery.id);
             }
         }
 
@@ -481,12 +502,12 @@ export class LotteryMiddleware extends Middleware {
         }
 
         const cancelMsg = this.applyTemplate(this.config.messages.cancelled, {
-            child_user: lottery.childUser,
+            subject: lottery.subject,
             initiator: lottery.initiatorName,
             count: lottery.entries.size
         });
 
-        this.log(`Lottery cancelled for "${lottery.childUser}"`);
+        this.log(`Lottery cancelled for "${lottery.subject}"`);
 
         // Очищаем состояние
         this.clearTimers();
@@ -508,8 +529,11 @@ export class LotteryMiddleware extends Middleware {
     private applyTemplate(template: string, vars: LotteryTemplateVars): string {
         let result = template;
 
-        if (vars.child_user !== undefined) {
-            result = result.replace(/\{\{child_user\}\}/g, vars.child_user);
+        if (vars.subject !== undefined) {
+            result = result.replace(/\{\{subject\}\}/g, vars.subject);
+        }
+        if (vars.command !== undefined) {
+            result = result.replace(/\{\{command\}\}/g, vars.command);
         }
         if (vars.initiator !== undefined) {
             result = result.replace(/\{\{initiator\}\}/g, vars.initiator);

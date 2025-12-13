@@ -18,15 +18,16 @@ export interface WarmupTriggerState extends WarmupTrigger {
 
 /** Конфигурация сообщений лотереи */
 export interface LotteryMessages {
-    start: string;           // "Розыгрыш {{child_user}} начат!"
+    start: string;           // "Розыгрыш {{subject}} начат!"
     warmup: WarmupTrigger[]; // разогревающие сообщения
     winner: string;          // "Победитель: {{winner}}!"
     noParticipants: string;  // "Никто не участвовал"
-    alreadyUsed: string;     // "{{child_user}} уже разыгрывался!"
+    alreadyUsed: string;     // "{{subject}} уже разыгрывался!"
     alreadyRunning: string;  // "Розыгрыш уже идёт!"
     cooldown: string;        // "Подожди {{cooldown}} сек"
     cancelled: string;       // "Розыгрыш отменён"
-    userNotInChat: string;   // "{{child_user}} не найден в чате!"
+    userNotInChat: string;   // "{{subject}} не найден в чате!"
+    subjectRequired: string; // "Укажите предмет розыгрыша!"
 }
 
 /** Конфигурация бота лотереи (для store) */
@@ -45,8 +46,11 @@ export interface LotteryBotConfig {
     // Таймер
     timerDurationSec: number;          // длительность приёма заявок
 
-    // Уникальность child_user
-    enforceUniqueChildUser: boolean;
+    // Валидация subject
+    requireSubjectInChat: boolean;     // требовать, чтобы subject был в чате
+
+    // Уникальность subject
+    enforceUniqueSubject: boolean;
 
     // Сообщения
     messages: LotteryMessages;
@@ -63,7 +67,7 @@ export interface LotteryEntry {
 /** Активная лотерея (runtime state) */
 export interface ActiveLottery {
     id: number;                              // ID в БД
-    childUser: string;                       // контекст розыгрыша (@username)
+    subject: string;                         // предмет розыгрыша (@username)
     initiatorId: string;
     initiatorName: string;
     startedAt: number;
@@ -75,7 +79,7 @@ export interface ActiveLottery {
 /** Запись о розыгрыше в БД */
 export interface LotteryDraw {
     id: number;
-    childUser: string;
+    subject: string;
     initiatorId: string;
     initiatorName: string;
     startedAt: number;
@@ -99,8 +103,9 @@ export interface LotteryStats {
 
 /** Переменные для подстановки в шаблоны */
 export interface LotteryTemplateVars {
-    child_user?: string;
+    subject?: string;
     initiator?: string;
+    command?: string;
     winner?: string;
     count?: number;
     timer?: number;
@@ -118,16 +123,18 @@ export const DEFAULT_LOTTERY_CONFIG: LotteryBotConfig = {
     entryTrigger: '+',
     channelPointRewardIds: [],
     timerDurationSec: 60,
-    enforceUniqueChildUser: false,
+    requireSubjectInChat: true,
+    enforceUniqueSubject: false,
     messages: {
-        start: 'Розыгрыш {{child_user}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
+        start: 'Розыгрыш {{subject}} начат! Пиши {{trigger}} чтобы участвовать! Осталось {{timer}} сек.',
         warmup: [],
-        winner: 'Победитель: {{winner}}! Поздравляем с {{child_user}}!',
-        noParticipants: 'Никто не захотел участвовать в розыгрыше {{child_user}}',
-        alreadyUsed: '{{child_user}} уже разыгрывался ранее!',
+        winner: 'Победитель: {{winner}}! Поздравляем с {{subject}}!',
+        noParticipants: 'Никто не захотел участвовать в розыгрыше {{subject}}',
+        alreadyUsed: '{{subject}} уже разыгрывался ранее!',
         alreadyRunning: 'Розыгрыш уже идёт! Пиши {{trigger}} чтобы участвовать.',
         cooldown: 'Подожди ещё {{cooldown}} сек перед следующим розыгрышем.',
-        cancelled: 'Розыгрыш {{child_user}} отменён.',
-        userNotInChat: '{{child_user}} не найден в чате!'
+        cancelled: 'Розыгрыш {{subject}} отменён.',
+        userNotInChat: '{{subject}} не найден в чате!',
+        subjectRequired: 'Укажите предмет розыгрыша! Пример: {{command}} приз'
     }
 };
