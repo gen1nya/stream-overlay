@@ -8,25 +8,14 @@ import {
     FiChevronDown, FiPlus, FiTrash2, FiSettings,
     FiAward, FiSlash, FiRefreshCw, FiDatabase
 } from 'react-icons/fi';
-import {
-    CardContent,
-    CardTitle,
-    Section,
-    SectionHeader,
-    SectionTitle,
-    SettingsCard
-} from "../../SharedSettingsStyles";
 import { Spacer } from "../../../../utils/Separator";
 import { Row } from "../../../SettingsComponent";
 import {
     AddButton,
-    StaticCardHeader,
-    HelpButton,
     HelpInfoPopup,
     EnabledToggle,
     ParameterCard,
     ParameterTitle,
-    StatusBadge,
     VariableItem,
     VariablesList
 } from "../SharedBotStyles";
@@ -303,12 +292,11 @@ const DEFAULT_LOTTERY_CONFIG = {
     }
 };
 
-export default function LotteryComponent({ botConfig, apply }) {
+export default function LotteryComponent({ botConfig, apply, showHelp, setShowHelp }) {
     const { t } = useTranslation();
     const [rewards, setRewards] = useState([]);
     const [loadingRewards, setLoadingRewards] = useState(false);
     const [showHistoryPopup, setShowHistoryPopup] = useState(false);
-    const [showHelp, setShowHelp] = useState(false);
 
     // Merge with defaults
     const config = {
@@ -319,8 +307,6 @@ export default function LotteryComponent({ botConfig, apply }) {
             ...botConfig?.lottery?.messages
         }
     };
-
-    const enabled = config.enabled;
 
     useEffect(() => {
         loadRewards();
@@ -433,36 +419,7 @@ export default function LotteryComponent({ botConfig, apply }) {
                 <p>{t('settings.bot.lottery.preview')}</p>
             </HelpInfoPopup>
 
-            <SettingsCard>
-            <StaticCardHeader>
-                <Row gap="12px">
-                    <EnabledToggle enabled={enabled}>
-                        <Switch
-                            checked={enabled}
-                            onChange={(e) => {
-                                updateConfig(() => ({ enabled: e.target.checked }));
-                            }}
-                        />
-                        <StatusBadge enabled={enabled}>
-                            {enabled
-                                ? t('settings.bot.shared.status.enabled')
-                                : t('settings.bot.shared.status.disabled')}
-                        </StatusBadge>
-                    </EnabledToggle>
-
-                    <CardTitle>
-                        <FiGift />
-                        {t('settings.bot.lottery.title')}
-                    </CardTitle>
-
-                    <Spacer />
-
-                    <HelpButton onClick={() => setShowHelp(true)} />
-                </Row>
-            </StaticCardHeader>
-
-            <CardContent>
-                    {/* STEP 1: START */}
+            {/* STEP 1: START */}
                     <FlowStep>
                         <FlowStepHeader $color="rgba(100, 108, 255, 0.1)" $iconColor="#646cff">
                             <FiPlay />
@@ -895,8 +852,6 @@ export default function LotteryComponent({ botConfig, apply }) {
                             )}
                         </FlowStepContent>
                     </FlowStep>
-                </CardContent>
-        </SettingsCard>
         </>
     );
 }

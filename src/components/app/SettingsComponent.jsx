@@ -29,7 +29,8 @@ import {
     FiYoutube,
     FiAlertCircle,
     FiTarget,
-    FiLayout
+    FiLayout,
+    FiGift
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -54,6 +55,9 @@ import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
+import Switch from "../utils/Switch";
+import { EnabledToggle, StatusBadge, HelpButton, HelpInfoPopup } from "./settings/bot/SharedBotStyles";
+import { Spacer } from "../utils/Separator";
 
 const Panel = styled.div`
     position: fixed;
@@ -196,6 +200,16 @@ export const Row = styled.div`
     gap: ${({gap = "0.5rem"}) => gap};
 `;
 
+// Wrapper for bot page content (replaces CardContent styles)
+const BotPageContent = styled.div`
+    width: 100%;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    box-sizing: border-box;
+`;
+
 export default function Settings() {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -244,6 +258,42 @@ export default function Settings() {
 
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
+    const [showBotHelp, setShowBotHelp] = useState(false);
+
+    // Helper to check if current page is a bot page
+    const isBotPage = activePage.startsWith('bot_');
+
+    // Get bot enabled state based on active page
+    const getBotEnabled = () => {
+        if (!botConfig) return false;
+        switch (activePage) {
+            case 'bot_pingpong': return botConfig.pingpong?.enabled ?? false;
+            case 'bot_roulette': return botConfig.roulette?.enabled ?? false;
+            case 'bot_gacha': return botConfig.gacha?.enabled ?? false;
+            case 'bot_lottery': return botConfig.lottery?.enabled ?? false;
+            default: return false;
+        }
+    };
+
+    // Toggle bot enabled state
+    const toggleBotEnabled = (newState) => {
+        switch (activePage) {
+            case 'bot_pingpong':
+                applyBotConfig(prev => ({ ...prev, pingpong: { ...prev.pingpong, enabled: newState } }));
+                break;
+            case 'bot_roulette':
+                applyBotConfig(prev => ({ ...prev, roulette: { ...prev.roulette, enabled: newState } }));
+                break;
+            case 'bot_gacha':
+                applyBotConfig(prev => ({ ...prev, gacha: { ...prev.gacha, enabled: newState } }));
+                break;
+            case 'bot_lottery':
+                applyBotConfig(prev => ({ ...prev, lottery: { ...prev.lottery, enabled: newState } }));
+                break;
+        }
+    };
+
+    const botEnabled = getBotEnabled();
 
     const [colorPopup, setColorPopup] = useState({
         open: false,
@@ -383,10 +433,35 @@ export default function Settings() {
 
                 <MainContainer>
                     <ContentHeader>
-                        <PageTitle>
-                            {currentPageInfo.icon}
-                            {currentPageInfo.title}
-                        </PageTitle>
+                        {isBotPage && botConfig ? (
+                            <Row gap="12px" style={{ flex: 1 }}>
+                                <EnabledToggle enabled={botEnabled}>
+                                    <Switch
+                                        checked={botEnabled}
+                                        onChange={(e) => toggleBotEnabled(e.target.checked)}
+                                    />
+                                    <StatusBadge enabled={botEnabled}>
+                                        {botEnabled
+                                            ? t('settings.bot.shared.status.enabled')
+                                            : t('settings.bot.shared.status.disabled')}
+                                    </StatusBadge>
+                                </EnabledToggle>
+
+                                <PageTitle style={{ margin: 0 }}>
+                                    {currentPageInfo.icon}
+                                    {currentPageInfo.title}
+                                </PageTitle>
+
+                                <Spacer />
+
+                                <HelpButton onClick={() => setShowBotHelp(true)} />
+                            </Row>
+                        ) : (
+                            <PageTitle>
+                                {currentPageInfo.icon}
+                                {currentPageInfo.title}
+                            </PageTitle>
+                        )}
                     </ContentHeader>
 
                     <MainContent
@@ -397,6 +472,8 @@ export default function Settings() {
                         botName={botName}
                         openColorPopup={openColorPopup}
                         applyBotConfig={applyBotConfig}
+                        showBotHelp={showBotHelp}
+                        setShowBotHelp={setShowBotHelp}
                     />
                 </MainContainer>
             </ContentWrapper>
@@ -404,7 +481,7 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig}) => {
+const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp}) => {
     const { t } = useTranslation();
     switch (page) {
         case "general":
@@ -523,10 +600,14 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     {botConfig ? (
-                        <PingPongComponent
-                            apply={applyBotConfig}
-                            botConfig={botConfig}
-                        />
+                        <BotPageContent>
+                            <PingPongComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>
@@ -545,10 +626,14 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     {botConfig ? (
-                        <Roulette
-                            botConfig={botConfig}
-                            apply={applyBotConfig}
-                        />
+                        <BotPageContent>
+                            <Roulette
+                                botConfig={botConfig}
+                                apply={applyBotConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>
@@ -567,10 +652,14 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     {botConfig ? (
-                        <GachaComponent
-                            apply={applyBotConfig}
-                            gachaConfig={botConfig.gacha}
-                        />
+                        <BotPageContent>
+                            <GachaComponent
+                                apply={applyBotConfig}
+                                gachaConfig={botConfig.gacha}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>
@@ -589,10 +678,14 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     {botConfig ? (
-                        <LotteryComponent
-                            apply={applyBotConfig}
-                            botConfig={botConfig}
-                        />
+                        <BotPageContent>
+                            <LotteryComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
                     ) : (
                         <NoConfigCard>
                             <FiAlertCircle/>

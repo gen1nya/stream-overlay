@@ -1,41 +1,27 @@
 import React, {useState, useCallback, useEffect} from 'react';
-import Switch from '../../../../utils/Switch';
 import PingPongActionEditorComponent from './PingPongActionEditorComponent';
 import {FiMessageCircle, FiPlus, FiSettings, FiInfo} from 'react-icons/fi';
 import {
-    CardContent,
-    CardTitle,
     Section,
     SectionHeader,
-    SectionTitle,
-    SettingsCard
+    SectionTitle
 } from "../../SharedSettingsStyles";
-import {Row} from "../../../SettingsComponent";
-import {Spacer} from "../../../../utils/Separator";
 import {
     AddButton,
     AddCommandForm,
-    StaticCardHeader,
-    HelpButton,
     HelpInfoPopup,
-    EnabledToggle, ErrorText, FormRow, NameInput,
-    StatusBadge, VariableItem,
+    ErrorText, FormRow, NameInput,
+    VariableItem,
     VariablesList
 } from "../SharedBotStyles";
 import { useTranslation, Trans } from 'react-i18next';
 
 
-export default function PingPongComponent({ botConfig, apply }) {
+export default function PingPongComponent({ botConfig, apply, showHelp, setShowHelp }) {
     const { t } = useTranslation();
     const [config, setConfig] = useState(botConfig);
-    const [enabled, setEnabled] = useState(config.pingpong.enabled);
     const [name, setName] = useState('');
     const [nameError, setNameError] = useState('');
-    const [showHelp, setShowHelp] = useState(false);
-
-    useEffect(() => {
-        setEnabled(config.pingpong.enabled);
-    }, [config.pingpong.enabled]);
 
     useEffect(() => {
         if (botConfig) {setConfig(botConfig);}
@@ -100,7 +86,7 @@ export default function PingPongComponent({ botConfig, apply }) {
     };
 
     return (
-        <SettingsCard>
+        <>
             <HelpInfoPopup
                 isOpen={showHelp}
                 onClose={() => setShowHelp(false)}
@@ -116,106 +102,75 @@ export default function PingPongComponent({ botConfig, apply }) {
                 />
             </HelpInfoPopup>
 
-            <StaticCardHeader>
-                <Row gap="12px">
-                    <EnabledToggle enabled={enabled}>
-                        <Switch
-                            checked={enabled}
+            {/* Информация о переменных */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiInfo />
+                        {t('settings.bot.pingpong.sections.variables')}
+                    </SectionTitle>
+                </SectionHeader>
+
+                <VariablesList>
+                    <VariableItem>
+                        <span className="var">${'{user}'}</span>
+                        <span className="desc">{t('settings.bot.pingpong.variables.user')}</span>
+                    </VariableItem>
+                    <VariableItem>
+                        <span className="var">${'{last_message}'}</span>
+                        <span className="desc">{t('settings.bot.pingpong.variables.lastMessage')}</span>
+                    </VariableItem>
+                    <VariableItem>
+                        <span className="var">${'{random(1000,9999)}'}</span>
+                        <span className="desc">{t('settings.bot.pingpong.variables.random')}</span>
+                    </VariableItem>
+                </VariablesList>
+            </Section>
+
+            {/* Добавление новой команды */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiPlus />
+                        {t('settings.bot.pingpong.sections.addCommand')}
+                    </SectionTitle>
+                </SectionHeader>
+
+                <AddCommandForm>
+                    <FormRow>
+                        <NameInput
+                            placeholder={t('settings.bot.pingpong.placeholders.commandName')}
+                            value={name}
+                            $error={!!nameError}
                             onChange={(e) => {
-                                const newState = e.target.checked;
-                                setEnabled(newState);
-                                updatePingPongConfig(() => ({ enabled: newState }));
+                                setNameError('');
+                                setName(e.target.value);
                             }}
+                            onKeyPress={handleKeyPress}
                         />
-                        <StatusBadge enabled={enabled}>
-                            {enabled
-                                ? t('settings.bot.shared.status.enabled')
-                                : t('settings.bot.shared.status.disabled')}
-                        </StatusBadge>
-                    </EnabledToggle>
+                        <AddButton onClick={addCommand}>
+                            <FiPlus />
+                            {t('settings.bot.pingpong.actions.addCommand')}
+                        </AddButton>
+                    </FormRow>
+                    {nameError && <ErrorText>{nameError}</ErrorText>}
+                </AddCommandForm>
+            </Section>
 
-                    <CardTitle>
-                        <FiMessageCircle />
-                        {t('settings.bot.pingpong.title')}
-                    </CardTitle>
+            {/* Редактор существующих команд */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiSettings />
+                        {t('settings.bot.pingpong.sections.manageCommands')}
+                    </SectionTitle>
+                </SectionHeader>
 
-                    <Spacer />
-
-                    <HelpButton onClick={() => setShowHelp(true)} />
-                </Row>
-            </StaticCardHeader>
-
-            <CardContent>
-                    {/* Информация о переменных */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiInfo />
-                                {t('settings.bot.pingpong.sections.variables')}
-                            </SectionTitle>
-                        </SectionHeader>
-
-                        <VariablesList>
-                            <VariableItem>
-                                <span className="var">${'{user}'}</span>
-                                <span className="desc">{t('settings.bot.pingpong.variables.user')}</span>
-                            </VariableItem>
-                            <VariableItem>
-                                <span className="var">${'{last_message}'}</span>
-                                <span className="desc">{t('settings.bot.pingpong.variables.lastMessage')}</span>
-                            </VariableItem>
-                            <VariableItem>
-                                <span className="var">${'{random(1000,9999)}'}</span>
-                                <span className="desc">{t('settings.bot.pingpong.variables.random')}</span>
-                            </VariableItem>
-                        </VariablesList>
-                    </Section>
-
-                    {/* Добавление новой команды */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiPlus />
-                                {t('settings.bot.pingpong.sections.addCommand')}
-                            </SectionTitle>
-                        </SectionHeader>
-
-                        <AddCommandForm>
-                            <FormRow>
-                                <NameInput
-                                    placeholder={t('settings.bot.pingpong.placeholders.commandName')}
-                                    value={name}
-                                    $error={!!nameError}
-                                    onChange={(e) => {
-                                        setNameError('');
-                                        setName(e.target.value);
-                                    }}
-                                    onKeyPress={handleKeyPress}
-                                />
-                                <AddButton onClick={addCommand}>
-                                    <FiPlus />
-                                    {t('settings.bot.pingpong.actions.addCommand')}
-                                </AddButton>
-                            </FormRow>
-                            {nameError && <ErrorText>{nameError}</ErrorText>}
-                        </AddCommandForm>
-                    </Section>
-
-                    {/* Редактор существующих команд */}
-                    <Section>
-                        <SectionHeader>
-                            <SectionTitle>
-                                <FiSettings />
-                                {t('settings.bot.pingpong.sections.manageCommands')}
-                            </SectionTitle>
-                        </SectionHeader>
-
-                        <PingPongActionEditorComponent
-                            botConfig={botConfig}
-                            apply={apply}
-                        />
-                    </Section>
-                </CardContent>
-        </SettingsCard>
+                <PingPongActionEditorComponent
+                    botConfig={botConfig}
+                    apply={apply}
+                />
+            </Section>
+        </>
     );
 }

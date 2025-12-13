@@ -1,25 +1,17 @@
 import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
-import Switch from '../../../../utils/Switch';
 import {
     FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap
 } from 'react-icons/fi';
 import {
-    CardContent,
-    CardTitle,
     Section,
     SectionHeader,
-    SectionTitle,
-    SettingsCard,
+    SectionTitle
 } from "../../SharedSettingsStyles";
 import {Row} from "../../../SettingsComponent";
 import {Spacer} from "../../../../utils/Separator";
 import {
-    StaticCardHeader,
-    HelpButton,
-    HelpInfoPopup,
-    EnabledToggle,
-    StatusBadge,
+    HelpInfoPopup
 } from "../SharedBotStyles";
 import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
@@ -118,7 +110,7 @@ const createDefaultConfig = (defaultBannerName) => ({
     triggers: []
 });
 
-export default function GachaComponent({gachaConfig, apply}) {
+export default function GachaComponent({gachaConfig, apply, showHelp, setShowHelp}) {
 
     const {t} = useTranslation();
 
@@ -140,13 +132,7 @@ export default function GachaComponent({gachaConfig, apply}) {
             return gachaConfig
         }
     });
-    const [enabled, setEnabled] = useState(config.enabled);
     const [showUsersPopup, setShowUsersPopup] = useState(false);
-    const [showHelp, setShowHelp] = useState(false);
-
-    useEffect(() => {
-        setEnabled(config.enabled ?? false);
-    }, [config.enabled]);
 
     useEffect(() => {
         if (gachaConfig) {
@@ -220,123 +206,90 @@ export default function GachaComponent({gachaConfig, apply}) {
                 </StatsGrid>
             </HelpInfoPopup>
 
-            <SettingsCard>
-                <StaticCardHeader>
-                    <Row gap="12px">
-                        <EnabledToggle enabled={enabled}>
-                            <Switch
-                                checked={enabled}
-                                onChange={(e) => {
-                                    const newState = e.target.checked;
-                                    setEnabled(newState);
-                                    updateGachaConfig({enabled: newState});
-                                }}
-                            />
-                            <StatusBadge enabled={enabled}>
-                                {enabled ? t('settings.bot.shared.status.enabled') : t('settings.bot.shared.status.disabled')}
-                            </StatusBadge>
-                        </EnabledToggle>
+            {/* Информация о системе */}
+            <Section>
+                <InfoCard>
+                    <InfoTitle>
+                        <FiInfo/>
+                        {t('settings.bot.gacha.component.info.title')}
+                    </InfoTitle>
+                    <InfoText>
+                        {t('settings.bot.gacha.component.info.description')}
+                        {Array.isArray(infoDetails) && infoDetails.map((detail, index) => (
+                            <React.Fragment key={detail.title || index}>
+                                <br/>• <strong>{detail.title}</strong>: {detail.text}
+                            </React.Fragment>
+                        ))}
+                    </InfoText>
+                </InfoCard>
+            </Section>
 
-                        <CardTitle>
-                            <FiGift/>
-                            {t('settings.bot.gacha.component.title')}
-                        </CardTitle>
+            <Row>
+                <ActionButton
+                    className={"secondary"}
+                    onClick={() => setShowUsersPopup(true)}
+                >
+                    {t('settings.bot.gacha.component.actions.manageUsers')}
+                </ActionButton>
+                <Spacer/>
+            </Row>
 
-                        <Spacer/>
+            {/* Настройки баннера */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiStar/>
+                        {t('settings.bot.gacha.component.sections.banner')}
+                    </SectionTitle>
+                </SectionHeader>
+                <BannerSettingsEditor
+                    banner={config.banner}
+                    items={config.items}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
 
-                        <HelpButton onClick={() => setShowHelp(true)} />
-                    </Row>
-                </StaticCardHeader>
+            {/* Управление предметами */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiPackage/>
+                        {t('settings.bot.gacha.component.sections.items')}
+                    </SectionTitle>
+                </SectionHeader>
+                <ItemsManager
+                    items={config.items}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
 
-                <CardContent>
-                        {/* Информация о системе */}
-                        <Section>
-                            <InfoCard>
-                                <InfoTitle>
-                                    <FiInfo/>
-                                    {t('settings.bot.gacha.component.info.title')}
-                                </InfoTitle>
-                                <InfoText>
-                                    {t('settings.bot.gacha.component.info.description')}
-                                    {Array.isArray(infoDetails) && infoDetails.map((detail, index) => (
-                                        <React.Fragment key={detail.title || index}>
-                                            <br/>• <strong>{detail.title}</strong>: {detail.text}
-                                        </React.Fragment>
-                                    ))}
-                                </InfoText>
-                            </InfoCard>
-                        </Section>
+            {/* Триггеры (Twitch награды) */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiGift/>
+                        {t('settings.bot.gacha.component.sections.triggers')}
+                    </SectionTitle>
+                </SectionHeader>
+                <TriggersManager
+                    triggers={config.triggers}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
 
-                        <Row>
-                            <ActionButton
-                                className={"secondary"}
-                                onClick={() => setShowUsersPopup(true)}
-                            >
-                                {t('settings.bot.gacha.component.actions.manageUsers')}
-                            </ActionButton>
-                            <Spacer/>
-
-                        </Row>
-
-
-                        {/* Настройки баннера */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiStar/>
-                                    {t('settings.bot.gacha.component.sections.banner')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <BannerSettingsEditor
-                                banner={config.banner}
-                                items={config.items}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-
-                        {/* Управление предметами */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiPackage/>
-                                    {t('settings.bot.gacha.component.sections.items')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <ItemsManager
-                                items={config.items}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-
-                        {/* Триггеры (Twitch награды) */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiGift/>
-                                    {t('settings.bot.gacha.component.sections.triggers')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <TriggersManager
-                                triggers={config.triggers}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-
-                        {/* Продвинутые настройки */}
-                        <Section>
-                            <SectionHeader>
-                                <SectionTitle>
-                                    <FiSettings/>
-                                    {t('settings.bot.gacha.component.sections.advanced')}
-                                </SectionTitle>
-                            </SectionHeader>
-                            <AdvancedSettings
-                                banner={config.banner}
-                                updateConfig={updateGachaConfig}
-                            />
-                        </Section>
-                    </CardContent>
-            </SettingsCard>
+            {/* Продвинутые настройки */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiSettings/>
+                        {t('settings.bot.gacha.component.sections.advanced')}
+                    </SectionTitle>
+                </SectionHeader>
+                <AdvancedSettings
+                    banner={config.banner}
+                    updateConfig={updateGachaConfig}
+                />
+            </Section>
         </>
     );
 }
