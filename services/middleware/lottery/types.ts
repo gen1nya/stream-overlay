@@ -40,8 +40,9 @@ export interface LotteryBotConfig {
     commandCooldownSec: number;        // кулдаун между розыгрышами (глобальный)
 
     // Способы входа
+    allowChatEntry: boolean;           // разрешить вход через чат
     entryTrigger: string;              // "+" или другое сообщение
-    channelPointRewardIds: string[];   // ID наград канала
+    channelPointRewardIds: string[];   // ID наград канала (пустой = вход через баллы отключён)
 
     // Таймер
     timerDurationSec: number;          // длительность приёма заявок
@@ -120,6 +121,7 @@ export const DEFAULT_LOTTERY_CONFIG: LotteryBotConfig = {
     command: '!розыгрыш',
     cancelCommand: '!отмена',
     commandCooldownSec: 60,
+    allowChatEntry: true,
     entryTrigger: '+',
     channelPointRewardIds: [],
     timerDurationSec: 60,

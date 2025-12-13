@@ -145,6 +145,8 @@ export class LotteryMiddleware extends Middleware {
     }
 
     private isEntryTrigger(text: string): boolean {
+        // Проверяем, что вход через чат разрешён
+        if (!this.config.allowChatEntry) return false;
         return text === this.config.entryTrigger;
     }
 

@@ -149,6 +149,7 @@ export class BotConfigService {
             command: '!розыгрыш',
             cancelCommand: '!отмена',
             commandCooldownSec: 60,
+            allowChatEntry: true,
             entryTrigger: '+',
             channelPointRewardIds: [],
             timerDurationSec: 60,

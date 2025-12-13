@@ -260,6 +260,7 @@ const DEFAULT_LOTTERY_CONFIG = {
     command: '!розыгрыш',
     cancelCommand: '!отмена',
     commandCooldownSec: 60,
+    allowChatEntry: true,
     entryTrigger: '+',
     channelPointRewardIds: [],
     timerDurationSec: 60,
@@ -384,7 +385,13 @@ export default function LotteryComponent({ botConfig, apply }) {
             const newRewards = current.includes(rewardId)
                 ? current.filter(id => id !== rewardId)
                 : [...current, rewardId];
-            return { channelPointRewardIds: newRewards };
+
+            // Автоматически управляем allowChatEntry:
+            // - Если добавляем награды → отключаем вход через чат
+            // - Если убираем все награды → включаем вход через чат
+            const allowChatEntry = newRewards.length === 0;
+
+            return { channelPointRewardIds: newRewards, allowChatEntry };
         });
     };
 
@@ -526,16 +533,22 @@ export default function LotteryComponent({ botConfig, apply }) {
                                     />
                                 </ParameterCard>
 
-                                <ParameterCard style={{ flex: 1 }}>
+                                <ParameterCard style={{ flex: 1, opacity: config.allowChatEntry ? 1 : 0.5 }}>
                                     <ParameterTitle>
                                         <FiMessageSquare />
                                         {t('settings.bot.lottery.flow.entry.trigger')}
+                                        {!config.allowChatEntry && (
+                                            <span style={{ fontSize: '0.75rem', color: '#888', marginLeft: '8px' }}>
+                                                ({t('settings.bot.lottery.flow.entry.disabledByRewards')})
+                                            </span>
+                                        )}
                                     </ParameterTitle>
                                     <NameInput
                                         value={config.entryTrigger}
                                         onChange={(e) => updateConfig(() => ({ entryTrigger: e.target.value }))}
                                         placeholder="+"
                                         style={{ width: '100px' }}
+                                        disabled={!config.allowChatEntry}
                                     />
                                 </ParameterCard>
                             </Row>

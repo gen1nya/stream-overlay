@@ -1059,6 +1059,7 @@ const en = {
                             chatEntry: 'Entry via chat',
                             chatTrigger: 'Entry trigger',
                             chatTriggerHint: 'What viewers type to join',
+                            disabledByRewards: 'disabled - using channel points',
                             pointsEntry: 'Entry via channel points',
                             selectRewards: 'Select rewards',
                             noRewards: 'No rewards available',
