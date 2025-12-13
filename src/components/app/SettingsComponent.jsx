@@ -418,10 +418,10 @@ export default function Settings() {
                             icon: <AiFillRobot/>,
                             label: t('settings.pages.botGroup.label'),
                             children: [
-                                {key: "bot_pingpong", icon: <FiMessageCircle/>, label: t('settings.pages.botPingpong.label')},
-                                {key: "bot_roulette", icon: <FiTarget/>, label: t('settings.pages.botRoulette.label')},
-                                {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label')},
-                                {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label')},
+                                {key: "bot_pingpong", icon: <FiMessageCircle/>, label: t('settings.pages.botPingpong.label'), enabled: botConfig?.pingpong?.enabled},
+                                {key: "bot_roulette", icon: <FiTarget/>, label: t('settings.pages.botRoulette.label'), enabled: botConfig?.roulette?.enabled},
+                                {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label'), enabled: botConfig?.gacha?.enabled},
+                                {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label'), enabled: botConfig?.lottery?.enabled},
                             ]
                         },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},

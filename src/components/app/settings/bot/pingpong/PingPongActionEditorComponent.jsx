@@ -28,6 +28,19 @@ export const FlagsInput = styled(TextInput)`
     width: 150px;
 `;
 
+// Status indicator dot (green = enabled, red = disabled)
+const StatusDot = styled.span`
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: ${props => props.$enabled ? '#44ff44' : '#ff4444'};
+    box-shadow: 0 0 4px ${props => props.$enabled ? '#44ff44' : '#ff4444'};
+    border: 1px solid ${props => props.$enabled ? '#33cc33' : '#cc3333'};
+    margin-right: 8px;
+    vertical-align: middle;
+`;
+
 export const Button = styled.button`
     margin-left: ${({$ml = 0}) => $ml}px;
     margin-top: ${({$mt = 0}) => $mt}px;
@@ -109,7 +122,7 @@ export default function PingPongActionEditorComponent({botConfig, apply}) {
             {cfg.pingpong.commands.map((command, commandIndex) => (
                 <Row key={commandIndex}>
                     <Accordion
-                        title={`${command.enabled ? '✅' : '⛔'}${command.name || t('settings.bot.pingpong.action.untitled')}`}
+                        title={<><StatusDot $enabled={command.enabled} />{command.name || t('settings.bot.pingpong.action.untitled')}</>}
                         style={{width: '100%'}}
                     >
                         {/* Активность + удаление */}

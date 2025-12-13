@@ -234,6 +234,20 @@ const ChildrenInner = styled.div`
     padding-right: 4px;
 `;
 
+// Green dot indicator for enabled items
+const EnabledDot = styled.div`
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #44ff44;
+    box-shadow: 0 0 4px #44ff44;
+    border: 1px solid #33cc33;
+    flex-shrink: 0;
+    margin-left: auto;
+    opacity: ${(props) => (props.$show ? 1 : 0)};
+    transition: opacity 0.2s ease;
+`;
+
 export const Sidebar = ({ open, active, onSelect, items }) => {
     const { t } = useTranslation();
     const [expandedItems, setExpandedItems] = useState({});
@@ -301,6 +315,9 @@ export const Sidebar = ({ open, active, onSelect, items }) => {
                                     <Label open={open} active={active === child.key}>
                                         {child.label}
                                     </Label>
+                                    {child.enabled !== undefined && (
+                                        <EnabledDot $show={open && child.enabled} />
+                                    )}
                                 </ChildItem>
                             ))}
                         </ChildrenInner>
