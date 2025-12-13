@@ -28,8 +28,7 @@ import {
     ParameterTitle,
     StatusBadge,
     VariableItem,
-    VariablesList,
-    NameInput
+    VariablesList
 } from "../SharedBotStyles";
 import { TagInput } from "../roulette/TagInput";
 import { getTwitchRewards } from "../../../../../services/api";
@@ -104,6 +103,7 @@ const FlowStepContent = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
+    box-sizing: border-box;
 `;
 
 const MessageInput = styled.textarea`
@@ -118,6 +118,31 @@ const MessageInput = styled.textarea`
     font-family: inherit;
     resize: vertical;
     transition: all 0.2s ease;
+    box-sizing: border-box;
+
+    &::placeholder {
+        color: #888;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: #646cff;
+        background: #252525;
+    }
+`;
+
+// Fixed-width input for commands
+const CommandInput = styled.input`
+    width: 180px;
+    height: 42px;
+    padding: 0 16px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
 
     &::placeholder {
         color: #888;
@@ -138,6 +163,7 @@ const WarmupTriggerCard = styled.div`
     display: flex;
     flex-direction: column;
     gap: 12px;
+    box-sizing: border-box;
 `;
 
 const WarmupHeader = styled.div`
@@ -185,13 +211,15 @@ const DeleteButton = styled.button`
 `;
 
 const Select = styled.select`
-    padding: 10px 12px;
+    height: 42px;
+    padding: 0 12px;
     border: 1px solid #555;
     border-radius: 8px;
     background: #1e1e1e;
     color: #fff;
     font-size: 14px;
     cursor: pointer;
+    box-sizing: border-box;
 
     &:focus {
         outline: none;
@@ -441,37 +469,34 @@ export default function LotteryComponent({ botConfig, apply }) {
                             <h4>{t('settings.bot.lottery.flow.start.title')}</h4>
                         </FlowStepHeader>
                         <FlowStepContent>
-                            <Row gap="20px">
-                                <ParameterCard style={{ flex: 1 }}>
+                            <Row gap="20px" style={{ alignItems: 'flex-start' }}>
+                                <ParameterCard>
                                     <ParameterTitle>
                                         <FiMessageSquare />
                                         {t('settings.bot.lottery.flow.start.command')}
                                     </ParameterTitle>
-                                    <NameInput
+                                    <CommandInput
                                         value={config.command}
                                         onChange={(e) => updateConfig(() => ({ command: e.target.value }))}
                                         placeholder="!розыгрыш"
                                     />
                                 </ParameterCard>
 
-                                <ParameterCard style={{ flex: 1 }}>
+                                <ParameterCard>
                                     <ParameterTitle>
                                         <FiSlash />
                                         {t('settings.bot.lottery.flow.start.cancelCommand')}
                                     </ParameterTitle>
-                                    <NameInput
+                                    <CommandInput
                                         value={config.cancelCommand}
                                         onChange={(e) => updateConfig(() => ({ cancelCommand: e.target.value }))}
                                         placeholder="!отмена"
                                     />
-                                    <span style={{ fontSize: '0.8rem', color: '#888' }}>
-                                        {t('settings.bot.lottery.flow.start.cancelHint')}
-                                    </span>
                                 </ParameterCard>
 
-                            </Row>
+                                <Spacer/>
+                                <div style={{ width: '1px', height: '70px', background: '#444', alignSelf: 'center' }} />
 
-                            <Row gap="20px">
                                 <ParameterCard>
                                     <ParameterTitle>
                                         <FiClock />
@@ -532,7 +557,7 @@ export default function LotteryComponent({ botConfig, apply }) {
                                     />
                                 </ParameterCard>
 
-                                <ParameterCard style={{ flex: 1, opacity: config.allowChatEntry ? 1 : 0.5 }}>
+                                <ParameterCard style={{ opacity: config.allowChatEntry ? 1 : 0.5 }}>
                                     <ParameterTitle>
                                         <FiMessageSquare />
                                         {t('settings.bot.lottery.flow.entry.trigger')}
@@ -542,11 +567,11 @@ export default function LotteryComponent({ botConfig, apply }) {
                                             </span>
                                         )}
                                     </ParameterTitle>
-                                    <NameInput
+                                    <CommandInput
                                         value={config.entryTrigger}
                                         onChange={(e) => updateConfig(() => ({ entryTrigger: e.target.value }))}
                                         placeholder="+"
-                                        style={{ width: '100px' }}
+                                        style={{ width: '80px' }}
                                         disabled={!config.allowChatEntry}
                                     />
                                 </ParameterCard>
@@ -698,17 +723,29 @@ export default function LotteryComponent({ botConfig, apply }) {
                             <h4>{t('settings.bot.lottery.flow.stats.title')}</h4>
                         </FlowStepHeader>
                         <FlowStepContent>
-                            <ParameterCard>
-                                <ParameterTitle>
-                                    <FiMessageSquare />
-                                    {t('settings.bot.lottery.flow.stats.command')}
-                                </ParameterTitle>
-                                <NameInput
-                                    value={config.statsCommand}
-                                    onChange={(e) => updateConfig(() => ({ statsCommand: e.target.value }))}
-                                    placeholder="!статистика"
-                                />
-                            </ParameterCard>
+                            <Row style={{ alignItems: 'flex-start' }}>
+                                <ParameterCard>
+                                    <ParameterTitle>
+                                        <FiMessageSquare />
+                                        {t('settings.bot.lottery.flow.stats.command')}
+                                    </ParameterTitle>
+                                    <CommandInput
+                                        value={config.statsCommand}
+                                        onChange={(e) => updateConfig(() => ({ statsCommand: e.target.value }))}
+                                        placeholder="!статистика"
+                                    />
+                                </ParameterCard>
+
+                                <Spacer />
+
+                                <ActionButton
+                                    className="secondary"
+                                    onClick={() => setShowHistoryPopup(true)}
+                                >
+                                    <FiDatabase style={{ marginRight: '8px' }} />
+                                    {t('settings.bot.lottery.history.openButton')}
+                                </ActionButton>
+                            </Row>
 
                             <div>
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
@@ -726,16 +763,6 @@ export default function LotteryComponent({ botConfig, apply }) {
                                     <VariableItem><span className="var">{'{{userSubjects}}'}</span><span className="desc">{t('settings.bot.lottery.variables.userSubjects')}</span></VariableItem>
                                 </VariablesList>
                             </div>
-
-                            <Row style={{ marginTop: '12px' }}>
-                                <ActionButton
-                                    className="secondary"
-                                    onClick={() => setShowHistoryPopup(true)}
-                                >
-                                    <FiDatabase style={{ marginRight: '8px' }} />
-                                    {t('settings.bot.lottery.history.openButton')}
-                                </ActionButton>
-                            </Row>
                         </FlowStepContent>
                     </FlowStep>
 

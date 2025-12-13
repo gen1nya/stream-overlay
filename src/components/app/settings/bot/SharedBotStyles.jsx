@@ -231,6 +231,7 @@ export const AddCommandForm = styled.div`
     display: flex;
     flex-direction: column;
     gap: 16px;
+    box-sizing: border-box;
 `;
 
 export const FormRow = styled.div`
@@ -290,6 +291,7 @@ export const VariablesList = styled.div`
     background: rgba(30, 30, 30, 0.5);
     border-radius: 8px;
     border: 1px solid #333;
+    box-sizing: border-box;
 `;
 
 export const VariableItem = styled.div`
@@ -316,6 +318,7 @@ export const ParameterCard = styled.div`
     display: flex;
     flex-direction: column;
     gap: 8px;
+    box-sizing: border-box;
 `;
 
 export const ParameterTitle = styled.h5`
