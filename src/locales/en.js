@@ -321,8 +321,18 @@ const en = {
                 paddingEditor: {
                     outerTitle: 'Outer margins',
                     innerTitle: 'Inner padding',
+                    layersTitle: 'Background layers',
+                    colorBgTitle: 'Color',
+                    gradientTitle: 'Gradient',
+                    imageTitle: 'Image',
                     horizontal: 'Horizontal',
                     vertical: 'Vertical',
+                    modeGrouped: 'Grouped',
+                    modeIndividual: 'Individual',
+                    top: 'Top',
+                    right: 'Right',
+                    bottom: 'Bottom',
+                    left: 'Left',
                 },
                 controls: {
                     textColor: 'Text color',

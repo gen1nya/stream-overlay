@@ -89,6 +89,36 @@ export interface BaseMessageConfig {
     marginV: string | number;
     paddingH: string | number;
     paddingV: string | number;
+    // Individual padding mode support
+    paddingMode?: 'grouped' | 'individual';
+    paddingTop?: string | number;
+    paddingRight?: string | number;
+    paddingBottom?: string | number;
+    paddingLeft?: string | number;
+    // Color background container padding (margin from container edges)
+    colorBgPaddingMode?: 'grouped' | 'individual';
+    colorBgPaddingH?: string | number;
+    colorBgPaddingV?: string | number;
+    colorBgPaddingTop?: string | number;
+    colorBgPaddingRight?: string | number;
+    colorBgPaddingBottom?: string | number;
+    colorBgPaddingLeft?: string | number;
+    // Gradient background layer padding
+    gradientPaddingMode?: 'grouped' | 'individual';
+    gradientPaddingH?: string | number;
+    gradientPaddingV?: string | number;
+    gradientPaddingTop?: string | number;
+    gradientPaddingRight?: string | number;
+    gradientPaddingBottom?: string | number;
+    gradientPaddingLeft?: string | number;
+    // Image background layer padding
+    imagePaddingMode?: 'grouped' | 'individual';
+    imagePaddingH?: string | number;
+    imagePaddingV?: string | number;
+    imagePaddingTop?: string | number;
+    imagePaddingRight?: string | number;
+    imagePaddingBottom?: string | number;
+    imagePaddingLeft?: string | number;
     fontSize: number;
     messageFont: MessageFontConfig;
 }

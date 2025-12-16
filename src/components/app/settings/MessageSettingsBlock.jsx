@@ -311,6 +311,32 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                         onHorizontalPaddingChange={(v) => updateField('paddingH', v)}
                         onVerticalMarginChange={(v) => updateField('marginV', v)}
                         onHorizontalMarginChange={(v) => updateField('marginH', v)}
+                        onPaddingModeChange={(v) => updateField('paddingMode', v)}
+                        onPaddingTopChange={(v) => updateField('paddingTop', v)}
+                        onPaddingRightChange={(v) => updateField('paddingRight', v)}
+                        onPaddingBottomChange={(v) => updateField('paddingBottom', v)}
+                        onPaddingLeftChange={(v) => updateField('paddingLeft', v)}
+                        onColorBgPaddingModeChange={(v) => updateField('colorBgPaddingMode', v)}
+                        onColorBgPaddingHChange={(v) => updateField('colorBgPaddingH', v)}
+                        onColorBgPaddingVChange={(v) => updateField('colorBgPaddingV', v)}
+                        onColorBgPaddingTopChange={(v) => updateField('colorBgPaddingTop', v)}
+                        onColorBgPaddingRightChange={(v) => updateField('colorBgPaddingRight', v)}
+                        onColorBgPaddingBottomChange={(v) => updateField('colorBgPaddingBottom', v)}
+                        onColorBgPaddingLeftChange={(v) => updateField('colorBgPaddingLeft', v)}
+                        onGradientPaddingModeChange={(v) => updateField('gradientPaddingMode', v)}
+                        onGradientPaddingHChange={(v) => updateField('gradientPaddingH', v)}
+                        onGradientPaddingVChange={(v) => updateField('gradientPaddingV', v)}
+                        onGradientPaddingTopChange={(v) => updateField('gradientPaddingTop', v)}
+                        onGradientPaddingRightChange={(v) => updateField('gradientPaddingRight', v)}
+                        onGradientPaddingBottomChange={(v) => updateField('gradientPaddingBottom', v)}
+                        onGradientPaddingLeftChange={(v) => updateField('gradientPaddingLeft', v)}
+                        onImagePaddingModeChange={(v) => updateField('imagePaddingMode', v)}
+                        onImagePaddingHChange={(v) => updateField('imagePaddingH', v)}
+                        onImagePaddingVChange={(v) => updateField('imagePaddingV', v)}
+                        onImagePaddingTopChange={(v) => updateField('imagePaddingTop', v)}
+                        onImagePaddingRightChange={(v) => updateField('imagePaddingRight', v)}
+                        onImagePaddingBottomChange={(v) => updateField('imagePaddingBottom', v)}
+                        onImagePaddingLeftChange={(v) => updateField('imagePaddingLeft', v)}
                     />
                 </Section>
             </CardContent>

@@ -321,8 +321,18 @@ const ru = {
                 paddingEditor: {
                     outerTitle: 'Отступы снаружи',
                     innerTitle: 'Отступы внутри',
+                    layersTitle: 'Слои фона',
+                    colorBgTitle: 'Цвет',
+                    gradientTitle: 'Градиент',
+                    imageTitle: 'Изображение',
                     horizontal: 'По горизонтали',
                     vertical: 'По вертикали',
+                    modeGrouped: 'Группой',
+                    modeIndividual: 'По отдельности',
+                    top: 'Сверху',
+                    right: 'Справа',
+                    bottom: 'Снизу',
+                    left: 'Слева',
                 },
                 controls: {
                     textColor: 'Цвет текста',

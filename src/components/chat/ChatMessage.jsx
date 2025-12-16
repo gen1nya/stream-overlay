@@ -1,6 +1,67 @@
 import React from 'react';
 import {generateGradientCSS, getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
-import styled, { css } from 'styled-components';
+import styled, { css, useTheme } from 'styled-components';
+
+// Helper to get inset values for color background layer
+const getColorLayerInset = (m) => {
+    if (m.colorBgPaddingMode === 'individual') {
+        const top = m.colorBgPaddingTop ?? m.colorBgPaddingV ?? 0;
+        const right = m.colorBgPaddingRight ?? m.colorBgPaddingH ?? 0;
+        const bottom = m.colorBgPaddingBottom ?? m.colorBgPaddingV ?? 0;
+        const left = m.colorBgPaddingLeft ?? m.colorBgPaddingH ?? 0;
+        return `${top}px ${right}px ${bottom}px ${left}px`;
+    }
+    const h = m.colorBgPaddingH ?? 0;
+    const v = m.colorBgPaddingV ?? 0;
+    return `${v}px ${h}px`;
+};
+
+// Helper to get inset values for gradient layer
+const getGradientLayerInset = (m) => {
+    if (m.gradientPaddingMode === 'individual') {
+        const top = m.gradientPaddingTop ?? m.gradientPaddingV ?? 0;
+        const right = m.gradientPaddingRight ?? m.gradientPaddingH ?? 0;
+        const bottom = m.gradientPaddingBottom ?? m.gradientPaddingV ?? 0;
+        const left = m.gradientPaddingLeft ?? m.gradientPaddingH ?? 0;
+        return `${top}px ${right}px ${bottom}px ${left}px`;
+    }
+    const h = m.gradientPaddingH ?? 0;
+    const v = m.gradientPaddingV ?? 0;
+    return `${v}px ${h}px`;
+};
+
+// Helper to get inset values for image layer
+const getImageLayerInset = (m) => {
+    if (m.imagePaddingMode === 'individual') {
+        const top = m.imagePaddingTop ?? m.imagePaddingV ?? 0;
+        const right = m.imagePaddingRight ?? m.imagePaddingH ?? 0;
+        const bottom = m.imagePaddingBottom ?? m.imagePaddingV ?? 0;
+        const left = m.imagePaddingLeft ?? m.imagePaddingH ?? 0;
+        return `${top}px ${right}px ${bottom}px ${left}px`;
+    }
+    const h = m.imagePaddingH ?? 0;
+    const v = m.imagePaddingV ?? 0;
+    return `${v}px ${h}px`;
+};
+
+// Get max padding value from layer config
+const getMaxPadding = (m, prefix) => {
+    return Math.max(
+        parseFloat(m[`${prefix}PaddingV`]) || 0,
+        parseFloat(m[`${prefix}PaddingH`]) || 0,
+        parseFloat(m[`${prefix}PaddingTop`]) || 0,
+        parseFloat(m[`${prefix}PaddingRight`]) || 0,
+        parseFloat(m[`${prefix}PaddingBottom`]) || 0,
+        parseFloat(m[`${prefix}PaddingLeft`]) || 0
+    );
+};
+
+// Get border radius for a specific layer
+const getLayerBorderRadius = (m, prefix) => {
+    const r = parseFloat(m.borderRadius) || 0;
+    const maxPadding = getMaxPadding(m, prefix);
+    return Math.max(0, r - maxPadding);
+};
 
 const MessageContainer = styled.div`
     position: relative;
@@ -10,39 +71,81 @@ const MessageContainer = styled.div`
     margin: ${({ theme }) =>
             `${theme.chatMessage.marginV}px ${theme.chatMessage.marginH}px`};
 
-    border-radius: ${({ theme }) => theme.chatMessage.borderRadius}px;
-
-    border: 1px solid
-    ${({ theme }) =>
-            hexToRgba(theme.chatMessage.borderColor, theme.chatMessage.borderOpacity)};
-    
-    background-color: ${({ theme }) =>
-            hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity)};
-
-    ${({ theme }) => getLayeredBackgroundStyles(theme.chatMessage)}
-    ${({ theme }) => generateGradientCSS(theme.chatMessage)}
-
-    box-shadow: ${({ theme }) => {
-        const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
-        return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
-    }};
-
     backdrop-filter: ${({ theme }) =>
             theme.allMessages?.blurRadius > 0
                     ? `blur(${theme.allMessages.blurRadius}px)`
                     : 'none'};
 `;
 
+// Z-index 0: Color background layer with border, shadow, borderRadius
+const ColorLayer = styled.div`
+    position: absolute;
+    inset: ${({ theme }) => getColorLayerInset(theme.chatMessage)};
+    z-index: 0;
+
+    background-color: ${({ theme }) =>
+            hexToRgba(theme.chatMessage.backgroundColor, theme.chatMessage.backgroundOpacity)};
+
+    border-radius: ${({ theme }) => getLayerBorderRadius(theme.chatMessage, 'colorBg')}px;
+
+    border: 1px solid ${({ theme }) =>
+            hexToRgba(theme.chatMessage.borderColor, theme.chatMessage.borderOpacity)};
+
+    box-shadow: ${({ theme }) => {
+        const { shadowColor, shadowOpacity, shadowRadius } = theme.chatMessage;
+        return `0 0 ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
+    }};
+`;
+
+// Z-index 1: Gradient background layer
+const GradientLayer = styled.div`
+    position: absolute;
+    inset: ${({ theme }) => getGradientLayerInset(theme.chatMessage)};
+    z-index: 1;
+    overflow: hidden;
+    pointer-events: none;
+
+    border-radius: ${({ theme }) => getLayerBorderRadius(theme.chatMessage, 'gradient')}px;
+
+    ${({ theme }) => generateGradientCSS(theme.chatMessage)}
+`;
+
+// Z-index 2: Image background layer
+const ImageLayer = styled.div`
+    position: absolute;
+    inset: ${({ theme }) => getImageLayerInset(theme.chatMessage)};
+    z-index: 2;
+    overflow: hidden;
+    pointer-events: none;
+
+    border-radius: ${({ theme }) => getLayerBorderRadius(theme.chatMessage, 'image')}px;
+
+    ${({ theme }) => getLayeredBackgroundStyles(theme.chatMessage)}
+`;
+
+// Z-index 3: Content layer
 const Content = styled.div`
-  display: flex;
-  flex-direction: ${({theme}) => theme.chatMessage.direction};
-  align-items: flex-start;
+    position: relative;
+    z-index: 3;
 
-  padding: ${({theme}) =>
-    `${theme.chatMessage.paddingV}px ${theme.chatMessage.paddingH}px`};
+    display: flex;
+    flex-direction: ${({theme}) => theme.chatMessage.direction};
+    align-items: flex-start;
 
-  width: 100%;           /* чтобы фон всегда перекрывался контентом */
-  box-sizing: border-box;
+    padding: ${({theme}) => {
+        const m = theme.chatMessage;
+        if (m.paddingMode === 'individual') {
+            const top = m.paddingTop ?? m.paddingV ?? 0;
+            const right = m.paddingRight ?? m.paddingH ?? 0;
+            const bottom = m.paddingBottom ?? m.paddingV ?? 0;
+            const left = m.paddingLeft ?? m.paddingH ?? 0;
+            return `${top}px ${right}px ${bottom}px ${left}px`;
+        }
+        return `${m.paddingV}px ${m.paddingH}px`;
+    }};
+
+    width: 100%;
+    box-sizing: border-box;
 `;
 
 
@@ -81,23 +184,6 @@ const Username = styled.span`
     margin-right: 6px;
     font-size: ${({theme}) => theme.chatMessage.titleFontSize}px;
     color: ${props => props.color || '#fff'};
-   /* text-shadow: ${({theme}) => {
-        if (!theme.allMessages) {
-            return 'none';
-        }
-        const {
-            textShadowColor,
-            textShadowOpacity,
-            textShadowRadius,
-            textShadowXPosition,
-            textShadowYPosition
-        } = theme.allMessages;
-        const m = theme.chatMessage;
-        const shadowColor = m.messageFont?.shadowColor ?? textShadowColor ?? '#000';
-        const shadowOpacity = m.messageFont?.shadowOpacity ?? textShadowOpacity ?? 0;
-        const shadowRadius = m.messageFont?.shadowRadius ?? textShadowRadius ?? 0;
-        return `${textShadowXPosition}px ${textShadowYPosition}px ${shadowRadius}px ${hexToRgba(shadowColor, shadowOpacity)}`;
-    }};*/
 `;
 
 const MessageText = styled.span`
@@ -108,10 +194,10 @@ const MessageText = styled.span`
             return 'none';
         }
         const {
-            textShadowColor, 
-            textShadowOpacity, 
-            textShadowRadius, 
-            textShadowXPosition, 
+            textShadowColor,
+            textShadowOpacity,
+            textShadowRadius,
+            textShadowXPosition,
             textShadowYPosition
         } = theme.allMessages;
         const m = theme.chatMessage;
@@ -156,21 +242,30 @@ export function getBackgroundForTextColor(hex) {
 
 export default function ChatMessage({ message, showSourceChannel, onClick }) {
     return (
-        <MessageContainer onClick={onClick} style={{ cursor: onClick ? 'pointer' : 'default' }}>
+        <MessageContainer
+            onClick={onClick}
+            style={{ cursor: onClick ? 'pointer' : 'default' }}
+        >
+            {/* Background layers */}
+            <ColorLayer />
+            <GradientLayer />
+            <ImageLayer />
+
+            {/* Content layer */}
             <Content>
-            <TitleContainer $tcolor={getBackgroundForTextColor(message.color)}>
-                {message.sourceChannel?.avatarUrl && showSourceChannel && (
-                    <ChannelAvatar
-                        src={message.sourceChannel.avatarUrl}
-                        alt={message.sourceChannel.displayName}
+                <TitleContainer $tcolor={getBackgroundForTextColor(message.color)}>
+                    {message.sourceChannel?.avatarUrl && showSourceChannel && (
+                        <ChannelAvatar
+                            src={message.sourceChannel.avatarUrl}
+                            alt={message.sourceChannel.displayName}
+                        />
+                    )}
+                    <BadgeContainer
+                        dangerouslySetInnerHTML={{ __html: message.htmlBadges }}
                     />
-                )}
-                <BadgeContainer
-                    dangerouslySetInnerHTML={{ __html: message.htmlBadges }}
-                />
-                <Username color={message.color}>{message.userName}:</Username>
-            </TitleContainer>
-            <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>
+                    <Username color={message.color}>{message.userName}:</Username>
+                </TitleContainer>
+                <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>
             </Content>
         </MessageContainer>
     );
