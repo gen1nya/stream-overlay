@@ -409,17 +409,37 @@ const DelayBadge = styled.div`
 `;
 
 const VariablesHint = styled.div`
-    padding: 8px 10px;
+    padding: 10px 12px;
     background: rgba(0, 255, 221, 0.05);
     border: 1px solid rgba(0, 255, 221, 0.2);
     border-radius: 6px;
     font-size: 0.8rem;
     color: #888;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+
+    .title {
+        color: #aaa;
+        margin-bottom: 4px;
+    }
+`;
+
+const VariableItem = styled.div`
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
 
     .var {
         color: #00ffdd;
         font-weight: 500;
         font-family: monospace;
+        white-space: nowrap;
+    }
+
+    .desc {
+        color: #666;
+        font-size: 0.75rem;
     }
 `;
 
@@ -778,16 +798,50 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                                             minHeight="70px"
                                                         />
                                                         <VariablesHint>
-                                                            {t('settings.bot.triggers.availableVariables')}:{' '}
-                                                            <span className="var">${'{user}'}</span>
-                                                            {editedRule.condition.eventType !== 'follow' && editedRule.condition.eventType !== 'raid' && (
-                                                                <>, <span className="var">${'{target}'}</span>, <span className="var">${'{args[0]}'}</span></>
+                                                            <div className="title">{t('settings.bot.triggers.availableVariables')}:</div>
+                                                            <VariableItem>
+                                                                <span className="var">${'{user}'}</span>
+                                                                <span className="desc">{t('settings.bot.triggers.variables.user')}</span>
+                                                            </VariableItem>
+                                                            {(editedRule.condition.eventType === 'command' || editedRule.condition.eventType === 'message') && (
+                                                                <>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{target}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.target')}</span>
+                                                                    </VariableItem>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{args[N]}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.args')}</span>
+                                                                    </VariableItem>
+                                                                </>
                                                             )}
                                                             {editedRule.condition.eventType === 'raid' && (
-                                                                <>, <span className="var">${'{raider}'}</span>, <span className="var">${'{viewers}'}</span></>
+                                                                <>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{raider}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.raider')}</span>
+                                                                    </VariableItem>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{viewers}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.viewers')}</span>
+                                                                    </VariableItem>
+                                                                </>
                                                             )}
                                                             {editedRule.condition.eventType === 'redemption' && (
-                                                                <>, <span className="var">${'{reward}'}</span>, <span className="var">${'{reward_cost}'}</span></>
+                                                                <>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{target}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.target')}</span>
+                                                                    </VariableItem>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{reward}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.reward')}</span>
+                                                                    </VariableItem>
+                                                                    <VariableItem>
+                                                                        <span className="var">${'{reward_cost}'}</span>
+                                                                        <span className="desc">{t('settings.bot.triggers.variables.rewardCost')}</span>
+                                                                    </VariableItem>
+                                                                </>
                                                             )}
                                                         </VariablesHint>
                                                     </>

@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FiZap, FiPlus, FiTrash2, FiEdit2, FiCopy,
     FiMessageSquare, FiGift, FiUserPlus, FiCommand,
-    FiChevronRight, FiClock, FiStar, FiShield
+    FiChevronRight, FiClock, FiStar, FiShield, FiUsers, FiExternalLink
 } from 'react-icons/fi';
 import { HelpInfoPopup, EnabledToggle, AddButton } from "../SharedBotStyles";
 import TriggerEditorPopup from "./TriggerEditorPopup";
@@ -171,10 +171,12 @@ const EVENT_TYPE_CONFIG = {
     command: { icon: FiCommand, color: 'rgba(100, 108, 255, 0.2)', iconColor: '#646cff' },
     redemption: { icon: FiGift, color: 'rgba(139, 92, 246, 0.2)', iconColor: '#8b5cf6' },
     follow: { icon: FiUserPlus, color: 'rgba(34, 197, 94, 0.2)', iconColor: '#22c55e' },
+    raid: { icon: FiUsers, color: 'rgba(249, 115, 22, 0.2)', iconColor: '#f97316' },
 };
 
 const ACTION_TYPE_CONFIG = {
     send_message: { icon: FiMessageSquare, color: 'rgba(59, 130, 246, 0.1)', textColor: '#3b82f6', borderColor: 'rgba(59, 130, 246, 0.3)' },
+    shoutout: { icon: FiExternalLink, color: 'rgba(249, 115, 22, 0.1)', textColor: '#f97316', borderColor: 'rgba(249, 115, 22, 0.3)' },
     add_vip: { icon: FiStar, color: 'rgba(139, 92, 246, 0.1)', textColor: '#8b5cf6', borderColor: 'rgba(139, 92, 246, 0.3)' },
     remove_vip: { icon: FiStar, color: 'rgba(220, 38, 38, 0.1)', textColor: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.3)' },
     add_mod: { icon: FiShield, color: 'rgba(34, 197, 94, 0.1)', textColor: '#22c55e', borderColor: 'rgba(34, 197, 94, 0.3)' },
