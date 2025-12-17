@@ -58,7 +58,12 @@ export class MiddlewareProcessor {
       if (result.accepted) break;
     }
     for (const action of actions) {
-      await this.applyAction(action);
+      try {
+        await this.applyAction(action);
+      } catch (error: any) {
+        console.error(`❌ Action ${action.type} failed:`, error?.message || error);
+        // Continue with remaining actions
+      }
     }
     return currentMessage;
   }
