@@ -1300,7 +1300,8 @@ const en = {
                         inMinutes: 'in {{count}} min',
                         cancelConfirmTitle: 'Cancel action?',
                         cancelConfirmText: 'Are you sure you want to cancel "{{action}}" for user {{user}}?',
-                        cancelAction: 'Cancel action',
+                        cancelNo: 'No',
+                        cancelYes: 'Yes, cancel',
                     },
                 },
                 commandList: {

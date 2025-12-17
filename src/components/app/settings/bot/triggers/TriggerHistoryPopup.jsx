@@ -312,20 +312,25 @@ export default function TriggerHistoryPopup({ onClose }) {
 
     const ITEMS_PER_PAGE = 50;
 
+    // Load both datasets on mount
     useEffect(() => {
-        loadData();
+        loadAllData();
+    }, []);
+
+    // Reset page when switching tabs
+    useEffect(() => {
+        setCurrentPage(0);
     }, [activeTab]);
 
-    const loadData = async () => {
+    const loadAllData = async () => {
         setLoading(true);
         try {
-            if (activeTab === 'executions') {
-                const data = await getTriggerExecutions({ limit: 500 });
-                setExecutions(data || []);
-            } else {
-                const data = await getScheduledActions();
-                setScheduledActions(data || []);
-            }
+            const [execData, schedData] = await Promise.all([
+                getTriggerExecutions({ limit: 500 }),
+                getScheduledActions()
+            ]);
+            setExecutions(execData || []);
+            setScheduledActions(schedData || []);
             setCurrentPage(0);
         } catch (error) {
             console.error('Failed to load data:', error);
@@ -333,6 +338,8 @@ export default function TriggerHistoryPopup({ onClose }) {
             setLoading(false);
         }
     };
+
+    const loadData = loadAllData;
 
     const handleCancelAction = async () => {
         if (!confirmCancel) return;
@@ -591,10 +598,10 @@ export default function TriggerHistoryPopup({ onClose }) {
                             </ConfirmText>
                             <ConfirmButtons>
                                 <ConfirmButton className="cancel" onClick={() => setConfirmCancel(null)}>
-                                    {t('common.cancel')}
+                                    {t('settings.bot.triggers.history.cancelNo')}
                                 </ConfirmButton>
                                 <ConfirmButton className="danger" onClick={handleCancelAction}>
-                                    {t('settings.bot.triggers.history.cancelAction')}
+                                    {t('settings.bot.triggers.history.cancelYes')}
                                 </ConfirmButton>
                             </ConfirmButtons>
                         </ConfirmContent>

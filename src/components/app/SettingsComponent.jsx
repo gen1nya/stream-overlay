@@ -32,7 +32,8 @@ import {
     FiLayout,
     FiGift,
     FiZap,
-    FiDatabase
+    FiDatabase,
+    FiUsers
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -56,6 +57,8 @@ import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
 import TriggersComponent from "./settings/bot/triggers/TriggersComponent";
 import TriggerHistoryPopup from "./settings/bot/triggers/TriggerHistoryPopup";
+import GachaUsersPopup from "./settings/bot/gacha/GachaUsersPopup";
+import LotteryHistoryPopup from "./settings/bot/lottery/LotteryHistoryPopup";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
@@ -291,6 +294,8 @@ export default function Settings() {
     const [activePage, setActivePage] = useState("general");
     const [showBotHelp, setShowBotHelp] = useState(false);
     const [showTriggerHistory, setShowTriggerHistory] = useState(false);
+    const [showGachaUsers, setShowGachaUsers] = useState(false);
+    const [showLotteryHistory, setShowLotteryHistory] = useState(false);
 
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
@@ -405,6 +410,12 @@ export default function Settings() {
             {showTriggerHistory && (
                 <TriggerHistoryPopup onClose={() => setShowTriggerHistory(false)} />
             )}
+            {showGachaUsers && (
+                <GachaUsersPopup onClose={() => setShowGachaUsers(false)} />
+            )}
+            {showLotteryHistory && (
+                <LotteryHistoryPopup onClose={() => setShowLotteryHistory(false)} />
+            )}
 
             <HolidayHeader>
                 <HeaderLeft>
@@ -494,6 +505,16 @@ export default function Settings() {
 
                                 <Spacer />
 
+                                {activePage === 'bot_gacha' && (
+                                    <ToolbarIconButton onClick={() => setShowGachaUsers(true)} title={t('settings.bot.gacha.users.title')}>
+                                        <FiUsers />
+                                    </ToolbarIconButton>
+                                )}
+                                {activePage === 'bot_lottery' && (
+                                    <ToolbarIconButton onClick={() => setShowLotteryHistory(true)} title={t('settings.bot.lottery.history.title')}>
+                                        <FiDatabase />
+                                    </ToolbarIconButton>
+                                )}
                                 {activePage === 'bot_triggers' && (
                                     <ToolbarIconButton onClick={() => setShowTriggerHistory(true)} title={t('settings.bot.triggers.history.button')}>
                                         <FiDatabase />

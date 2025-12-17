@@ -1294,7 +1294,8 @@ const ru = {
                         inMinutes: 'через {{count}} мин.',
                         cancelConfirmTitle: 'Отменить действие?',
                         cancelConfirmText: 'Вы уверены, что хотите отменить действие "{{action}}" для пользователя {{user}}?',
-                        cancelAction: 'Отменить действие',
+                        cancelNo: 'Нет',
+                        cancelYes: 'Да, отменить',
                     },
                 },
                 commandList: {

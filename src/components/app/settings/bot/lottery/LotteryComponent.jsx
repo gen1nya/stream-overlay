@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FiGift, FiPlay, FiUsers, FiClock, FiMessageSquare,
     FiChevronDown, FiPlus, FiTrash2, FiSettings,
-    FiAward, FiSlash, FiRefreshCw, FiDatabase
+    FiAward, FiSlash, FiRefreshCw
 } from 'react-icons/fi';
 import { Spacer } from "../../../../utils/Separator";
 import { Row } from "../../../SettingsComponent";
@@ -21,8 +21,6 @@ import {
 } from "../SharedBotStyles";
 import { TagInput } from "../roulette/TagInput";
 import { getTwitchRewards } from "../../../../../services/api";
-import LotteryHistoryPopup from "./LotteryHistoryPopup";
-import { ActionButton } from "../../../SharedStyles";
 
 // Flow step connector
 const FlowConnector = styled.div`
@@ -296,7 +294,6 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
     const { t } = useTranslation();
     const [rewards, setRewards] = useState([]);
     const [loadingRewards, setLoadingRewards] = useState(false);
-    const [showHistoryPopup, setShowHistoryPopup] = useState(false);
 
     // Merge with defaults
     const config = {
@@ -406,10 +403,6 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
 
     return (
         <>
-            {showHistoryPopup && (
-                <LotteryHistoryPopup onClose={() => setShowHistoryPopup(false)} />
-            )}
-
             <HelpInfoPopup
                 isOpen={showHelp}
                 onClose={() => setShowHelp(false)}
@@ -692,16 +685,6 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                         placeholder="!статистика"
                                     />
                                 </ParameterCard>
-
-                                <Spacer />
-
-                                <ActionButton
-                                    className="secondary"
-                                    onClick={() => setShowHistoryPopup(true)}
-                                >
-                                    <FiDatabase style={{ marginRight: '8px' }} />
-                                    {t('settings.bot.lottery.history.openButton')}
-                                </ActionButton>
                             </Row>
 
                             <div>
