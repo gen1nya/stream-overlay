@@ -40,6 +40,7 @@ const SCOPES = [
   'moderator:read:followers',
   'moderator:manage:chat_messages',
   'moderator:manage:banned_users',
+  'moderator:manage:shoutouts',
   'channel:manage:moderators',
   'channel:manage:vips',
   'chat:read',

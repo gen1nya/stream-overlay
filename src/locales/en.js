@@ -1287,6 +1287,7 @@ const en = {
                         message: 'Message',
                         redemption: 'Channel points',
                         follow: 'Follow',
+                        raid: 'Raid',
                     },
                     matchType: 'Match type',
                     matchExact: 'Exact match',
@@ -1300,6 +1301,7 @@ const en = {
                     actions: 'Actions (THEN)',
                     actionTypes: {
                         send_message: 'Send message',
+                        shoutout: 'Shoutout',
                         add_vip: 'Add VIP',
                         remove_vip: 'Remove VIP',
                         add_mod: 'Add moderator',

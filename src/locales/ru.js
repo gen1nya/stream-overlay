@@ -1281,6 +1281,7 @@ const ru = {
                         message: 'Сообщение',
                         redemption: 'Баллы канала',
                         follow: 'Фоллов',
+                        raid: 'Рейд',
                     },
                     matchType: 'Тип совпадения',
                     matchExact: 'Точное совпадение',
@@ -1294,6 +1295,7 @@ const ru = {
                     actions: 'Действия (ТОГДА)',
                     actionTypes: {
                         send_message: 'Отправить сообщение',
+                        shoutout: 'Shoutout',
                         add_vip: 'Добавить VIP',
                         remove_vip: 'Убрать VIP',
                         add_mod: 'Добавить модератора',

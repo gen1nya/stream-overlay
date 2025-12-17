@@ -3,7 +3,7 @@ import axios, { AxiosError } from 'axios';
 import * as authService from './authService';
 import { Tokens } from './authService';
 import MESSAGE_TYPES from './types/eventSubMessageTypes';
-import { AppEvent, FollowEvent, RedeemEvent } from './messageParser';
+import { AppEvent, FollowEvent, RedeemEvent, RaidEvent } from './messageParser';
 import { LogService } from '../logService';
 import { ProxyService } from '../ProxyService';
 
@@ -74,6 +74,7 @@ interface StopOptions {
 export const EVENT_CHANEL = 'event';
 export const EVENT_FOLLOW = 'follow';
 export const EVENT_REDEMPTION = 'redemption';
+export const EVENT_RAID = 'raid';
 export const EVENT_BROADCASTING = 'broadcasting';
 
 const KNOWN_MESSAGE_TYPES = Object.values(MESSAGE_TYPES);
@@ -119,6 +120,21 @@ function formatRedeemEvent(event: any): RedeemEvent {
     userName: event.user_name,
     reward: event.reward,
     userNameRaw: event.user_login,
+  };
+}
+
+function formatRaidEvent(event: any): RaidEvent {
+  return {
+    timestamp: Date.now(),
+    id: `raid_${Date.now()}_${event.from_broadcaster_user_id}`,
+    type: 'raid',
+    userId: event.from_broadcaster_user_id,
+    userName: event.from_broadcaster_user_name,
+    userNameRaw: event.from_broadcaster_user_login,
+    fromBroadcasterId: event.from_broadcaster_user_id,
+    fromBroadcasterLogin: event.from_broadcaster_user_login,
+    fromBroadcasterName: event.from_broadcaster_user_name,
+    viewers: event.viewers,
   };
 }
 
@@ -515,6 +531,10 @@ class EventSubService {
         this.handleOfflineEvent(event);
         break;
 
+      case 'channel.raid':
+        this.handleRaidEvent(event);
+        break;
+
       default:
         console.warn(`⚠️ [${this.connectionId}] Unhandled subscription type: ${subscription.type}, event:`, event);
         break;
@@ -560,6 +580,18 @@ class EventSubService {
         event.user_name
     );
     this.eventHandler?.(`status:${EVENT_BROADCASTING}`, { type: "broadcast", isOnline: false });
+  }
+
+  private handleRaidEvent(event: any): void {
+    console.log(`🎉 [${this.connectionId}] Incoming raid from ${event.from_broadcaster_user_name} with ${event.viewers} viewers`);
+
+    const raidEvent = formatRaidEvent(event);
+    this.log(
+        `Рейд от ${event.from_broadcaster_user_name} (${event.viewers} зрителей)`,
+        event.from_broadcaster_user_id,
+        event.from_broadcaster_user_name
+    );
+    this.eventHandler?.(`${EVENT_CHANEL}:${EVENT_RAID}`, raidEvent);
   }
 
   private async handleSessionWelcome(payload: any): Promise<void> {

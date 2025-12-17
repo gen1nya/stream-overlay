@@ -1,6 +1,6 @@
 import { ActionTypes } from './ActionTypes';
 import Middleware from './Middleware';
-import { AppEvent, RedeemEvent, ChatEvent, FollowEvent } from '../twitch/messageParser';
+import { AppEvent, RedeemEvent, ChatEvent, FollowEvent, RaidEvent } from '../twitch/messageParser';
 import { LogService } from '../logService';
 import {
     BotConfig,
@@ -19,7 +19,7 @@ import { fetchUser } from '../twitch/authorizedHelixApi';
 
 interface TriggerContext {
     event: AppEvent;
-    eventType: 'message' | 'redemption' | 'follow' | 'command';
+    eventType: 'message' | 'redemption' | 'follow' | 'command' | 'raid';
 
     sender: {
         id: string;
@@ -36,6 +36,13 @@ interface TriggerContext {
         title: string;
         cost: number;
         userInput?: string;
+    };
+
+    raid?: {
+        fromId: string;
+        fromLogin: string;
+        fromName: string;
+        viewers: number;
     };
 }
 
@@ -139,6 +146,10 @@ export default class TriggerMiddleware extends Middleware {
             return this.buildFollowContext(event as FollowEvent);
         }
 
+        if (event.type === 'raid') {
+            return this.buildRaidContext(event as RaidEvent);
+        }
+
         return null;
     }
 
@@ -208,6 +219,27 @@ export default class TriggerMiddleware extends Middleware {
             },
             args: [],
             rawInput: ''
+        };
+    }
+
+    private buildRaidContext(event: RaidEvent): TriggerContext {
+        return {
+            event,
+            eventType: 'raid',
+            sender: {
+                id: event.fromBroadcasterId || '',
+                name: event.fromBroadcasterLogin || '',
+                displayName: event.fromBroadcasterName || '',
+                roles: new Set()
+            },
+            args: [],
+            rawInput: '',
+            raid: {
+                fromId: event.fromBroadcasterId || '',
+                fromLogin: event.fromBroadcasterLogin || '',
+                fromName: event.fromBroadcasterName || '',
+                viewers: event.viewers || 0
+            }
         };
     }
 
@@ -489,6 +521,15 @@ export default class TriggerMiddleware extends Middleware {
                     }
                 };
 
+            case 'shoutout':
+                return {
+                    type: ActionTypes.SHOUTOUT,
+                    payload: {
+                        userId: target.id,
+                        userName: target.name
+                    }
+                };
+
             default:
                 return null;
         }
@@ -593,6 +634,12 @@ export default class TriggerMiddleware extends Middleware {
         if (context.reward) {
             result = result.replace(/\$\{reward\}/g, context.reward.title);
             result = result.replace(/\$\{reward_cost\}/g, String(context.reward.cost));
+        }
+
+        // ${raider}, ${viewers} - raid info
+        if (context.raid) {
+            result = result.replace(/\$\{raider\}/g, context.raid.fromName);
+            result = result.replace(/\$\{viewers\}/g, String(context.raid.viewers));
         }
 
         return result;

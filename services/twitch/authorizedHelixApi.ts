@@ -140,6 +140,26 @@ export async function removeModerator(user_id: string): Promise<void> {
     const params = new URLSearchParams({broadcaster_id: String(broadcaster_id), user_id});
     await axios.delete(`${BASE_URL}/moderation/moderators?${params}`, {
         headers: {
+            Authorization: `Bearer ${tokens.access_token}`, 'Client-Id': authService.CLIENT_ID,
+        },
+    });
+}
+
+/**
+ * Send a shoutout to another broadcaster
+ * @param to_broadcaster_id - The ID of the broadcaster to shoutout
+ */
+export async function sendShoutout(to_broadcaster_id: string): Promise<void> {
+    const tokens = await authService.getTokens();
+    if (!tokens?.access_token) throw new Error('No access token');
+    const broadcaster_id = await authService.getUserId();
+    const params = new URLSearchParams({
+        from_broadcaster_id: String(broadcaster_id),
+        to_broadcaster_id: to_broadcaster_id,
+        moderator_id: String(broadcaster_id)
+    });
+    await axios.post(`${BASE_URL}/chat/shoutouts?${params}`, null, {
+        headers: {
             Authorization: `Bearer ${tokens.access_token}`,
             'Client-Id': authService.CLIENT_ID,
         },

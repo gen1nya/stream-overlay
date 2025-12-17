@@ -11,13 +11,14 @@ import {
     removeVip,
     addModerator,
     removeModerator,
-    deleteMessage
+    deleteMessage,
+    sendShoutout
 } from './services/twitch/authorizedHelixApi';
 import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
-import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/twitch/esService";
+import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID} from "./services/twitch/esService";
 import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
 import {LogService} from "./services/logService";
 import {UserData} from "./services/twitch/types/UserData";
@@ -183,6 +184,27 @@ const applyAction = async (action: { type: string; payload: any }) => {
       }
       break;
 
+    case ActionTypes.SHOUTOUT:
+      try {
+        await sendShoutout(action.payload.userId);
+        logService.log({
+          message: `Shoutout отправлен: ${action.payload.userName || action.payload.userId}`,
+          timestamp: new Date().toISOString(),
+          userId: action.payload.userId,
+          userName: action.payload.userName || 'unknown',
+        });
+      } catch (error: any) {
+        const errorMsg = error?.response?.data?.message || error?.message || 'Unknown error';
+        logService.log({
+          message: `Ошибка shoutout для ${action.payload.userName || action.payload.userId}: ${errorMsg}`,
+          timestamp: new Date().toISOString(),
+          userId: action.payload.userId,
+          userName: action.payload.userName || 'unknown',
+        });
+        console.error('Shoutout error:', error?.response?.data || error?.message);
+      }
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -279,6 +301,11 @@ twitchClient.on('event', async ({ destination, event }) => {
   } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
     const result = await middlewareProcessor.processMessage(event);
     messageCache.processMessage(result);
+  } else if (destination === `${EVENT_CHANEL}:${EVENT_RAID}`) {
+    // Process raid through middleware (for triggers)
+    await middlewareProcessor.processMessage(event);
+    // Also broadcast to UI
+    broadcast(destination, event);
   } else {
     broadcast(destination, event);
   }

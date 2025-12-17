@@ -57,6 +57,13 @@ export interface ParserRedeemMessage extends Identity {
   reward: any;
 }
 
+export interface ParserRaidMessage extends Identity {
+  fromBroadcasterId: string;
+  fromBroadcasterLogin: string;
+  fromBroadcasterName: string;
+  viewers: number;
+}
+
 export interface ParsedBroadcastStatus extends Identity  {
   isOnline: boolean;
 }
@@ -68,9 +75,10 @@ export type PartEvent  = Envelope<'part', ParsedIrcMessage>;
 export type DeleteEvent  = Envelope<'delete_msg', ParsedIrcMessage>;
 export type RedeemEvent  = Envelope<'redemption', ParserRedeemMessage>;
 export type FollowEvent  = Envelope<'follow', ParserFollowMessage>;
+export type RaidEvent  = Envelope<'raid', ParserRaidMessage>;
 export type BroadcastEvent  = Envelope<'broadcast', ParsedBroadcastStatus>;
 
-export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | JoinEvent | PartEvent | BroadcastEvent | DeleteEvent;
+export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | RaidEvent | JoinEvent | PartEvent | BroadcastEvent | DeleteEvent;
 
 export const emptyRoles: ChatRoles = {
     isModerator: false,

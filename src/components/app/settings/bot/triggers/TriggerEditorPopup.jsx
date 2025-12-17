@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
     FiClock, FiPlus, FiTrash2, FiChevronDown, FiStar, FiShield, FiSettings,
-    FiArrowRight
+    FiArrowRight, FiUsers, FiExternalLink
 } from 'react-icons/fi';
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
@@ -442,10 +442,12 @@ const EVENT_TYPE_CONFIG = {
     message: { icon: FiMessageSquare, color: 'rgba(59, 130, 246, 0.15)', borderColor: '#3b82f6', iconColor: '#3b82f6' },
     redemption: { icon: FiGift, color: 'rgba(139, 92, 246, 0.15)', borderColor: '#8b5cf6', iconColor: '#8b5cf6' },
     follow: { icon: FiUserPlus, color: 'rgba(34, 197, 94, 0.15)', borderColor: '#22c55e', iconColor: '#22c55e' },
+    raid: { icon: FiUsers, color: 'rgba(249, 115, 22, 0.15)', borderColor: '#f97316', iconColor: '#f97316' },
 };
 
 const ACTION_TYPES = [
     { value: 'send_message', icon: FiMessageSquare, color: 'rgba(59, 130, 246, 0.2)', iconColor: '#3b82f6' },
+    { value: 'shoutout', icon: FiExternalLink, color: 'rgba(249, 115, 22, 0.2)', iconColor: '#f97316' },
     { value: 'add_vip', icon: FiStar, color: 'rgba(139, 92, 246, 0.2)', iconColor: '#8b5cf6' },
     { value: 'remove_vip', icon: FiStar, color: 'rgba(220, 38, 38, 0.2)', iconColor: '#dc2626' },
     { value: 'add_mod', icon: FiShield, color: 'rgba(34, 197, 94, 0.2)', iconColor: '#22c55e' },
@@ -489,7 +491,7 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
             const newCondition = { ...prev.condition, ...updates };
 
             if (updates.eventType) {
-                if (updates.eventType === 'redemption' || updates.eventType === 'follow') {
+                if (updates.eventType === 'redemption' || updates.eventType === 'follow' || updates.eventType === 'raid') {
                     delete newCondition.textMatch;
                 } else {
                     delete newCondition.rewardId;
@@ -776,7 +778,17 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                                             minHeight="70px"
                                                         />
                                                         <VariablesHint>
-                                                            {t('settings.bot.triggers.availableVariables')}: <span className="var">${'{user}'}</span>, <span className="var">${'{target}'}</span>, <span className="var">${'{args[0]}'}</span>
+                                                            {t('settings.bot.triggers.availableVariables')}:{' '}
+                                                            <span className="var">${'{user}'}</span>
+                                                            {editedRule.condition.eventType !== 'follow' && editedRule.condition.eventType !== 'raid' && (
+                                                                <>, <span className="var">${'{target}'}</span>, <span className="var">${'{args[0]}'}</span></>
+                                                            )}
+                                                            {editedRule.condition.eventType === 'raid' && (
+                                                                <>, <span className="var">${'{raider}'}</span>, <span className="var">${'{viewers}'}</span></>
+                                                            )}
+                                                            {editedRule.condition.eventType === 'redemption' && (
+                                                                <>, <span className="var">${'{reward}'}</span>, <span className="var">${'{reward_cost}'}</span></>
+                                                            )}
                                                         </VariablesHint>
                                                     </>
                                                 )}

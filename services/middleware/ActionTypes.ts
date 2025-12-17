@@ -9,6 +9,7 @@ export const ActionTypes = {
   REMOVE_VIP: 'REMOVE_VIP',
   ADD_MOD: 'ADD_MOD',
   REMOVE_MOD: 'REMOVE_MOD',
+  SHOUTOUT: 'SHOUTOUT',
 } as const;
 
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes];

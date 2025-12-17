@@ -287,7 +287,7 @@ export interface TriggerUserRoleFilter {
 
 // Trigger condition ("IF" part)
 export interface TriggerCondition {
-    eventType: 'message' | 'redemption' | 'follow' | 'command';
+    eventType: 'message' | 'redemption' | 'follow' | 'command' | 'raid';
 
     // For message/command - text matching
     textMatch?: TriggerTextMatch;
@@ -317,7 +317,7 @@ export interface TriggerActionParams {
 export interface TriggerAction {
     id: string;            // UUID for UI identification
     type: 'send_message' | 'add_vip' | 'remove_vip' |
-          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message';
+          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout';
 
     // Action target
     target: 'sender' | 'arg_user';  // sender = message author, arg_user = from argument
