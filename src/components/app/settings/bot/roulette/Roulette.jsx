@@ -6,8 +6,9 @@ import WinnerMessagesComponent from "./WinnerMessagesComponent";
 import CooldownMessagesComponent from "./CooldownMessagesComponent";
 import ProtectedUsersMessagesComponent from "./ProtectedUsersMessagesComponent";
 import StatsMessagesComponent from "./StatsMessagesComponent";
+import LeaderboardMessagesComponent from "./LeaderboardMessagesComponent";
 import {TagInput} from "./TagInput";
-import {FiTarget, FiSettings, FiClock, FiPercent, FiMessageSquare, FiAlertTriangle, FiBarChart2} from 'react-icons/fi';
+import {FiTarget, FiSettings, FiClock, FiPercent, FiMessageSquare, FiAlertTriangle, FiBarChart2, FiAward} from 'react-icons/fi';
 import {
     ControlGroup,
     Section,
@@ -192,6 +193,49 @@ export default function Roulette({ botConfig, apply, showHelp, setShowHelp }) {
 
                 <div style={{ marginTop: '16px' }}>
                     <StatsMessagesComponent botConfig={botConfig} apply={apply} />
+                </div>
+            </Section>
+
+            {/* Команда лидерборда */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiAward />
+                        {t('settings.bot.roulette.leaderboard.sectionTitle')}
+                    </SectionTitle>
+                </SectionHeader>
+
+                <TagInput
+                    value={(config.roulette.leaderboardCommands || []).join(", ")}
+                    onChange={(value) => {
+                        const leaderboardCommands = value.split(",").map((cmd) => cmd.trim()).filter(cmd => cmd);
+                        updateRouletteConfig(() => ({ leaderboardCommands }));
+                    }}
+                    placeholder={t('settings.bot.roulette.leaderboard.commands.placeholder')}
+                />
+
+                <Row gap="20px" style={{ marginTop: '16px' }}>
+                    <ControlGroup>
+                        <ParameterCard>
+                            <ParameterTitle>
+                                <FiAward />
+                                {t('settings.bot.roulette.leaderboard.size')}
+                            </ParameterTitle>
+                            <NumericEditorComponent
+                                width="100px"
+                                value={config.roulette.leaderboardSize || 5}
+                                onChange={(value) =>
+                                    updateRouletteConfig(() => ({ leaderboardSize: value }))
+                                }
+                                min={1}
+                                max={10}
+                            />
+                        </ParameterCard>
+                    </ControlGroup>
+                </Row>
+
+                <div style={{ marginTop: '16px' }}>
+                    <LeaderboardMessagesComponent botConfig={botConfig} apply={apply} />
                 </div>
             </Section>
 

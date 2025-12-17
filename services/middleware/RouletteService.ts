@@ -27,6 +27,10 @@ export default class RouletteService extends Middleware {
   // Stats command
   private statsCommands: string[] = ['!roulette-stats', '!рулетка-стат'];
   private statsMessages: string[] = [];
+  // Leaderboard command
+  private leaderboardCommands: string[] = ['!roulette-top', '!рулетка-топ'];
+  private leaderboardMessages: string[] = [];
+  private leaderboardSize: number = 5;
   private repository: RouletteRepository | null = null;
 
   constructor(
@@ -79,6 +83,9 @@ export default class RouletteService extends Middleware {
       this.protectedUsersMessages = config.roulette.protectedUsersMessages;
       this.statsCommands = config.roulette.statsCommands || ['!roulette-stats', '!рулетка-стат'];
       this.statsMessages = config.roulette.statsMessages || [];
+      this.leaderboardCommands = config.roulette.leaderboardCommands || ['!roulette-top', '!рулетка-топ'];
+      this.leaderboardMessages = config.roulette.leaderboardMessages || [];
+      this.leaderboardSize = config.roulette.leaderboardSize || 5;
       console.log('✅ RouletteService config updated');
     }
 
@@ -105,6 +112,11 @@ export default class RouletteService extends Middleware {
     // Check for stats command first
     if (this.statsCommands.includes(message.htmlMessage)) {
       return this.handleStatsCommand(message);
+    }
+
+    // Check for leaderboard command
+    if (this.leaderboardCommands.includes(message.htmlMessage)) {
+      return this.handleLeaderboardCommand(message);
     }
 
     // Check for roulette command
@@ -258,6 +270,58 @@ export default class RouletteService extends Middleware {
     if (streak === 0) return '0';
     if (streak > 0) return `+${streak} выживаний`;
     return `${streak} смертей`;
+  }
+
+  private handleLeaderboardCommand(message: AppEvent): { accepted: boolean; message: AppEvent; actions: any[] } {
+    if (!this.repository) {
+      return { accepted: false, message: { ...message }, actions: [] };
+    }
+
+    const leaderboard = this.repository.getLeaderboard('plays', this.leaderboardSize);
+
+    if (!leaderboard || leaderboard.length === 0) {
+      return {
+        accepted: true,
+        message: { ...message },
+        actions: [
+          {
+            type: ActionTypes.SEND_MESSAGE,
+            payload: {
+              message: `Лидерборд пока пуст. Будь первым!`,
+              forwardToUi: true
+            }
+          }
+        ]
+      };
+    }
+
+    // Format leaderboard entries
+    const topEntries = leaderboard.map((stat, index) => {
+      const survivalRate = stat.totalPlays > 0
+        ? ((stat.survivals / stat.totalPlays) * 100).toFixed(0)
+        : '0';
+      return `${index + 1}. ${stat.userName} (${stat.totalPlays} игр, ${survivalRate}%)`;
+    }).join(' | ');
+
+    const template = this.leaderboardMessages.length > 0
+      ? this.leaderboardMessages[Math.floor(Math.random() * this.leaderboardMessages.length)]
+      : "🏆 Топ рулетки: ${top}";
+
+    const leaderboardMessage = template.replace(/\$\{top\}/g, topEntries);
+
+    return {
+      accepted: true,
+      message: { ...message },
+      actions: [
+        {
+          type: ActionTypes.SEND_MESSAGE,
+          payload: {
+            message: leaderboardMessage,
+            forwardToUi: true
+          }
+        }
+      ]
+    };
   }
 
   private recordPlay(userId: string, userName: string, result: 'survival' | 'death', wasMuted: boolean): void {

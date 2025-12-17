@@ -790,6 +790,19 @@ const en = {
                         },
                         noStats: "You don't have roulette stats yet. Try playing!",
                     },
+                    leaderboard: {
+                        sectionTitle: 'Leaderboard command',
+                        commands: {
+                            title: 'Leaderboard commands',
+                            placeholder: 'Enter commands separated by commas (e.g. !roulette-top, !rr-top)',
+                        },
+                        messages: {
+                            title: 'Response templates',
+                            hint: 'Available variables: ${top} — formatted leaderboard list',
+                            defaultTemplate: "🏆 Roulette Top: ${top}",
+                        },
+                        size: 'Top size',
+                    },
                     history: {
                         button: 'Statistics',
                         title: 'Roulette Statistics',

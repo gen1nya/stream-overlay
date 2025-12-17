@@ -250,6 +250,10 @@ export interface RouletteBotConfig {
     // Stats command
     statsCommands: string[];
     statsMessages: string[];  // ${user}, ${plays}, ${survivals}, ${deaths}, ${rate}, ${streak}
+    // Leaderboard command
+    leaderboardCommands: string[];
+    leaderboardMessages: string[];  // ${top} - formatted leaderboard
+    leaderboardSize: number;  // number of players to show (default: 5)
 }
 
 // Custom bot configuration

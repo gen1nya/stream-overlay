@@ -39,6 +39,13 @@ export class BotConfigService {
             statsMessages: [
                 "@${user} | Игр: ${plays} | Выжил: ${survivals} | Смертей: ${deaths} | Выживаемость: ${rate}% | Текущая серия: ${streak}"
             ],
+            leaderboardCommands: [
+                "!roulette-top", "!рулетка-топ"
+            ],
+            leaderboardMessages: [
+                "🏆 Топ рулетки: ${top}"
+            ],
+            leaderboardSize: 5,
         },
         custom: { enabled: false },
         gacha: {
