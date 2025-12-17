@@ -31,7 +31,8 @@ import {
     FiTarget,
     FiLayout,
     FiGift,
-    FiZap
+    FiZap,
+    FiDatabase
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -54,6 +55,7 @@ import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
 import TriggersComponent from "./settings/bot/triggers/TriggersComponent";
+import TriggerHistoryPopup from "./settings/bot/triggers/TriggerHistoryPopup";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
@@ -212,6 +214,32 @@ const BotPageContent = styled.div`
     box-sizing: border-box;
 `;
 
+// Toolbar icon button (for database, etc.)
+const ToolbarIconButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: rgba(100, 108, 255, 0.1);
+    color: #646cff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(100, 108, 255, 0.2);
+        border-color: #646cff;
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+`;
+
 export default function Settings() {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -262,6 +290,7 @@ export default function Settings() {
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
     const [showBotHelp, setShowBotHelp] = useState(false);
+    const [showTriggerHistory, setShowTriggerHistory] = useState(false);
 
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
@@ -373,6 +402,9 @@ export default function Settings() {
                     onCreateTheme={handleCreateTheme}
                 />
             )}
+            {showTriggerHistory && (
+                <TriggerHistoryPopup onClose={() => setShowTriggerHistory(false)} />
+            )}
 
             <HolidayHeader>
                 <HeaderLeft>
@@ -462,6 +494,11 @@ export default function Settings() {
 
                                 <Spacer />
 
+                                {activePage === 'bot_triggers' && (
+                                    <ToolbarIconButton onClick={() => setShowTriggerHistory(true)} title={t('settings.bot.triggers.history.button')}>
+                                        <FiDatabase />
+                                    </ToolbarIconButton>
+                                )}
                                 <HelpButton onClick={() => setShowBotHelp(true)} />
                             </Row>
                         ) : (
