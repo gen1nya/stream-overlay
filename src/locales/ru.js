@@ -321,6 +321,8 @@ const ru = {
                 paddingEditor: {
                     outerTitle: 'Отступы снаружи',
                     innerTitle: 'Отступы внутри',
+                    headerTitle: 'Отступы заголовка',
+                    textTitle: 'Отступы текста',
                     layersTitle: 'Слои фона',
                     colorBgTitle: 'Цвет',
                     gradientTitle: 'Градиент',
@@ -1285,6 +1287,11 @@ const ru = {
                 },
                 layout: {
                     title: 'Отступы и позиционирование',
+                },
+                offset: {
+                    title: 'Смещение элементов',
+                    header: 'Смещение заголовка',
+                    text: 'Смещение текста',
                 },
             },
             fft: {

@@ -155,7 +155,25 @@ const TitleContainer = styled.div`
     background: ${({ $tcolor, theme }) =>
             theme.chatMessage.titleBackgroundMode === "solid" ? $tcolor : "transparent"};
     border-radius: 8px;
-    padding: 0 0 0 6px;
+    padding: ${({ theme }) => {
+        const m = theme.chatMessage;
+        if (m.headerPaddingMode === 'individual') {
+            const top = m.headerPaddingTop ?? m.headerPaddingV ?? 0;
+            const right = m.headerPaddingRight ?? m.headerPaddingH ?? 0;
+            const bottom = m.headerPaddingBottom ?? m.headerPaddingV ?? 0;
+            const left = m.headerPaddingLeft ?? m.headerPaddingH ?? 6;
+            return `${top}px ${right}px ${bottom}px ${left}px`;
+        }
+        const v = m.headerPaddingV ?? 0;
+        const h = m.headerPaddingH ?? 6;
+        return `${v}px ${h}px`;
+    }};
+    transform: ${({ theme }) => {
+        const m = theme.chatMessage;
+        const x = m.headerOffsetX ?? 0;
+        const y = m.headerOffsetY ?? 0;
+        return x === 0 && y === 0 ? 'none' : `translate(${x}px, ${y}px)`;
+    }};
     display: flex;
     align-items: center;
     flex-direction: row;
@@ -211,6 +229,25 @@ const MessageText = styled.span`
         return hexToRgba(theme.chatMessage.messageFont.color ?? defaultColor, theme.chatMessage.messageFont.opacity ?? 1);
     }};
     font-size: ${({theme}) => theme.chatMessage.fontSize}px;
+    padding: ${({theme}) => {
+        const m = theme.chatMessage;
+        if (m.textPaddingMode === 'individual') {
+            const top = m.textPaddingTop ?? m.textPaddingV ?? 0;
+            const right = m.textPaddingRight ?? m.textPaddingH ?? 0;
+            const bottom = m.textPaddingBottom ?? m.textPaddingV ?? 0;
+            const left = m.textPaddingLeft ?? m.textPaddingH ?? 0;
+            return `${top}px ${right}px ${bottom}px ${left}px`;
+        }
+        const v = m.textPaddingV ?? 0;
+        const h = m.textPaddingH ?? 0;
+        return `${v}px ${h}px`;
+    }};
+    transform: ${({ theme }) => {
+        const m = theme.chatMessage;
+        const x = m.textOffsetX ?? 0;
+        const y = m.textOffsetY ?? 0;
+        return x === 0 && y === 0 ? 'none' : `translate(${x}px, ${y}px)`;
+    }};
     overflow-wrap: anywhere;
     img {
         height: 1em;

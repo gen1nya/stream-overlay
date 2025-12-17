@@ -85,12 +85,30 @@ export default function PaddingEditorComponent({
     onImagePaddingRightChange,
     onImagePaddingBottomChange,
     onImagePaddingLeftChange,
+    // Header padding props
+    onHeaderPaddingModeChange,
+    onHeaderPaddingHChange,
+    onHeaderPaddingVChange,
+    onHeaderPaddingTopChange,
+    onHeaderPaddingRightChange,
+    onHeaderPaddingBottomChange,
+    onHeaderPaddingLeftChange,
+    // Text padding props
+    onTextPaddingModeChange,
+    onTextPaddingHChange,
+    onTextPaddingVChange,
+    onTextPaddingTopChange,
+    onTextPaddingRightChange,
+    onTextPaddingBottomChange,
+    onTextPaddingLeftChange,
 }) {
     const { t } = useTranslation();
     const paddingMode = message.paddingMode || 'grouped';
     const colorBgPaddingMode = message.colorBgPaddingMode || 'grouped';
     const gradientPaddingMode = message.gradientPaddingMode || 'grouped';
     const imagePaddingMode = message.imagePaddingMode || 'grouped';
+    const headerPaddingMode = message.headerPaddingMode || 'grouped';
+    const textPaddingMode = message.textPaddingMode || 'grouped';
 
     // Memoized mode options
     const modeOptions = useMemo(() => [
@@ -162,11 +180,45 @@ export default function PaddingEditorComponent({
         }
     };
 
+    const handleHeaderModeChange = (mode) => {
+        if (onHeaderPaddingModeChange) {
+            onHeaderPaddingModeChange(mode);
+
+            // When switching to individual mode, initialize values from grouped if not set
+            if (mode === 'individual') {
+                const h = message.headerPaddingH ?? 6;
+                const v = message.headerPaddingV ?? 0;
+                if (onHeaderPaddingTopChange && message.headerPaddingTop === undefined) onHeaderPaddingTopChange(v);
+                if (onHeaderPaddingRightChange && message.headerPaddingRight === undefined) onHeaderPaddingRightChange(h);
+                if (onHeaderPaddingBottomChange && message.headerPaddingBottom === undefined) onHeaderPaddingBottomChange(v);
+                if (onHeaderPaddingLeftChange && message.headerPaddingLeft === undefined) onHeaderPaddingLeftChange(h);
+            }
+        }
+    };
+
+    const handleTextModeChange = (mode) => {
+        if (onTextPaddingModeChange) {
+            onTextPaddingModeChange(mode);
+
+            // When switching to individual mode, initialize values from grouped if not set
+            if (mode === 'individual') {
+                const h = message.textPaddingH ?? 0;
+                const v = message.textPaddingV ?? 0;
+                if (onTextPaddingTopChange && message.textPaddingTop === undefined) onTextPaddingTopChange(v);
+                if (onTextPaddingRightChange && message.textPaddingRight === undefined) onTextPaddingRightChange(h);
+                if (onTextPaddingBottomChange && message.textPaddingBottom === undefined) onTextPaddingBottomChange(v);
+                if (onTextPaddingLeftChange && message.textPaddingLeft === undefined) onTextPaddingLeftChange(h);
+            }
+        }
+    };
+
     // Check if background padding sections should be shown
     const showColorBgSection = onColorBgPaddingModeChange || onColorBgPaddingHChange || onColorBgPaddingVChange;
     const showGradientSection = onGradientPaddingModeChange || onGradientPaddingHChange || onGradientPaddingVChange;
     const showImageSection = onImagePaddingModeChange || onImagePaddingHChange || onImagePaddingVChange;
     const showLayersSection = showColorBgSection || showGradientSection || showImageSection;
+    const showHeaderSection = onHeaderPaddingModeChange || onHeaderPaddingHChange || onHeaderPaddingVChange;
+    const showTextSection = onTextPaddingModeChange || onTextPaddingHChange || onTextPaddingVChange;
 
     // Render controls for grouped mode (horizontal/vertical)
     const renderGroupedControls = (hValue, vValue, onHChange, onVChange, maxH = 50, maxV = 50) => (
@@ -459,6 +511,108 @@ export default function PaddingEditorComponent({
                     <Spacer />
                 </LayersGrid>
             </div>
+
+            {/* Header padding */}
+            {showHeaderSection && (
+                <div>
+                    <SmallSubTitle>{t('settings.shared.paddingEditor.headerTitle')}</SmallSubTitle>
+                    <LayersGrid>
+                        <LayerCard>
+                            {onHeaderPaddingModeChange && (
+                                <ModeSelector>
+                                    <RadioGroup
+                                        items={modeOptions}
+                                        defaultSelected={headerPaddingMode}
+                                        direction="horizontal"
+                                        onChange={handleHeaderModeChange}
+                                    />
+                                </ModeSelector>
+                            )}
+
+                            {headerPaddingMode === 'grouped'
+                                ? renderGroupedControls(
+                                    message.headerPaddingH ?? 6,
+                                    message.headerPaddingV ?? 0,
+                                    onHeaderPaddingHChange,
+                                    onHeaderPaddingVChange,
+                                    50,
+                                    20
+                                )
+                                : renderIndividualControls(
+                                    {
+                                        top: message.headerPaddingTop,
+                                        right: message.headerPaddingRight,
+                                        bottom: message.headerPaddingBottom,
+                                        left: message.headerPaddingLeft,
+                                    },
+                                    message.headerPaddingH ?? 6,
+                                    message.headerPaddingV ?? 0,
+                                    {
+                                        top: onHeaderPaddingTopChange,
+                                        right: onHeaderPaddingRightChange,
+                                        bottom: onHeaderPaddingBottomChange,
+                                        left: onHeaderPaddingLeftChange,
+                                    },
+                                    50,
+                                    20
+                                )
+                            }
+                        </LayerCard>
+                        <Spacer />
+                    </LayersGrid>
+                </div>
+            )}
+
+            {/* Text padding */}
+            {showTextSection && (
+                <div>
+                    <SmallSubTitle>{t('settings.shared.paddingEditor.textTitle')}</SmallSubTitle>
+                    <LayersGrid>
+                        <LayerCard>
+                            {onTextPaddingModeChange && (
+                                <ModeSelector>
+                                    <RadioGroup
+                                        items={modeOptions}
+                                        defaultSelected={textPaddingMode}
+                                        direction="horizontal"
+                                        onChange={handleTextModeChange}
+                                    />
+                                </ModeSelector>
+                            )}
+
+                            {textPaddingMode === 'grouped'
+                                ? renderGroupedControls(
+                                    message.textPaddingH ?? 0,
+                                    message.textPaddingV ?? 0,
+                                    onTextPaddingHChange,
+                                    onTextPaddingVChange,
+                                    50,
+                                    20
+                                )
+                                : renderIndividualControls(
+                                    {
+                                        top: message.textPaddingTop,
+                                        right: message.textPaddingRight,
+                                        bottom: message.textPaddingBottom,
+                                        left: message.textPaddingLeft,
+                                    },
+                                    message.textPaddingH ?? 0,
+                                    message.textPaddingV ?? 0,
+                                    {
+                                        top: onTextPaddingTopChange,
+                                        right: onTextPaddingRightChange,
+                                        bottom: onTextPaddingBottomChange,
+                                        left: onTextPaddingLeftChange,
+                                    },
+                                    50,
+                                    20
+                                )
+                            }
+                        </LayerCard>
+                        <Spacer />
+                    </LayersGrid>
+                </div>
+            )}
         </>
     );
 }

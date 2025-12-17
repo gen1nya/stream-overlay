@@ -1,4 +1,5 @@
 import React, {useCallback, useMemo} from 'react';
+import styled from 'styled-components';
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import ColorSelectorButton from './ColorSelectorButton';
 import FontAndSizeEditor from '../../utils/FontAndSizeEditor';
@@ -7,7 +8,8 @@ import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorCom
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
-import {FiMessageSquare, FiType, FiImage, FiLayout, FiAlignCenter} from "react-icons/fi";
+import XYPad from "../../utils/XYPad";
+import {FiMessageSquare, FiType, FiImage, FiLayout, FiAlignCenter, FiMove} from "react-icons/fi";
 import {
     CardContent,
     CardHeader,
@@ -21,6 +23,20 @@ import {Spacer} from "../../utils/Separator";
 import {Row} from "../SettingsComponent";
 import Switch from "../../utils/Switch";
 import { useTranslation } from "react-i18next";
+
+const OffsetGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+    margin-top: 12px;
+`;
+
+const OffsetCard = styled.div`
+    background: rgba(40, 40, 40, 0.3);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 16px;
+`;
 
 const MESSAGE_DIRECTION_OPT = [
     {key: 'row', labelKey: 'settings.chatMessages.header.namePosition.options.row', aiIcon: 'AiOutlineInsertRowLeft'},
@@ -337,7 +353,60 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
                         onImagePaddingRightChange={(v) => updateField('imagePaddingRight', v)}
                         onImagePaddingBottomChange={(v) => updateField('imagePaddingBottom', v)}
                         onImagePaddingLeftChange={(v) => updateField('imagePaddingLeft', v)}
+                        onHeaderPaddingModeChange={(v) => updateField('headerPaddingMode', v)}
+                        onHeaderPaddingHChange={(v) => updateField('headerPaddingH', v)}
+                        onHeaderPaddingVChange={(v) => updateField('headerPaddingV', v)}
+                        onHeaderPaddingTopChange={(v) => updateField('headerPaddingTop', v)}
+                        onHeaderPaddingRightChange={(v) => updateField('headerPaddingRight', v)}
+                        onHeaderPaddingBottomChange={(v) => updateField('headerPaddingBottom', v)}
+                        onHeaderPaddingLeftChange={(v) => updateField('headerPaddingLeft', v)}
                     />
+                </Section>
+
+                {/* Секция смещений */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiMove />
+                            {t('settings.chatMessages.offset.title')}
+                        </SectionTitle>
+                    </SectionHeader>
+
+                    <OffsetGrid>
+                        <OffsetCard>
+                            <XYPad
+                                title={t('settings.chatMessages.offset.header')}
+                                valueX={chatMessage.headerOffsetX ?? 0}
+                                valueY={chatMessage.headerOffsetY ?? 0}
+                                min={-50}
+                                max={50}
+                                size={120}
+                                onChange={({x, y}) => {
+                                    updateChatMessage({
+                                        headerOffsetX: x,
+                                        headerOffsetY: y,
+                                    });
+                                }}
+                            />
+                        </OffsetCard>
+
+                        <OffsetCard>
+                            <XYPad
+                                title={t('settings.chatMessages.offset.text')}
+                                valueX={chatMessage.textOffsetX ?? 0}
+                                valueY={chatMessage.textOffsetY ?? 0}
+                                min={-50}
+                                max={50}
+                                size={120}
+                                onChange={({x, y}) => {
+                                    updateChatMessage({
+                                        textOffsetX: x,
+                                        textOffsetY: y,
+                                    });
+                                }}
+                            />
+                        </OffsetCard>
+                    </OffsetGrid>
                 </Section>
             </CardContent>
         </SettingsCard>

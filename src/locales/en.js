@@ -321,6 +321,8 @@ const en = {
                 paddingEditor: {
                     outerTitle: 'Outer margins',
                     innerTitle: 'Inner padding',
+                    headerTitle: 'Header padding',
+                    textTitle: 'Text padding',
                     layersTitle: 'Background layers',
                     colorBgTitle: 'Color',
                     gradientTitle: 'Gradient',
@@ -1291,6 +1293,11 @@ const en = {
                 },
                 layout: {
                     title: 'Spacing and positioning',
+                },
+                offset: {
+                    title: 'Element offset',
+                    header: 'Header offset',
+                    text: 'Text offset',
                 },
             },
             fft: {
