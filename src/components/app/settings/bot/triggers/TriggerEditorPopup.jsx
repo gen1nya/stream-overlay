@@ -9,6 +9,7 @@ import {
 } from 'react-icons/fi';
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
+import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
 import { getTwitchRewards } from "../../../../../services/api";
 import { v4 as uuidv4 } from 'uuid';
 import {Spacer} from "../../../../utils/Separator";
@@ -211,31 +212,6 @@ const Input = styled.input`
     background: #1e1e1e;
     color: #fff;
     font-size: 14px;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-
-    &::placeholder {
-        color: #666;
-    }
-
-    &:focus {
-        outline: none;
-        border-color: #646cff;
-        background: #252525;
-    }
-`;
-
-const TextArea = styled.textarea`
-    width: 100%;
-    min-height: 70px;
-    padding: 10px 14px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
     transition: all 0.2s ease;
     box-sizing: border-box;
 
@@ -792,10 +768,12 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                                 {/* Message input */}
                                                 {action.type === 'send_message' && (
                                                     <>
-                                                        <TextArea
+                                                        <DebouncedTextarea
                                                             value={action.params.message || ''}
-                                                            onChange={(e) => updateActionParams(action.id, { message: e.target.value })}
+                                                            onChange={(value) => updateActionParams(action.id, { message: value })}
                                                             placeholder={t('settings.bot.triggers.messagePlaceholder')}
+                                                            maxLength={500}
+                                                            minHeight="70px"
                                                         />
                                                         <VariablesHint>
                                                             {t('settings.bot.triggers.availableVariables')}: <span className="var">${'{user}'}</span>, <span className="var">${'{target}'}</span>, <span className="var">${'{args[0]}'}</span>

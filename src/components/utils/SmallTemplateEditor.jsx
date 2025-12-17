@@ -1,6 +1,7 @@
 import React from "react";
 import styled from "styled-components";
-import {FiDelete, FiTrash2} from "react-icons/fi";
+import {FiTrash2} from "react-icons/fi";
+import DebouncedTextarea from "./DebouncedTextarea";
 
 const Wrapper = styled.div`
     display: flex;
@@ -8,17 +9,7 @@ const Wrapper = styled.div`
     max-width: ${({ maxWidth }) => maxWidth || "100%"};
     flex-direction: row;
     align-items: center;
-`;
-
-const Input = styled.textarea`
-  flex: 1;
-  font-family: monospace;
-  font-size: 1rem;
-  padding: 0.25rem 0.5rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  resize: vertical;
-  min-height: 40px;
+    gap: 8px;
 `;
 
 export function SmallTemplateEditor({
@@ -27,18 +18,20 @@ export function SmallTemplateEditor({
                                         onDelete = () => {},
                                         onBlur = () => {},
                                         hideDelete = false,
-                                        width = "100%",                                    }) {
+                                        width = "100%",
+                                    }) {
     return (
         <Wrapper maxWidth={width}>
-            <Input
+            <DebouncedTextarea
                 value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onBlur={(e) => onBlur(e.target.value)}
+                onChange={onChange}
+                maxLength={500}
+                minHeight="40px"
             />
             {!hideDelete && (
                 <FiTrash2
                     size={"24px"}
-                    style={{ cursor: "pointer", marginLeft: "8px" }}
+                    style={{ cursor: "pointer", flexShrink: 0 }}
                     onClick={onDelete}
                 />
             )}

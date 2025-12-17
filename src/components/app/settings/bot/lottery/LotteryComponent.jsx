@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import styled from "styled-components";
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
+import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
 import { useTranslation } from 'react-i18next';
 import {
     FiGift, FiPlay, FiUsers, FiClock, FiMessageSquare,
@@ -91,31 +92,6 @@ const FlowStepContent = styled.div`
     flex-direction: column;
     gap: 16px;
     box-sizing: border-box;
-`;
-
-const MessageInput = styled.textarea`
-    width: 100%;
-    min-height: 80px;
-    padding: 12px 16px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
-    font-size: 14px;
-    font-family: inherit;
-    resize: vertical;
-    transition: all 0.2s ease;
-    box-sizing: border-box;
-
-    &::placeholder {
-        color: #888;
-    }
-
-    &:focus {
-        outline: none;
-        border-color: #646cff;
-        background: #252525;
-    }
 `;
 
 // Fixed-width input for commands
@@ -466,10 +442,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.start.message')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.start}
-                                    onChange={(e) => updateMessage('start', e.target.value)}
+                                    onChange={(value) => updateMessage('start', value)}
                                     placeholder={t('settings.bot.lottery.flow.start.messagePlaceholder')}
+                                    maxLength={500}
                                 />
                                 <VariablesList style={{ marginTop: '8px' }}>
                                     <VariableItem><span className="var">{'{{subject}}'}</span><span className="desc">{t('settings.bot.lottery.variables.subject')}</span></VariableItem>
@@ -605,11 +582,12 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                             <FiTrash2 />
                                         </DeleteButton>
                                     </WarmupHeader>
-                                    <MessageInput
+                                    <DebouncedTextarea
                                         value={trigger.message}
-                                        onChange={(e) => updateWarmupTrigger(trigger.id, { message: e.target.value })}
+                                        onChange={(value) => updateWarmupTrigger(trigger.id, { message: value })}
                                         placeholder={t('settings.bot.lottery.flow.warmup.messagePlaceholder')}
-                                        style={{ minHeight: '60px' }}
+                                        maxLength={500}
+                                        minHeight="60px"
                                     />
                                 </WarmupTriggerCard>
                             ))}
@@ -637,9 +615,10 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.result.winner')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.winner}
-                                    onChange={(e) => updateMessage('winner', e.target.value)}
+                                    onChange={(value) => updateMessage('winner', value)}
+                                    maxLength={500}
                                 />
                             </div>
 
@@ -647,9 +626,10 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.result.noParticipants')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.noParticipants}
-                                    onChange={(e) => updateMessage('noParticipants', e.target.value)}
+                                    onChange={(value) => updateMessage('noParticipants', value)}
+                                    maxLength={500}
                                 />
                             </div>
 
@@ -691,9 +671,10 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.stats.response')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.statsResponse}
-                                    onChange={(e) => updateMessage('statsResponse', e.target.value)}
+                                    onChange={(value) => updateMessage('statsResponse', value)}
+                                    maxLength={500}
                                 />
                                 <VariablesList style={{ marginTop: '8px' }}>
                                     <VariableItem><span className="var">{'{{topPlayers}}'}</span><span className="desc">{t('settings.bot.lottery.variables.topPlayers')}</span></VariableItem>
@@ -757,10 +738,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.additional.subjectBlacklisted')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.subjectBlacklisted}
-                                    onChange={(e) => updateMessage('subjectBlacklisted', e.target.value)}
-                                    style={{ minHeight: '60px' }}
+                                    onChange={(value) => updateMessage('subjectBlacklisted', value)}
+                                    maxLength={500}
+                                    minHeight="60px"
                                 />
                             </div>
 
@@ -768,10 +750,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.additional.alreadyUsed')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.alreadyUsed}
-                                    onChange={(e) => updateMessage('alreadyUsed', e.target.value)}
-                                    style={{ minHeight: '60px' }}
+                                    onChange={(value) => updateMessage('alreadyUsed', value)}
+                                    maxLength={500}
+                                    minHeight="60px"
                                 />
                             </div>
 
@@ -779,10 +762,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.additional.alreadyRunning')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.alreadyRunning}
-                                    onChange={(e) => updateMessage('alreadyRunning', e.target.value)}
-                                    style={{ minHeight: '60px' }}
+                                    onChange={(value) => updateMessage('alreadyRunning', value)}
+                                    maxLength={500}
+                                    minHeight="60px"
                                 />
                             </div>
 
@@ -790,10 +774,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.additional.cooldown')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.cooldown}
-                                    onChange={(e) => updateMessage('cooldown', e.target.value)}
-                                    style={{ minHeight: '60px' }}
+                                    onChange={(value) => updateMessage('cooldown', value)}
+                                    maxLength={500}
+                                    minHeight="60px"
                                 />
                             </div>
 
@@ -801,10 +786,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                 <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                     {t('settings.bot.lottery.flow.additional.cancelled')}
                                 </label>
-                                <MessageInput
+                                <DebouncedTextarea
                                     value={config.messages.cancelled}
-                                    onChange={(e) => updateMessage('cancelled', e.target.value)}
-                                    style={{ minHeight: '60px' }}
+                                    onChange={(value) => updateMessage('cancelled', value)}
+                                    maxLength={500}
+                                    minHeight="60px"
                                 />
                             </div>
 
@@ -813,10 +799,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                     <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                         {t('settings.bot.lottery.flow.additional.userNotInChat')}
                                     </label>
-                                    <MessageInput
+                                    <DebouncedTextarea
                                         value={config.messages.userNotInChat}
-                                        onChange={(e) => updateMessage('userNotInChat', e.target.value)}
-                                        style={{ minHeight: '60px' }}
+                                        onChange={(value) => updateMessage('userNotInChat', value)}
+                                        maxLength={500}
+                                        minHeight="60px"
                                     />
                                 </div>
                             )}
@@ -826,10 +813,11 @@ export default function LotteryComponent({ botConfig, apply, showHelp, setShowHe
                                     <label style={{ fontSize: '0.9rem', color: '#ccc', marginBottom: '8px', display: 'block' }}>
                                         {t('settings.bot.lottery.flow.additional.subjectRequired')}
                                     </label>
-                                    <MessageInput
+                                    <DebouncedTextarea
                                         value={config.messages.subjectRequired}
-                                        onChange={(e) => updateMessage('subjectRequired', e.target.value)}
-                                        style={{ minHeight: '60px' }}
+                                        onChange={(value) => updateMessage('subjectRequired', value)}
+                                        maxLength={500}
+                                        minHeight="60px"
                                     />
                                 </div>
                             )}
