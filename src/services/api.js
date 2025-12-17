@@ -360,3 +360,32 @@ export const getBackendLogsConfig = () => {
 export const updateBackendLogsConfig = (config) => {
     return ipcRenderer?.invoke('backend-logs:update-config', config);
 };
+
+// Trigger System API
+export const getScheduledActions = () => {
+    return ipcRenderer?.invoke('triggers:get-scheduled');
+};
+
+export const getActiveVips = () => {
+    return ipcRenderer?.invoke('triggers:get-active-vips');
+};
+
+export const getActiveMods = () => {
+    return ipcRenderer?.invoke('triggers:get-active-mods');
+};
+
+export const cancelScheduledAction = (actionId, reason) => {
+    return ipcRenderer?.invoke('triggers:cancel-action', actionId, reason);
+};
+
+export const cancelScheduledActionsForUser = (userId, actionType, reason) => {
+    return ipcRenderer?.invoke('triggers:cancel-for-user', userId, actionType, reason);
+};
+
+export const getTriggerExecutions = (options) => {
+    return ipcRenderer?.invoke('triggers:get-executions', options);
+};
+
+export const getUserScheduledActions = (userId) => {
+    return ipcRenderer?.invoke('triggers:get-user-scheduled', userId);
+};

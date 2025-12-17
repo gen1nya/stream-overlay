@@ -5,7 +5,15 @@ import defaultTheme from './default-theme.json';
 import * as messageCache from './services/MessageCacheManager';
 import {MiddlewareProcessor} from './services/middleware/MiddlewareProcessor';
 import {ActionTypes} from './services/middleware/ActionTypes';
-import {timeoutUser} from './services/twitch/authorizedHelixApi';
+import {
+    timeoutUser,
+    addVip,
+    removeVip,
+    addModerator,
+    removeModerator,
+    deleteMessage
+} from './services/twitch/authorizedHelixApi';
+import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
@@ -127,6 +135,54 @@ const applyAction = async (action: { type: string; payload: any }) => {
         userName: action.payload.userName || 'unknown',
       });
       break;
+
+    case ActionTypes.ADD_VIP:
+      await addVip(action.payload.userId);
+      logService.log({
+        message: `VIP добавлен: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.REMOVE_VIP:
+      await removeVip(action.payload.userId);
+      logService.log({
+        message: `VIP удален: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.ADD_MOD:
+      await addModerator(action.payload.userId);
+      logService.log({
+        message: `Модератор добавлен: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.REMOVE_MOD:
+      await removeModerator(action.payload.userId);
+      logService.log({
+        message: `Модератор удален: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.DELETE_MESSAGE:
+      if (action.payload.messageId) {
+        await deleteMessage(action.payload.messageId);
+        logService.logMessage(`Сообщение удалено: ${action.payload.messageId}`);
+      }
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -146,6 +202,8 @@ const twitchClient = new TwitchClient(
   },
   () => {
     console.log('Twitch client logged out');
+    currentUserId = null;
+    actionScheduler.stop();
     mainWindow?.webContents?.send("logout:success");
   },
   proxy  // Pass ProxyService to TwitchClient
@@ -157,6 +215,18 @@ const botService = new BotConfigService(
         middlewareProcessor.onThemeUpdated(newConfig);
     }
 )
+
+// Track current user ID for trigger repository access
+let currentUserId: string | null = null;
+
+const actionScheduler = new ActionScheduler({
+    getRepository: () => {
+        if (!currentUserId) return null;
+        return DbRepository.getInstance(currentUserId).triggers;
+    },
+    logService,
+    sendMessage: (message: string) => twitchClient.sendMessage(message)
+})
 
 const scraper = new YouTubeLiveStreamsScraper(
     store,
@@ -239,10 +309,12 @@ app.whenReady().then(() => {
       twitchClient,
       () => {
         twitchClient.refreshUser().then((userId) => {
-          middlewareProcessor.onUserUpdated(userId)
+          currentUserId = userId;
+          middlewareProcessor.onUserUpdated(userId);
+
+          // Start the action scheduler after user is authenticated
+          actionScheduler.start();
         });
-
-
       },
       localeRepository,
       backendLogService

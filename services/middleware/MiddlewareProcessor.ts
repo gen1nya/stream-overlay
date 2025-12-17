@@ -1,5 +1,6 @@
 import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
+import TriggerMiddleware from './TriggerMiddleware';
 import {ActionType} from './ActionTypes';
 import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
@@ -33,7 +34,8 @@ export class MiddlewareProcessor {
       new RouletteService(this.logService),
       new GreetingMiddleware(this.logService),
       new GachaMiddleware(store),
-      lotteryMiddleware
+      lotteryMiddleware,
+      new TriggerMiddleware(this.logService)
     ];
   }
 

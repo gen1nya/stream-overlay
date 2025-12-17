@@ -39,7 +39,7 @@ import {
     TableScrollContainer,
     Title
 } from "../utils/tablePopupSharedStyles";
-import {getTwitchUsers, searchTwitchUsers, updateRoles} from '../../services/api';
+import {getTwitchUsers, searchTwitchUsers, updateRoles, getActiveVips, cancelScheduledActionsForUser} from '../../services/api';
 import { useTranslation } from 'react-i18next';
 
 const FilterSection = styled.div`
@@ -193,6 +193,31 @@ const LastSeenTime = styled.span`
 
 const ITEMS_PER_PAGE = 500;
 
+const VipExpiryBadge = styled.div`
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    width: 10px;
+    height: 10px;
+    background: #ff9800;
+    border-radius: 50%;
+    border: 1px solid #2a2a2a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    svg {
+        width: 6px;
+        height: 6px;
+        color: #fff;
+    }
+`;
+
+const VipIconWrapper = styled.div`
+    position: relative;
+    display: inline-flex;
+`;
+
 export default function TwitchUsersPopup({ onClose }) {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -207,6 +232,7 @@ export default function TwitchUsersPopup({ onClose }) {
     const [currentPage, setCurrentPage] = useState(0);
     const [totalCount, setTotalCount] = useState(0);
     const [hasMore, setHasMore] = useState(true);
+    const [activeVips, setActiveVips] = useState([]);
     const { t, i18n } = useTranslation();
     const locale = useMemo(() => (i18n.language === 'ru' ? 'ru-RU' : 'en-US'), [i18n.language]);
 
@@ -231,6 +257,14 @@ export default function TwitchUsersPopup({ onClose }) {
                 }
             );
 
+            // Cancel scheduled actions when VIP/mod is manually removed
+            if (!set && (role === 'vip' || role === 'mod')) {
+                const actionType = role === 'vip' ? 'remove_vip' : 'remove_mod';
+                await cancelScheduledActionsForUser(userId, actionType, 'Manually removed via UI');
+                // Refresh active VIPs list
+                loadActiveVips();
+            }
+
             setUsers(prev => prev.map(u => {
                 if (u.id === userId) {
                     return {...u, ...result};
@@ -247,6 +281,35 @@ export default function TwitchUsersPopup({ onClose }) {
             });
         }
     }
+
+    // Load active VIPs with scheduled removal
+    const loadActiveVips = async () => {
+        try {
+            const vips = await getActiveVips();
+            setActiveVips(vips || []);
+        } catch (error) {
+            console.error('Failed to load active VIPs:', error);
+        }
+    };
+
+    // Get VIP expiry time for a user
+    const getVipExpiry = useCallback((userId) => {
+        const vip = activeVips.find(v => v.userId === userId);
+        return vip ? vip.expiresAt : null;
+    }, [activeVips]);
+
+    // Format expiry date for tooltip
+    const formatExpiryDate = useCallback((timestamp) => {
+        if (!timestamp) return '';
+        const date = new Date(timestamp);
+        return date.toLocaleString(locale, {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+    }, [locale]);
 
     const searchTimeoutRef = useRef(null);
 
@@ -286,6 +349,7 @@ export default function TwitchUsersPopup({ onClose }) {
     // Инициальная загрузка
     useEffect(() => {
         loadUsers(0, '', true);
+        loadActiveVips();
     }, []);
 
     // Поиск с задержкой
@@ -488,14 +552,25 @@ export default function TwitchUsersPopup({ onClose }) {
                                             </TableCell>
                                             <TableCell>
                                                 <StatusIconsContainer>
-                                                    <VipInteractiveIcon
-                                                        active={user.isVip}
-                                                        $loading={loadingUsers.has(user.id)}
-                                                        title={t(user.isVip ? 'twitchUsers.statusIcons.vipRemove' : 'twitchUsers.statusIcons.vipAdd')}
-                                                        onClick={() => !loadingUsers.has(user.id) && handleRoleToggle(user.id, user.isVip, user.isMod, 'vip', !user.isVip)}
-                                                    >
-                                                        <FiStar />
-                                                    </VipInteractiveIcon>
+                                                    <VipIconWrapper>
+                                                        <VipInteractiveIcon
+                                                            active={user.isVip}
+                                                            $loading={loadingUsers.has(user.id)}
+                                                            title={
+                                                                getVipExpiry(user.id)
+                                                                    ? t('twitchUsers.statusIcons.vipExpiry', { date: formatExpiryDate(getVipExpiry(user.id)) })
+                                                                    : t(user.isVip ? 'twitchUsers.statusIcons.vipRemove' : 'twitchUsers.statusIcons.vipAdd')
+                                                            }
+                                                            onClick={() => !loadingUsers.has(user.id) && handleRoleToggle(user.id, user.isVip, user.isMod, 'vip', !user.isVip)}
+                                                        >
+                                                            <FiStar />
+                                                        </VipInteractiveIcon>
+                                                        {getVipExpiry(user.id) && (
+                                                            <VipExpiryBadge title={t('twitchUsers.statusIcons.temporaryVip')}>
+                                                                <FiClock />
+                                                            </VipExpiryBadge>
+                                                        )}
+                                                    </VipIconWrapper>
 
                                                     <FollowerIcon active={user.isFollower} title={t('twitchUsers.statusIcons.follower')}>
                                                         <FiUserCheck />

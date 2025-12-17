@@ -182,6 +182,10 @@ export class BotConfigService {
                 subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша',
                 statsResponse: '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}'
             }
+        },
+        triggers: {
+            enabled: false,
+            rules: []
         }
     }
 

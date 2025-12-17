@@ -30,7 +30,8 @@ import {
     FiAlertCircle,
     FiTarget,
     FiLayout,
-    FiGift
+    FiGift,
+    FiZap
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -52,6 +53,7 @@ import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
+import TriggersComponent from "./settings/bot/triggers/TriggersComponent";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
@@ -224,6 +226,7 @@ export default function Settings() {
         bot_roulette: {title: t('settings.pages.botRoulette.title'), icon: <FiTarget/>},
         bot_gacha: {title: t('settings.pages.botGacha.title'), icon: <FiAward/>},
         bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
+        bot_triggers: {title: t('settings.pages.botTriggers.title'), icon: <FiZap/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
@@ -271,6 +274,7 @@ export default function Settings() {
             case 'bot_roulette': return botConfig.roulette?.enabled ?? false;
             case 'bot_gacha': return botConfig.gacha?.enabled ?? false;
             case 'bot_lottery': return botConfig.lottery?.enabled ?? false;
+            case 'bot_triggers': return botConfig.triggers?.enabled ?? false;
             default: return false;
         }
     };
@@ -289,6 +293,9 @@ export default function Settings() {
                 break;
             case 'bot_lottery':
                 applyBotConfig(prev => ({ ...prev, lottery: { ...prev.lottery, enabled: newState } }));
+                break;
+            case 'bot_triggers':
+                applyBotConfig(prev => ({ ...prev, triggers: { ...prev.triggers, enabled: newState } }));
                 break;
         }
     };
@@ -422,6 +429,7 @@ export default function Settings() {
                                 {key: "bot_roulette", icon: <FiTarget/>, label: t('settings.pages.botRoulette.label'), enabled: botConfig?.roulette?.enabled},
                                 {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label'), enabled: botConfig?.gacha?.enabled},
                                 {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label'), enabled: botConfig?.lottery?.enabled},
+                                {key: "bot_triggers", icon: <FiZap/>, label: t('settings.pages.botTriggers.label'), enabled: botConfig?.triggers?.enabled},
                             ]
                         },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
@@ -699,6 +707,33 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                     )}
                 </Content>
             );
+
+        case "bot_triggers":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
+                            <TriggersComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
         case "players": {
             return (
                 <Content>

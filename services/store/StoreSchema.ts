@@ -261,6 +261,92 @@ export interface PingPongBotConfig {
     commands: PingPongCommandConfig[];
 }
 
+// ============================================
+// Trigger System Types
+// ============================================
+
+// Text matching configuration for trigger conditions
+export interface TriggerTextMatch {
+    type: 'exact' | 'starts' | 'contains' | 'regex';
+    value: string;
+    caseSensitive?: boolean;
+}
+
+// User role filter for trigger conditions
+export interface TriggerUserRoleFilter {
+    include?: ('broadcaster' | 'mod' | 'vip' | 'sub')[];
+    exclude?: ('broadcaster' | 'mod' | 'vip' | 'sub')[];
+}
+
+// Trigger condition ("IF" part)
+export interface TriggerCondition {
+    eventType: 'message' | 'redemption' | 'follow' | 'command';
+
+    // For message/command - text matching
+    textMatch?: TriggerTextMatch;
+
+    // For redemption - reward ID and title
+    rewardId?: string;
+    rewardTitle?: string;
+
+    // Filter by sender roles
+    userRoles?: TriggerUserRoleFilter;
+}
+
+// Delay configuration for trigger actions
+export interface TriggerActionDelay {
+    value: number;
+    unit: 'seconds' | 'minutes' | 'hours' | 'days';
+}
+
+// Trigger action parameters
+export interface TriggerActionParams {
+    message?: string;      // For send_message (supports ${user}, ${target}, ${args[N]})
+    duration?: number;     // For timeout (seconds)
+    reason?: string;       // For timeout
+}
+
+// Trigger action ("THEN" part)
+export interface TriggerAction {
+    id: string;            // UUID for UI identification
+    type: 'send_message' | 'add_vip' | 'remove_vip' |
+          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message';
+
+    // Action target
+    target: 'sender' | 'arg_user';  // sender = message author, arg_user = from argument
+    argIndex?: number;              // Which argument to parse (default: 0)
+
+    // Action parameters
+    params: TriggerActionParams;
+
+    // Delayed execution
+    delay?: TriggerActionDelay;
+}
+
+// Trigger rule configuration
+export interface TriggerRule {
+    id: string;                      // UUID
+    name: string;                    // Display name
+    enabled: boolean;
+
+    // Condition ("IF")
+    condition: TriggerCondition;
+
+    // Actions ("THEN")
+    actions: TriggerAction[];
+
+    // Settings
+    cooldown?: number;               // Seconds
+    cooldownScope?: 'global' | 'per_user';
+    stopPropagation?: boolean;       // Stop middleware chain
+}
+
+// Triggers bot configuration
+export interface TriggersBotConfig {
+    enabled: boolean;
+    rules: TriggerRule[];
+}
+
 // Main bot configuration interface
 export interface BotConfig {
     roulette: RouletteBotConfig;
@@ -268,4 +354,5 @@ export interface BotConfig {
     pingpong: PingPongBotConfig;
     gacha: GachaStoreSchema;
     lottery: LotteryBotConfig;
+    triggers: TriggersBotConfig;
 }
