@@ -59,6 +59,7 @@ import TriggersComponent from "./settings/bot/triggers/TriggersComponent";
 import TriggerHistoryPopup from "./settings/bot/triggers/TriggerHistoryPopup";
 import GachaUsersPopup from "./settings/bot/gacha/GachaUsersPopup";
 import LotteryHistoryPopup from "./settings/bot/lottery/LotteryHistoryPopup";
+import RouletteHistoryPopup from "./settings/bot/roulette/RouletteHistoryPopup";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
@@ -296,6 +297,7 @@ export default function Settings() {
     const [showTriggerHistory, setShowTriggerHistory] = useState(false);
     const [showGachaUsers, setShowGachaUsers] = useState(false);
     const [showLotteryHistory, setShowLotteryHistory] = useState(false);
+    const [showRouletteHistory, setShowRouletteHistory] = useState(false);
 
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
@@ -416,6 +418,9 @@ export default function Settings() {
             {showLotteryHistory && (
                 <LotteryHistoryPopup onClose={() => setShowLotteryHistory(false)} />
             )}
+            {showRouletteHistory && (
+                <RouletteHistoryPopup onClose={() => setShowRouletteHistory(false)} />
+            )}
 
             <HolidayHeader>
                 <HeaderLeft>
@@ -505,6 +510,11 @@ export default function Settings() {
 
                                 <Spacer />
 
+                                {activePage === 'bot_roulette' && (
+                                    <ToolbarIconButton onClick={() => setShowRouletteHistory(true)} title={t('settings.bot.roulette.history.button')}>
+                                        <FiDatabase />
+                                    </ToolbarIconButton>
+                                )}
                                 {activePage === 'bot_gacha' && (
                                     <ToolbarIconButton onClick={() => setShowGachaUsers(true)} title={t('settings.bot.gacha.users.title')}>
                                         <FiUsers />
