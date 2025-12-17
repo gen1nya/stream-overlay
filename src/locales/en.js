@@ -1258,6 +1258,13 @@ const en = {
                         hours: 'hours',
                         days: 'days',
                     },
+                    conditionIf: 'IF',
+                    actionsThen: 'THEN',
+                    additionalSettings: 'Settings',
+                    noActions: 'Add actions that will be executed when the trigger fires',
+                    followNoConfig: 'Trigger fires on any new channel follow',
+                    stopPropagation: 'Stop processing by other rules',
+                    stopPropagationHint: 'When enabled, other rules won\'t be checked after this trigger fires',
                 },
                 commandList: {
                     newCommand: 'New command',
