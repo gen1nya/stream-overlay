@@ -5,8 +5,8 @@ import RoleRestoreManager from './RoleRestoreManager';
 import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
 import {UserData} from "../twitch/types/UserData";
-import {act} from "react";
 import {BotConfig} from "../store/StoreSchema";
+import {RouletteRepository} from "../db/RouletteRepository";
 
 export default class RouletteService extends Middleware {
   private commands: string[];
@@ -24,6 +24,10 @@ export default class RouletteService extends Middleware {
   private logService: LogService;
   private editors: UserData[] = [];
   private userId: string | null = "unknown";
+  // Stats command
+  private statsCommands: string[] = ['!roulette-stats', '!рулетка-стат'];
+  private statsMessages: string[] = [];
+  private repository: RouletteRepository | null = null;
 
   constructor(
     logService: LogService,
@@ -73,7 +77,13 @@ export default class RouletteService extends Middleware {
       this.chance = config.roulette.chance || 18;
       this.allowToBanEditors = config.roulette.allowToBanEditors || false;
       this.protectedUsersMessages = config.roulette.protectedUsersMessages;
+      this.statsCommands = config.roulette.statsCommands || ['!roulette-stats', '!рулетка-стат'];
+      this.statsMessages = config.roulette.statsMessages || [];
       console.log('✅ RouletteService config updated');
+    }
+
+    setRepository(repository: RouletteRepository) {
+      this.repository = repository;
     }
 
   async processMessage(message: AppEvent) {
@@ -88,11 +98,18 @@ export default class RouletteService extends Middleware {
       console.warn('❌ Message is missing userId or userName, skipping RouletteService processing');
       return { accepted: false, message: { ...message }, actions: [] };
     }
-    if (!this.commands.includes(message.htmlMessage)) {
-      return { accepted: false, message: { ...message }, actions: [] };
-    }
     if (this.userId !== null && message.sourceRoomId !== null && message.sourceRoomId !== this.userId) {
       return { message, actions: [], accepted: false };
+    }
+
+    // Check for stats command first
+    if (this.statsCommands.includes(message.htmlMessage)) {
+      return this.handleStatsCommand(message);
+    }
+
+    // Check for roulette command
+    if (!this.commands.includes(message.htmlMessage)) {
+      return { accepted: false, message: { ...message }, actions: [] };
     }
 
     const now = Date.now();
@@ -110,7 +127,9 @@ export default class RouletteService extends Middleware {
     }
     this.cooldowns.set(message.userId, now);
     const actions: any[] = [];
-    if (this.checkRouletteWin()) {
+    const isDeath = this.checkRouletteWin();
+
+    if (isDeath) {
       const prepared = await this.roleManager.prepareMute(
           message.userId,
           message.userName,
@@ -168,12 +187,89 @@ export default class RouletteService extends Middleware {
         this.log(`Банить Редакторов запрещено в настройках`, message.userId, message.userName);
       }
 
+      // Record play to database
+      this.recordPlay(message.userId, message.userName, 'death', canBeMuted);
+
     } else {
       this.log(`Пользователь проиграл в рулетку и не будет замьючен`, message.userId, message.userName);
       const reason = this.getRandomMessage(this.survivalMessages, message.userName);
       actions.push({ type: ActionTypes.SEND_MESSAGE, payload: { message: reason, forwardToUi: true } });
+
+      // Record play to database
+      this.recordPlay(message.userId, message.userName, 'survival', false);
     }
     return { accepted: true, message: { ...message }, actions };
+  }
+
+  private handleStatsCommand(message: AppEvent): { accepted: boolean; message: AppEvent; actions: any[] } {
+    if (!this.repository) {
+      return { accepted: false, message: { ...message }, actions: [] };
+    }
+
+    const stats = this.repository.getStats(message.userId!);
+
+    if (!stats || stats.totalPlays === 0) {
+      return {
+        accepted: true,
+        message: { ...message },
+        actions: [
+          {
+            type: ActionTypes.SEND_MESSAGE,
+            payload: {
+              message: `@${message.userName}, у тебя пока нет статистики рулетки. Попробуй сыграть!`,
+              forwardToUi: true
+            }
+          }
+        ]
+      };
+    }
+
+    const survivalRate = ((stats.survivals / stats.totalPlays) * 100).toFixed(1);
+    const streakText = this.formatStreak(stats.currentStreak);
+
+    const template = this.statsMessages.length > 0
+      ? this.statsMessages[Math.floor(Math.random() * this.statsMessages.length)]
+      : "@${user} | Игр: ${plays} | Выжил: ${survivals} | Смертей: ${deaths} | Выживаемость: ${rate}% | Серия: ${streak}";
+
+    const statsMessage = template
+      .replace(/\$\{user\}/g, message.userName!)
+      .replace(/\$\{plays\}/g, stats.totalPlays.toString())
+      .replace(/\$\{survivals\}/g, stats.survivals.toString())
+      .replace(/\$\{deaths\}/g, stats.deaths.toString())
+      .replace(/\$\{rate\}/g, survivalRate)
+      .replace(/\$\{streak\}/g, streakText);
+
+    return {
+      accepted: true,
+      message: { ...message },
+      actions: [
+        {
+          type: ActionTypes.SEND_MESSAGE,
+          payload: {
+            message: statsMessage,
+            forwardToUi: true
+          }
+        }
+      ]
+    };
+  }
+
+  private formatStreak(streak: number): string {
+    if (streak === 0) return '0';
+    if (streak > 0) return `+${streak} выживаний`;
+    return `${streak} смертей`;
+  }
+
+  private recordPlay(userId: string, userName: string, result: 'survival' | 'death', wasMuted: boolean): void {
+    if (!this.repository) {
+      console.warn('⚠️ RouletteRepository not set, skipping play recording');
+      return;
+    }
+    try {
+      this.repository.recordPlay({ userId, userName, result, wasMuted });
+    } catch (error) {
+      console.error('❌ Failed to record roulette play:', error);
+    }
   }
 
   public setEditors(editors: UserData[]): void {

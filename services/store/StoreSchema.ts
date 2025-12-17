@@ -247,6 +247,9 @@ export interface RouletteBotConfig {
     muteDuration: number;
     commandCooldown: number;
     chance: number;
+    // Stats command
+    statsCommands: string[];
+    statsMessages: string[];  // ${user}, ${plays}, ${survivals}, ${deaths}, ${rate}, ${streak}
 }
 
 // Custom bot configuration

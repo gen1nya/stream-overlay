@@ -5,8 +5,9 @@ import SurvivalMessagesComponent from "./SurvivalMessagesComponent";
 import WinnerMessagesComponent from "./WinnerMessagesComponent";
 import CooldownMessagesComponent from "./CooldownMessagesComponent";
 import ProtectedUsersMessagesComponent from "./ProtectedUsersMessagesComponent";
+import StatsMessagesComponent from "./StatsMessagesComponent";
 import {TagInput} from "./TagInput";
-import {FiTarget, FiSettings, FiClock, FiPercent, FiMessageSquare, FiAlertTriangle} from 'react-icons/fi';
+import {FiTarget, FiSettings, FiClock, FiPercent, FiMessageSquare, FiAlertTriangle, FiBarChart2} from 'react-icons/fi';
 import {
     ControlGroup,
     Section,
@@ -169,6 +170,29 @@ export default function Roulette({ botConfig, apply, showHelp, setShowHelp }) {
                     }}
                     placeholder={t('settings.bot.roulette.commands.placeholder')}
                 />
+            </Section>
+
+            {/* Команда статистики */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiBarChart2 />
+                        {t('settings.bot.roulette.stats.sectionTitle')}
+                    </SectionTitle>
+                </SectionHeader>
+
+                <TagInput
+                    value={(config.roulette.statsCommands || []).join(", ")}
+                    onChange={(value) => {
+                        const statsCommands = value.split(",").map((cmd) => cmd.trim()).filter(cmd => cmd);
+                        updateRouletteConfig(() => ({ statsCommands }));
+                    }}
+                    placeholder={t('settings.bot.roulette.stats.commands.placeholder')}
+                />
+
+                <div style={{ marginTop: '16px' }}>
+                    <StatsMessagesComponent botConfig={botConfig} apply={apply} />
+                </div>
             </Section>
 
             {/* Сообщения */}

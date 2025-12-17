@@ -282,6 +282,35 @@ export const clearLotteryMonth = async (year, month) => {
     return await ipcRenderer?.invoke('lottery:clear-month', { year, month });
 };
 
+// roulette api
+export const getRoulettePlays = async (options = {}) => {
+    return await ipcRenderer?.invoke('roulette:get-plays', options);
+};
+
+export const getRouletteStats = async (userId) => {
+    return await ipcRenderer?.invoke('roulette:get-stats', userId);
+};
+
+export const getAllRouletteStats = async (options = {}) => {
+    return await ipcRenderer?.invoke('roulette:get-all-stats', options);
+};
+
+export const getRouletteGlobalStats = async () => {
+    return await ipcRenderer?.invoke('roulette:get-global-stats');
+};
+
+export const getRouletteLeaderboard = async (type = 'plays', limit = 10) => {
+    return await ipcRenderer?.invoke('roulette:get-leaderboard', type, limit);
+};
+
+export const getRoulettePlayCount = async () => {
+    return await ipcRenderer?.invoke('roulette:get-play-count');
+};
+
+export const clearAllRouletteData = async () => {
+    return await ipcRenderer?.invoke('roulette:clear-all');
+};
+
 // listener
 export const onLogout = (callback) => {
     ipcRenderer.on('logout:success', callback);

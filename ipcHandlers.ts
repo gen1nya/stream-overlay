@@ -252,4 +252,65 @@ export function registerIpcHandlers(
     if (!repo) return [];
     return repo.getScheduledActionsForUser(userId);
   });
+
+  // ============================================
+  // Roulette Stats Handlers
+  // ============================================
+
+  // Helper to get roulette repository
+  const getRouletteRepository = () => {
+    const userId = twitchClient.getUserId();
+    if (!userId) return null;
+    return DbRepository.getInstance(userId).roulette;
+  };
+
+  // Get roulette plays history
+  ipcMain.handle('roulette:get-plays', async (_e, options?: { userId?: string; limit?: number; offset?: number }) => {
+    const repo = getRouletteRepository();
+    if (!repo) return [];
+    return repo.getPlays(options);
+  });
+
+  // Get roulette stats for a specific user
+  ipcMain.handle('roulette:get-stats', async (_e, userId: string) => {
+    const repo = getRouletteRepository();
+    if (!repo) return null;
+    return repo.getStats(userId);
+  });
+
+  // Get all roulette stats
+  ipcMain.handle('roulette:get-all-stats', async (_e, options?: { limit?: number; offset?: number; orderBy?: 'plays' | 'survival_rate' | 'death_rate' }) => {
+    const repo = getRouletteRepository();
+    if (!repo) return [];
+    return repo.getAllStats(options);
+  });
+
+  // Get global roulette stats
+  ipcMain.handle('roulette:get-global-stats', async () => {
+    const repo = getRouletteRepository();
+    if (!repo) return { totalPlays: 0, totalSurvivals: 0, totalDeaths: 0, uniquePlayers: 0 };
+    return repo.getGlobalStats();
+  });
+
+  // Get roulette leaderboard
+  ipcMain.handle('roulette:get-leaderboard', async (_e, type: 'survivors' | 'deaths' | 'plays', limit?: number) => {
+    const repo = getRouletteRepository();
+    if (!repo) return [];
+    return repo.getLeaderboard(type, limit || 10);
+  });
+
+  // Get total play count
+  ipcMain.handle('roulette:get-play-count', async () => {
+    const repo = getRouletteRepository();
+    if (!repo) return 0;
+    return repo.getPlayCount();
+  });
+
+  // Clear all roulette data
+  ipcMain.handle('roulette:clear-all', async () => {
+    const repo = getRouletteRepository();
+    if (!repo) return false;
+    repo.clearAllData();
+    return true;
+  });
 }

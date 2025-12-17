@@ -10,8 +10,8 @@ import {BotConfig, StoreSchema} from "../store/StoreSchema";
 import ElectronStore from "electron-store";
 import {GachaMiddleware} from "./gacha/GachaMiddleware";
 import {LotteryMiddleware} from "./lottery/LotteryMiddleware";
-import type * as Database from "better-sqlite3";
 import {DbRepository} from "../db/DbRepository";
+import {RouletteRepository} from "../db/RouletteRepository";
 
 
 export class MiddlewareProcessor {
@@ -69,6 +69,14 @@ export class MiddlewareProcessor {
     for (const middleware of this.middlewares) {
       if (middleware instanceof RouletteService) {
         middleware.setEditors(editors);
+      }
+    }
+  }
+
+  setRouletteRepository(repository: RouletteRepository): void {
+    for (const middleware of this.middlewares) {
+      if (middleware instanceof RouletteService) {
+        middleware.setRepository(repository);
       }
     }
   }

@@ -312,6 +312,12 @@ app.whenReady().then(() => {
           currentUserId = userId;
           middlewareProcessor.onUserUpdated(userId);
 
+          // Set roulette repository after user is authenticated
+          if (userId) {
+            const dbRepo = DbRepository.getInstance(userId);
+            middlewareProcessor.setRouletteRepository(dbRepo.roulette);
+          }
+
           // Start the action scheduler after user is authenticated
           actionScheduler.start();
         });

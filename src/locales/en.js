@@ -777,6 +777,19 @@ const en = {
                             defaultTemplate: "You won, ${user}! 🎉",
                         },
                     },
+                    stats: {
+                        sectionTitle: 'Stats command',
+                        commands: {
+                            title: 'Stats commands',
+                            placeholder: 'Enter commands separated by commas (e.g. !roulette-stats, !rr-stats)',
+                        },
+                        messages: {
+                            title: 'Response templates',
+                            hint: 'Available variables: ${user}, ${plays}, ${survivals}, ${deaths}, ${rate}, ${streak}',
+                            defaultTemplate: "@${user} | Games: ${plays} | Survived: ${survivals} | Deaths: ${deaths} | Survival rate: ${rate}% | Streak: ${streak}",
+                        },
+                        noStats: "You don't have roulette stats yet. Try playing!",
+                    },
                 },
                 pingpong: {
                     title: 'Ping-pong commands',

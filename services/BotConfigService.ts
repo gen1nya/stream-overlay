@@ -33,6 +33,12 @@ export class BotConfigService {
             muteDuration: 120000,
             commandCooldown: 30000,
             chance: 0.18,
+            statsCommands: [
+                "!roulette-stats", "!рулетка-стат"
+            ],
+            statsMessages: [
+                "@${user} | Игр: ${plays} | Выжил: ${survivals} | Смертей: ${deaths} | Выживаемость: ${rate}% | Текущая серия: ${streak}"
+            ],
         },
         custom: { enabled: false },
         gacha: {

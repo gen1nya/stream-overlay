@@ -4,6 +4,7 @@ import { ActionRepository } from './ActionRepository';
 import { PityRepository } from './PityRepository';
 import { LotteryRepository } from './LotteryRepository';
 import { TriggerRepository } from './TriggerRepository';
+import { RouletteRepository } from './RouletteRepository';
 import fs from "fs";
 import path from "path";
 
@@ -18,6 +19,7 @@ export class DbRepository {
     public pity: PityRepository;
     public lottery: LotteryRepository;
     public triggers: TriggerRepository;
+    public roulette: RouletteRepository;
 
     private constructor(user: string) {
         this.user = user;
@@ -35,6 +37,7 @@ export class DbRepository {
         this.pity = new PityRepository(this.db);
         this.lottery = new LotteryRepository(this.db);
         this.triggers = new TriggerRepository(this.db);
+        this.roulette = new RouletteRepository(this.db);
     }
 
     public static getInstance(user: string): DbRepository {
@@ -166,6 +169,38 @@ export class DbRepository {
         this.db.prepare(`
             CREATE INDEX IF NOT EXISTS idx_scheduled_actions_pending
             ON scheduled_actions(execute_at) WHERE status = 'pending'
+        `).run();
+
+        // Roulette tables
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS roulette_plays (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                user_name TEXT NOT NULL,
+                result TEXT NOT NULL,
+                was_muted INTEGER DEFAULT 1,
+                created_at INTEGER NOT NULL
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS roulette_stats (
+                user_id TEXT PRIMARY KEY,
+                user_name TEXT NOT NULL,
+                total_plays INTEGER DEFAULT 0,
+                survivals INTEGER DEFAULT 0,
+                deaths INTEGER DEFAULT 0,
+                current_streak INTEGER DEFAULT 0,
+                max_survival_streak INTEGER DEFAULT 0,
+                max_death_streak INTEGER DEFAULT 0,
+                last_play_at INTEGER NOT NULL
+            )
+        `).run();
+
+        // Index for efficient play history queries
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_roulette_plays_user
+            ON roulette_plays(user_id, created_at)
         `).run();
     }
 }
