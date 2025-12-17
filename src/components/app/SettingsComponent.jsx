@@ -33,7 +33,8 @@ import {
     FiGift,
     FiZap,
     FiDatabase,
-    FiUsers
+    FiUsers,
+    FiClock
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -56,6 +57,7 @@ import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
 import TriggersComponent from "./settings/bot/triggers/TriggersComponent";
+import TimersComponent from "./settings/bot/timers/TimersComponent";
 import TriggerHistoryPopup from "./settings/bot/triggers/TriggerHistoryPopup";
 import GachaUsersPopup from "./settings/bot/gacha/GachaUsersPopup";
 import LotteryHistoryPopup from "./settings/bot/lottery/LotteryHistoryPopup";
@@ -259,6 +261,7 @@ export default function Settings() {
         bot_gacha: {title: t('settings.pages.botGacha.title'), icon: <FiAward/>},
         bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
         bot_triggers: {title: t('settings.pages.botTriggers.title'), icon: <FiZap/>},
+        bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
@@ -311,6 +314,7 @@ export default function Settings() {
             case 'bot_gacha': return botConfig.gacha?.enabled ?? false;
             case 'bot_lottery': return botConfig.lottery?.enabled ?? false;
             case 'bot_triggers': return botConfig.triggers?.enabled ?? false;
+            case 'bot_timers': return botConfig.timers?.enabled ?? false;
             default: return false;
         }
     };
@@ -332,6 +336,9 @@ export default function Settings() {
                 break;
             case 'bot_triggers':
                 applyBotConfig(prev => ({ ...prev, triggers: { ...prev.triggers, enabled: newState } }));
+                break;
+            case 'bot_timers':
+                applyBotConfig(prev => ({ ...prev, timers: { ...prev.timers, enabled: newState } }));
                 break;
         }
     };
@@ -478,6 +485,7 @@ export default function Settings() {
                                 {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label'), enabled: botConfig?.gacha?.enabled},
                                 {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label'), enabled: botConfig?.lottery?.enabled},
                                 {key: "bot_triggers", icon: <FiZap/>, label: t('settings.pages.botTriggers.label'), enabled: botConfig?.triggers?.enabled},
+                                {key: "bot_timers", icon: <FiClock/>, label: t('settings.pages.botTimers.label'), enabled: botConfig?.timers?.enabled},
                             ]
                         },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
@@ -782,6 +790,32 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                     {botConfig ? (
                         <BotPageContent>
                             <TriggersComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
+        case "bot_timers":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
+                            <TimersComponent
                                 apply={applyBotConfig}
                                 botConfig={botConfig}
                                 showHelp={showBotHelp}

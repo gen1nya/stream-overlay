@@ -209,6 +209,11 @@ const twitchClient = new TwitchClient(
   proxy  // Pass ProxyService to TwitchClient
 );
 
+// Set up broadcasting status callback for timer middleware
+middlewareProcessor.setIsBroadcastingCallback(async () => {
+  return await twitchClient.getIsBroadcasting();
+});
+
 const botService = new BotConfigService(
     store,
     (newConfig: BotConfig) => {

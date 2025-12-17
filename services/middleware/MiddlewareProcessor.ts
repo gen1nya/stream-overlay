@@ -1,6 +1,7 @@
 import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
 import TriggerMiddleware from './TriggerMiddleware';
+import TimerMiddleware from './TimerMiddleware';
 import {ActionType} from './ActionTypes';
 import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
@@ -18,6 +19,7 @@ export class MiddlewareProcessor {
   private applyAction: (action: { type: ActionType; payload: any }) => Promise<void>;
   private logService: LogService;
   private middlewares: Middleware[] = [];
+  private timerMiddleware: TimerMiddleware;
 
   constructor(
       applyAction: (action: { type: ActionType; payload: any }) => Promise<void>,
@@ -30,13 +32,20 @@ export class MiddlewareProcessor {
     const lotteryMiddleware = new LotteryMiddleware(store, this.logService);
     lotteryMiddleware.setApplyAction(applyAction);
 
+    this.timerMiddleware = new TimerMiddleware(this.logService);
+
     this.middlewares = [
       new RouletteService(this.logService),
       new GreetingMiddleware(this.logService),
       new GachaMiddleware(store),
       lotteryMiddleware,
-      new TriggerMiddleware(this.logService)
+      new TriggerMiddleware(this.logService),
+      this.timerMiddleware
     ];
+  }
+
+  setIsBroadcastingCallback(callback: () => Promise<boolean>): void {
+    this.timerMiddleware.setIsBroadcastingCallback(callback);
   }
 
   async processMessage(message: AppEvent): Promise<AppEvent> {

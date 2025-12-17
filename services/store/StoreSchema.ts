@@ -354,6 +354,26 @@ export interface TriggersBotConfig {
     rules: TriggerRule[];
 }
 
+// ============================================
+// Timer System Types
+// ============================================
+
+// Individual timer configuration
+export interface TimerConfig {
+    id: string;              // UUID
+    enabled: boolean;
+    name: string;            // Display name for UI
+    message: string;         // Message text to send
+    minMessages: number;     // Min chat messages between sends (0 = ignore)
+    minIntervalSec: number;  // Min seconds between sends
+}
+
+// Timers bot configuration
+export interface TimerBotConfig {
+    enabled: boolean;
+    timers: TimerConfig[];
+}
+
 // Main bot configuration interface
 export interface BotConfig {
     roulette: RouletteBotConfig;
@@ -362,4 +382,5 @@ export interface BotConfig {
     gacha: GachaStoreSchema;
     lottery: LotteryBotConfig;
     triggers: TriggersBotConfig;
+    timers: TimerBotConfig;
 }

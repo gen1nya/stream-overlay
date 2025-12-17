@@ -232,6 +232,10 @@ export class TwitchClient extends EventEmitter {
     return chatService.getLastEventTimestamp();
   }
 
+  async getIsBroadcasting(): Promise<boolean> {
+    return this.userState.getIsBroadcasting();
+  }
+
   async checkBroadcastingStatus() {
       const isBroadcasting = await this.userState.getIsBroadcasting();
       const destination = `status:${EVENT_BROADCASTING}`

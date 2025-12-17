@@ -199,6 +199,10 @@ export class BotConfigService {
         triggers: {
             enabled: false,
             rules: []
+        },
+        timers: {
+            enabled: false,
+            timers: []
         }
     }
 
