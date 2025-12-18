@@ -5,11 +5,20 @@ import defaultTheme from './default-theme.json';
 import * as messageCache from './services/MessageCacheManager';
 import {MiddlewareProcessor} from './services/middleware/MiddlewareProcessor';
 import {ActionTypes} from './services/middleware/ActionTypes';
-import {timeoutUser} from './services/twitch/authorizedHelixApi';
+import {
+    timeoutUser,
+    addVip,
+    removeVip,
+    addModerator,
+    removeModerator,
+    deleteMessage,
+    sendShoutout
+} from './services/twitch/authorizedHelixApi';
+import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
-import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION} from "./services/twitch/esService";
+import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID} from "./services/twitch/esService";
 import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
 import {LogService} from "./services/logService";
 import {UserData} from "./services/twitch/types/UserData";
@@ -127,6 +136,75 @@ const applyAction = async (action: { type: string; payload: any }) => {
         userName: action.payload.userName || 'unknown',
       });
       break;
+
+    case ActionTypes.ADD_VIP:
+      await addVip(action.payload.userId);
+      logService.log({
+        message: `VIP добавлен: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.REMOVE_VIP:
+      await removeVip(action.payload.userId);
+      logService.log({
+        message: `VIP удален: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.ADD_MOD:
+      await addModerator(action.payload.userId);
+      logService.log({
+        message: `Модератор добавлен: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.REMOVE_MOD:
+      await removeModerator(action.payload.userId);
+      logService.log({
+        message: `Модератор удален: ${action.payload.userName || action.payload.userId}`,
+        timestamp: new Date().toISOString(),
+        userId: action.payload.userId,
+        userName: action.payload.userName || 'unknown',
+      });
+      break;
+
+    case ActionTypes.DELETE_MESSAGE:
+      if (action.payload.messageId) {
+        await deleteMessage(action.payload.messageId);
+        logService.logMessage(`Сообщение удалено: ${action.payload.messageId}`);
+      }
+      break;
+
+    case ActionTypes.SHOUTOUT:
+      try {
+        await sendShoutout(action.payload.userId);
+        logService.log({
+          message: `Shoutout отправлен: ${action.payload.userName || action.payload.userId}`,
+          timestamp: new Date().toISOString(),
+          userId: action.payload.userId,
+          userName: action.payload.userName || 'unknown',
+        });
+      } catch (error: any) {
+        const errorMsg = error?.response?.data?.message || error?.message || 'Unknown error';
+        logService.log({
+          message: `Ошибка shoutout для ${action.payload.userName || action.payload.userId}: ${errorMsg}`,
+          timestamp: new Date().toISOString(),
+          userId: action.payload.userId,
+          userName: action.payload.userName || 'unknown',
+        });
+        console.error('Shoutout error:', error?.response?.data || error?.message);
+      }
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -146,10 +224,17 @@ const twitchClient = new TwitchClient(
   },
   () => {
     console.log('Twitch client logged out');
+    currentUserId = null;
+    actionScheduler.stop();
     mainWindow?.webContents?.send("logout:success");
   },
   proxy  // Pass ProxyService to TwitchClient
 );
+
+// Set up broadcasting status callback for timer middleware
+middlewareProcessor.setIsBroadcastingCallback(async () => {
+  return await twitchClient.getIsBroadcasting();
+});
 
 const botService = new BotConfigService(
     store,
@@ -157,6 +242,18 @@ const botService = new BotConfigService(
         middlewareProcessor.onThemeUpdated(newConfig);
     }
 )
+
+// Track current user ID for trigger repository access
+let currentUserId: string | null = null;
+
+const actionScheduler = new ActionScheduler({
+    getRepository: () => {
+        if (!currentUserId) return null;
+        return DbRepository.getInstance(currentUserId).triggers;
+    },
+    logService,
+    sendMessage: (message: string) => twitchClient.sendMessage(message)
+})
 
 const scraper = new YouTubeLiveStreamsScraper(
     store,
@@ -204,6 +301,11 @@ twitchClient.on('event', async ({ destination, event }) => {
   } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
     const result = await middlewareProcessor.processMessage(event);
     messageCache.processMessage(result);
+  } else if (destination === `${EVENT_CHANEL}:${EVENT_RAID}`) {
+    // Process raid through middleware (for triggers)
+    await middlewareProcessor.processMessage(event);
+    // Also broadcast to UI
+    broadcast(destination, event);
   } else {
     broadcast(destination, event);
   }
@@ -239,10 +341,18 @@ app.whenReady().then(() => {
       twitchClient,
       () => {
         twitchClient.refreshUser().then((userId) => {
-          middlewareProcessor.onUserUpdated(userId)
+          currentUserId = userId;
+          middlewareProcessor.onUserUpdated(userId);
+
+          // Set roulette repository after user is authenticated
+          if (userId) {
+            const dbRepo = DbRepository.getInstance(userId);
+            middlewareProcessor.setRouletteRepository(dbRepo.roulette);
+          }
+
+          // Start the action scheduler after user is authenticated
+          actionScheduler.start();
         });
-
-
       },
       localeRepository,
       backendLogService

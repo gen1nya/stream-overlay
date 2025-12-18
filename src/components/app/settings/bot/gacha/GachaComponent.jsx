@@ -8,8 +8,6 @@ import {
     SectionHeader,
     SectionTitle
 } from "../../SharedSettingsStyles";
-import {Row} from "../../../SettingsComponent";
-import {Spacer} from "../../../../utils/Separator";
 import {
     HelpInfoPopup
 } from "../SharedBotStyles";
@@ -17,8 +15,6 @@ import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
 import TriggersManager from './TriggersManager';
 import AdvancedSettings from './AdvancedSettings';
-import {ActionButton} from "../../../SharedStyles";
-import GachaUsersPopup from "./GachaUsersPopup";
 import {useTranslation} from 'react-i18next';
 
 const InfoCard = styled.div`
@@ -132,7 +128,6 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
             return gachaConfig
         }
     });
-    const [showUsersPopup, setShowUsersPopup] = useState(false);
 
     useEffect(() => {
         if (gachaConfig) {
@@ -165,8 +160,6 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
 
     return (
         <>
-            {showUsersPopup && <GachaUsersPopup onClose={() => setShowUsersPopup(false)}/>}
-
             <HelpInfoPopup
                 isOpen={showHelp}
                 onClose={() => setShowHelp(false)}
@@ -223,16 +216,6 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                     </InfoText>
                 </InfoCard>
             </Section>
-
-            <Row>
-                <ActionButton
-                    className={"secondary"}
-                    onClick={() => setShowUsersPopup(true)}
-                >
-                    {t('settings.bot.gacha.component.actions.manageUsers')}
-                </ActionButton>
-                <Spacer/>
-            </Row>
 
             {/* Настройки баннера */}
             <Section>

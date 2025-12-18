@@ -3,6 +3,8 @@ import { UserRepository } from './UserRepository';
 import { ActionRepository } from './ActionRepository';
 import { PityRepository } from './PityRepository';
 import { LotteryRepository } from './LotteryRepository';
+import { TriggerRepository } from './TriggerRepository';
+import { RouletteRepository } from './RouletteRepository';
 import fs from "fs";
 import path from "path";
 
@@ -16,6 +18,8 @@ export class DbRepository {
     public actions: ActionRepository;
     public pity: PityRepository;
     public lottery: LotteryRepository;
+    public triggers: TriggerRepository;
+    public roulette: RouletteRepository;
 
     private constructor(user: string) {
         this.user = user;
@@ -32,6 +36,8 @@ export class DbRepository {
         this.actions = new ActionRepository(this.db);
         this.pity = new PityRepository(this.db);
         this.lottery = new LotteryRepository(this.db);
+        this.triggers = new TriggerRepository(this.db);
+        this.roulette = new RouletteRepository(this.db);
     }
 
     public static getInstance(user: string): DbRepository {
@@ -118,6 +124,83 @@ export class DbRepository {
                 last_win_at INTEGER,
                 updated_at INTEGER NOT NULL
             )
+        `).run();
+
+        // Trigger system tables
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS trigger_executions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                trigger_id TEXT NOT NULL,
+                trigger_name TEXT NOT NULL,
+                event_type TEXT NOT NULL,
+                event_id TEXT,
+                source_user_id TEXT NOT NULL,
+                source_user_name TEXT NOT NULL,
+                target_user_id TEXT,
+                target_user_name TEXT,
+                context_args TEXT,
+                context_input TEXT,
+                status TEXT DEFAULT 'active',
+                created_at INTEGER NOT NULL,
+                completed_at INTEGER,
+                cancelled_at INTEGER,
+                cancel_reason TEXT
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS scheduled_actions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                execution_id INTEGER NOT NULL,
+                action_type TEXT NOT NULL,
+                action_params TEXT,
+                target_user_id TEXT NOT NULL,
+                target_user_name TEXT,
+                execute_at INTEGER NOT NULL,
+                status TEXT DEFAULT 'pending',
+                executed_at INTEGER,
+                error_message TEXT,
+                created_at INTEGER NOT NULL,
+                FOREIGN KEY (execution_id) REFERENCES trigger_executions(id)
+            )
+        `).run();
+
+        // Index for efficient pending action queries
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_scheduled_actions_pending
+            ON scheduled_actions(execute_at) WHERE status = 'pending'
+        `).run();
+
+        // Roulette tables
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS roulette_plays (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                user_name TEXT NOT NULL,
+                result TEXT NOT NULL,
+                was_muted INTEGER DEFAULT 1,
+                created_at INTEGER NOT NULL
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS roulette_stats (
+                user_id TEXT PRIMARY KEY,
+                user_name TEXT NOT NULL,
+                total_plays INTEGER DEFAULT 0,
+                survivals INTEGER DEFAULT 0,
+                deaths INTEGER DEFAULT 0,
+                current_streak INTEGER DEFAULT 0,
+                max_survival_streak INTEGER DEFAULT 0,
+                max_death_streak INTEGER DEFAULT 0,
+                last_play_at INTEGER NOT NULL
+            )
+        `).run();
+
+        // Index for efficient play history queries
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_roulette_plays_user
+            ON roulette_plays(user_id, created_at)
         `).run();
     }
 }

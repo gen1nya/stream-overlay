@@ -33,6 +33,19 @@ export class BotConfigService {
             muteDuration: 120000,
             commandCooldown: 30000,
             chance: 0.18,
+            statsCommands: [
+                "!roulette-stats", "!рулетка-стат"
+            ],
+            statsMessages: [
+                "@${user} | Игр: ${plays} | Выжил: ${survivals} | Смертей: ${deaths} | Выживаемость: ${rate}% | Текущая серия: ${streak}"
+            ],
+            leaderboardCommands: [
+                "!roulette-top", "!рулетка-топ"
+            ],
+            leaderboardMessages: [
+                "🏆 Топ рулетки: ${top}"
+            ],
+            leaderboardSize: 5,
         },
         custom: { enabled: false },
         gacha: {
@@ -182,6 +195,14 @@ export class BotConfigService {
                 subjectBlacklisted: '{{subject}} в чёрном списке и не может быть предметом розыгрыша',
                 statsResponse: '📊 Топ игроков: {{topPlayers}} | Топ призов: {{topSubjects}} | @{{user}}: {{userWins}} побед, выиграл: {{userSubjects}}'
             }
+        },
+        triggers: {
+            enabled: false,
+            rules: []
+        },
+        timers: {
+            enabled: false,
+            timers: []
         }
     }
 

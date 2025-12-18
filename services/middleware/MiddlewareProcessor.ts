@@ -1,5 +1,7 @@
 import RouletteService from './RouletteService';
 import GreetingMiddleware from './GreetingMiddleware';
+import TriggerMiddleware from './TriggerMiddleware';
+import TimerMiddleware from './TimerMiddleware';
 import {ActionType} from './ActionTypes';
 import {AppEvent} from "../twitch/messageParser";
 import {LogService} from "../logService";
@@ -9,14 +11,15 @@ import {BotConfig, StoreSchema} from "../store/StoreSchema";
 import ElectronStore from "electron-store";
 import {GachaMiddleware} from "./gacha/GachaMiddleware";
 import {LotteryMiddleware} from "./lottery/LotteryMiddleware";
-import type * as Database from "better-sqlite3";
 import {DbRepository} from "../db/DbRepository";
+import {RouletteRepository} from "../db/RouletteRepository";
 
 
 export class MiddlewareProcessor {
   private applyAction: (action: { type: ActionType; payload: any }) => Promise<void>;
   private logService: LogService;
   private middlewares: Middleware[] = [];
+  private timerMiddleware: TimerMiddleware;
 
   constructor(
       applyAction: (action: { type: ActionType; payload: any }) => Promise<void>,
@@ -29,12 +32,20 @@ export class MiddlewareProcessor {
     const lotteryMiddleware = new LotteryMiddleware(store, this.logService);
     lotteryMiddleware.setApplyAction(applyAction);
 
+    this.timerMiddleware = new TimerMiddleware(this.logService);
+
     this.middlewares = [
       new RouletteService(this.logService),
       new GreetingMiddleware(this.logService),
       new GachaMiddleware(store),
-      lotteryMiddleware
+      lotteryMiddleware,
+      new TriggerMiddleware(this.logService),
+      this.timerMiddleware
     ];
+  }
+
+  setIsBroadcastingCallback(callback: () => Promise<boolean>): void {
+    this.timerMiddleware.setIsBroadcastingCallback(callback);
   }
 
   async processMessage(message: AppEvent): Promise<AppEvent> {
@@ -47,7 +58,12 @@ export class MiddlewareProcessor {
       if (result.accepted) break;
     }
     for (const action of actions) {
-      await this.applyAction(action);
+      try {
+        await this.applyAction(action);
+      } catch (error: any) {
+        console.error(`❌ Action ${action.type} failed:`, error?.message || error);
+        // Continue with remaining actions
+      }
     }
     return currentMessage;
   }
@@ -67,6 +83,14 @@ export class MiddlewareProcessor {
     for (const middleware of this.middlewares) {
       if (middleware instanceof RouletteService) {
         middleware.setEditors(editors);
+      }
+    }
+  }
+
+  setRouletteRepository(repository: RouletteRepository): void {
+    for (const middleware of this.middlewares) {
+      if (middleware instanceof RouletteService) {
+        middleware.setRepository(repository);
       }
     }
   }

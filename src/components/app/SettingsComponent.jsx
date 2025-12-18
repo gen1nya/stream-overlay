@@ -30,7 +30,11 @@ import {
     FiAlertCircle,
     FiTarget,
     FiLayout,
-    FiGift
+    FiGift,
+    FiZap,
+    FiDatabase,
+    FiUsers,
+    FiClock
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -52,6 +56,12 @@ import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
 import GachaComponent from "./settings/bot/gacha/GachaComponent";
 import LotteryComponent from "./settings/bot/lottery/LotteryComponent";
+import TriggersComponent from "./settings/bot/triggers/TriggersComponent";
+import TimersComponent from "./settings/bot/timers/TimersComponent";
+import TriggerHistoryPopup from "./settings/bot/triggers/TriggerHistoryPopup";
+import GachaUsersPopup from "./settings/bot/gacha/GachaUsersPopup";
+import LotteryHistoryPopup from "./settings/bot/lottery/LotteryHistoryPopup";
+import RouletteHistoryPopup from "./settings/bot/roulette/RouletteHistoryPopup";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
@@ -210,6 +220,32 @@ const BotPageContent = styled.div`
     box-sizing: border-box;
 `;
 
+// Toolbar icon button (for database, etc.)
+const ToolbarIconButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: rgba(100, 108, 255, 0.1);
+    color: #646cff;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+        background: rgba(100, 108, 255, 0.2);
+        border-color: #646cff;
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+`;
+
 export default function Settings() {
     const navigate = useNavigate();
     const { t } = useTranslation();
@@ -224,6 +260,8 @@ export default function Settings() {
         bot_roulette: {title: t('settings.pages.botRoulette.title'), icon: <FiTarget/>},
         bot_gacha: {title: t('settings.pages.botGacha.title'), icon: <FiAward/>},
         bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
+        bot_triggers: {title: t('settings.pages.botTriggers.title'), icon: <FiZap/>},
+        bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
@@ -259,6 +297,10 @@ export default function Settings() {
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
     const [showBotHelp, setShowBotHelp] = useState(false);
+    const [showTriggerHistory, setShowTriggerHistory] = useState(false);
+    const [showGachaUsers, setShowGachaUsers] = useState(false);
+    const [showLotteryHistory, setShowLotteryHistory] = useState(false);
+    const [showRouletteHistory, setShowRouletteHistory] = useState(false);
 
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
@@ -271,6 +313,8 @@ export default function Settings() {
             case 'bot_roulette': return botConfig.roulette?.enabled ?? false;
             case 'bot_gacha': return botConfig.gacha?.enabled ?? false;
             case 'bot_lottery': return botConfig.lottery?.enabled ?? false;
+            case 'bot_triggers': return botConfig.triggers?.enabled ?? false;
+            case 'bot_timers': return botConfig.timers?.enabled ?? false;
             default: return false;
         }
     };
@@ -289,6 +333,12 @@ export default function Settings() {
                 break;
             case 'bot_lottery':
                 applyBotConfig(prev => ({ ...prev, lottery: { ...prev.lottery, enabled: newState } }));
+                break;
+            case 'bot_triggers':
+                applyBotConfig(prev => ({ ...prev, triggers: { ...prev.triggers, enabled: newState } }));
+                break;
+            case 'bot_timers':
+                applyBotConfig(prev => ({ ...prev, timers: { ...prev.timers, enabled: newState } }));
                 break;
         }
     };
@@ -366,6 +416,18 @@ export default function Settings() {
                     onCreateTheme={handleCreateTheme}
                 />
             )}
+            {showTriggerHistory && (
+                <TriggerHistoryPopup onClose={() => setShowTriggerHistory(false)} />
+            )}
+            {showGachaUsers && (
+                <GachaUsersPopup onClose={() => setShowGachaUsers(false)} />
+            )}
+            {showLotteryHistory && (
+                <LotteryHistoryPopup onClose={() => setShowLotteryHistory(false)} />
+            )}
+            {showRouletteHistory && (
+                <RouletteHistoryPopup onClose={() => setShowRouletteHistory(false)} />
+            )}
 
             <HolidayHeader>
                 <HeaderLeft>
@@ -422,6 +484,8 @@ export default function Settings() {
                                 {key: "bot_roulette", icon: <FiTarget/>, label: t('settings.pages.botRoulette.label'), enabled: botConfig?.roulette?.enabled},
                                 {key: "bot_gacha", icon: <FiAward/>, label: t('settings.pages.botGacha.label'), enabled: botConfig?.gacha?.enabled},
                                 {key: "bot_lottery", icon: <FiHeart/>, label: t('settings.pages.botLottery.label'), enabled: botConfig?.lottery?.enabled},
+                                {key: "bot_triggers", icon: <FiZap/>, label: t('settings.pages.botTriggers.label'), enabled: botConfig?.triggers?.enabled},
+                                {key: "bot_timers", icon: <FiClock/>, label: t('settings.pages.botTimers.label'), enabled: botConfig?.timers?.enabled},
                             ]
                         },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
@@ -454,6 +518,26 @@ export default function Settings() {
 
                                 <Spacer />
 
+                                {activePage === 'bot_roulette' && (
+                                    <ToolbarIconButton onClick={() => setShowRouletteHistory(true)} title={t('settings.bot.roulette.history.button')}>
+                                        <FiDatabase />
+                                    </ToolbarIconButton>
+                                )}
+                                {activePage === 'bot_gacha' && (
+                                    <ToolbarIconButton onClick={() => setShowGachaUsers(true)} title={t('settings.bot.gacha.users.title')}>
+                                        <FiUsers />
+                                    </ToolbarIconButton>
+                                )}
+                                {activePage === 'bot_lottery' && (
+                                    <ToolbarIconButton onClick={() => setShowLotteryHistory(true)} title={t('settings.bot.lottery.history.title')}>
+                                        <FiDatabase />
+                                    </ToolbarIconButton>
+                                )}
+                                {activePage === 'bot_triggers' && (
+                                    <ToolbarIconButton onClick={() => setShowTriggerHistory(true)} title={t('settings.bot.triggers.history.button')}>
+                                        <FiDatabase />
+                                    </ToolbarIconButton>
+                                )}
                                 <HelpButton onClick={() => setShowBotHelp(true)} />
                             </Row>
                         ) : (
@@ -699,6 +783,59 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                     )}
                 </Content>
             );
+
+        case "bot_triggers":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
+                            <TriggersComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
+        case "bot_timers":
+            return (
+                <Content>
+                    {botConfig ? (
+                        <BotPageContent>
+                            <TimersComponent
+                                apply={applyBotConfig}
+                                botConfig={botConfig}
+                                showHelp={showBotHelp}
+                                setShowHelp={setShowBotHelp}
+                            />
+                        </BotPageContent>
+                    ) : (
+                        <NoConfigCard>
+                            <FiAlertCircle/>
+                            <h3>{t('settings.botConfigMissing.title')}</h3>
+                            <p>
+                                {t('settings.botConfigMissing.line1')}
+                                <br/>
+                                {t('settings.botConfigMissing.line2')}
+                            </p>
+                        </NoConfigCard>
+                    )}
+                </Content>
+            );
+
         case "players": {
             return (
                 <Content>

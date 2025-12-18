@@ -1,0 +1,146 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import styled from 'styled-components';
+
+const TextareaWrapper = styled.div`
+    position: relative;
+    width: 100%;
+`;
+
+const StyledTextarea = styled.textarea`
+    width: 100%;
+    min-height: ${props => props.$minHeight || '80px'};
+    padding: 12px 16px;
+    padding-bottom: ${props => props.$showCounter ? '28px' : '12px'};
+    border: 1px solid ${props => props.$isOverLimit ? '#dc2626' : '#555'};
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 14px;
+    font-family: inherit;
+    resize: vertical;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+
+    &::placeholder {
+        color: #888;
+    }
+
+    &:focus {
+        outline: none;
+        border-color: ${props => props.$isOverLimit ? '#dc2626' : '#646cff'};
+        background: #252525;
+    }
+`;
+
+const CharCounter = styled.div`
+    position: absolute;
+    bottom: 8px;
+    right: 12px;
+    font-size: 11px;
+    color: ${props => props.$isOverLimit ? '#dc2626' : props.$isNearLimit ? '#fbbf24' : '#666'};
+    pointer-events: none;
+    user-select: none;
+`;
+
+/**
+ * Textarea component with debounced onChange and character limit
+ *
+ * @param {string} value - Current value
+ * @param {function} onChange - Callback when value changes (debounced)
+ * @param {number} maxLength - Maximum character limit (default: 500 for Twitch)
+ * @param {number} debounceMs - Debounce delay in ms (default: 300)
+ * @param {boolean} showCounter - Show character counter (default: true)
+ * @param {string} placeholder - Placeholder text
+ * @param {string} minHeight - Minimum height CSS value
+ */
+export default function DebouncedTextarea({
+    value,
+    onChange,
+    maxLength = 500,
+    debounceMs = 300,
+    showCounter = true,
+    placeholder,
+    minHeight,
+    ...props
+}) {
+    const [localValue, setLocalValue] = useState(value || '');
+    const debounceTimerRef = useRef(null);
+    const isInitialMount = useRef(true);
+
+    // Sync local value when external value changes
+    useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
+        // Only update if different (avoid loops)
+        if (value !== localValue) {
+            setLocalValue(value || '');
+        }
+    }, [value]);
+
+    // Cleanup timer on unmount
+    useEffect(() => {
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, []);
+
+    const handleChange = useCallback((e) => {
+        const newValue = e.target.value;
+
+        // Enforce max length
+        if (maxLength && newValue.length > maxLength) {
+            return;
+        }
+
+        setLocalValue(newValue);
+
+        // Clear existing timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+        }
+
+        // Set new debounced callback
+        debounceTimerRef.current = setTimeout(() => {
+            onChange?.(newValue);
+        }, debounceMs);
+    }, [onChange, debounceMs, maxLength]);
+
+    // Flush pending changes on blur
+    const handleBlur = useCallback(() => {
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
+            debounceTimerRef.current = null;
+        }
+        if (localValue !== value) {
+            onChange?.(localValue);
+        }
+    }, [localValue, value, onChange]);
+
+    const charCount = localValue.length;
+    const isOverLimit = maxLength && charCount > maxLength;
+    const isNearLimit = maxLength && charCount > maxLength * 0.9;
+
+    return (
+        <TextareaWrapper>
+            <StyledTextarea
+                value={localValue}
+                onChange={handleChange}
+                onBlur={handleBlur}
+                placeholder={placeholder}
+                $minHeight={minHeight}
+                $showCounter={showCounter}
+                $isOverLimit={isOverLimit}
+                {...props}
+            />
+            {showCounter && maxLength && (
+                <CharCounter $isOverLimit={isOverLimit} $isNearLimit={isNearLimit}>
+                    {charCount}/{maxLength}
+                </CharCounter>
+            )}
+        </TextareaWrapper>
+    );
+}

@@ -138,7 +138,6 @@ export class LotteryMiddleware extends Middleware {
                     ...botConfig.lottery.messages
                 }
             };
-            this.log('LotteryMiddleware config updated');
         }
     }
 
@@ -271,7 +270,7 @@ export class LotteryMiddleware extends Middleware {
                 });
                 return {
                     message,
-                    actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                    actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
                     accepted: true
                 };
             }
@@ -285,7 +284,7 @@ export class LotteryMiddleware extends Middleware {
             });
             return {
                 message,
-                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
                 accepted: true
             };
         }
@@ -298,7 +297,7 @@ export class LotteryMiddleware extends Middleware {
             });
             return {
                 message,
-                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
                 accepted: true
             };
         }
@@ -311,7 +310,7 @@ export class LotteryMiddleware extends Middleware {
             });
             return {
                 message,
-                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
                 accepted: true
             };
         }
@@ -326,7 +325,7 @@ export class LotteryMiddleware extends Middleware {
             });
             return {
                 message,
-                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
                 accepted: true
             };
         }
@@ -340,7 +339,7 @@ export class LotteryMiddleware extends Middleware {
                 });
                 return {
                     message,
-                    actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+                    actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
                     accepted: true
                 };
             }
@@ -411,7 +410,7 @@ export class LotteryMiddleware extends Middleware {
 
         return {
             message,
-            actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg } }],
+            actions: [{ type: ActionTypes.SEND_MESSAGE, payload: { message: responseMsg, forwardToUi: true } }],
             accepted: true
         };
     }
@@ -510,7 +509,7 @@ export class LotteryMiddleware extends Middleware {
             trigger: this.config.entryTrigger
         });
 
-        return [{ type: ActionTypes.SEND_MESSAGE, payload: { message: startMsg } }];
+        return [{ type: ActionTypes.SEND_MESSAGE, payload: { message: startMsg, forwardToUi: true } }];
     }
 
     private addEntry(userId: string, userName: string, method: 'chat' | 'points'): any[] {
@@ -550,7 +549,7 @@ export class LotteryMiddleware extends Middleware {
                     count,
                     initiator: this.activeLottery.initiatorName
                 });
-                countActions.push({ type: ActionTypes.SEND_MESSAGE, payload: { message: msg } });
+                countActions.push({ type: ActionTypes.SEND_MESSAGE, payload: { message: msg, forwardToUi: true } });
             }
         }
 
@@ -573,7 +572,7 @@ export class LotteryMiddleware extends Middleware {
 
         // Отправляем сразу через callback
         if (this.applyAction) {
-            await this.applyAction({ type: ActionTypes.SEND_MESSAGE, payload: { message: msg } });
+            await this.applyAction({ type: ActionTypes.SEND_MESSAGE, payload: { message: msg, forwardToUi: true } });
         }
     }
 
@@ -636,7 +635,7 @@ export class LotteryMiddleware extends Middleware {
 
         // Отправляем результат сразу через callback
         if (this.applyAction) {
-            await this.applyAction({ type: ActionTypes.SEND_MESSAGE, payload: { message: resultMsg } });
+            await this.applyAction({ type: ActionTypes.SEND_MESSAGE, payload: { message: resultMsg, forwardToUi: true } });
         }
     }
 
@@ -664,7 +663,7 @@ export class LotteryMiddleware extends Middleware {
         this.activeLottery = null;
         this.lastDrawEndTime = Date.now();
 
-        return [{ type: ActionTypes.SEND_MESSAGE, payload: { message: cancelMsg } }];
+        return [{ type: ActionTypes.SEND_MESSAGE, payload: { message: cancelMsg, forwardToUi: true } }];
     }
 
     private clearTimers(): void {

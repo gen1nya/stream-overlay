@@ -282,6 +282,35 @@ export const clearLotteryMonth = async (year, month) => {
     return await ipcRenderer?.invoke('lottery:clear-month', { year, month });
 };
 
+// roulette api
+export const getRoulettePlays = async (options = {}) => {
+    return await ipcRenderer?.invoke('roulette:get-plays', options);
+};
+
+export const getRouletteStats = async (userId) => {
+    return await ipcRenderer?.invoke('roulette:get-stats', userId);
+};
+
+export const getAllRouletteStats = async (options = {}) => {
+    return await ipcRenderer?.invoke('roulette:get-all-stats', options);
+};
+
+export const getRouletteGlobalStats = async () => {
+    return await ipcRenderer?.invoke('roulette:get-global-stats');
+};
+
+export const getRouletteLeaderboard = async (type = 'plays', limit = 10) => {
+    return await ipcRenderer?.invoke('roulette:get-leaderboard', type, limit);
+};
+
+export const getRoulettePlayCount = async () => {
+    return await ipcRenderer?.invoke('roulette:get-play-count');
+};
+
+export const clearAllRouletteData = async () => {
+    return await ipcRenderer?.invoke('roulette:clear-all');
+};
+
 // listener
 export const onLogout = (callback) => {
     ipcRenderer.on('logout:success', callback);
@@ -359,4 +388,33 @@ export const getBackendLogsConfig = () => {
 
 export const updateBackendLogsConfig = (config) => {
     return ipcRenderer?.invoke('backend-logs:update-config', config);
+};
+
+// Trigger System API
+export const getScheduledActions = () => {
+    return ipcRenderer?.invoke('triggers:get-scheduled');
+};
+
+export const getActiveVips = () => {
+    return ipcRenderer?.invoke('triggers:get-active-vips');
+};
+
+export const getActiveMods = () => {
+    return ipcRenderer?.invoke('triggers:get-active-mods');
+};
+
+export const cancelScheduledAction = (actionId, reason) => {
+    return ipcRenderer?.invoke('triggers:cancel-action', actionId, reason);
+};
+
+export const cancelScheduledActionsForUser = (userId, actionType, reason) => {
+    return ipcRenderer?.invoke('triggers:cancel-for-user', userId, actionType, reason);
+};
+
+export const getTriggerExecutions = (options) => {
+    return ipcRenderer?.invoke('triggers:get-executions', options);
+};
+
+export const getUserScheduledActions = (userId) => {
+    return ipcRenderer?.invoke('triggers:get-user-scheduled', userId);
 };

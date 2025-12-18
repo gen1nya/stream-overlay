@@ -20,6 +20,7 @@ import {
 } from "./services/twitch/authorizedHelixApi";
 import {updateRoles} from "./services/twitch/roleUpdater";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
+import {DbRepository} from "./services/db/DbRepository";
 
 export function registerIpcHandlers(
     store: Store,
@@ -183,5 +184,133 @@ export function registerIpcHandlers(
       return backendLogService.getConfig();
     }
     return null;
+  });
+
+  // ============================================
+  // Trigger System IPC Handlers
+  // ============================================
+
+  // Helper to get trigger repository
+  const getTriggerRepository = () => {
+    const userId = twitchClient.getUserId();
+    if (!userId) return null;
+    return DbRepository.getInstance(userId).triggers;
+  };
+
+  // Get all pending scheduled actions
+  ipcMain.handle('triggers:get-scheduled', async () => {
+    const repo = getTriggerRepository();
+    if (!repo) return [];
+    return repo.getAllPendingActions();
+  });
+
+  // Get active VIPs (with scheduled removal)
+  ipcMain.handle('triggers:get-active-vips', async () => {
+    const repo = getTriggerRepository();
+    if (!repo) return [];
+    return repo.getActiveVips();
+  });
+
+  // Get active moderators (with scheduled removal)
+  ipcMain.handle('triggers:get-active-mods', async () => {
+    const repo = getTriggerRepository();
+    if (!repo) return [];
+    return repo.getActiveMods();
+  });
+
+  // Cancel a specific scheduled action
+  ipcMain.handle('triggers:cancel-action', async (_e, actionId: number, reason?: string) => {
+    const repo = getTriggerRepository();
+    if (!repo) return false;
+    repo.cancelAction(actionId, reason);
+    return true;
+  });
+
+  // Cancel all scheduled actions for a user
+  ipcMain.handle('triggers:cancel-for-user', async (_e, userId: string, actionType?: string, reason?: string) => {
+    const repo = getTriggerRepository();
+    if (!repo) return 0;
+    if (actionType) {
+      return repo.cancelByUserAndType(userId, actionType, reason);
+    }
+    // Cancel all types for this user
+    const vipCancelled = repo.cancelByUserAndType(userId, 'remove_vip', reason);
+    const modCancelled = repo.cancelByUserAndType(userId, 'remove_mod', reason);
+    return vipCancelled + modCancelled;
+  });
+
+  // Get execution history
+  ipcMain.handle('triggers:get-executions', async (_e, options?: { limit?: number; triggerId?: string; offset?: number }) => {
+    const repo = getTriggerRepository();
+    if (!repo) return [];
+    return repo.getExecutions(options);
+  });
+
+  // Get scheduled actions for a specific user
+  ipcMain.handle('triggers:get-user-scheduled', async (_e, userId: string) => {
+    const repo = getTriggerRepository();
+    if (!repo) return [];
+    return repo.getScheduledActionsForUser(userId);
+  });
+
+  // ============================================
+  // Roulette Stats Handlers
+  // ============================================
+
+  // Helper to get roulette repository
+  const getRouletteRepository = () => {
+    const userId = twitchClient.getUserId();
+    if (!userId) return null;
+    return DbRepository.getInstance(userId).roulette;
+  };
+
+  // Get roulette plays history
+  ipcMain.handle('roulette:get-plays', async (_e, options?: { userId?: string; limit?: number; offset?: number }) => {
+    const repo = getRouletteRepository();
+    if (!repo) return [];
+    return repo.getPlays(options);
+  });
+
+  // Get roulette stats for a specific user
+  ipcMain.handle('roulette:get-stats', async (_e, userId: string) => {
+    const repo = getRouletteRepository();
+    if (!repo) return null;
+    return repo.getStats(userId);
+  });
+
+  // Get all roulette stats
+  ipcMain.handle('roulette:get-all-stats', async (_e, options?: { limit?: number; offset?: number; orderBy?: 'plays' | 'survival_rate' | 'death_rate' }) => {
+    const repo = getRouletteRepository();
+    if (!repo) return [];
+    return repo.getAllStats(options);
+  });
+
+  // Get global roulette stats
+  ipcMain.handle('roulette:get-global-stats', async () => {
+    const repo = getRouletteRepository();
+    if (!repo) return { totalPlays: 0, totalSurvivals: 0, totalDeaths: 0, uniquePlayers: 0 };
+    return repo.getGlobalStats();
+  });
+
+  // Get roulette leaderboard
+  ipcMain.handle('roulette:get-leaderboard', async (_e, type: 'survivors' | 'deaths' | 'plays', limit?: number) => {
+    const repo = getRouletteRepository();
+    if (!repo) return [];
+    return repo.getLeaderboard(type, limit || 10);
+  });
+
+  // Get total play count
+  ipcMain.handle('roulette:get-play-count', async () => {
+    const repo = getRouletteRepository();
+    if (!repo) return 0;
+    return repo.getPlayCount();
+  });
+
+  // Clear all roulette data
+  ipcMain.handle('roulette:clear-all', async () => {
+    const repo = getRouletteRepository();
+    if (!repo) return false;
+    repo.clearAllData();
+    return true;
   });
 }

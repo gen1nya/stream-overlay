@@ -8,13 +8,20 @@ export class GachaSystem {
     private bannerConfig: GachaBannerConfig;
 
     constructor(initialConfig?: GachaStoreSchema) {
+        console.log('🎲 [GachaEngine] Constructor called');
+        console.log('🎲 [GachaEngine] Initial config provided:', !!initialConfig);
+        console.log('🎲 [GachaEngine] Initial items count:', initialConfig?.items?.length || 0);
+        console.log('🎲 [GachaEngine] Initial banner:', JSON.stringify(initialConfig?.banner, null, 2));
+
         this.itemDb = new ItemInMemoryDatabase(initialConfig?.items);
         this.userManager = new UserManager();
 
         if (initialConfig?.banner) {
             this.bannerConfig = initialConfig.banner;
+            console.log('🎲 [GachaEngine] Using provided banner config');
         } else {
             this.bannerConfig = this.createDefaultBannerConfig();
+            console.log('🎲 [GachaEngine] Using default banner config');
         }
     }
 
@@ -35,6 +42,8 @@ export class GachaSystem {
     }
 
     setBannerConfig(config: GachaBannerConfig): void {
+        console.log('🎲 [GachaEngine] setBannerConfig called');
+        console.log('🎲 [GachaEngine] New banner config:', JSON.stringify(config, null, 2));
         this.bannerConfig = config;
     }
 
@@ -43,10 +52,19 @@ export class GachaSystem {
     }
 
     pull(userId: string, userName: string): PullResult {
+        console.log('🎲 [GachaEngine] pull() called');
+        console.log('🎲 [GachaEngine]   - userId:', userId);
+        console.log('🎲 [GachaEngine]   - userName:', userName);
+
         const pityData = this.userManager.getUserPityStatus(userId, userName);
+        console.log('🎲 [GachaEngine] Pity data before increment:', JSON.stringify(pityData, null, 2));
 
         pityData.pullsSince5Star++;
         pityData.pullsSince4Star++;
+
+        console.log('🎲 [GachaEngine] Pity data after increment:');
+        console.log('🎲 [GachaEngine]   - pullsSince5Star:', pityData.pullsSince5Star);
+        console.log('🎲 [GachaEngine]   - pullsSince4Star:', pityData.pullsSince4Star);
 
         this.userManager.updateUserPity(
             userId,
@@ -57,10 +75,18 @@ export class GachaSystem {
             userName
         );
 
+        console.log('🎲 [GachaEngine] Determining pull result...');
         const result = this.determinePullResult(pityData);
+        console.log('🎲 [GachaEngine] Pull result determined:');
+        console.log('🎲 [GachaEngine]   - item:', result.item?.name, `(${result.item?.rarity}*)`);
+        console.log('🎲 [GachaEngine]   - wasGuaranteed:', result.wasGuaranteed);
+        console.log('🎲 [GachaEngine]   - wasSoftPity:', result.wasSoftPity);
+        console.log('🎲 [GachaEngine]   - was5050:', result.was5050);
+        console.log('🎲 [GachaEngine]   - won5050:', result.won5050);
+
         this.updatePityAfterPull(userId, result, userName);
 
-        return {
+        const pullResult = {
             item: result.item,
             pullNumber: pityData.pullsSince5Star,
             wasGuaranteed: result.wasGuaranteed,
@@ -69,6 +95,9 @@ export class GachaSystem {
             won5050: result.won5050,
             wasCapturingRadiance: result.wasCapturingRadiance
         };
+
+        console.log('🎲 [GachaEngine] Returning pull result:', JSON.stringify(pullResult, null, 2));
+        return pullResult;
     }
 
     multiPull(userId: string, count: number = 10, userName: string): PullResult[] {
@@ -283,6 +312,7 @@ export class GachaSystem {
     }
 
     setCurrentUserId(userId: string | null) {
+        console.log('🎲 [GachaEngine] setCurrentUserId called with:', userId);
         this.userManager.setCurrentUserId(userId);
     }
 }
