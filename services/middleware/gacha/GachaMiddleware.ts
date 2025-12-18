@@ -182,7 +182,7 @@ export class GachaMiddleware extends Middleware {
 
         const action = {
             type: ActionTypes.SEND_MESSAGE,
-            payload: {message: response}
+            payload: {message: response, forwardToUi: true}
         };
 
         console.log('🎰 [GachaMiddleware] Created action:', JSON.stringify(action, null, 2));
