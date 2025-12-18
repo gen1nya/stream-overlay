@@ -38,6 +38,7 @@ const SCOPES = [
   'channel:read:editors',
   'user:read:follows',
   'moderator:read:followers',
+  'moderator:read:chatters',
   'moderator:manage:chat_messages',
   'moderator:manage:banned_users',
   'moderator:manage:shoutouts',
