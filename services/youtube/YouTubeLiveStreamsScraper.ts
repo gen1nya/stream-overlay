@@ -132,11 +132,11 @@ class YouTubeLiveStreamsScraper {
     }
 
     private async fetchLiveStreams() {
+        if (!this.store.get('youtube.enabled')) return
         if (!this.channelId) {
             console.warn('Канал не установлен, пропускаем обновление трансляций');
             return;
         }
-        if (!this.store.get('youtube.enabled')) return
         if (this.isFetching) return; // анти-гонка
         this.isFetching = true;
         try {

@@ -138,7 +138,6 @@ export class LotteryMiddleware extends Middleware {
                     ...botConfig.lottery.messages
                 }
             };
-            this.log('LotteryMiddleware config updated');
         }
     }
 
