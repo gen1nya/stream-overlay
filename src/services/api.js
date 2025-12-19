@@ -43,6 +43,22 @@ export const openOverlay = () => {
     return ipcRenderer?.invoke('chat:open-overlay');
 };
 
+export const setChatGameMode = (enabled) => {
+    return ipcRenderer?.invoke('chat:set-game-mode', enabled);
+};
+
+export const getChatGameMode = () => {
+    return ipcRenderer?.invoke('chat:get-game-mode');
+};
+
+export const onGameModeChanged = (callback) => {
+    ipcRenderer?.on('chat:game-mode-changed', (_event, enabled) => callback(enabled));
+};
+
+export const removeGameModeListener = () => {
+    ipcRenderer?.removeAllListeners('chat:game-mode-changed');
+};
+
 export const openTerminal = () => {
     return ipcRenderer?.invoke('arg:create-terminal');
 }

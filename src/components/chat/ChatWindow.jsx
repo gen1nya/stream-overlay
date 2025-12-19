@@ -1,11 +1,13 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import styled, { createGlobalStyle, css } from 'styled-components';
-import { windowModeThemeDark, windowModeThemeLight } from '../../theme';
+import { useTranslation } from 'react-i18next';
+import { windowModeThemeDark, windowModeThemeLight, gameModeTheme } from '../../theme';
 import { usePersistentOpacity } from '../../hooks/usePersistentOpacity';
 import { usePersistentThemeMode } from '../../hooks/usePersistentThemeMode';
 import { usePersistentFontScale } from '../../hooks/usePersistentFontScale';
 import { Spacer } from '../utils/Separator';
 import { FiX, FiSettings } from 'react-icons/fi';
+import { getChatGameMode, onGameModeChanged, removeGameModeListener } from '../../services/api';
 import ChatMessageList from './ChatMessageList';
 import ChatWindowSettings from './ChatWindowSettings';
 import ModeratorPopup from './ModeratorPopup';
@@ -88,6 +90,14 @@ const Frame = styled.div`
     border: 1px solid ${({ $isLight }) => ($isLight ? 'rgba(200, 200, 200, 0.6)' : 'rgba(155, 116, 255, 0.55)')};
     background: ${({ $opacity, $isLight }) =>
         $isLight ? `rgba(245, 245, 245, ${$opacity / 100})` : `rgba(20, 20, 20, ${$opacity / 100})`};
+
+    /* In game mode: no background, no border, click-through */
+    ${({ $isGameMode }) => $isGameMode && css`
+        pointer-events: none;
+        background: transparent;
+        border: none;
+        border-radius: 0;
+    `}
 `;
 
 const Toolbar = styled.div`
@@ -101,6 +111,11 @@ const Toolbar = styled.div`
     padding: 0 12px;
     background: ${({ $isLight }) => ($isLight ? 'rgba(220, 220, 220, 0.8)' : 'rgba(155, 116, 255, 0.55)')};
     border-radius: 12px 12px 0 0;
+
+    /* Hide toolbar in game mode */
+    ${({ $isGameMode }) => $isGameMode && css`
+        display: none;
+    `}
 `;
 
 const ToolbarButton = styled.button`
@@ -155,16 +170,34 @@ const SettingsContainer = styled.div`
  * Independent component for window mode with its own theme management
  */
 export default function ChatWindow() {
+    const { t } = useTranslation();
     const [opacity, setOpacity] = usePersistentOpacity('ui.opacity', 100, 100);
     const [themeMode, setThemeMode] = usePersistentThemeMode('ui.themeMode', 'dark');
     const [fontScale, setFontScale] = usePersistentFontScale('ui.fontScale', 100);
     const [isSettingsOpen, setIsSettingsOpen] = useState(false);
     const [selectedMessage, setSelectedMessage] = useState(null);
     const [isModPopupOpen, setIsModPopupOpen] = useState(false);
+    const [isGameMode, setIsGameMode] = useState(false);
     const settingsButtonRef = useRef(null);
 
-    const baseTheme = themeMode === 'light' ? windowModeThemeLight : windowModeThemeDark;
     const isLight = themeMode === 'light';
+
+    // Select base theme based on mode
+    const baseTheme = useMemo(() => {
+        if (isGameMode) return gameModeTheme;
+        return isLight ? windowModeThemeLight : windowModeThemeDark;
+    }, [isGameMode, isLight]);
+
+    // Sync game mode state from backend via IPC events
+    useEffect(() => {
+        // Get initial state
+        getChatGameMode().then(state => setIsGameMode(state ?? false));
+
+        // Subscribe to changes from main process
+        onGameModeChanged(setIsGameMode);
+
+        return () => removeGameModeListener();
+    }, []);
 
     // Calculate blended opacity for messages
     // Formula: 50% at 0 opacity, 100% at 100 opacity
@@ -172,9 +205,12 @@ export default function ChatWindow() {
         return 0.5 + (opacity / 100) * 0.5;
     }, [opacity]);
 
-    // Apply font scale to theme
+    // Apply font scale and localized templates to theme
     const currentTheme = useMemo(() => {
         const scale = fontScale / 100;
+        const followTemplate = t('chatWindow.templates.follow');
+        const redeemTemplate = t('chatWindow.templates.redeem');
+
         return {
             ...baseTheme,
             chatMessage: {
@@ -185,13 +221,15 @@ export default function ChatWindow() {
             followMessage: baseTheme.followMessage?.map(msg => ({
                 ...msg,
                 fontSize: Math.round(msg.fontSize * scale),
+                template: followTemplate,
             })),
             redeemMessage: baseTheme.redeemMessage?.map(msg => ({
                 ...msg,
                 fontSize: Math.round(msg.fontSize * scale),
+                template: redeemTemplate,
             })),
         };
-    }, [baseTheme, fontScale]);
+    }, [baseTheme, fontScale, t]);
 
     const handleCloseClick = () => {
         console.log('Closing chat window');
@@ -216,14 +254,14 @@ export default function ChatWindow() {
     return (
         <>
             <GlobalStyle />
-            <Frame $opacity={opacity} $isLight={isLight}>
-                <Toolbar $isLight={isLight}>
+            <Frame $opacity={opacity} $isLight={isLight} $isGameMode={isGameMode}>
+                <Toolbar $isLight={isLight} $isGameMode={isGameMode}>
                     <SettingsContainer>
                         <ToolbarButton
                             ref={settingsButtonRef}
                             $isLight={isLight}
                             onClick={toggleSettings}
-                            title="Настройки"
+                            title={t('chatWindow.settings.title')}
                         >
                             <FiSettings />
                         </ToolbarButton>
@@ -241,7 +279,7 @@ export default function ChatWindow() {
                         />
                     </SettingsContainer>
                     <Spacer />
-                    <CloseButton $isLight={isLight} onClick={handleCloseClick} title="Закрыть">
+                    <CloseButton $isLight={isLight} onClick={handleCloseClick} title={t('chatWindow.close')}>
                         <FiX />
                     </CloseButton>
                 </Toolbar>

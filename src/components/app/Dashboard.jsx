@@ -10,7 +10,9 @@ import {
     openTerminal,
     onLogout,
     onAccountUpdated,
-    openBackendLogs
+    openBackendLogs,
+    setChatGameMode,
+    getChatGameMode
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import Marquee from 'react-fast-marquee';
@@ -21,6 +23,7 @@ import {
     FiExternalLink,
     FiCopy,
     FiLayers,
+    FiMonitor,
 } from 'react-icons/fi';
 import ConnectionStatus from './ConnectionStatus';
 import {Row} from "./SettingsComponent";
@@ -32,6 +35,7 @@ import { APP_VERSION } from "../../config/version";
 import HolidayHeader from "../seasonal/HolidayHeader";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./settings/SharedSettingsStyles";
+import Switch from "../utils/Switch";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
 import {useWebSocket} from "../../context/WebSocketContext";
@@ -166,6 +170,29 @@ const ThemeLabel = styled.span`
     white-space: nowrap;
 `;
 
+const GameModeToggle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
+    background: ${({ $isActive }) => $isActive ? 'rgba(76, 175, 80, 0.15)' : '#383838'};
+    border-radius: 8px;
+    border: 1px solid ${({ $isActive }) => $isActive ? 'rgba(76, 175, 80, 0.4)' : '#555'};
+    transition: all 0.2s;
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: ${({ $isActive }) => $isActive ? '#4caf50' : '#999'};
+    }
+`;
+
+const GameModeLabel = styled.span`
+    font-size: 13px;
+    color: ${({ $isActive }) => $isActive ? '#4caf50' : '#ccc'};
+    white-space: nowrap;
+`;
+
 const AccountRow = styled.div`
     display: flex;
     align-items: center;
@@ -222,6 +249,20 @@ const DashboardCard = styled(SettingsCard)`
     width: calc(100% - 42px);
     margin-right: 20px;
     margin-left: 20px;
+`;
+
+const CardsRow = styled.div`
+    display: flex;
+    flex-wrap: wrap;
+    margin: 0 21px;
+    gap: 16px;
+    width: calc(100% - 42px);
+`;
+
+const HalfCard = styled(SettingsCard)`
+    flex: 1;
+    min-width: 400px;
+    margin: 12px 0 0 0;
 `;
 
 const DashboardCardHeader = styled(CardHeader)`
@@ -335,6 +376,14 @@ export default function Dashboard() {
 
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
+    const [isGameMode, setIsGameMode] = useState(false);
+
+    // Load initial game mode state
+    useEffect(() => {
+        getChatGameMode().then(state => {
+            setIsGameMode(state ?? false);
+        });
+    }, []);
 
     // Используем WebSocket из контекста
     const { send, subscribe, isConnected } = useWebSocket();
@@ -468,6 +517,14 @@ export default function Dashboard() {
 
     const handleOpenOverlay = () => {
         openOverlay();
+    };
+
+    const handleGameModeToggle = async (e) => {
+        const newState = e.target.checked;
+        const success = await setChatGameMode(newState);
+        if (success) {
+            setIsGameMode(newState);
+        }
     };
 
     const openPlayer1 = () => {
@@ -662,30 +719,26 @@ export default function Dashboard() {
                         </CardContent>
                     </DashboardCard>
 
-                    <DashboardCard>
-                        <DashboardCardHeader>
-                            <CardTitle>
-                                {t('dashboard.cards.chat.title')}
-                            </CardTitle>
-                        </DashboardCardHeader>
-                        <CardContent>
-                            <ButtonsRow>
-                                <button onClick={handleOpenOverlay}>
-                                    <FiExternalLink />
-                                    {t('dashboard.cards.chat.open')}
-                                </button>
-                                <LinkGroup>
+                    <CardsRow>
+                        <HalfCard>
+                            <DashboardCardHeader>
+                                <CardTitle>
+                                    {t('dashboard.cards.overlay.title')}
+                                </CardTitle>
+                            </DashboardCardHeader>
+                            <CardContent>
+                                <ButtonsRow>
                                     <LinkButton onClick={handleCopyChatLink}>
                                         <FiCopy />
-                                        {t('dashboard.cards.chat.copyLink')}
+                                        {t('dashboard.cards.overlay.copyLink')}
                                     </LinkButton>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                        <ThemeLabel>{t('dashboard.cards.chat.themeLabel')}:</ThemeLabel>
+                                        <ThemeLabel>{t('dashboard.cards.overlay.themeLabel')}:</ThemeLabel>
                                         <ThemeSelector
                                             value={selectedThemeName}
                                             onChange={(e) => setSelectedThemeName(e.target.value)}
                                         >
-                                            <option value="">{t('dashboard.cards.chat.defaultThemeOption')}</option>
+                                            <option value="">{t('dashboard.cards.overlay.defaultThemeOption')}</option>
                                             {themes && Object.keys(themes).map((themeName) => (
                                                 <option key={themeName} value={themeName}>
                                                     {themeName}
@@ -693,10 +746,36 @@ export default function Dashboard() {
                                             ))}
                                         </ThemeSelector>
                                     </div>
-                                </LinkGroup>
-                            </ButtonsRow>
-                        </CardContent>
-                    </DashboardCard>
+                                </ButtonsRow>
+                            </CardContent>
+                        </HalfCard>
+
+                        <HalfCard>
+                            <DashboardCardHeader>
+                                <CardTitle>
+                                    {t('dashboard.cards.chatWindow.title')}
+                                </CardTitle>
+                            </DashboardCardHeader>
+                            <CardContent>
+                                <ButtonsRow>
+                                    <button onClick={handleOpenOverlay}>
+                                        <FiExternalLink />
+                                        {t('dashboard.cards.chatWindow.open')}
+                                    </button>
+                                    <GameModeToggle $isActive={isGameMode}>
+                                        <FiMonitor />
+                                        <GameModeLabel $isActive={isGameMode}>
+                                            {t('dashboard.cards.chatWindow.gameMode')}
+                                        </GameModeLabel>
+                                        <Switch
+                                            checked={isGameMode}
+                                            onChange={handleGameModeToggle}
+                                        />
+                                    </GameModeToggle>
+                                </ButtonsRow>
+                            </CardContent>
+                        </HalfCard>
+                    </CardsRow>
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>

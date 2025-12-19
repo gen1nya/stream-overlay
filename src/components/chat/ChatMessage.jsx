@@ -1,6 +1,6 @@
 import React from 'react';
 import {generateGradientCSS, getLayeredBackgroundStyles, hexToRgba} from "../../utils.js";
-import styled, { css, useTheme } from 'styled-components';
+import styled from 'styled-components';
 
 // Helper to get inset values for color background layer
 const getColorLayerInset = (m) => {
@@ -302,7 +302,7 @@ export default function ChatMessage({ message, showSourceChannel, onClick }) {
                     />
                     <Username color={message.color}>{message.userName}:</Username>
                 </TitleContainer>
-                <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}}/>
+                <MessageText dangerouslySetInnerHTML={{__html: message.htmlMessage}} />
             </Content>
         </MessageContainer>
     );

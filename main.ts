@@ -15,7 +15,7 @@ import {
     sendShoutout
 } from './services/twitch/authorizedHelixApi';
 import {ActionScheduler} from './services/ActionScheduler';
-import {createMainWindow, mainWindow} from "./windowsManager";
+import {createMainWindow, mainWindow, initWindowsManager} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID} from "./services/twitch/esService";
@@ -65,6 +65,11 @@ const store = new Store<StoreSchema>({
     },
     irc: {
         useWebSocket: false,  // Default to TCP
+    },
+    chatWindow: {
+        width: 400,
+        height: 640,
+        gameMode: false,
     }
   },
 });
@@ -325,6 +330,7 @@ app.whenReady().then(() => {
   } else {
     startHttpServer(PORT);
   }
+  initWindowsManager(store);
   createMainWindow('http://localhost:5173/loading');
   registerIpcHandlers(
       store as any,

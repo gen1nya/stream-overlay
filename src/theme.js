@@ -259,6 +259,113 @@ export const windowModeThemeLight = {
 // Legacy export for backward compatibility
 export const windowModeTheme = windowModeThemeDark;
 
+// Game Mode Theme - Minimal, transparent, readable over any background
+export const gameModeTheme = {
+    chatMessage: {
+        backgroundColor: "#000000",
+        borderColor: "#ffffff",
+        shadowColor: "#000000",
+        shadowOpacity: "0",
+        shadowRadius: "0",
+        direction: "column",
+        borderRadius: "0",
+        marginH: "0",
+        marginV: "0",
+        backgroundOpacity: "0",
+        borderOpacity: "0.2",
+        paddingH: "4",
+        paddingV: "6",
+        fontSize: 16,
+        titleFontSize: 16,
+        titleBackgroundMode: "none",
+        titleFont: {
+            family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+            url: null,
+        },
+        messageFont: {
+            family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+            url: null,
+            color: "#ffffff",
+            opacity: "1",
+            shadowColor: "#000000",
+            shadowOpacity: "1",
+            shadowRadius: "2"
+        }
+    },
+    followMessage: [
+        {
+            backgroundColor: "#000000",
+            borderColor: "#4caf50",
+            shadowColor: "#000",
+            shadowOpacity: "0",
+            shadowRadius: "0",
+            direction: "row",
+            backgroundOpacity: "0",
+            borderOpacity: "0.3",
+            borderRadius: "0",
+            marginH: "0",
+            marginV: "0",
+            paddingH: "4",
+            paddingV: "6",
+            fontSize: 16,
+            template: "🎉 {userName} подписался!",
+            messageFont: {
+                family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+                url: null,
+                color: "#4caf50",
+                opacity: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "1",
+                shadowRadius: "2"
+            }
+        }
+    ],
+    redeemMessage: [
+        {
+            backgroundColor: "#000000",
+            borderColor: "#9c27b0",
+            shadowColor: "#000",
+            shadowOpacity: "0",
+            shadowRadius: "0",
+            direction: "row",
+            backgroundOpacity: "0",
+            borderRadius: "0",
+            paddingV: "6",
+            paddingH: "4",
+            marginV: "0",
+            marginH: "0",
+            borderOpacity: "0.3",
+            fontSize: 16,
+            template: "💎 {userName} потратил {cost} на {title}",
+            messageFont: {
+                family: "system-ui, -apple-system, 'Segoe UI', sans-serif",
+                url: null,
+                color: "#ce93d8",
+                opacity: "1",
+                shadowColor: "#000000",
+                shadowOpacity: "1",
+                shadowRadius: "2"
+            }
+        }
+    ],
+    allMessages: {
+        lifetime: 60,
+        textColor: "#ffffff",
+        textOpacity: "1",
+        blurRadius: "0",
+        textShadowColor: "#000000",
+        textShadowOpacity: "1",
+        textShadowRadius: "2",
+        textShadowXPosition: 1,
+        textShadowYPosition: 1
+    },
+    overlay: {
+        backgroundType: "none",
+        backgroundColor: null,
+        backgroundImage: null
+    }
+};
+
 export const defaultTheme = {
     chatMessage: {
         backgroundColor: "#422434",

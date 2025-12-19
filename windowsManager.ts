@@ -1,11 +1,49 @@
-import { BrowserWindow, app } from 'electron';
+import { BrowserWindow, app, screen } from 'electron';
 import path from "path";
+import Store from 'electron-store';
+import { StoreSchema, ChatWindowConfig } from './services/store/StoreSchema';
+
+/**
+ * Check if a point is visible on any connected display
+ */
+function isPositionVisible(x: number, y: number, width: number, height: number): boolean {
+  const displays = screen.getAllDisplays();
+  // Check if at least part of the window (top-left corner area) is visible on any display
+  for (const display of displays) {
+    const { x: dx, y: dy, width: dw, height: dh } = display.bounds;
+    // Window is visible if its top-left corner + some margin is within display bounds
+    const margin = 50; // At least 50px should be visible
+    if (x >= dx - width + margin && x < dx + dw - margin &&
+        y >= dy && y < dy + dh - margin) {
+      return true;
+    }
+  }
+  return false;
+}
 
 export let mainWindow: BrowserWindow | null = null;
 export let chatWindow: BrowserWindow | null = null;
 export let previewWindow: BrowserWindow | null = null;
 export let terminalWindow: BrowserWindow | null = null;
 export let backendLogsWindow: BrowserWindow | null = null;
+
+// Store reference for persisting settings
+let store: Store<StoreSchema> | null = null;
+
+// Game mode state for chat window
+let isGameModeEnabled = false;
+
+/**
+ * Initialize windowsManager with store reference
+ */
+export function initWindowsManager(storeInstance: Store<StoreSchema>): void {
+  store = storeInstance;
+  // Load saved game mode state
+  const chatWindowConfig = store.get('chatWindow');
+  if (chatWindowConfig) {
+    isGameModeEnabled = chatWindowConfig.gameMode ?? false;
+  }
+}
 
 export function createTerminalWindow(): void {
     terminalWindow = new BrowserWindow({
@@ -24,6 +62,18 @@ export function createTerminalWindow(): void {
     terminalWindow.loadURL('http://localhost:5173/tty');
 }
 
+/**
+ * Close all child windows (chat, preview, terminal, backend logs)
+ */
+function closeAllChildWindows(): void {
+  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow];
+  for (const win of windows) {
+    if (win && !win.isDestroyed()) {
+      win.close();
+    }
+  }
+}
+
 export function createMainWindow(url: string): void {
   mainWindow = new BrowserWindow({
     width: 1200,
@@ -36,6 +86,12 @@ export function createMainWindow(url: string): void {
   });
   mainWindow.setMenuBarVisibility(false);
   mainWindow.loadURL(url);
+
+  // Close all child windows when main window is closed
+  mainWindow.on('closed', () => {
+    closeAllChildWindows();
+    mainWindow = null;
+  });
 }
 
 export function createChatWindow(): void {
@@ -43,9 +99,20 @@ export function createChatWindow(): void {
     chatWindow.focus();
     return;
   }
+
+  // Load saved window config
+  const savedConfig = store?.get('chatWindow') ?? { width: 400, height: 640, gameMode: false };
+
+  // Validate saved position - only use if visible on current displays
+  let usePosition = false;
+  if (savedConfig.x !== undefined && savedConfig.y !== undefined) {
+    usePosition = isPositionVisible(savedConfig.x, savedConfig.y, savedConfig.width, savedConfig.height);
+  }
+
   chatWindow = new BrowserWindow({
-    width: 400,
-    height: 640,
+    width: savedConfig.width,
+    height: savedConfig.height,
+    ...(usePosition && { x: savedConfig.x, y: savedConfig.y }),
     webPreferences: {
       nodeIntegration: true,
       contextIsolation: false,
@@ -63,6 +130,36 @@ export function createChatWindow(): void {
   chatWindow.setMenuBarVisibility(false);
   chatWindow.setTitle('');
   chatWindow.loadURL('http://localhost:5173/chat-overlay?mode=window');
+
+  // Apply saved game mode state after window is ready
+  chatWindow.webContents.on('did-finish-load', () => {
+    if (isGameModeEnabled && chatWindow && !chatWindow.isDestroyed()) {
+      chatWindow.setIgnoreMouseEvents(true, { forward: true });
+      chatWindow.setAlwaysOnTop(true, 'screen-saver');
+    }
+  });
+
+  // Save position and size on move/resize
+  const saveWindowBounds = () => {
+    if (chatWindow && !chatWindow.isDestroyed() && store) {
+      const bounds = chatWindow.getBounds();
+      const currentConfig = store.get('chatWindow');
+      store.set('chatWindow', {
+        ...currentConfig,
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height,
+      });
+    }
+  };
+
+  chatWindow.on('moved', saveWindowBounds);
+  chatWindow.on('resized', saveWindowBounds);
+
+  chatWindow.on('closed', () => {
+    chatWindow = null;
+  });
 }
 
 export function createPreviewWindow(): void {
@@ -99,4 +196,47 @@ export function createBackendLogsWindow(): void {
   backendLogsWindow.on('closed', () => {
     backendLogsWindow = null;
   });
+}
+
+/**
+ * Toggle game mode for chat window
+ * In game mode:
+ * - Window is click-through (mouse events pass through)
+ * - Window stays on top of fullscreen apps (screen-saver level)
+ * State is persisted and will be applied when window is opened
+ */
+export function setChatGameMode(enabled: boolean): boolean {
+  isGameModeEnabled = enabled;
+
+  // Persist game mode state (even if window is not open)
+  if (store) {
+    const currentConfig = store.get('chatWindow');
+    store.set('chatWindow', {
+      ...currentConfig,
+      gameMode: enabled,
+    });
+  }
+
+  // Apply to window if it exists
+  if (chatWindow && !chatWindow.isDestroyed()) {
+    if (enabled) {
+      chatWindow.setIgnoreMouseEvents(true, { forward: true });
+      chatWindow.setAlwaysOnTop(true, 'screen-saver');
+    } else {
+      chatWindow.setIgnoreMouseEvents(false);
+      chatWindow.setAlwaysOnTop(true, 'normal');
+    }
+
+    // Notify renderer about game mode change
+    chatWindow.webContents.send('chat:game-mode-changed', enabled);
+  }
+
+  return true;
+}
+
+/**
+ * Get current game mode state
+ */
+export function getChatGameMode(): boolean {
+  return isGameModeEnabled;
 }

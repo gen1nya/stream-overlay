@@ -141,12 +141,16 @@ const en = {
                     followers: 'Followers: {{count}}',
                     loading: 'Loading account info...'
                 },
-                chat: {
-                    title: 'Chat overlay',
-                    open: 'Open chat',
+                overlay: {
+                    title: 'Chat Overlay',
                     copyLink: 'Copy link',
                     themeLabel: 'Theme',
                     defaultThemeOption: 'Default'
+                },
+                chatWindow: {
+                    title: 'Chat Window',
+                    open: 'Open window',
+                    gameMode: 'Game mode',
                 },
                 widgets: {
                     title: 'Widgets',
@@ -203,6 +207,15 @@ const en = {
                     dark: 'Dark',
                 },
                 fontScale: 'Font scale',
+            },
+            gameMode: {
+                enable: 'Game mode (click-through enabled)',
+                disable: 'Disable game mode',
+            },
+            close: 'Close',
+            templates: {
+                follow: '🎉 {userName} just followed!',
+                redeem: '💎 {userName} spent {cost} on {title}',
             },
         },
         moderatorPopup: {

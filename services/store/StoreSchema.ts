@@ -2,6 +2,14 @@ import {GachaStoreSchema} from "../middleware/gacha/types";
 import {LotteryBotConfig} from "../middleware/lottery/types";
 
 
+export interface ChatWindowConfig {
+    x?: number;
+    y?: number;
+    width: number;
+    height: number;
+    gameMode: boolean;
+}
+
 export interface StoreSchema {
     themes: {
         default: ThemeConfig;
@@ -15,6 +23,7 @@ export interface StoreSchema {
     audio: AudioConfig;
     youtube: YoutubeConfig;
     irc: IrcConfig;
+    chatWindow: ChatWindowConfig;
 }
 
 export interface IrcConfig {
