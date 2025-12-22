@@ -1,6 +1,7 @@
 import {ipcMain} from "electron";
 import ElectronStore from "electron-store";
 import {BotConfig, StoreSchema} from "./store/StoreSchema";
+import {isLegacyGachaConfig, migrateGachaConfig} from "./middleware/gacha/migration";
 
 export class BotConfigService {
     private appStorage: ElectronStore<StoreSchema>;
@@ -50,9 +51,9 @@ export class BotConfigService {
         custom: { enabled: false },
         gacha: {
             enabled: false,
-            banner: {
+            banners: [{
                 id: 0,
-                name: 'Новый баннер',
+                name: 'Banner 1',
                 featured5StarId: null,
                 featured4StarIds: [],
                 hardPity5Star: 90,
@@ -62,7 +63,7 @@ export class BotConfigService {
                 baseRate4Star: 0.051,
                 featuredRate4Star: 0.5,
                 hasCapturingRadiance: true
-            },
+            }],
             items: [],
             triggers: [],
         },
@@ -212,12 +213,27 @@ export class BotConfigService {
     ) {
         this.appStorage = store;
 
-        const name =  this.appStorage.get('currentBot') || 'default';
+        const name = this.appStorage.get('currentBot') || 'default';
         let configs = this.appStorage.get('bots') || {};
         console.log('Loaded bot configurations:', configs);
+
         if (Object.keys(configs).length === 0) {
             configs['default'] = this.bot;
             this.appStorage.set('bots', configs);
+        } else {
+            // Мигрируем все gacha конфиги со старого формата на новый
+            let needsSave = false;
+            for (const botName of Object.keys(configs)) {
+                if (configs[botName]?.gacha && isLegacyGachaConfig(configs[botName].gacha)) {
+                    console.log(`[BotConfigService] Migrating gacha config for bot: ${botName}`);
+                    configs[botName].gacha = migrateGachaConfig(configs[botName].gacha);
+                    needsSave = true;
+                }
+            }
+            if (needsSave) {
+                console.log('[BotConfigService] Saving migrated configs');
+                this.appStorage.set('bots', configs);
+            }
         }
 
         const currentBot = configs[name] || configs['default'];

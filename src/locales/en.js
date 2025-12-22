@@ -915,6 +915,11 @@ const en = {
                     },
                 },
                 gacha: {
+                    bannerSelector: {
+                        addBanner: 'Add banner',
+                        confirmDelete: 'Are you sure you want to delete this banner? All its items, triggers and user data will be removed.',
+                        newBannerName: 'Banner {{id}}',
+                    },
                     component: {
                         defaults: {
                             bannerName: 'New banner',
@@ -1060,6 +1065,7 @@ const en = {
                         errors: {
                             rewardRequired: 'Select a reward',
                             rewardDuplicate: 'A trigger for this reward already exists',
+                            rewardUsedByBanner: 'This reward is already used by another banner',
                             amountRange: 'Amount must be between 1 and 10',
                         },
                         actions: {
@@ -1087,6 +1093,9 @@ const en = {
                     },
                     users: {
                         title: 'Gacha user management',
+                        bannerSelect: {
+                            label: 'Banner',
+                        },
                         search: {
                             placeholder: 'Search by user name…',
                             clearTooltip: 'Clear search (ESC)',

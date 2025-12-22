@@ -161,7 +161,7 @@ const LoadingSpinner = styled.div`
     }
 `;
 
-export default function TriggersManager({ triggers = [], updateConfig }) {
+export default function TriggersManager({ triggers = [], allTriggers = [], bannerId, updateConfig }) {
     const { t } = useTranslation();
     const [isAdding, setIsAdding] = useState(false);
     const [rewards, setRewards] = useState([]);
@@ -201,6 +201,12 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
             errs.rewardId = t('settings.bot.gacha.triggers.errors.rewardRequired');
         } else if (triggers.some(t => t.rewardId === newTrigger.rewardId)) {
             errs.rewardId = t('settings.bot.gacha.triggers.errors.rewardDuplicate');
+        } else {
+            // Check if reward is used by another banner
+            const existingTrigger = allTriggers.find(t => t.rewardId === newTrigger.rewardId && t.bannerId !== bannerId);
+            if (existingTrigger) {
+                errs.rewardId = t('settings.bot.gacha.triggers.errors.rewardUsedByBanner');
+            }
         }
 
         if (newTrigger.amount < 1 || newTrigger.amount > 10) {
@@ -220,7 +226,8 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                 ...prev.triggers,
                 {
                     rewardId: newTrigger.rewardId,
-                    amount: parseInt(newTrigger.amount)
+                    amount: parseInt(newTrigger.amount),
+                    bannerId
                 }
             ]
         }));
@@ -287,7 +294,7 @@ export default function TriggersManager({ triggers = [], updateConfig }) {
                                 >
                                     <option value="">{t('settings.bot.gacha.triggers.form.reward.placeholder')}</option>
                                     {rewards
-                                        .filter(reward => !triggers.some(t => t.rewardId === reward.id))
+                                        .filter(reward => !allTriggers.some(t => t.rewardId === reward.id))
                                         .map(reward => (
                                             <option key={reward.id} value={reward.id}>
                                                 {t('settings.bot.gacha.triggers.form.reward.option', { title: reward.title, cost: reward.cost })}

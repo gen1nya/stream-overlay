@@ -246,21 +246,22 @@ export async function getTwitchRewards() {
 }
 
 // gacha users api
-export const getGachaUsers = async (offset, limit) => {
-    return await ipcRenderer.invoke('gatcha:get-users', { offset, limit });
+export const getGachaUsers = async (bannerId, offset, limit) => {
+    return await ipcRenderer.invoke('gacha:get-users', { bannerId, offset, limit });
 };
 
-export const searchGachaUsers = async (query, offset, limit) => {
-    return await ipcRenderer.invoke('gatcha:search-users', { query, offset, limit });
+export const searchGachaUsers = async (bannerId, query, offset, limit) => {
+    return await ipcRenderer.invoke('gacha:search-users', { bannerId, query, offset, limit });
 };
 
-export const deleteGachaUser = async (userId) => {
-    return await ipcRenderer.invoke('gatcha:delete-user', { userId });
+export const deleteGachaUser = async (userId, bannerId) => {
+    return await ipcRenderer.invoke('gacha:delete-user-pity', { userId, bannerId });
 };
 
-export const updateGachaUser = async (userId, userName, pityData) => {
-    return await ipcRenderer.invoke('gatcha:update-user', {
+export const updateGachaUser = async (userId, bannerId, userName, pityData) => {
+    return await ipcRenderer.invoke('gacha:update-user-pity', {
         userId,
+        bannerId,
         userName,
         pullsSince5Star: pityData.pullsSince5Star,
         pullsSince4Star: pityData.pullsSince4Star,

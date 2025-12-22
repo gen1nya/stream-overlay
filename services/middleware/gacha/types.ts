@@ -9,7 +9,7 @@ export interface Item {
     name: string;
     rarity: Rarity;
     isLimited: boolean;
-    bannerId: number; // Всегда 0 для MVP
+    bannerId: number;
 }
 
 export interface PullResult {
@@ -35,9 +35,17 @@ export interface UserPityData {
     pity: PityData;
 }
 
+// Pity для пользователя по конкретному баннеру
+export interface UserBannerPityData {
+    userName: string;
+    userId: string;
+    bannerId: number;
+    pity: PityData;
+}
+
 // Конфигурация баннера для store
 export interface GachaBannerConfig {
-    id: number; // Всегда 0 для MVP
+    id: number;
     name: string;
     featured5StarId: string | null;
     featured4StarIds: string[];
@@ -52,13 +60,25 @@ export interface GachaBannerConfig {
     hasCapturingRadiance: boolean;
 }
 
-// Схема для хранения в store
+// Триггер с привязкой к баннеру
+export interface GachaTrigger {
+    rewardId: string;
+    amount: number;
+    bannerId: number;
+}
+
+// Схема для хранения в store (новый формат с множеством баннеров)
 export interface GachaStoreSchema {
+    enabled: boolean;
+    banners: GachaBannerConfig[];
+    items: Item[];
+    triggers: GachaTrigger[];
+}
+
+// Старая схема для обратной совместимости (один баннер)
+export interface LegacyGachaStoreSchema {
     enabled: boolean;
     banner: GachaBannerConfig;
     items: Item[];
-    // list of channel rewards that allow to trigger gacha pull for specific amount
-    // rewardId - Twitch reward ID
-    // amount - number of pulls to trigger
     triggers: { rewardId: string; amount: number }[];
 }

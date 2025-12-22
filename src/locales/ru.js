@@ -915,6 +915,11 @@ const ru = {
                     },
                 },
                 gacha: {
+                    bannerSelector: {
+                        addBanner: 'Добавить баннер',
+                        confirmDelete: 'Вы уверены, что хотите удалить этот баннер? Все его предметы, триггеры и данные пользователей будут удалены.',
+                        newBannerName: 'Баннер {{id}}',
+                    },
                     component: {
                         defaults: {
                             bannerName: 'Новый баннер',
@@ -1060,6 +1065,7 @@ const ru = {
                         errors: {
                             rewardRequired: 'Выберите награду',
                             rewardDuplicate: 'Триггер для этой награды уже существует',
+                            rewardUsedByBanner: 'Эта награда уже используется другим баннером',
                             amountRange: 'Количество должно быть от 1 до 10',
                         },
                         actions: {
@@ -1089,6 +1095,9 @@ const ru = {
                     },
                     users: {
                         title: 'Управление пользователями гачи',
+                        bannerSelect: {
+                            label: 'Баннер',
+                        },
                         search: {
                             placeholder: 'Поиск по имени пользователя…',
                             clearTooltip: 'Очистить поиск (ESC)',

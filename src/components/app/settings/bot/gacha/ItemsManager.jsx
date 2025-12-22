@@ -333,7 +333,7 @@ function ConfirmDeletePopup({ itemName, onClose, onConfirm }) {
 }
 
 // Main Component
-export default function ItemsManager({ items, updateConfig }) {
+export default function ItemsManager({ items, bannerId, updateConfig }) {
     const { t } = useTranslation();
     const [filter, setFilter] = useState('all');
     const [activePopup, setActivePopup] = useState(null); // 'add', 'edit', 'delete'
@@ -358,7 +358,7 @@ export default function ItemsManager({ items, updateConfig }) {
                 ...prev.items,
                 {
                     ...itemData,
-                    bannerId: 0
+                    bannerId
                 }
             ]
         }));
@@ -380,11 +380,15 @@ export default function ItemsManager({ items, updateConfig }) {
         updateConfig(prev => ({
             ...prev,
             items: prev.items.filter(item => item.id !== selectedItem.id),
-            banner: {
-                ...prev.banner,
-                featured5StarId: prev.banner.featured5StarId === selectedItem.id ? null : prev.banner.featured5StarId,
-                featured4StarIds: (prev.banner.featured4StarIds || []).filter(id => id !== selectedItem.id)
-            }
+            banners: prev.banners.map(banner =>
+                banner.id === bannerId
+                    ? {
+                        ...banner,
+                        featured5StarId: banner.featured5StarId === selectedItem.id ? null : banner.featured5StarId,
+                        featured4StarIds: (banner.featured4StarIds || []).filter(id => id !== selectedItem.id)
+                    }
+                    : banner
+            )
         }));
         setActivePopup(null);
         setSelectedItem(null);
