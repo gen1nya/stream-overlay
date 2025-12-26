@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import {
     FiZap, FiPlus, FiTrash2, FiEdit2, FiCopy,
     FiMessageSquare, FiGift, FiUserPlus, FiCommand,
-    FiChevronRight, FiClock, FiStar, FiShield, FiUsers, FiExternalLink
+    FiChevronRight, FiClock, FiStar, FiShield, FiUsers, FiExternalLink, FiImage
 } from 'react-icons/fi';
 import { HelpInfoPopup, EnabledToggle, AddButton } from "../SharedBotStyles";
 import TriggerEditorPopup from "./TriggerEditorPopup";
@@ -183,6 +183,7 @@ const ACTION_TYPE_CONFIG = {
     remove_mod: { icon: FiShield, color: 'rgba(220, 38, 38, 0.1)', textColor: '#dc2626', borderColor: 'rgba(220, 38, 38, 0.3)' },
     timeout: { icon: FiClock, color: 'rgba(251, 191, 36, 0.1)', textColor: '#fbbf24', borderColor: 'rgba(251, 191, 36, 0.3)' },
     delete_message: { icon: FiTrash2, color: 'rgba(107, 114, 128, 0.1)', textColor: '#6b7280', borderColor: 'rgba(107, 114, 128, 0.3)' },
+    show_media: { icon: FiImage, color: 'rgba(236, 72, 153, 0.1)', textColor: '#ec4899', borderColor: 'rgba(236, 72, 153, 0.3)' },
 };
 
 const DEFAULT_TRIGGERS_CONFIG = {

@@ -31,6 +31,8 @@ import {BotConfigService} from "./services/BotConfigService";
 import {DbRepository} from "./services/db/DbRepository";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {BackendLogService} from "./services/BackendLogService";
+import {MediaEventsController} from "./services/MediaEventsController";
+import {MediaEventsService} from "./services/MediaEventsService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -70,7 +72,8 @@ const store = new Store<StoreSchema>({
         width: 400,
         height: 640,
         gameMode: false,
-    }
+    },
+    mediaEvents: [],
   },
 });
 
@@ -79,6 +82,9 @@ const wss = new WebSocket.Server({ port: 42001 });
 const logService = new LogService((logs) => {
   broadcast('log:updated', { logs });
 }, 100);
+
+const mediaEventsService = new MediaEventsService(store);
+const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 
 const backendLogService = new BackendLogService({
   enabled: true,
@@ -210,6 +216,10 @@ const applyAction = async (action: { type: string; payload: any }) => {
       }
       break;
 
+    case ActionTypes.SHOW_MEDIA:
+      await mediaEventsController.showMedia(action.payload);
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -300,6 +310,8 @@ backendLogService.setBroadcastCallback((logs) => {
   broadcast('backend-logs:update', logs);
 });
 
+mediaEventsService.setBroadcastCallback(broadcast);
+
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
     messageCache.processMessage(event);
@@ -365,6 +377,7 @@ app.whenReady().then(() => {
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();
+  mediaEventsService.registerIpcHandlers();
 
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {

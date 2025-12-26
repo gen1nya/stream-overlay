@@ -24,6 +24,7 @@ export interface StoreSchema {
     youtube: YoutubeConfig;
     irc: IrcConfig;
     chatWindow: ChatWindowConfig;
+    mediaEvents: MediaEventConfig[];  // Standalone media events storage
 }
 
 export interface IrcConfig {
@@ -320,13 +321,14 @@ export interface TriggerActionParams {
     message?: string;      // For send_message (supports ${user}, ${target}, ${args[N]})
     duration?: number;     // For timeout (seconds)
     reason?: string;       // For timeout
+    mediaEventId?: string; // For show_media - reference to MediaEventConfig.id
 }
 
 // Trigger action ("THEN" part)
 export interface TriggerAction {
     id: string;            // UUID for UI identification
     type: 'send_message' | 'add_vip' | 'remove_vip' |
-          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout';
+          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout' | 'show_media';
 
     // Action target
     target: 'sender' | 'arg_user';  // sender = message author, arg_user = from argument
@@ -383,6 +385,47 @@ export interface TimerBotConfig {
     timers: TimerConfig[];
 }
 
+// ============================================
+// Media Events Types
+// ============================================
+
+// Media event style configuration
+export interface MediaEventStyle {
+    // Text settings
+    fontSize: number;
+    fontFamily: string;
+    fontUrl: string;
+    fontColor: string;
+    fontOpacity: number;
+
+    // Text shadow
+    shadowColor: string;
+    shadowOpacity: number;
+    shadowRadius: number;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
+
+    // Background
+    backgroundColor: string;
+    backgroundOpacity: number;
+}
+
+// Media event definition
+export interface MediaEventConfig {
+    id: string;                      // UUID
+    name: string;                    // Display name for UI
+    mediaType: 'image' | 'video';
+    mediaUrl: string;                // URL to image/video
+    caption: string;                 // Template with ${user}, ${reward}, etc.
+    displayDuration: number;         // Seconds to show (0 = until video ends)
+    style: MediaEventStyle;
+}
+
+// Media events bot configuration
+export interface MediaEventsBotConfig {
+    events: MediaEventConfig[];
+}
+
 // Main bot configuration interface
 export interface BotConfig {
     roulette: RouletteBotConfig;
@@ -392,4 +435,5 @@ export interface BotConfig {
     lottery: LotteryBotConfig;
     triggers: TriggersBotConfig;
     timers: TimerBotConfig;
+    mediaEvents: MediaEventsBotConfig;
 }

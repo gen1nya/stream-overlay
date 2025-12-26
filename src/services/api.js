@@ -435,3 +435,20 @@ export const getTriggerExecutions = (options) => {
 export const getUserScheduledActions = (userId) => {
     return ipcRenderer?.invoke('triggers:get-user-scheduled', userId);
 };
+
+// Media Events API
+export const getAllMediaEvents = () => {
+    return ipcRenderer?.invoke('media:get-all');
+};
+
+export const getMediaEvent = (id) => {
+    return ipcRenderer?.invoke('media:get', id);
+};
+
+export const saveMediaEvent = (mediaEvent) => {
+    return ipcRenderer?.invoke('media:save', mediaEvent);
+};
+
+export const deleteMediaEvent = (id) => {
+    return ipcRenderer?.invoke('media:delete', id);
+};

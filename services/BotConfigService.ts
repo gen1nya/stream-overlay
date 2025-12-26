@@ -204,6 +204,9 @@ export class BotConfigService {
         timers: {
             enabled: false,
             timers: []
+        },
+        mediaEvents: {
+            events: []
         }
     }
 
@@ -221,12 +224,30 @@ export class BotConfigService {
             configs['default'] = this.bot;
             this.appStorage.set('bots', configs);
         } else {
-            // Мигрируем все gacha конфиги со старого формата на новый
+            // Мигрируем все конфиги со старого формата на новый
             let needsSave = false;
             for (const botName of Object.keys(configs)) {
+                // Миграция gacha
                 if (configs[botName]?.gacha && isLegacyGachaConfig(configs[botName].gacha)) {
                     console.log(`[BotConfigService] Migrating gacha config for bot: ${botName}`);
                     configs[botName].gacha = migrateGachaConfig(configs[botName].gacha);
+                    needsSave = true;
+                }
+                // Миграция timers: добавляем массив timers если его нет
+                if (configs[botName]?.timers && !Array.isArray(configs[botName].timers.timers)) {
+                    console.log(`[BotConfigService] Migrating timers config for bot: ${botName}`);
+                    configs[botName].timers = {
+                        enabled: configs[botName].timers.enabled ?? false,
+                        timers: []
+                    };
+                    needsSave = true;
+                }
+                // Миграция mediaEvents: добавляем если отсутствует
+                if (!configs[botName]?.mediaEvents) {
+                    console.log(`[BotConfigService] Migrating mediaEvents config for bot: ${botName}`);
+                    configs[botName].mediaEvents = {
+                        events: []
+                    };
                     needsSave = true;
                 }
             }
