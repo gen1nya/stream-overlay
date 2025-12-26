@@ -4,8 +4,18 @@ import { BotConfig, StoreSchema } from "../../store/StoreSchema";
 import ElectronStore from "electron-store";
 import GachaEngine from "./GachaEngine";
 import { ActionTypes } from "../ActionTypes";
-import { GachaTrigger } from "./types";
-import { migrateGachaConfig } from "./migration";
+import { GachaTrigger, GachaBannerMessages } from "./types";
+import { migrateGachaConfig, getDefaultBannerMessages } from "./migration";
+
+/**
+ * Заменяет переменные в шаблоне сообщения
+ * Поддерживаемые переменные: ${user}, ${item}, ${stars}, ${rarity}, ${count}, ${pullNumber}, ${error}
+ */
+function formatMessage(template: string, variables: Record<string, string | number>): string {
+    return template.replace(/\$\{(\w+)\}/g, (match, key) => {
+        return variables[key]?.toString() ?? match;
+    });
+}
 
 export class GachaMiddleware extends Middleware {
     private store: ElectronStore<StoreSchema>;
@@ -87,6 +97,10 @@ export class GachaMiddleware extends Middleware {
         const userName = redemption.userName?.toString() || 'UnknownUser';
         const bannerId = trigger.bannerId;
 
+        // Получаем конфиг баннера и шаблоны сообщений
+        const bannerConfig = this.gachaEngine.getBanner(bannerId);
+        const messages = bannerConfig?.messages || getDefaultBannerMessages();
+
         let response = "";
         try {
             if (trigger.amount === 1) {
@@ -95,20 +109,27 @@ export class GachaMiddleware extends Middleware {
                 console.log('[GachaMiddleware] Pull result:', JSON.stringify(result, null, 2));
 
                 const stars = '⭐'.repeat(result.item.rarity);
-                response = `@${redemption.userName}, you got: ${result.item.name} ${stars}`;
+                response = formatMessage(messages.singlePull, {
+                    user: redemption.userName || 'Unknown',
+                    item: result.item.name,
+                    stars: stars,
+                    rarity: result.item.rarity
+                });
 
                 // Добавляем инфо о 50/50 для 5*
                 if (result.item.rarity === 5 && result.was5050) {
                     if (result.won5050) {
-                        response += result.wasCapturingRadiance ? ' 💫 (Capturing Radiance!)' : ' ✅ (50/50 Won!)';
+                        response += result.wasCapturingRadiance
+                            ? messages.capturingRadiance
+                            : messages.won5050;
                     } else {
-                        response += ' ❌ (50/50 Lost)';
+                        response += messages.lost5050;
                     }
                 }
 
                 // Инфо о soft pity
                 if (result.wasSoftPity) {
-                    response += ` 🔥 (Крутка #${result.pullNumber})`;
+                    response += formatMessage(messages.softPity, { pullNumber: result.pullNumber });
                 }
             } else {
                 console.log(`[GachaMiddleware] Executing multi-pull (${trigger.amount}x) for banner:`, bannerId);
@@ -134,7 +155,10 @@ export class GachaMiddleware extends Middleware {
                 console.log('[GachaMiddleware]   - 5* items:', _5items.map(i => i.name));
 
                 // Формируем компактное сообщение
-                response = `@${redemption.userName} крутит ${trigger.amount}x и получает: `;
+                response = formatMessage(messages.multiPullIntro, {
+                    user: redemption.userName || 'Unknown',
+                    count: trigger.amount
+                });
 
                 const parts: string[] = [];
 
@@ -143,6 +167,7 @@ export class GachaMiddleware extends Middleware {
                     const fiveStarText = _5items.map(item => {
                         let text = item.name;
                         if (item.result.was5050) {
+                            // Используем сокращенные маркеры для multi-pull
                             text += item.result.won5050
                                 ? (item.result.wasCapturingRadiance ? '💫' : '✅')
                                 : '❌';
@@ -171,7 +196,10 @@ export class GachaMiddleware extends Middleware {
             }
         } catch (error) {
             console.error('[GachaMiddleware] Error during pull:', error);
-            response = `@${redemption.userName}, произошла ошибка при крутке: ${(error as Error).message}`;
+            response = formatMessage(messages.error, {
+                user: redemption.userName || 'Unknown',
+                error: (error as Error).message
+            });
         }
 
         console.log('[GachaMiddleware] Final response:', response);

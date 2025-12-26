@@ -1,7 +1,7 @@
 import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
 import {
-    FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap
+    FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap, FiMessageSquare
 } from 'react-icons/fi';
 import {
     Section,
@@ -16,6 +16,7 @@ import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
 import TriggersManager from './TriggersManager';
 import AdvancedSettings from './AdvancedSettings';
+import MessageTemplatesEditor from './MessageTemplatesEditor';
 import {useTranslation} from 'react-i18next';
 
 const InfoCard = styled.div`
@@ -92,6 +93,16 @@ const BannerSelectorSection = styled.div`
     margin-bottom: 16px;
 `;
 
+const DEFAULT_MESSAGES = {
+    singlePull: '@${user}, you got: ${item} ${stars}',
+    multiPullIntro: '@${user} pulls ${count}x and gets: ',
+    won5050: ' ✅ (50/50 Won!)',
+    lost5050: ' ❌ (50/50 Lost)',
+    capturingRadiance: ' 💫 (Capturing Radiance!)',
+    softPity: ' 🔥 (Pull #${pullNumber})',
+    error: '@${user}, error during pull: ${error}'
+};
+
 const createDefaultBanner = (id, name) => ({
     id,
     name: name || `Banner ${id + 1}`,
@@ -103,7 +114,8 @@ const createDefaultBanner = (id, name) => ({
     baseRate5Star: 0.006,
     baseRate4Star: 0.051,
     featuredRate4Star: 0.5,
-    hasCapturingRadiance: true
+    hasCapturingRadiance: true,
+    messages: DEFAULT_MESSAGES
 });
 
 const createDefaultConfig = (defaultBannerName) => ({
@@ -396,6 +408,20 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                     allTriggers={allTriggers}
                     bannerId={selectedBannerId}
                     updateConfig={updateGachaConfig}
+                />
+            </Section>
+
+            {/* Шаблоны сообщений */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiMessageSquare/>
+                        {t('settings.bot.gacha.component.sections.messages')}
+                    </SectionTitle>
+                </SectionHeader>
+                <MessageTemplatesEditor
+                    banner={currentBanner}
+                    updateConfig={(updater) => updateBannerConfig(selectedBannerId, updater)}
                 />
             </Section>
 

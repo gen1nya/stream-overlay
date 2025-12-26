@@ -949,6 +949,7 @@ const en = {
                             banner: 'Banner settings',
                             items: 'Item management',
                             triggers: 'Triggers (Twitch rewards)',
+                            messages: 'Message templates',
                             advanced: 'Advanced mechanics settings',
                         },
                     },
@@ -1003,8 +1004,52 @@ const en = {
                             featured4Star: {
                                 label: 'Featured 4★ items (max. 3)',
                                 hint: 'Select up to three items with boosted rates',
-                                empty: 'No 4★ items available. Add them in the “Item management” section.',
+                                empty: 'No 4★ items available. Add them in the "Item management" section.',
                                 limitWarning: '⚠️ Maximum reached (3 items). Deselect one to add another.',
+                            },
+                        },
+                    },
+                    messages: {
+                        info: 'Customize the messages sent to chat when viewers use the gacha. Leave fields empty to use default templates. Click on variable tags to insert them into the template.',
+                        variablesLabel: 'Variables',
+                        preview: 'Preview',
+                        variables: {
+                            user: 'Viewer username',
+                            item: 'Name of the obtained item',
+                            stars: 'Star icons matching rarity (e.g. ⭐⭐⭐⭐⭐)',
+                            rarity: 'Numeric rarity value (3, 4, or 5)',
+                            count: 'Number of pulls in multi-pull',
+                            pullNumber: 'Current pull number (for soft pity)',
+                            error: 'Error message text',
+                        },
+                        fields: {
+                            singlePull: {
+                                label: 'Single pull result',
+                                hint: 'Message shown when a viewer gets a single pull.',
+                            },
+                            multiPullIntro: {
+                                label: 'Multi-pull intro',
+                                hint: 'The beginning of the message for multi-pulls. Results are appended automatically.',
+                            },
+                            won5050: {
+                                label: '50/50 won',
+                                hint: 'Appended when the viewer wins the 50/50.',
+                            },
+                            lost5050: {
+                                label: '50/50 lost',
+                                hint: 'Appended when the viewer loses the 50/50.',
+                            },
+                            capturingRadiance: {
+                                label: 'Special guarantee triggered',
+                                hint: 'Appended when the special guarantee saves the viewer.',
+                            },
+                            softPity: {
+                                label: 'Soft pity reached',
+                                hint: 'Appended when the pull was in soft pity range.',
+                            },
+                            error: {
+                                label: 'Error message',
+                                hint: 'Shown when an error occurs during the pull.',
                             },
                         },
                     },

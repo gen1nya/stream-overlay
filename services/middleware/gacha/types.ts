@@ -43,6 +43,17 @@ export interface UserBannerPityData {
     pity: PityData;
 }
 
+// Шаблоны сообщений для баннера
+export interface GachaBannerMessages {
+    singlePull: string;        // Переменные: ${user}, ${item}, ${stars}, ${rarity}
+    multiPullIntro: string;    // Переменные: ${user}, ${count}
+    won5050: string;           // Сообщение при выигрыше 50/50
+    lost5050: string;          // Сообщение при проигрыше 50/50
+    capturingRadiance: string; // Сообщение при срабатывании Capturing Radiance
+    softPity: string;          // Переменные: ${pullNumber}
+    error: string;             // Переменные: ${user}, ${error}
+}
+
 // Конфигурация баннера для store
 export interface GachaBannerConfig {
     id: number;
@@ -58,6 +69,9 @@ export interface GachaBannerConfig {
     baseRate4Star: number;
     featuredRate4Star: number;
     hasCapturingRadiance: boolean;
+
+    // Шаблоны сообщений (опционально для обратной совместимости)
+    messages?: GachaBannerMessages;
 }
 
 // Триггер с привязкой к баннеру

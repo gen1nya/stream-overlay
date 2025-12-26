@@ -1,4 +1,4 @@
-import { GachaStoreSchema, LegacyGachaStoreSchema, GachaTrigger, Item } from './types';
+import { GachaStoreSchema, LegacyGachaStoreSchema, GachaTrigger, Item, GachaBannerMessages } from './types';
 
 /**
  * Проверяет, является ли конфигурация старым форматом (с одним баннером)
@@ -51,6 +51,21 @@ export function migrateGachaConfig(oldConfig: any): GachaStoreSchema {
 }
 
 /**
+ * Возвращает дефолтные шаблоны сообщений для баннера
+ */
+export function getDefaultBannerMessages(): GachaBannerMessages {
+    return {
+        singlePull: '@${user}, you got: ${item} ${stars}',
+        multiPullIntro: '@${user} pulls ${count}x and gets: ',
+        won5050: ' ✅ (50/50 Won!)',
+        lost5050: ' ❌ (50/50 Lost)',
+        capturingRadiance: ' 💫 (Capturing Radiance!)',
+        softPity: ' 🔥 (Pull #${pullNumber})',
+        error: '@${user}, error during pull: ${error}'
+    };
+}
+
+/**
  * Возвращает дефолтную конфигурацию баннера
  */
 export function getDefaultBannerConfig(id: number) {
@@ -65,7 +80,8 @@ export function getDefaultBannerConfig(id: number) {
         baseRate5Star: 0.006,
         baseRate4Star: 0.051,
         featuredRate4Star: 0.5,
-        hasCapturingRadiance: true
+        hasCapturingRadiance: true,
+        messages: getDefaultBannerMessages()
     };
 }
 
