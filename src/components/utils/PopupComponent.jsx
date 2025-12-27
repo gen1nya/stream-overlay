@@ -4,9 +4,9 @@ import styled from "styled-components";
 
 // TODO: Рефакторинг системы модалок
 // Сейчас z-index управляется вручную в каждом компоненте:
-// - MediaEventEditorPopup: 10000
 // - InlineColorPicker: 10001
 // - PopupComponent: 10002
+// - MediaEventEditorPopup: 10003
 //
 // Идея: Единый PortalManager
 // - Все модалки регистрируются в одном месте
