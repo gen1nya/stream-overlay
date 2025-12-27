@@ -1,10 +1,10 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useId } from 'react';
 import styled from 'styled-components';
-import { createPortal } from 'react-dom';
 import { ColorPicker } from 'react-pick-color';
 import throttle from 'lodash.throttle';
 import { hexToRgba } from "../../utils";
 import { useTranslation } from "react-i18next";
+import { Portal } from '../../context/PortalContext';
 
 const Container = styled.div`
     display: flex;
@@ -65,18 +65,6 @@ const SolidLayer = styled(Half)`
     background-color: ${({ $color }) => $color || '#000'};
 `;
 
-const PickerOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10001;
-`;
 
 const PickerContainer = styled.div`
     background: #2e2e2e;
@@ -148,7 +136,7 @@ export default function InlineColorPicker({
         setIsOpen(true);
     };
 
-    const popupRoot = document.getElementById('popup-root');
+    const portalId = useId();
 
     return (
         <Container>
@@ -160,9 +148,13 @@ export default function InlineColorPicker({
                 <SolidLayer $color={solidStr} />
             </ColorButton>
 
-            {isOpen && popupRoot && createPortal(
-                <PickerOverlay onClick={() => setIsOpen(false)}>
-                    <PickerContainer onClick={(e) => e.stopPropagation()}>
+            {isOpen && (
+                <Portal
+                    id={`color-picker-${portalId}`}
+                    onClose={() => setIsOpen(false)}
+                    overlayBackground="rgba(0, 0, 0, 0.6)"
+                >
+                    <PickerContainer>
                         <Title>{resolvedTitle}</Title>
                         <ColorPicker
                             color={hexToRgba(localColor, localAlpha)}
@@ -180,8 +172,7 @@ export default function InlineColorPicker({
                             {t('common.close')}
                         </CloseButton>
                     </PickerContainer>
-                </PickerOverlay>,
-                popupRoot
+                </Portal>
             )}
         </Container>
     );

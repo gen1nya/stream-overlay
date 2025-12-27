@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react';
 import styled from 'styled-components';
 import { useTranslation } from 'react-i18next';
 import { FiX, FiUpload, FiImage, FiVideo, FiMusic, FiTrash2, FiCheck, FiFolder } from 'react-icons/fi';
 import { getAllMediaFiles, saveMediaFile, deleteMediaFile } from '../../services/api';
+import { Portal } from '../../context/PortalContext';
 
 const ALLOWED_TYPES = {
     image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
@@ -12,16 +12,6 @@ const ALLOWED_TYPES = {
 };
 
 const ALL_ALLOWED_MIMES = [...ALLOWED_TYPES.image, ...ALLOWED_TYPES.video, ...ALLOWED_TYPES.audio];
-
-const Overlay = styled.div`
-    position: fixed;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background: rgba(0, 0, 0, 0.6);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10003;
-`;
 
 const PopupContainer = styled.div`
     background: #1a1a1a;
@@ -585,9 +575,15 @@ export default function MediaLibraryPopup({
         return ALL_ALLOWED_MIMES.join(',');
     };
 
-    return ReactDOM.createPortal(
-        <Overlay onClick={onClose}>
-            <PopupContainer onClick={(e) => e.stopPropagation()}>
+    const portalId = useId();
+
+    return (
+        <Portal
+            id={`media-library-${portalId}`}
+            onClose={onClose}
+            overlayBackground="rgba(0, 0, 0, 0.6)"
+        >
+            <PopupContainer>
                 <Header>
                     <Title>
                         <FiFolder size={20} />
@@ -734,7 +730,6 @@ export default function MediaLibraryPopup({
                     </Footer>
                 )}
             </PopupContainer>
-        </Overlay>,
-        document.getElementById('popup-root')
+        </Portal>
     );
 }

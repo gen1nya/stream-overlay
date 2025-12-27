@@ -1,5 +1,4 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
+import React, { useState, useEffect, useId } from "react";
 import styled from "styled-components";
 import { useTranslation } from 'react-i18next';
 import {
@@ -12,20 +11,7 @@ import InlineColorPicker from "../../../../utils/InlineColorPicker";
 import MediaLibraryPopup from "../../../../utils/MediaLibraryPopup";
 import { v4 as uuidv4 } from 'uuid';
 import { saveMediaEvent, getAllMediaDisplayGroups } from "../../../../../services/api";
-
-const PopupOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10003;
-    padding: 20px;
-`;
+import { Portal } from "../../../../../context/PortalContext";
 
 const PopupContainer = styled.div`
     background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
@@ -480,11 +466,16 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
         return ['image', 'video', 'audio'];
     };
 
-    const portalRoot = document.getElementById('popup-root') || document.body;
+    const portalId = useId();
 
-    return ReactDOM.createPortal(
-        <PopupOverlay onClick={onClose}>
-            <PopupContainer onClick={(e) => e.stopPropagation()}>
+    return (
+        <Portal
+            id={`media-editor-${portalId}`}
+            onClose={onClose}
+            overlayBackground="rgba(0, 0, 0, 0.8)"
+            padding="20px"
+        >
+            <PopupContainer>
                 <PopupHeader>
                     <h3>
                         <FiImage />
@@ -748,7 +739,6 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
                     onClose={() => setShowLibrary(false)}
                 />
             )}
-        </PopupOverlay>,
-        portalRoot
+        </Portal>
     );
 }
