@@ -13,8 +13,11 @@ export const DEFAULT_GROUP: Omit<MediaDisplayGroup, 'id' | 'name'> = {
         width: 0,      // auto
         height: 0,     // auto
         maxWidth: 800,
-        maxHeight: 600
+        maxHeight: 600,
+        contentScale: 1  // 100%
     },
+    layout: 'overlay',   // Items overlay each other
+    anchor: 'center',    // Content centered in group
     animation: {
         in: 'fade',
         out: 'fade',

@@ -510,12 +510,16 @@ const DragGhost = styled.div`
 // Constants
 const ANIMATION_TYPES = ['none', 'fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'scale', 'bounce'];
 const QUEUE_MODES = ['sequential', 'replace', 'stack'];
+const LAYOUT_MODES = ['overlay', 'stack-vertical', 'stack-horizontal'];
+const ANCHOR_POINTS = ['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const EASING_TYPES = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
 
 const DEFAULT_GROUP = {
     enabled: true,
     position: { x: 100, y: 100 },
-    size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300 },
+    size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300, contentScale: 1 },
+    layout: 'overlay',
+    anchor: 'center',
     animation: { in: 'fade', out: 'fade', inDuration: 300, outDuration: 300, easing: 'ease-out' },
     queue: { mode: 'sequential', maxItems: 10, gapBetween: 500 },
     defaultDuration: 5,
@@ -1197,6 +1201,40 @@ export default function MediaOverlayEditor() {
                                         />
                                     </FormGroup>
                                 </FormRow>
+                            </Section>
+
+                            {/* Layout */}
+                            <Section>
+                                <SectionTitle><FiBox />{t('mediaOverlay.layout', 'Layout')}</SectionTitle>
+                                <FormRow>
+                                    <FormGroup>
+                                        <Label>{t('mediaOverlay.layoutMode', 'Mode')}</Label>
+                                        <Select
+                                            value={selectedGroup.layout || 'overlay'}
+                                            onChange={(e) => updateGroup({ layout: e.target.value })}
+                                        >
+                                            {LAYOUT_MODES.map(m => <option key={m} value={m}>{m}</option>)}
+                                        </Select>
+                                    </FormGroup>
+                                    <FormGroup>
+                                        <Label>{t('mediaOverlay.anchor', 'Anchor')}</Label>
+                                        <Select
+                                            value={selectedGroup.anchor || 'center'}
+                                            onChange={(e) => updateGroup({ anchor: e.target.value })}
+                                        >
+                                            {ANCHOR_POINTS.map(a => <option key={a} value={a}>{a}</option>)}
+                                        </Select>
+                                    </FormGroup>
+                                </FormRow>
+                                <FormGroup>
+                                    <Label>{t('mediaOverlay.contentScale', 'Content Scale')} ({Math.round((selectedGroup.size?.contentScale || 1) * 100)}%)</Label>
+                                    <NumericEditorComponent
+                                        value={selectedGroup.size?.contentScale || 1}
+                                        onChange={(v) => updateGroupNested('size.contentScale', v)}
+                                        min={0.1} max={2} step={0.1}
+                                        width="100%"
+                                    />
+                                </FormGroup>
                             </Section>
 
                             {/* Display */}

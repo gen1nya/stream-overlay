@@ -147,41 +147,101 @@ const DebugGroupBorder = styled.div`
     }
 `;
 
+// Helper to get anchor alignment styles
+const getAnchorStyles = (anchor) => {
+    const alignMap = {
+        'top-left': { alignItems: 'flex-start', justifyContent: 'flex-start' },
+        'top-center': { alignItems: 'center', justifyContent: 'flex-start' },
+        'top-right': { alignItems: 'flex-end', justifyContent: 'flex-start' },
+        'center-left': { alignItems: 'flex-start', justifyContent: 'center' },
+        'center': { alignItems: 'center', justifyContent: 'center' },
+        'center-right': { alignItems: 'flex-end', justifyContent: 'center' },
+        'bottom-left': { alignItems: 'flex-start', justifyContent: 'flex-end' },
+        'bottom-center': { alignItems: 'center', justifyContent: 'flex-end' },
+        'bottom-right': { alignItems: 'flex-end', justifyContent: 'flex-end' },
+    };
+    return alignMap[anchor] || alignMap['center'];
+};
+
 const GroupContainer = styled.div`
     position: absolute;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     pointer-events: auto;
+    overflow: hidden;
 
-    ${({ $position, $size }) => {
-        return `
-            left: ${$position.x || 0}px;
-            top: ${$position.y || 0}px;
-            max-width: ${$size.maxWidth || 400}px;
-            max-height: ${$size.maxHeight || 300}px;
+    ${({ $position, $size, $layout, $anchor }) => {
+        const anchorStyles = getAnchorStyles($anchor);
+
+        // Base positioning
+        let styles = `
+            left: ${$position?.x || 0}px;
+            top: ${$position?.y || 0}px;
+            width: ${$size?.width || $size?.maxWidth || 400}px;
+            height: ${$size?.height || $size?.maxHeight || 300}px;
         `;
+
+        // Layout-specific styles
+        switch ($layout) {
+            case 'stack-vertical':
+                styles += `
+                    display: flex;
+                    flex-direction: column;
+                    align-items: ${anchorStyles.alignItems};
+                    justify-content: flex-start;
+                    gap: 8px;
+                `;
+                break;
+            case 'stack-horizontal':
+                styles += `
+                    display: flex;
+                    flex-direction: row;
+                    align-items: flex-start;
+                    justify-content: ${anchorStyles.alignItems};
+                    gap: 8px;
+                `;
+                break;
+            case 'overlay':
+            default:
+                // For overlay mode, use grid with place-items for perfect centering
+                // All items will occupy the same cell and stack on top of each other
+                styles += `
+                    display: grid;
+                    grid-template-columns: 1fr;
+                    grid-template-rows: 1fr;
+                    place-items: ${anchorStyles.justifyContent} ${anchorStyles.alignItems};
+                `;
+                break;
+        }
+
+        return styles;
     }}
 `;
 
 const MediaItem = styled.div`
-    position: relative;
     display: flex;
     flex-direction: column;
     align-items: center;
+    flex-shrink: 0;
+
+    /* In grid (overlay) mode, all items occupy the same cell (row 1, col 1) */
+    ${({ $layout }) => $layout === 'overlay' && css`
+        grid-row: 1;
+        grid-column: 1;
+    `}
 
     ${({ $animation, $phase }) => {
-        const animIn = getAnimationIn($animation.in);
-        const animOut = getAnimationOut($animation.out);
+        const animIn = getAnimationIn($animation?.in || 'fade');
+        const animOut = getAnimationOut($animation?.out || 'fade');
+        const inDuration = $animation?.inDuration || 300;
+        const outDuration = $animation?.outDuration || 300;
+        const easing = $animation?.easing || 'ease-out';
 
         if ($phase === 'entering') {
             return css`
-                animation: ${animIn} ${$animation.inDuration}ms ${$animation.easing} forwards;
+                animation: ${animIn} ${inDuration}ms ${easing} forwards;
             `;
         } else if ($phase === 'exiting') {
             return css`
-                animation: ${animOut} ${$animation.outDuration}ms ${$animation.easing} forwards;
+                animation: ${animOut} ${outDuration}ms ${easing} forwards;
             `;
         }
         return '';
@@ -190,11 +250,14 @@ const MediaItem = styled.div`
 
 const MediaContent = styled.div`
     position: relative;
-    max-width: 100%;
-    max-height: 100%;
     border-radius: 8px;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+
+    ${({ $scale, $maxWidth, $maxHeight }) => css`
+        max-width: ${$maxWidth ? `${$maxWidth * ($scale || 1)}px` : '100%'};
+        max-height: ${$maxHeight ? `${$maxHeight * ($scale || 1)}px` : '100%'};
+    `}
 
     img, video {
         max-width: 100%;
@@ -480,11 +543,17 @@ export default function MediaOverlay() {
                     const items = activeItems.get(group.id) || [];
                     if (items.length === 0) return null;
 
+                    const layout = group.layout || 'overlay';
+                    const anchor = group.anchor || 'center';
+                    const contentScale = group.size?.contentScale || 1;
+
                     return (
                         <GroupContainer
                             key={group.id}
                             $position={group.position}
                             $size={group.size}
+                            $layout={layout}
+                            $anchor={anchor}
                             style={{ zIndex: group.zIndex }}
                         >
                             {items.map(item => (
@@ -492,8 +561,13 @@ export default function MediaOverlay() {
                                     key={item.id}
                                     $animation={group.animation}
                                     $phase={item.phase}
+                                    $layout={layout}
                                 >
-                                    <MediaContent>
+                                    <MediaContent
+                                        $scale={contentScale}
+                                        $maxWidth={group.size?.maxWidth}
+                                        $maxHeight={group.size?.maxHeight}
+                                    >
                                         {item.mediaEvent.mediaType === 'video' ? (
                                             <video
                                                 src={item.mediaEvent.mediaUrl}

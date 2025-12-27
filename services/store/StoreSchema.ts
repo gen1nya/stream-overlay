@@ -417,6 +417,12 @@ export type AnimationType = 'none' | 'fade' | 'slide-up' | 'slide-down' | 'slide
 // Queue mode for handling multiple media events
 export type QueueMode = 'sequential' | 'replace' | 'stack';
 
+// Layout mode for positioning items within group
+export type LayoutMode = 'overlay' | 'stack-vertical' | 'stack-horizontal';
+
+// Anchor point for content positioning
+export type AnchorPoint = 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
 // Media display group position configuration
 export interface MediaGroupPosition {
     x: number;                       // X coordinate from top-left (0,0)
@@ -429,6 +435,7 @@ export interface MediaGroupSize {
     height: number;                  // Height in pixels (0 = auto)
     maxWidth: number;                // Max width constraint
     maxHeight: number;               // Max height constraint
+    contentScale: number;            // Content scale multiplier (1 = 100%)
 }
 
 // Animation configuration
@@ -454,6 +461,8 @@ export interface MediaDisplayGroup {
     enabled: boolean;
     position: MediaGroupPosition;
     size: MediaGroupSize;
+    layout: LayoutMode;              // How items are positioned within group
+    anchor: AnchorPoint;             // Content anchor point within group
     animation: MediaGroupAnimation;
     queue: MediaGroupQueue;
     defaultDuration: number;         // Default display duration in seconds
