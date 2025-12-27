@@ -116,8 +116,9 @@ const DebouncedTextarea = forwardRef(function DebouncedTextarea({
 
             // Set cursor position after the inserted text
             const newCursorPos = start + text.length;
-            // Use setTimeout to ensure state has updated
+            // Use setTimeout to ensure state has updated, then focus and set cursor
             setTimeout(() => {
+                textarea.focus();
                 textarea.setSelectionRange(newCursorPos, newCursorPos);
                 lastSelectionRef.current = { start: newCursorPos, end: newCursorPos };
             }, 0);
