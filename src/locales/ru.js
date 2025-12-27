@@ -1791,7 +1791,6 @@ const ru = {
             layoutMode: 'Режим',
             contentScale: 'Масштаб контента',
             customResolution: 'Своя рамка',
-            showCustomFrame: 'Показывать в режиме отладки',
             resWidth: 'Ширина',
             resHeight: 'Высота',
             resColor: 'Цвет',

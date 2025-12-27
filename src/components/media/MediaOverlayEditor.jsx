@@ -963,57 +963,42 @@ export default function MediaOverlayEditor() {
                             {/* Custom Resolution Section */}
                             <Section style={{ marginTop: '16px' }}>
                                 <SectionTitle><FiBox />{t('mediaOverlay.customResolution', 'Custom Resolution')}</SectionTitle>
-                                <FormGroup style={{ marginBottom: '8px' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Switch
-                                            checked={overlaySettings.customResolution?.enabled || false}
-                                            onChange={(e) => updateCustomResolution({ enabled: e.target.checked })}
+                                <FormRow>
+                                    <FormGroup>
+                                        <Label>{t('mediaOverlay.resWidth', 'Width')}</Label>
+                                        <NumericEditorComponent
+                                            value={overlaySettings.customResolution?.width || 1600}
+                                            onChange={(v) => updateCustomResolution({ width: v })}
+                                            min={100} max={3840}
+                                            width="100%"
                                         />
-                                        <span style={{ fontSize: '0.85rem', color: '#888' }}>
-                                            {t('mediaOverlay.showCustomFrame', 'Show in debug mode')}
-                                        </span>
+                                    </FormGroup>
+                                    <FormGroup>
+                                        <Label>{t('mediaOverlay.resHeight', 'Height')}</Label>
+                                        <NumericEditorComponent
+                                            value={overlaySettings.customResolution?.height || 900}
+                                            onChange={(v) => updateCustomResolution({ height: v })}
+                                            min={100} max={2160}
+                                            width="100%"
+                                        />
+                                    </FormGroup>
+                                </FormRow>
+                                <FormGroup>
+                                    <Label>{t('mediaOverlay.resColor', 'Color')}</Label>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <input
+                                            type="color"
+                                            value={overlaySettings.customResolution?.color || '#f59e0b'}
+                                            onChange={(e) => updateCustomResolution({ color: e.target.value })}
+                                            style={{ width: '40px', height: '30px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                        />
+                                        <Input
+                                            value={overlaySettings.customResolution?.color || '#f59e0b'}
+                                            onChange={(e) => updateCustomResolution({ color: e.target.value })}
+                                            style={{ flex: 1 }}
+                                        />
                                     </div>
                                 </FormGroup>
-                                {overlaySettings.customResolution?.enabled && (
-                                    <>
-                                        <FormRow>
-                                            <FormGroup>
-                                                <Label>{t('mediaOverlay.resWidth', 'Width')}</Label>
-                                                <NumericEditorComponent
-                                                    value={overlaySettings.customResolution?.width || 1600}
-                                                    onChange={(v) => updateCustomResolution({ width: v })}
-                                                    min={100} max={3840}
-                                                    width="100%"
-                                                />
-                                            </FormGroup>
-                                            <FormGroup>
-                                                <Label>{t('mediaOverlay.resHeight', 'Height')}</Label>
-                                                <NumericEditorComponent
-                                                    value={overlaySettings.customResolution?.height || 900}
-                                                    onChange={(v) => updateCustomResolution({ height: v })}
-                                                    min={100} max={2160}
-                                                    width="100%"
-                                                />
-                                            </FormGroup>
-                                        </FormRow>
-                                        <FormGroup>
-                                            <Label>{t('mediaOverlay.resColor', 'Color')}</Label>
-                                            <div style={{ display: 'flex', gap: '8px' }}>
-                                                <input
-                                                    type="color"
-                                                    value={overlaySettings.customResolution?.color || '#f59e0b'}
-                                                    onChange={(e) => updateCustomResolution({ color: e.target.value })}
-                                                    style={{ width: '40px', height: '30px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
-                                                />
-                                                <Input
-                                                    value={overlaySettings.customResolution?.color || '#f59e0b'}
-                                                    onChange={(e) => updateCustomResolution({ color: e.target.value })}
-                                                    style={{ flex: 1 }}
-                                                />
-                                            </div>
-                                        </FormGroup>
-                                    </>
-                                )}
                             </Section>
                         </>
                     )}

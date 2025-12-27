@@ -1791,7 +1791,6 @@ const en = {
             layoutMode: 'Mode',
             contentScale: 'Content Scale',
             customResolution: 'Custom Frame',
-            showCustomFrame: 'Show in debug mode',
             resWidth: 'Width',
             resHeight: 'Height',
             resColor: 'Color',

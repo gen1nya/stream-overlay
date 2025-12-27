@@ -527,13 +527,13 @@ export default function MediaOverlay() {
                                 height: RESOLUTIONS['720p'].height
                             }}
                         />
-                        {overlaySettings?.customResolution?.enabled && (
+                        {overlaySettings?.customResolution && (
                             <ResolutionGuide
-                                $color={overlaySettings.customResolution.color}
-                                $label={`${overlaySettings.customResolution.width}×${overlaySettings.customResolution.height}`}
+                                $color={overlaySettings.customResolution.color || '#f59e0b'}
+                                $label={`${overlaySettings.customResolution.width || 1600}×${overlaySettings.customResolution.height || 900}`}
                                 style={{
-                                    width: overlaySettings.customResolution.width,
-                                    height: overlaySettings.customResolution.height
+                                    width: overlaySettings.customResolution.width || 1600,
+                                    height: overlaySettings.customResolution.height || 900
                                 }}
                             />
                         )}
