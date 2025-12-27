@@ -240,14 +240,19 @@ export default function MediaOverlay() {
     const queuesRef = useRef(new Map()); // groupId -> item[]
     const timersRef = useRef(new Map()); // itemId -> timer
     const groupsRef = useRef([]); // Keep groups in ref for callbacks
+    const activeItemsRef = useRef(new Map()); // Ref for active items to avoid stale closure
 
     // Debug mode state (controlled via WebSocket)
     const [debugMode, setDebugMode] = useState(false);
 
-    // Update ref when groups change
+    // Update refs when state changes
     useEffect(() => {
         groupsRef.current = groups;
     }, [groups]);
+
+    useEffect(() => {
+        activeItemsRef.current = activeItems;
+    }, [activeItems]);
 
     const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
         onOpen: (_, socket) => {
@@ -281,19 +286,18 @@ export default function MediaOverlay() {
 
     // Process queue for a group
     const processQueue = useCallback((groupId) => {
-        const group = groups.find(g => g.id === groupId);
+        // Use refs to avoid stale closures
+        const group = groupsRef.current.find(g => g.id === groupId);
         if (!group) return;
 
         const queue = queuesRef.current.get(groupId) || [];
-        const active = activeItems.get(groupId) || [];
+        const active = activeItemsRef.current.get(groupId) || [];
 
-        // Check if we can show next item based on queue mode
         if (queue.length === 0) return;
 
-        const { mode, maxItems } = group.queue;
+        const { mode, maxItems } = group.queue || { mode: 'sequential', maxItems: 1 };
 
         if (mode === 'sequential' && active.some(i => i.phase !== 'exiting')) {
-            // Wait for current item to finish
             return;
         }
 
@@ -318,7 +322,6 @@ export default function MediaOverlay() {
         }
 
         if (mode === 'stack' && active.length >= maxItems) {
-            // Max items reached for stack mode
             return;
         }
 
@@ -343,6 +346,7 @@ export default function MediaOverlay() {
         });
 
         // Schedule transition to visible
+        const inDuration = group.animation?.inDuration || 300;
         setTimeout(() => {
             setActiveItems(prev => {
                 const newMap = new Map(prev);
@@ -352,10 +356,11 @@ export default function MediaOverlay() {
                 newMap.set(groupId, groupItems);
                 return newMap;
             });
-        }, group.animation.inDuration);
+        }, inDuration);
 
         // Schedule exit
-        const duration = nextItem.duration || group.defaultDuration;
+        const duration = nextItem.duration || group.defaultDuration || 5;
+        const outDuration = group.animation?.outDuration || 300;
         const exitTimer = setTimeout(() => {
             setActiveItems(prev => {
                 const newMap = new Map(prev);
@@ -378,11 +383,11 @@ export default function MediaOverlay() {
 
                 // Process next in queue
                 processQueue(groupId);
-            }, group.animation.outDuration);
-        }, (duration * 1000) + group.animation.inDuration);
+            }, outDuration);
+        }, (duration * 1000) + inDuration);
 
         timersRef.current.set(newItem.id, exitTimer);
-    }, [groups, activeItems]);
+    }, []);
 
     // Handle media show event (called from onMessage)
     const handleMediaShowEvent = (payload) => {
