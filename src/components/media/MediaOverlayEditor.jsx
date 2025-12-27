@@ -511,14 +511,19 @@ const DragGhost = styled.div`
 const ANIMATION_TYPES = ['none', 'fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'scale', 'bounce'];
 const QUEUE_MODES = ['sequential', 'replace', 'stack'];
 const LAYOUT_MODES = ['overlay', 'stack-vertical', 'stack-horizontal'];
+const PLACEMENT_MODES = ['fixed', 'random', 'stack'];
+const STACK_DIRECTIONS = ['horizontal', 'vertical'];
 const ANCHOR_POINTS = ['top-left', 'top-center', 'top-right', 'center-left', 'center', 'center-right', 'bottom-left', 'bottom-center', 'bottom-right'];
 const EASING_TYPES = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
 
 const DEFAULT_GROUP = {
     enabled: true,
     position: { x: 100, y: 100 },
-    size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300, contentScale: 1 },
+    size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300, contentScale: 1, mediaWidth: 0, mediaHeight: 0 },
     layout: 'overlay',
+    placement: 'fixed',
+    randomSettings: { rotationEnabled: true, maxRotation: 15 },
+    stackSettings: { direction: 'horizontal', gap: 10, wrap: true },
     anchor: 'center',
     animation: { in: 'fade', out: 'fade', inDuration: 300, outDuration: 300, easing: 'ease-out' },
     queue: { mode: 'sequential', maxItems: 10, gapBetween: 500 },
@@ -1187,6 +1192,26 @@ export default function MediaOverlayEditor() {
                                         />
                                     </FormGroup>
                                 </FormRow>
+                                <FormRow>
+                                    <FormGroup>
+                                        <Label>{t('mediaOverlay.mediaWidth', 'Media Width')} {selectedGroup.size?.mediaWidth === 0 && `(${t('mediaOverlay.auto', 'auto')})`}</Label>
+                                        <NumericEditorComponent
+                                            value={selectedGroup.size?.mediaWidth || 0}
+                                            onChange={(v) => updateGroupNested('size.mediaWidth', v)}
+                                            min={0} max={1920}
+                                            width="100%"
+                                        />
+                                    </FormGroup>
+                                    <FormGroup>
+                                        <Label>{t('mediaOverlay.mediaHeight', 'Media Height')} {selectedGroup.size?.mediaHeight === 0 && `(${t('mediaOverlay.auto', 'auto')})`}</Label>
+                                        <NumericEditorComponent
+                                            value={selectedGroup.size?.mediaHeight || 0}
+                                            onChange={(v) => updateGroupNested('size.mediaHeight', v)}
+                                            min={0} max={1080}
+                                            width="100%"
+                                        />
+                                    </FormGroup>
+                                </FormRow>
                             </Section>
 
                             {/* Animation */}
@@ -1277,17 +1302,17 @@ export default function MediaOverlayEditor() {
                                 </FormRow>
                             </Section>
 
-                            {/* Layout */}
+                            {/* Placement */}
                             <Section>
-                                <SectionTitle><FiBox />{t('mediaOverlay.layout', 'Layout')}</SectionTitle>
+                                <SectionTitle><FiBox />{t('mediaOverlay.placement', 'Placement')}</SectionTitle>
                                 <FormRow>
                                     <FormGroup>
-                                        <Label>{t('mediaOverlay.layoutMode', 'Mode')}</Label>
+                                        <Label>{t('mediaOverlay.placementMode', 'Mode')}</Label>
                                         <Select
-                                            value={selectedGroup.layout || 'overlay'}
-                                            onChange={(e) => updateGroup({ layout: e.target.value })}
+                                            value={selectedGroup.placement || 'fixed'}
+                                            onChange={(e) => updateGroup({ placement: e.target.value })}
                                         >
-                                            {LAYOUT_MODES.map(m => <option key={m} value={m}>{m}</option>)}
+                                            {PLACEMENT_MODES.map(m => <option key={m} value={m}>{t(`mediaOverlay.placement_${m}`, m)}</option>)}
                                         </Select>
                                     </FormGroup>
                                     <FormGroup>
@@ -1300,6 +1325,76 @@ export default function MediaOverlayEditor() {
                                         </Select>
                                     </FormGroup>
                                 </FormRow>
+
+                                {/* Random placement settings */}
+                                {selectedGroup.placement === 'random' && (
+                                    <FormRow $align="center">
+                                        <FormGroup $flex={2}>
+                                            <Label>{t('mediaOverlay.randomRotation', 'Random Rotation')}</Label>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                <Switch
+                                                    checked={selectedGroup.randomSettings?.rotationEnabled ?? true}
+                                                    onChange={(e) => updateGroupNested('randomSettings.rotationEnabled', e.target.checked)}
+                                                />
+                                                <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                                                    {selectedGroup.randomSettings?.rotationEnabled ? t('common.enabled', 'On') : t('common.disabled', 'Off')}
+                                                </span>
+                                            </div>
+                                        </FormGroup>
+                                        {selectedGroup.randomSettings?.rotationEnabled && (
+                                            <FormGroup $flex={1}>
+                                                <Label>{t('mediaOverlay.maxRotation', 'Max °')}</Label>
+                                                <NumericEditorComponent
+                                                    value={selectedGroup.randomSettings?.maxRotation || 15}
+                                                    onChange={(v) => updateGroupNested('randomSettings.maxRotation', v)}
+                                                    min={0} max={45} step={1}
+                                                    width="100%"
+                                                />
+                                            </FormGroup>
+                                        )}
+                                    </FormRow>
+                                )}
+
+                                {/* Stack placement settings */}
+                                {selectedGroup.placement === 'stack' && (
+                                    <>
+                                        <FormRow>
+                                            <FormGroup>
+                                                <Label>{t('mediaOverlay.stackDirection', 'Direction')}</Label>
+                                                <Select
+                                                    value={selectedGroup.stackSettings?.direction || 'horizontal'}
+                                                    onChange={(e) => updateGroupNested('stackSettings.direction', e.target.value)}
+                                                >
+                                                    {STACK_DIRECTIONS.map(d => <option key={d} value={d}>{t(`mediaOverlay.stack_${d}`, d)}</option>)}
+                                                </Select>
+                                            </FormGroup>
+                                            <FormGroup>
+                                                <Label>{t('mediaOverlay.stackGap', 'Gap (px)')}</Label>
+                                                <NumericEditorComponent
+                                                    value={selectedGroup.stackSettings?.gap || 10}
+                                                    onChange={(v) => updateGroupNested('stackSettings.gap', v)}
+                                                    min={0} max={100} step={1}
+                                                    width="100%"
+                                                />
+                                            </FormGroup>
+                                        </FormRow>
+                                        <FormRow $align="center">
+                                            <FormGroup>
+                                                <Label>{t('mediaOverlay.stackWrap', 'Wrap')}</Label>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                                                    <Switch
+                                                        checked={selectedGroup.stackSettings?.wrap ?? true}
+                                                        onChange={(e) => updateGroupNested('stackSettings.wrap', e.target.checked)}
+                                                    />
+                                                    <span style={{ fontSize: '0.8rem', color: '#888' }}>
+                                                        {selectedGroup.stackSettings?.wrap ? t('mediaOverlay.wrapEnabled', 'Wrap to next line') : t('mediaOverlay.wrapDisabled', 'Overflow')}
+                                                    </span>
+                                                </div>
+                                            </FormGroup>
+                                        </FormRow>
+                                    </>
+                                )}
+
                                 <FormGroup>
                                     <Label>{t('mediaOverlay.contentScale', 'Content Scale')} ({Math.round((selectedGroup.size?.contentScale || 1) * 100)}%)</Label>
                                     <NumericEditorComponent

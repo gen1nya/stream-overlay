@@ -25,9 +25,21 @@ export const DEFAULT_GROUP: Omit<MediaDisplayGroup, 'id' | 'name'> = {
         height: 0,     // auto
         maxWidth: 800,
         maxHeight: 600,
-        contentScale: 1  // 100%
+        contentScale: 1,  // 100%
+        mediaWidth: 0,    // auto - use group size
+        mediaHeight: 0    // auto - use group size
     },
-    layout: 'overlay',   // Items overlay each other
+    layout: 'overlay',   // Legacy: Items overlay each other
+    placement: 'fixed',  // Placement mode: fixed, random, stack
+    randomSettings: {
+        rotationEnabled: true,
+        maxRotation: 15  // degrees
+    },
+    stackSettings: {
+        direction: 'horizontal',
+        gap: 10,
+        wrap: true
+    },
     anchor: 'center',    // Content centered in group
     animation: {
         in: 'fade',

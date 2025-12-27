@@ -3,12 +3,13 @@ import ReactDOM from "react-dom";
 import styled from "styled-components";
 import { useTranslation } from 'react-i18next';
 import {
-    FiX, FiSave, FiImage, FiVideo, FiType, FiDroplet, FiLayers, FiGrid
+    FiX, FiSave, FiImage, FiVideo, FiType, FiDroplet, FiLayers, FiGrid, FiMusic, FiFolder
 } from 'react-icons/fi';
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
 import FontAndSizeEditor from "../../../../utils/FontAndSizeEditor";
 import InlineColorPicker from "../../../../utils/InlineColorPicker";
+import MediaLibraryPopup from "../../../../utils/MediaLibraryPopup";
 import { v4 as uuidv4 } from 'uuid';
 import { saveMediaEvent, getAllMediaDisplayGroups } from "../../../../../services/api";
 
@@ -256,6 +257,41 @@ const MediaTypeButton = styled.button`
     }
 `;
 
+const MediaUrlRow = styled.div`
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+`;
+
+const MediaUrlInput = styled(Input)`
+    flex: 1;
+`;
+
+const LibraryButton = styled.button`
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 14px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #2a2a2a;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    flex-shrink: 0;
+
+    &:hover {
+        border-color: #ec4899;
+        background: rgba(236, 72, 153, 0.1);
+        color: #ec4899;
+    }
+
+    svg {
+        width: 18px;
+        height: 18px;
+    }
+`;
+
 const MediaPreview = styled.div`
     margin-top: 10px;
     border: 1px solid #333;
@@ -351,6 +387,7 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
     const { t } = useTranslation();
     const [saving, setSaving] = useState(false);
     const [groups, setGroups] = useState([]);
+    const [showLibrary, setShowLibrary] = useState(false);
     const [edited, setEdited] = useState(() => {
         if (mediaEvent) {
             return {
@@ -415,6 +452,24 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
         updateStyle('fontUrl', font.url || '');
     };
 
+    const handleLibrarySelect = (file) => {
+        updateField('mediaUrl', file.httpUrl);
+        // Auto-detect type from file
+        if (file.type === 'audio') {
+            updateField('mediaType', 'audio');
+        } else if (file.type === 'video') {
+            updateField('mediaType', 'video');
+        } else {
+            updateField('mediaType', 'image');
+        }
+        setShowLibrary(false);
+    };
+
+    const getAllowedLibraryTypes = () => {
+        // Allow all types for media overlay
+        return ['image', 'video', 'audio'];
+    };
+
     const portalRoot = document.getElementById('popup-root') || document.body;
 
     return ReactDOM.createPortal(
@@ -472,6 +527,13 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
                                             <FiVideo />
                                             {t('settings.bot.triggers.mediaEvent.video')}
                                         </MediaTypeButton>
+                                        <MediaTypeButton
+                                            $selected={edited.mediaType === 'audio'}
+                                            onClick={() => updateField('mediaType', 'audio')}
+                                        >
+                                            <FiMusic />
+                                            {t('settings.bot.triggers.mediaEvent.audio')}
+                                        </MediaTypeButton>
                                     </MediaTypeSelector>
                                 </FormGroup>
                                 <FormGroup $flex={1} $minWidth="100px">
@@ -506,17 +568,28 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
 
                             <FormGroup>
                                 <Label>{t('settings.bot.triggers.mediaEvent.mediaUrl')}</Label>
-                                <Input
-                                    value={edited.mediaUrl}
-                                    onChange={(e) => updateField('mediaUrl', e.target.value)}
-                                    placeholder={t('settings.bot.triggers.mediaEvent.mediaUrlPlaceholder')}
-                                />
+                                <MediaUrlRow>
+                                    <MediaUrlInput
+                                        value={edited.mediaUrl}
+                                        onChange={(e) => updateField('mediaUrl', e.target.value)}
+                                        placeholder={t('settings.bot.triggers.mediaEvent.mediaUrlPlaceholder')}
+                                    />
+                                    <LibraryButton
+                                        type="button"
+                                        onClick={() => setShowLibrary(true)}
+                                        title={t('mediaLibrary.chooseFromLibrary')}
+                                    >
+                                        <FiFolder />
+                                    </LibraryButton>
+                                </MediaUrlRow>
                                 {edited.mediaUrl && (
                                     <MediaPreview>
                                         {edited.mediaType === 'image' ? (
                                             <img src={edited.mediaUrl} alt="Preview" onError={(e) => e.target.style.display = 'none'} />
-                                        ) : (
+                                        ) : edited.mediaType === 'video' ? (
                                             <video src={edited.mediaUrl} controls muted onError={(e) => e.target.style.display = 'none'} />
+                                        ) : (
+                                            <audio src={edited.mediaUrl} controls onError={(e) => e.target.style.display = 'none'} />
                                         )}
                                     </MediaPreview>
                                 )}
@@ -655,6 +728,15 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
                     </Section>
                 </PopupContent>
             </PopupContainer>
+
+            {showLibrary && (
+                <MediaLibraryPopup
+                    mode="picker"
+                    allowedTypes={getAllowedLibraryTypes()}
+                    onSelect={handleLibrarySelect}
+                    onClose={() => setShowLibrary(false)}
+                />
+            )}
         </PopupOverlay>,
         portalRoot
     );

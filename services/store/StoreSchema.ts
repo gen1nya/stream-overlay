@@ -1,6 +1,24 @@
 import {GachaStoreSchema} from "../middleware/gacha/types";
 import {LotteryBotConfig} from "../middleware/lottery/types";
 
+// ============================================
+// Media Library Types
+// ============================================
+
+export type MediaFileType = 'image' | 'video' | 'audio';
+
+export interface MediaFile {
+    id: string;                    // UUID
+    filename: string;              // Stored filename (uuid + extension)
+    originalName: string;          // Original upload name
+    type: MediaFileType;
+    mimeType: string;              // 'image/png', 'video/mp4', 'audio/mp3'
+    size: number;                  // File size in bytes
+    dateAdded: number;             // Unix timestamp
+    width?: number;                // For image/video
+    height?: number;               // For image/video
+    duration?: number;             // For video/audio (seconds)
+}
 
 export interface ChatWindowConfig {
     x?: number;
@@ -27,6 +45,7 @@ export interface StoreSchema {
     mediaEvents: MediaEventConfig[];  // Standalone media events storage
     mediaDisplayGroups: MediaDisplayGroup[];  // Media display groups configuration
     mediaOverlaySettings: MediaOverlaySettings;  // Media overlay debug/preview settings
+    mediaLibrary: MediaFile[];  // Media library files storage
 }
 
 export interface MediaOverlaySettings {
@@ -428,11 +447,30 @@ export type AnimationType = 'none' | 'fade' | 'slide-up' | 'slide-down' | 'slide
 // Queue mode for handling multiple media events
 export type QueueMode = 'sequential' | 'replace' | 'stack';
 
-// Layout mode for positioning items within group
+// Layout mode for positioning items within group (legacy, kept for compatibility)
 export type LayoutMode = 'overlay' | 'stack-vertical' | 'stack-horizontal';
+
+// Placement mode for positioning items within group
+export type PlacementMode = 'fixed' | 'random' | 'stack';
+
+// Stack direction for stack placement mode
+export type StackDirection = 'horizontal' | 'vertical';
 
 // Anchor point for content positioning
 export type AnchorPoint = 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+// Random placement settings
+export interface RandomPlacementSettings {
+    rotationEnabled: boolean;        // Enable random rotation
+    maxRotation: number;             // Max rotation angle in degrees (e.g., 15 means -15 to +15)
+}
+
+// Stack placement settings
+export interface StackPlacementSettings {
+    direction: StackDirection;       // Stack direction
+    gap: number;                     // Gap between items in pixels
+    wrap: boolean;                   // Wrap to next row/column when full
+}
 
 // Media display group position configuration
 export interface MediaGroupPosition {
@@ -447,6 +485,8 @@ export interface MediaGroupSize {
     maxWidth: number;                // Max width constraint
     maxHeight: number;               // Max height constraint
     contentScale: number;            // Content scale multiplier (1 = 100%)
+    mediaWidth: number;              // Media container width (0 = auto, use group size)
+    mediaHeight: number;             // Media container height (0 = auto, use group size)
 }
 
 // Animation configuration
@@ -472,7 +512,10 @@ export interface MediaDisplayGroup {
     enabled: boolean;
     position: MediaGroupPosition;
     size: MediaGroupSize;
-    layout: LayoutMode;              // How items are positioned within group
+    layout: LayoutMode;              // Legacy: How items are positioned within group
+    placement: PlacementMode;        // Placement mode: fixed, random, stack
+    randomSettings: RandomPlacementSettings;  // Settings for random placement
+    stackSettings: StackPlacementSettings;    // Settings for stack placement
     anchor: AnchorPoint;             // Content anchor point within group
     animation: MediaGroupAnimation;
     queue: MediaGroupQueue;
@@ -485,10 +528,10 @@ export interface MediaEventConfig {
     id: string;                      // UUID
     name: string;                    // Display name for UI
     groupId?: string;                // Reference to MediaDisplayGroup (optional for backwards compat)
-    mediaType: 'image' | 'video';
-    mediaUrl: string;                // URL to image/video
+    mediaType: 'image' | 'video' | 'audio';
+    mediaUrl: string;                // URL to image/video/audio
     caption: string;                 // Template with ${user}, ${reward}, etc.
-    displayDuration: number;         // Seconds to show (0 = use group default, -1 = until video ends)
+    displayDuration: number;         // Seconds to show (0 = use group default, -1 = until media ends)
     style: MediaEventStyle;
 }
 

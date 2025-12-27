@@ -34,6 +34,7 @@ import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
+import {MediaLibraryService} from "./services/MediaLibraryService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -85,6 +86,7 @@ const store = new Store<StoreSchema>({
         label: 'Custom'
       }
     },
+    mediaLibrary: [],
   },
 });
 
@@ -97,6 +99,7 @@ const logService = new LogService((logs) => {
 const mediaEventsService = new MediaEventsService(store);
 const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
+const mediaLibraryService = new MediaLibraryService(store);
 
 const backendLogService = new BackendLogService({
   enabled: true,
@@ -326,6 +329,7 @@ backendLogService.setBroadcastCallback((logs) => {
 mediaEventsService.setBroadcastCallback(broadcast);
 mediaDisplayGroupService.setBroadcastCallback(broadcast);
 mediaEventsController.setBroadcastCallback(broadcast);
+mediaLibraryService.setBroadcastCallback(broadcast);
 
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
@@ -394,6 +398,7 @@ app.whenReady().then(() => {
   scraper.setupIPCs();
   mediaEventsService.registerIpcHandlers();
   mediaDisplayGroupService.registerIpcHandlers();
+  mediaLibraryService.registerIpcHandlers();
 
   // Media test handler - needs access to mediaEventsController
   ipcMain.handle('media:test', async (_e, mediaEventId: string) => {

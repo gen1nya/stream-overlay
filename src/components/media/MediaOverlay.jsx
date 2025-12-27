@@ -163,12 +163,29 @@ const getAnchorStyles = (anchor) => {
     return alignMap[anchor] || alignMap['center'];
 };
 
+// Helper to get stack start position from anchor
+const getStackStartFromAnchor = (anchor, direction) => {
+    // For horizontal stack: anchor affects justify-content (start position)
+    // For vertical stack: anchor affects align-items (cross-axis alignment)
+    const startMap = {
+        'top-left': { justify: 'flex-start', align: 'flex-start' },
+        'top-center': { justify: 'center', align: 'flex-start' },
+        'top-right': { justify: 'flex-end', align: 'flex-start' },
+        'center-left': { justify: 'flex-start', align: 'center' },
+        'center': { justify: 'center', align: 'center' },
+        'center-right': { justify: 'flex-end', align: 'center' },
+        'bottom-left': { justify: 'flex-start', align: 'flex-end' },
+        'bottom-center': { justify: 'center', align: 'flex-end' },
+        'bottom-right': { justify: 'flex-end', align: 'flex-end' },
+    };
+    return startMap[anchor] || startMap['center'];
+};
+
 const GroupContainer = styled.div`
     position: absolute;
     pointer-events: auto;
-    overflow: hidden;
 
-    ${({ $position, $size, $layout, $anchor }) => {
+    ${({ $position, $size, $placement, $anchor, $stackSettings }) => {
         const anchorStyles = getAnchorStyles($anchor);
 
         // Base positioning
@@ -179,35 +196,62 @@ const GroupContainer = styled.div`
             height: ${$size?.height || $size?.maxHeight || 300}px;
         `;
 
-        // Layout-specific styles
-        switch ($layout) {
-            case 'stack-vertical':
+        // Placement-specific styles
+        switch ($placement) {
+            case 'random':
+                // Random placement: items positioned absolutely within, hide overflow
                 styles += `
-                    display: flex;
-                    flex-direction: column;
-                    align-items: ${anchorStyles.alignItems};
-                    justify-content: flex-start;
-                    gap: 8px;
+                    overflow: hidden;
                 `;
                 break;
-            case 'stack-horizontal':
-                styles += `
-                    display: flex;
-                    flex-direction: row;
-                    align-items: flex-start;
-                    justify-content: ${anchorStyles.alignItems};
-                    gap: 8px;
-                `;
+            case 'stack':
+                const stackStart = getStackStartFromAnchor($anchor, $stackSettings?.direction);
+                const direction = $stackSettings?.direction || 'horizontal';
+                const gap = $stackSettings?.gap || 10;
+                const wrap = $stackSettings?.wrap ? 'wrap' : 'nowrap';
+
+                if (direction === 'horizontal') {
+                    // Horizontal: main axis = row (left-right), cross axis = column (top-bottom)
+                    // justify-content: horizontal alignment (start/center/end)
+                    // align-items: vertical alignment for single line
+                    // align-content: vertical alignment for wrapped lines
+                    styles += `
+                        display: flex;
+                        flex-direction: row;
+                        flex-wrap: ${wrap};
+                        justify-content: ${stackStart.justify};
+                        align-items: ${stackStart.align};
+                        align-content: ${stackStart.align};
+                        gap: ${gap}px;
+                        overflow: hidden;
+                    `;
+                } else {
+                    // Vertical: main axis = column (top-bottom), cross axis = row (left-right)
+                    // justify-content: vertical alignment
+                    // align-items: horizontal alignment for single column
+                    // align-content: horizontal alignment for wrapped columns
+                    styles += `
+                        display: flex;
+                        flex-direction: column;
+                        flex-wrap: ${wrap};
+                        justify-content: ${stackStart.align};
+                        align-items: ${stackStart.justify};
+                        align-content: ${stackStart.justify};
+                        gap: ${gap}px;
+                        overflow: hidden;
+                    `;
+                }
                 break;
-            case 'overlay':
+            case 'fixed':
             default:
-                // For overlay mode, use grid with place-items for perfect centering
+                // Fixed mode: use grid with place-items for perfect centering
                 // All items will occupy the same cell and stack on top of each other
                 styles += `
                     display: grid;
                     grid-template-columns: 1fr;
                     grid-template-rows: 1fr;
                     place-items: ${anchorStyles.justifyContent} ${anchorStyles.alignItems};
+                    overflow: hidden;
                 `;
                 break;
         }
@@ -222,10 +266,18 @@ const MediaItem = styled.div`
     align-items: center;
     flex-shrink: 0;
 
-    /* In grid (overlay) mode, all items occupy the same cell (row 1, col 1) */
-    ${({ $layout }) => $layout === 'overlay' && css`
+    /* Fixed placement: all items occupy the same cell (row 1, col 1) */
+    ${({ $placement }) => $placement === 'fixed' && css`
         grid-row: 1;
         grid-column: 1;
+    `}
+
+    /* Random placement: position absolutely with random coords and rotation */
+    ${({ $placement, $randomPos }) => $placement === 'random' && $randomPos && css`
+        position: absolute;
+        left: ${$randomPos.x}px;
+        top: ${$randomPos.y}px;
+        transform: rotate(${$randomPos.rotation || 0}deg);
     `}
 
     ${({ $animation, $phase }) => {
@@ -254,14 +306,23 @@ const MediaContent = styled.div`
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 
-    ${({ $scale, $maxWidth, $maxHeight }) => css`
-        max-width: ${$maxWidth ? `${$maxWidth * ($scale || 1)}px` : '100%'};
-        max-height: ${$maxHeight ? `${$maxHeight * ($scale || 1)}px` : '100%'};
-    `}
+    ${({ $scale, $mediaWidth, $mediaHeight, $maxWidth, $maxHeight }) => {
+        // Use media size if specified, otherwise fall back to max size
+        const effectiveWidth = $mediaWidth > 0 ? $mediaWidth : $maxWidth;
+        const effectiveHeight = $mediaHeight > 0 ? $mediaHeight : $maxHeight;
+        const scale = $scale || 1;
+
+        return css`
+            ${effectiveWidth ? `width: ${effectiveWidth * scale}px;` : ''}
+            ${effectiveHeight ? `height: ${effectiveHeight * scale}px;` : ''}
+            max-width: ${$maxWidth ? `${$maxWidth * scale}px` : '100%'};
+            max-height: ${$maxHeight ? `${$maxHeight * scale}px` : '100%'};
+        `;
+    }}
 
     img, video {
-        max-width: 100%;
-        max-height: 100%;
+        width: 100%;
+        height: 100%;
         display: block;
         object-fit: contain;
     }
@@ -459,6 +520,33 @@ export default function MediaOverlay() {
         timersRef.current.set(newItem.id, exitTimer);
     }, []);
 
+    // Generate random position within group bounds
+    const generateRandomPosition = (group) => {
+        const groupWidth = group.size?.width || group.size?.maxWidth || 400;
+        const groupHeight = group.size?.height || group.size?.maxHeight || 300;
+
+        // Get media size (use mediaWidth/mediaHeight if set, otherwise estimate)
+        const mediaWidth = (group.size?.mediaWidth > 0 ? group.size.mediaWidth : group.size?.maxWidth * 0.5) || 100;
+        const mediaHeight = (group.size?.mediaHeight > 0 ? group.size.mediaHeight : group.size?.maxHeight * 0.5) || 100;
+
+        // Calculate available space (media shouldn't go outside group bounds)
+        const maxX = Math.max(0, groupWidth - mediaWidth);
+        const maxY = Math.max(0, groupHeight - mediaHeight);
+
+        // Generate random position
+        const x = Math.random() * maxX;
+        const y = Math.random() * maxY;
+
+        // Generate random rotation if enabled
+        let rotation = 0;
+        if (group.randomSettings?.rotationEnabled) {
+            const maxRotation = group.randomSettings?.maxRotation || 15;
+            rotation = (Math.random() * 2 - 1) * maxRotation; // -maxRotation to +maxRotation
+        }
+
+        return { x: Math.round(x), y: Math.round(y), rotation: Math.round(rotation * 10) / 10 };
+    };
+
     // Handle media show event (called from onMessage)
     const handleMediaShowEvent = (payload) => {
         const { mediaEvent, context } = payload;
@@ -479,11 +567,16 @@ export default function MediaOverlay() {
             });
         }
 
+        // Generate random position for random placement mode
+        const placement = group.placement || 'fixed';
+        const randomPos = placement === 'random' ? generateRandomPosition(group) : null;
+
         const queueItem = {
             id: `${mediaEvent.id}-${Date.now()}`,
             mediaEvent: { ...mediaEvent, caption },
             groupId,
-            duration: mediaEvent.displayDuration || group.defaultDuration
+            duration: mediaEvent.displayDuration || group.defaultDuration,
+            randomPos  // Store random position for this item
         };
 
         // Add to queue
@@ -560,7 +653,7 @@ export default function MediaOverlay() {
                     const items = activeItems.get(group.id) || [];
                     if (items.length === 0) return null;
 
-                    const layout = group.layout || 'overlay';
+                    const placement = group.placement || 'fixed';
                     const anchor = group.anchor || 'center';
                     const contentScale = group.size?.contentScale || 1;
 
@@ -569,8 +662,9 @@ export default function MediaOverlay() {
                             key={group.id}
                             $position={group.position}
                             $size={group.size}
-                            $layout={layout}
+                            $placement={placement}
                             $anchor={anchor}
+                            $stackSettings={group.stackSettings}
                             style={{ zIndex: group.zIndex }}
                         >
                             {items.map(item => (
@@ -578,29 +672,43 @@ export default function MediaOverlay() {
                                     key={item.id}
                                     $animation={group.animation}
                                     $phase={item.phase}
-                                    $layout={layout}
+                                    $placement={placement}
+                                    $randomPos={item.randomPos}
                                 >
-                                    <MediaContent
-                                        $scale={contentScale}
-                                        $maxWidth={group.size?.maxWidth}
-                                        $maxHeight={group.size?.maxHeight}
-                                    >
-                                        {item.mediaEvent.mediaType === 'video' ? (
-                                            <video
-                                                src={item.mediaEvent.mediaUrl}
-                                                autoPlay
-                                                muted={false}
-                                                onEnded={() => {
-                                                    // Optionally trigger exit early when video ends
-                                                }}
-                                            />
-                                        ) : (
-                                            <img
-                                                src={item.mediaEvent.mediaUrl}
-                                                alt={item.mediaEvent.name}
-                                            />
-                                        )}
-                                    </MediaContent>
+                                    {item.mediaEvent.mediaType === 'audio' ? (
+                                        <audio
+                                            src={item.mediaEvent.mediaUrl}
+                                            autoPlay
+                                            style={{ display: 'none' }}
+                                            onEnded={() => {
+                                                // Optionally trigger exit early when audio ends
+                                            }}
+                                        />
+                                    ) : (
+                                        <MediaContent
+                                            $scale={contentScale}
+                                            $mediaWidth={group.size?.mediaWidth}
+                                            $mediaHeight={group.size?.mediaHeight}
+                                            $maxWidth={group.size?.maxWidth}
+                                            $maxHeight={group.size?.maxHeight}
+                                        >
+                                            {item.mediaEvent.mediaType === 'video' ? (
+                                                <video
+                                                    src={item.mediaEvent.mediaUrl}
+                                                    autoPlay
+                                                    muted={false}
+                                                    onEnded={() => {
+                                                        // Optionally trigger exit early when video ends
+                                                    }}
+                                                />
+                                            ) : (
+                                                <img
+                                                    src={item.mediaEvent.mediaUrl}
+                                                    alt={item.mediaEvent.name}
+                                                />
+                                            )}
+                                        </MediaContent>
+                                    )}
                                     {item.mediaEvent.caption && (
                                         <Caption $style={item.mediaEvent.style}>
                                             {item.mediaEvent.caption}

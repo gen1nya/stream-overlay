@@ -500,3 +500,31 @@ export const testMediaEvent = (mediaEventId) => {
 export const testMediaGroup = (groupId) => {
     return ipcRenderer?.invoke('media:test-group', groupId);
 };
+
+// ============================================
+// Media Library
+// ============================================
+
+export const getAllMediaFiles = () => {
+    return ipcRenderer?.invoke('media-library:get-all');
+};
+
+export const getMediaFilesByType = (type) => {
+    return ipcRenderer?.invoke('media-library:get-by-type', type);
+};
+
+export const getMediaFile = (id) => {
+    return ipcRenderer?.invoke('media-library:get', id);
+};
+
+export const saveMediaFile = (originalName, buffer, mimeType, dimensions) => {
+    return ipcRenderer?.invoke('media-library:save', originalName, buffer, mimeType, dimensions);
+};
+
+export const deleteMediaFile = (id) => {
+    return ipcRenderer?.invoke('media-library:delete', id);
+};
+
+export const getMediaFileUrl = (id) => {
+    return ipcRenderer?.invoke('media-library:get-url', id);
+};
