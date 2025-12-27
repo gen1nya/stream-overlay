@@ -57,6 +57,7 @@ function generateMediaActions(
 export class GachaMiddleware extends Middleware {
     private store: ElectronStore<StoreSchema>;
     private gachaEngine: GachaEngine;
+    private enabled: boolean = false;
 
     // Map: rewardId -> { bannerId, amount }
     private triggerMap: Map<string, { bannerId: number; amount: number }> = new Map();
@@ -78,6 +79,8 @@ export class GachaMiddleware extends Middleware {
         // Мигрируем конфиг если нужно
         const gachaConfig = bot?.gacha ? migrateGachaConfig(bot.gacha) : undefined;
 
+        this.enabled = gachaConfig?.enabled ?? false;
+        console.log('[GachaMiddleware] Enabled:', this.enabled);
         console.log('[GachaMiddleware] Gacha triggers:', JSON.stringify(gachaConfig?.triggers, null, 2));
         console.log('[GachaMiddleware] Gacha banners:', gachaConfig?.banners?.length || 0);
         console.log('[GachaMiddleware] Gacha items count:', gachaConfig?.items?.length || 0);
@@ -101,6 +104,11 @@ export class GachaMiddleware extends Middleware {
     processMessage(message: AppEvent) {
         console.log('[GachaMiddleware] ========== processMessage START ==========');
         console.log('[GachaMiddleware] Message type:', message.type);
+
+        if (!this.enabled) {
+            console.log('[GachaMiddleware] Gacha is disabled, skipping');
+            return Promise.resolve({ message, actions: [], accepted: false });
+        }
 
         if (message.type !== 'redemption') {
             console.log('[GachaMiddleware] Not a redemption event, skipping');
@@ -267,13 +275,18 @@ export class GachaMiddleware extends Middleware {
 
         if (!botConfig?.gacha) {
             console.warn('[GachaMiddleware] No gacha config provided');
+            this.enabled = false;
             return;
         }
 
         // Мигрируем конфиг если нужно
         const gachaConfig = migrateGachaConfig(botConfig.gacha);
 
+        // Обновляем enabled
+        this.enabled = gachaConfig.enabled ?? false;
+
         console.log('[GachaMiddleware] Migrated config:');
+        console.log('[GachaMiddleware]   - enabled:', this.enabled);
         console.log('[GachaMiddleware]   - banners:', gachaConfig.banners?.length || 0);
         console.log('[GachaMiddleware]   - items:', gachaConfig.items?.length || 0);
         console.log('[GachaMiddleware]   - triggers:', gachaConfig.triggers?.length || 0);
