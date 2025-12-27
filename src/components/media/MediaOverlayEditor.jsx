@@ -1058,6 +1058,15 @@ export default function MediaOverlayEditor() {
                                 height: RESOLUTIONS['720p'].height * CANVAS_SCALE
                             }}
                         />
+                        {/* Custom resolution guide - always visible in editor */}
+                        <ResolutionGuide
+                            $color={overlaySettings.customResolution?.color || '#f59e0b'}
+                            $label={`${overlaySettings.customResolution?.width || 1600}×${overlaySettings.customResolution?.height || 900}`}
+                            style={{
+                                width: (overlaySettings.customResolution?.width || 1600) * CANVAS_SCALE,
+                                height: (overlaySettings.customResolution?.height || 900) * CANVAS_SCALE
+                            }}
+                        />
 
                         {/* Origin marker */}
                         <CoordinateOrigin>

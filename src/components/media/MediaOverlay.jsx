@@ -147,6 +147,47 @@ const DebugGroupBorder = styled.div`
     }
 `;
 
+// Audio player component with fade-out support
+const AudioPlayer = ({ src, phase, fadeOutDuration = 300 }) => {
+    const audioRef = React.useRef(null);
+    const fadeIntervalRef = React.useRef(null);
+
+    React.useEffect(() => {
+        // When phase changes to 'exiting', start fade-out
+        if (phase === 'exiting' && audioRef.current) {
+            const audio = audioRef.current;
+            const steps = 20;
+            const stepTime = fadeOutDuration / steps;
+            const volumeStep = audio.volume / steps;
+
+            fadeIntervalRef.current = setInterval(() => {
+                if (audio.volume > volumeStep) {
+                    audio.volume = Math.max(0, audio.volume - volumeStep);
+                } else {
+                    audio.volume = 0;
+                    clearInterval(fadeIntervalRef.current);
+                }
+            }, stepTime);
+        }
+
+        return () => {
+            if (fadeIntervalRef.current) {
+                clearInterval(fadeIntervalRef.current);
+            }
+        };
+    }, [phase, fadeOutDuration]);
+
+    return (
+        <audio
+            ref={audioRef}
+            src={src}
+            autoPlay
+            style={{ display: 'none' }}
+            onError={(e) => console.error('[MediaOverlay] Audio error:', e.target.error, src)}
+        />
+    );
+};
+
 // Helper to get anchor alignment styles
 const getAnchorStyles = (anchor) => {
     const alignMap = {
@@ -676,13 +717,10 @@ export default function MediaOverlay() {
                                     $randomPos={item.randomPos}
                                 >
                                     {item.mediaEvent.mediaType === 'audio' ? (
-                                        <audio
+                                        <AudioPlayer
                                             src={item.mediaEvent.mediaUrl}
-                                            autoPlay
-                                            style={{ display: 'none' }}
-                                            onEnded={() => {
-                                                // Optionally trigger exit early when audio ends
-                                            }}
+                                            phase={item.phase}
+                                            fadeOutDuration={group.animation?.outDuration || 300}
                                         />
                                     ) : (
                                         <MediaContent
