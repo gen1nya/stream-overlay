@@ -89,7 +89,14 @@ const DebouncedTextarea = forwardRef(function DebouncedTextarea({
             const textarea = textareaRef.current;
             if (!textarea) return;
 
-            const { start, end } = lastSelectionRef.current;
+            // Use current selection from DOM if textarea is focused, otherwise use last known
+            const start = document.activeElement === textarea
+                ? textarea.selectionStart
+                : lastSelectionRef.current.start;
+            const end = document.activeElement === textarea
+                ? textarea.selectionEnd
+                : lastSelectionRef.current.end;
+
             const before = localValue.substring(0, start);
             const after = localValue.substring(end);
             const newValue = before + text + after;
@@ -101,26 +108,24 @@ const DebouncedTextarea = forwardRef(function DebouncedTextarea({
 
             setLocalValue(newValue);
 
-            // Trigger onChange
+            // Trigger onChange immediately for better UX
             if (debounceTimerRef.current) {
                 clearTimeout(debounceTimerRef.current);
             }
-            debounceTimerRef.current = setTimeout(() => {
-                onChange?.(newValue);
-            }, debounceMs);
+            onChange?.(newValue);
 
             // Set cursor position after the inserted text
             const newCursorPos = start + text.length;
-            requestAnimationFrame(() => {
-                textarea.focus();
+            // Use setTimeout to ensure state has updated
+            setTimeout(() => {
                 textarea.setSelectionRange(newCursorPos, newCursorPos);
                 lastSelectionRef.current = { start: newCursorPos, end: newCursorPos };
-            });
+            }, 0);
         },
         focus: () => {
             textareaRef.current?.focus();
         }
-    }), [localValue, onChange, debounceMs, maxLength]);
+    }), [localValue, onChange, maxLength]);
 
     // Sync local value when external value changes
     useEffect(() => {

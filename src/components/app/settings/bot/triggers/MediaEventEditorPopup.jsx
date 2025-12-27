@@ -646,7 +646,10 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
                                         <VariableItem
                                             key={v.name}
                                             title={v.description}
-                                            onClick={() => insertVariable(v.name)}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault(); // Prevent focus loss
+                                                insertVariable(v.name);
+                                            }}
                                             type="button"
                                         >
                                             ${`{${v.name}}`}
