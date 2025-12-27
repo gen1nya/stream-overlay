@@ -310,7 +310,7 @@ const VariablesHint = styled.div`
     }
 `;
 
-const VariableItem = styled.button`
+const VariableItem = styled.span`
     display: inline-block;
     margin-right: 8px;
     margin-bottom: 4px;
@@ -323,6 +323,7 @@ const VariableItem = styled.button`
     border: 1px solid rgba(236, 72, 153, 0.3);
     border-radius: 4px;
     cursor: pointer;
+    user-select: none;
     transition: all 0.15s ease;
 
     &:hover {
@@ -647,10 +648,10 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
                                             key={v.name}
                                             title={v.description}
                                             onMouseDown={(e) => {
-                                                e.preventDefault(); // Prevent focus loss
+                                                e.preventDefault();
+                                                e.stopPropagation();
                                                 insertVariable(v.name);
                                             }}
-                                            type="button"
                                         >
                                             ${`{${v.name}}`}
                                         </VariableItem>
