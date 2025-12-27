@@ -123,31 +123,6 @@ const SortSelect = styled.select`
     }
 `;
 
-const UploadButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 16px;
-    border: none;
-    border-radius: 6px;
-    background: #646cff;
-    color: #fff;
-    cursor: pointer;
-    font-size: 13px;
-    font-weight: 500;
-    transition: all 0.2s;
-    margin-left: auto;
-
-    &:hover {
-        background: #7c3aed;
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-`;
-
 const Content = styled.div`
     flex: 1;
     overflow-y: auto;
@@ -654,11 +629,6 @@ export default function MediaLibraryPopup({
                         <option value="type">{t('mediaLibrary.sort.type')}</option>
                         <option value="size">{t('mediaLibrary.sort.size')}</option>
                     </SortSelect>
-
-                    <UploadButton onClick={() => fileInputRef.current?.click()} disabled={uploading}>
-                        <FiUpload size={14} />
-                        {uploading ? t('mediaLibrary.uploading') : t('mediaLibrary.upload')}
-                    </UploadButton>
 
                     <HiddenInput
                         ref={fileInputRef}
