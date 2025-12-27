@@ -33,6 +33,7 @@ import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
+import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -74,6 +75,7 @@ const store = new Store<StoreSchema>({
         gameMode: false,
     },
     mediaEvents: [],
+    mediaDisplayGroups: [],
   },
 });
 
@@ -84,6 +86,7 @@ const logService = new LogService((logs) => {
 }, 100);
 
 const mediaEventsService = new MediaEventsService(store);
+const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 
 const backendLogService = new BackendLogService({
@@ -311,6 +314,7 @@ backendLogService.setBroadcastCallback((logs) => {
 });
 
 mediaEventsService.setBroadcastCallback(broadcast);
+mediaDisplayGroupService.setBroadcastCallback(broadcast);
 
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
@@ -378,6 +382,7 @@ app.whenReady().then(() => {
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();
   mediaEventsService.registerIpcHandlers();
+  mediaDisplayGroupService.registerIpcHandlers();
 
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {

@@ -10,6 +10,7 @@ import {
     importTheme,
     deleteTheme,
     openExternalLink,
+    openMediaOverlayEditor,
 } from '../../services/api';
 import MessageSettingsBlock from "./settings/MessageSettingsBlock";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
@@ -34,7 +35,8 @@ import {
     FiZap,
     FiDatabase,
     FiUsers,
-    FiClock
+    FiClock,
+    FiExternalLink
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -262,6 +264,7 @@ export default function Settings() {
         bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
         bot_triggers: {title: t('settings.pages.botTriggers.title'), icon: <FiZap/>},
         bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
+        media_overlay: {title: t('settings.pages.mediaOverlay.title', 'Media Overlay'), icon: <FiLayers/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
@@ -297,6 +300,16 @@ export default function Settings() {
     const [drawerOpen, setDrawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
     const [showBotHelp, setShowBotHelp] = useState(false);
+
+    // Handle page selection with special cases
+    const handlePageSelect = (pageKey) => {
+        if (pageKey === 'media_overlay') {
+            // Open editor in separate window instead of changing page
+            openMediaOverlayEditor();
+            return;
+        }
+        setActivePage(pageKey);
+    };
     const [showTriggerHistory, setShowTriggerHistory] = useState(false);
     const [showGachaUsers, setShowGachaUsers] = useState(false);
     const [showLotteryHistory, setShowLotteryHistory] = useState(false);
@@ -461,7 +474,7 @@ export default function Settings() {
                 <Sidebar
                     open={drawerOpen}
                     active={activePage}
-                    onSelect={setActivePage}
+                    onSelect={handlePageSelect}
                     items={[
                         {key: "general", icon: <FiSettings/>, label: t('settings.pages.general.label')},
                         {
@@ -488,6 +501,7 @@ export default function Settings() {
                                 {key: "bot_timers", icon: <FiClock/>, label: t('settings.pages.botTimers.label'), enabled: botConfig?.timers?.enabled},
                             ]
                         },
+                        {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                         {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},

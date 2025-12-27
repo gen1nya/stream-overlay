@@ -452,3 +452,29 @@ export const saveMediaEvent = (mediaEvent) => {
 export const deleteMediaEvent = (id) => {
     return ipcRenderer?.invoke('media:delete', id);
 };
+
+// Media Display Groups API
+export const getAllMediaDisplayGroups = () => {
+    return ipcRenderer?.invoke('media-groups:get-all');
+};
+
+export const getMediaDisplayGroup = (id) => {
+    return ipcRenderer?.invoke('media-groups:get', id);
+};
+
+export const saveMediaDisplayGroup = (group) => {
+    return ipcRenderer?.invoke('media-groups:save', group);
+};
+
+export const deleteMediaDisplayGroup = (id) => {
+    return ipcRenderer?.invoke('media-groups:delete', id);
+};
+
+export const reorderMediaDisplayGroups = (orderedIds) => {
+    return ipcRenderer?.invoke('media-groups:reorder', orderedIds);
+};
+
+// Media Overlay Editor
+export const openMediaOverlayEditor = () => {
+    return ipcRenderer?.invoke('media-overlay:open-editor');
+};

@@ -19,6 +19,8 @@ import FollowersGoalWidget from "./components/followers/FollowersGoalWidget";
 import {WebSocketProvider} from "./context/WebSocketContext";
 import Terminal from "./components/app/SonaARG";
 import BackendLogs from "./components/app/BackendLogs";
+import MediaOverlayEditor from "./components/media/MediaOverlayEditor";
+import MediaOverlay from "./components/media/MediaOverlay";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -57,6 +59,8 @@ export default function App() {
                         <Route path="/auth" element={<AuthScreen/>} />
                         <Route path="/tty" element={<Terminal/>} />
                         <Route path="/backend-logs" element={<BackendLogs/>} />
+                        <Route path="/media-overlay-editor" element={<MediaOverlayEditor/>} />
+                        <Route path="/media-overlay" element={<MediaOverlay/>} />
                         <Route path="*" element={ <WrongPageComponent/> }/>
                     </Routes>
                 </BrowserRouter>

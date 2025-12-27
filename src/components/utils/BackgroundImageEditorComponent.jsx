@@ -13,7 +13,7 @@ import { useTranslation, Trans } from 'react-i18next';
 import {getImageUrl, saveImageBuffer} from "../../services/api";
 
 // Темы
-const lightTheme = {
+export const lightTheme = {
     bg: {
         primary: '#ffffff',
         secondary: '#fafafa',
@@ -45,7 +45,7 @@ const lightTheme = {
     }
 };
 
-const darkTheme = {
+export const darkTheme = {
     bg: {
         primary: 'rgba(26,26,26,0)',
         secondary: '#2d2d2d',
@@ -541,6 +541,7 @@ export function ImageUploadField({
                 onDrop={handleDrop}
                 onDragOver={handleDragOver}
                 onDragLeave={handleDragLeave}
+                onClick={() => !value && !isLoading && fileInputRef.current?.click()}
             >
                 {value ? (
                     <LoadedContent>

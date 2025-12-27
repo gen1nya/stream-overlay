@@ -1,16 +1,16 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import styled from "styled-components";
 import { useTranslation } from 'react-i18next';
 import {
-    FiX, FiSave, FiImage, FiVideo, FiType, FiDroplet, FiLayers
+    FiX, FiSave, FiImage, FiVideo, FiType, FiDroplet, FiLayers, FiGrid
 } from 'react-icons/fi';
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
 import FontAndSizeEditor from "../../../../utils/FontAndSizeEditor";
 import InlineColorPicker from "../../../../utils/InlineColorPicker";
 import { v4 as uuidv4 } from 'uuid';
-import { saveMediaEvent } from "../../../../../services/api";
+import { saveMediaEvent, getAllMediaDisplayGroups } from "../../../../../services/api";
 
 const PopupOverlay = styled.div`
     position: fixed;
@@ -202,6 +202,29 @@ const Input = styled.input`
     }
 `;
 
+const Select = styled.select`
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #444;
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 14px;
+    transition: all 0.2s ease;
+    box-sizing: border-box;
+    cursor: pointer;
+
+    &:focus {
+        outline: none;
+        border-color: #ec4899;
+        background: #252525;
+    }
+
+    option {
+        background: #1e1e1e;
+    }
+`;
+
 const MediaTypeSelector = styled.div`
     display: flex;
     gap: 8px;
@@ -320,12 +343,14 @@ const DEFAULT_MEDIA_EVENT = {
     mediaUrl: '',
     caption: '',
     displayDuration: 5,
+    groupId: '',
     style: DEFAULT_STYLE
 };
 
 export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
     const { t } = useTranslation();
     const [saving, setSaving] = useState(false);
+    const [groups, setGroups] = useState([]);
     const [edited, setEdited] = useState(() => {
         if (mediaEvent) {
             return {
@@ -336,6 +361,23 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
         }
         return { ...DEFAULT_MEDIA_EVENT, id: uuidv4() };
     });
+
+    // Load groups on mount
+    useEffect(() => {
+        const loadGroups = async () => {
+            try {
+                const groupsData = await getAllMediaDisplayGroups();
+                setGroups(groupsData || []);
+                // If no group is set and there are groups available, set the first one
+                if (!edited.groupId && groupsData?.length > 0) {
+                    setEdited(prev => ({ ...prev, groupId: groupsData[0].id }));
+                }
+            } catch (error) {
+                console.error('Failed to load groups:', error);
+            }
+        };
+        loadGroups();
+    }, []);
 
     const updateField = (field, value) => {
         setEdited(prev => ({ ...prev, [field]: value }));
@@ -443,6 +485,24 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
                                     />
                                 </FormGroup>
                             </FormRow>
+
+                            <FormGroup>
+                                <Label>{t('settings.bot.triggers.mediaEvent.displayGroup')}</Label>
+                                <Select
+                                    value={edited.groupId}
+                                    onChange={(e) => updateField('groupId', e.target.value)}
+                                >
+                                    {groups.length === 0 ? (
+                                        <option value="">{t('settings.bot.triggers.mediaEvent.noGroups')}</option>
+                                    ) : (
+                                        groups.map(group => (
+                                            <option key={group.id} value={group.id}>
+                                                {group.name}
+                                            </option>
+                                        ))
+                                    )}
+                                </Select>
+                            </FormGroup>
 
                             <FormGroup>
                                 <Label>{t('settings.bot.triggers.mediaEvent.mediaUrl')}</Label>

@@ -26,6 +26,7 @@ export let chatWindow: BrowserWindow | null = null;
 export let previewWindow: BrowserWindow | null = null;
 export let terminalWindow: BrowserWindow | null = null;
 export let backendLogsWindow: BrowserWindow | null = null;
+export let mediaOverlayEditorWindow: BrowserWindow | null = null;
 
 // Store reference for persisting settings
 let store: Store<StoreSchema> | null = null;
@@ -66,7 +67,7 @@ export function createTerminalWindow(): void {
  * Close all child windows (chat, preview, terminal, backend logs)
  */
 function closeAllChildWindows(): void {
-  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow];
+  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow, mediaOverlayEditorWindow];
   for (const win of windows) {
     if (win && !win.isDestroyed()) {
       win.close();
@@ -239,4 +240,34 @@ export function setChatGameMode(enabled: boolean): boolean {
  */
 export function getChatGameMode(): boolean {
   return isGameModeEnabled;
+}
+
+/**
+ * Create or focus the Media Overlay Editor window
+ */
+export function createMediaOverlayEditorWindow(): void {
+  if (mediaOverlayEditorWindow && !mediaOverlayEditorWindow.isDestroyed()) {
+    mediaOverlayEditorWindow.focus();
+    return;
+  }
+
+  mediaOverlayEditorWindow = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 700,
+    title: 'Media Overlay Editor',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+  });
+
+  mediaOverlayEditorWindow.setMenuBarVisibility(false);
+  mediaOverlayEditorWindow.loadURL('http://localhost:5173/media-overlay-editor');
+
+  mediaOverlayEditorWindow.on('closed', () => {
+    mediaOverlayEditorWindow = null;
+  });
 }

@@ -25,6 +25,7 @@ export interface StoreSchema {
     irc: IrcConfig;
     chatWindow: ChatWindowConfig;
     mediaEvents: MediaEventConfig[];  // Standalone media events storage
+    mediaDisplayGroups: MediaDisplayGroup[];  // Media display groups configuration
 }
 
 export interface IrcConfig {
@@ -410,14 +411,71 @@ export interface MediaEventStyle {
     backgroundOpacity: number;
 }
 
+// Position anchor for media display groups
+export type PositionAnchor =
+    | 'top-left' | 'top-center' | 'top-right'
+    | 'center-left' | 'center' | 'center-right'
+    | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+// Animation types for media display
+export type AnimationType = 'none' | 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right' | 'scale' | 'bounce';
+
+// Queue mode for handling multiple media events
+export type QueueMode = 'sequential' | 'replace' | 'stack';
+
+// Media display group position configuration
+export interface MediaGroupPosition {
+    anchor: PositionAnchor;
+    offsetX: number;                 // Offset from anchor in pixels
+    offsetY: number;
+}
+
+// Media display group size configuration
+export interface MediaGroupSize {
+    width: number;                   // Width in pixels (0 = auto)
+    height: number;                  // Height in pixels (0 = auto)
+    maxWidth: number;                // Max width constraint
+    maxHeight: number;               // Max height constraint
+}
+
+// Animation configuration
+export interface MediaGroupAnimation {
+    in: AnimationType;
+    out: AnimationType;
+    inDuration: number;              // Animation duration in ms
+    outDuration: number;
+    easing: string;                  // CSS easing function
+}
+
+// Queue configuration
+export interface MediaGroupQueue {
+    mode: QueueMode;
+    maxItems: number;                // Max items in queue (0 = unlimited)
+    gapBetween: number;              // Gap between items in ms (for sequential)
+}
+
+// Media display group definition
+export interface MediaDisplayGroup {
+    id: string;                      // UUID
+    name: string;                    // Display name
+    enabled: boolean;
+    position: MediaGroupPosition;
+    size: MediaGroupSize;
+    animation: MediaGroupAnimation;
+    queue: MediaGroupQueue;
+    defaultDuration: number;         // Default display duration in seconds
+    zIndex: number;                  // Layer order
+}
+
 // Media event definition
 export interface MediaEventConfig {
     id: string;                      // UUID
     name: string;                    // Display name for UI
+    groupId?: string;                // Reference to MediaDisplayGroup (optional for backwards compat)
     mediaType: 'image' | 'video';
     mediaUrl: string;                // URL to image/video
     caption: string;                 // Template with ${user}, ${reward}, etc.
-    displayDuration: number;         // Seconds to show (0 = until video ends)
+    displayDuration: number;         // Seconds to show (0 = use group default, -1 = until video ends)
     style: MediaEventStyle;
 }
 

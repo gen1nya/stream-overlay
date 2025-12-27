@@ -7,7 +7,7 @@ import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, setChatGameMode, getChatGameMode} from './windowsManager';
+import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, createMediaOverlayEditorWindow, setChatGameMode, getChatGameMode} from './windowsManager';
 import {BackendLogService} from './services/BackendLogService';
 import {LogService} from "./services/logService";
 import {
@@ -166,6 +166,9 @@ export function registerIpcHandlers(
     return `file://${fullPath}`;
   });
   ipcMain.handle('utils:get_image_url', (_e, fileName) => `/images/${encodeURIComponent(fileName)}`);
+
+  // Media overlay editor handler
+  ipcMain.handle('media-overlay:open-editor', () => createMediaOverlayEditorWindow());
 
   // Backend logs handlers
   ipcMain.handle('backend-logs:open', () => createBackendLogsWindow());

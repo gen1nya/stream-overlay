@@ -1,8 +1,8 @@
-import React, {useMemo} from 'react';
-import styled from 'styled-components';
+import React, {useMemo, useCallback} from 'react';
+import styled, {ThemeProvider} from 'styled-components';
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
 import SeekbarComponent from "../../utils/SeekbarComponent";
-import ConfirmableInputField from "../../utils/ConfirmableInputField";
+import {ImageUploadField, darkTheme as imageUploadDarkTheme} from "../../utils/BackgroundImageEditorComponent";
 import ColorSelectorButton from "./ColorSelectorButton";
 import {mergeWithDefaults} from "../../utils/defaultBotConfig";
 import {FiSettings, FiMessageSquare, FiEye, FiImage, FiType, FiClock} from "react-icons/fi";
@@ -46,6 +46,37 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
         }
         return null;
     };
+
+    const handleBackgroundImageChange = useCallback((imageUrl) => {
+        if (!imageUrl) return;
+
+        const img = new Image();
+        img.src = imageUrl;
+        img.onload = () => {
+            const aspectRatio = img.width / img.height;
+            handleChange(prev => ({
+                ...prev,
+                overlay: {
+                    ...prev.overlay,
+                    containerWidth: img.width,
+                    backgroundImage: imageUrl,
+                    backgroundImageAspectRatio: aspectRatio,
+                    backgroundImageWidth: img.width,
+                    backgroundImageHeight: img.height
+                },
+            }));
+        };
+    }, [handleChange]);
+
+    const handleBackgroundImageClear = useCallback(() => {
+        handleChange(prev => ({
+            ...prev,
+            overlay: {
+                ...prev.overlay,
+                backgroundImage: undefined,
+            },
+        }));
+    }, [handleChange]);
 
     const widthTitle = overlay?.chatWidth
         ? t('settings.unified.overlay.sections.dimensions.width')
@@ -248,44 +279,15 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                         {overlay?.backgroundType === "image" && (
                             <>
-                                <ConfirmableInputField
-                                    onConfirm={(data) => {
-                                        return new Promise((resolve) => {
-                                            const img = new Image();
-                                            const imageUrl = data.value;
-                                            img.src = imageUrl;
-                                            img.onload = () => {
-                                                const aspectRatio = img.width / img.height;
-                                                handleChange(prev => ({
-                                                    ...prev,
-                                                    overlay: {
-                                                        ...prev.overlay,
-                                                        containerWidth: img.width,
-                                                        backgroundImage: imageUrl,
-                                                        backgroundImageAspectRatio: aspectRatio,
-                                                        backgroundImageWidth: img.width,
-                                                        backgroundImageHeight: img.height
-                                                    },
-                                                }));
-                                                resolve(true);
-                                            };
-                                            img.onerror = () => resolve(false);
-                                        });
-                                    }}
-                                    onClear={() => {
-                                        handleChange(prev => ({
-                                            ...prev,
-                                            overlay: {
-                                                ...prev.overlay,
-                                                backgroundImage: undefined,
-                                            },
-                                        }));
-                                    }}
-                                    onSuccess={value => console.log("Image confirmed:", value)}
-                                    onError={error => console.error("Error confirming image:", error)}
-                                    initialValue={overlay?.backgroundImage ?? ""}
-                                    placeholder={t('settings.unified.overlay.sections.background.imagePlaceholder')}
-                                />
+                                <ThemeProvider theme={imageUploadDarkTheme}>
+                                    <ImageUploadField
+                                        label={t('settings.unified.overlay.sections.background.imageLabel')}
+                                        value={overlay?.backgroundImage}
+                                        onChange={handleBackgroundImageChange}
+                                        onClear={handleBackgroundImageClear}
+                                        showPreview={true}
+                                    />
+                                </ThemeProvider>
 
                                 <Row gap="20px">
                                     <ControlGroup>

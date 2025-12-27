@@ -57,17 +57,20 @@ export class MediaEventsController {
         this.log(`  URL: ${event.mediaUrl}`);
         this.log(`  Caption: ${interpolatedCaption}`);
         this.log(`  Duration: ${event.displayDuration}s`);
+        this.log(`  Group: ${event.groupId || 'none'}`);
         this.log(`  Style: fontSize=${event.style.fontSize}, font=${event.style.fontFamily}`);
         this.log(`━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
 
-        // Future: broadcast to overlay
-        // if (this.broadcastCallback) {
-        //     this.broadcastCallback('media:show', {
-        //         event,
-        //         interpolatedCaption,
-        //         context: payload.context
-        //     });
-        // }
+        // Broadcast to overlay
+        if (this.broadcastCallback) {
+            this.broadcastCallback('media:show', {
+                mediaEvent: {
+                    ...event,
+                    caption: interpolatedCaption
+                },
+                context: payload.context
+            });
+        }
     }
 
     private interpolateCaption(template: string, context: MediaEventContext): string {
