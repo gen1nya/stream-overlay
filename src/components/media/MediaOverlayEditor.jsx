@@ -519,7 +519,7 @@ const EASING_TYPES = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
 const DEFAULT_GROUP = {
     enabled: true,
     position: { x: 100, y: 100 },
-    size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300, contentScale: 1, mediaWidth: 0, mediaHeight: 0 },
+    size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300, contentScale: 1, mediaWidth: 400, mediaHeight: 300 },
     layout: 'overlay',
     placement: 'fixed',
     randomSettings: { rotationEnabled: true, maxRotation: 15 },
