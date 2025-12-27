@@ -409,11 +409,17 @@ function getTypeIcon(type) {
 }
 
 function getMediaUrl(file) {
+    // Add cache-buster based on dateAdded to force reload after upload
+    const cacheBuster = file.dateAdded ? `?t=${file.dateAdded}` : '';
+    let url;
     if (file.filename === file.originalName && file.type === 'image') {
-        return `/images/${encodeURIComponent(file.filename)}`;
+        url = `/images/${encodeURIComponent(file.filename)}${cacheBuster}`;
+    } else {
+        const typeDir = file.type === 'image' ? 'images' : file.type === 'video' ? 'videos' : 'audio';
+        url = `/media/${typeDir}/${encodeURIComponent(file.filename)}${cacheBuster}`;
     }
-    const typeDir = file.type === 'image' ? 'images' : file.type === 'video' ? 'videos' : 'audio';
-    return `/media/${typeDir}/${encodeURIComponent(file.filename)}`;
+    console.log(`[MediaLibrary] getMediaUrl for ${file.originalName}: ${url}`);
+    return url;
 }
 
 export default function MediaLibraryPopup({
@@ -479,9 +485,12 @@ export default function MediaLibraryPopup({
         return result;
     }, [files, filter, sortBy, allowedTypes]);
 
-    const handleFileSelect = useCallback(async (fileList) => {
+    const handleFileSelect = useCallback(async (fileList, source = 'unknown') => {
+        console.log(`[MediaLibrary] handleFileSelect from ${source}, files:`, fileList.length);
+
         const validFiles = Array.from(fileList).filter(file => {
             const isAllowed = ALL_ALLOWED_MIMES.includes(file.type);
+            console.log(`[MediaLibrary] File: ${file.name}, type: ${file.type}, size: ${file.size}, allowed: ${isAllowed}`);
             if (!isAllowed) {
                 console.warn(`Skipping unsupported file type: ${file.type}`);
             }
@@ -492,10 +501,30 @@ export default function MediaLibraryPopup({
 
         setUploading(true);
 
+        // Process files sequentially using FileReader (same approach as BackgroundImageEditorComponent)
+        const processFile = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = async () => {
+                    try {
+                        console.log(`[MediaLibrary] FileReader loaded: ${file.name}, result type: ${typeof reader.result}, byteLength: ${reader.result?.byteLength}`);
+                        await saveMediaFile(file.name, reader.result, file.type);
+                        resolve();
+                    } catch (error) {
+                        reject(error);
+                    }
+                };
+                reader.onerror = (err) => {
+                    console.error(`[MediaLibrary] FileReader error for ${file.name}:`, err);
+                    reject(err);
+                };
+                reader.readAsArrayBuffer(file);
+            });
+        };
+
         for (const file of validFiles) {
             try {
-                const buffer = await file.arrayBuffer();
-                await saveMediaFile(file.name, buffer, file.type);
+                await processFile(file);
             } catch (error) {
                 console.error(`Failed to upload ${file.name}:`, error);
             }
@@ -518,7 +547,7 @@ export default function MediaLibraryPopup({
     const handleDrop = useCallback((e) => {
         e.preventDefault();
         setIsDragging(false);
-        handleFileSelect(e.dataTransfer.files);
+        handleFileSelect(e.dataTransfer.files, 'drop');
     }, [handleFileSelect]);
 
     const handleDelete = useCallback(async (e, id) => {
@@ -630,7 +659,7 @@ export default function MediaLibraryPopup({
                         type="file"
                         accept={getAcceptString()}
                         multiple
-                        onChange={(e) => handleFileSelect(e.target.files)}
+                        onChange={(e) => handleFileSelect(e.target.files, 'input')}
                     />
                 </ControlsRow>
 

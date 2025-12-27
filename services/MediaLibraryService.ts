@@ -295,8 +295,24 @@ export class MediaLibraryService {
             return this.get(id);
         });
 
-        ipcMain.handle('media-library:save', async (_e, originalName: string, buffer: ArrayBuffer, mimeType: string, dimensions?: { width?: number; height?: number; duration?: number }) => {
-            return this.save(originalName, Buffer.from(buffer), mimeType, dimensions);
+        ipcMain.handle('media-library:save', async (_e, originalName: string, data: any, mimeType: string, dimensions?: { width?: number; height?: number; duration?: number }) => {
+            // Handle different data types that may come through IPC
+            // Note: instanceof checks don't work across IPC boundary, so check constructor.name
+            let buffer: Buffer;
+            if (Buffer.isBuffer(data)) {
+                buffer = data;
+            } else if (data?.constructor?.name === 'ArrayBuffer' || data?.constructor?.name === 'Uint8Array' || data?.byteLength !== undefined) {
+                // ArrayBuffer or Uint8Array from renderer - use Buffer.from directly
+                buffer = Buffer.from(data);
+            } else if (Array.isArray(data)) {
+                // Plain array of bytes
+                buffer = Buffer.from(data);
+            } else {
+                console.error('[MediaLibraryService] Unknown data type:', typeof data, data?.constructor?.name);
+                return null;
+            }
+
+            return this.save(originalName, buffer, mimeType, dimensions);
         });
 
         ipcMain.handle('media-library:delete', async (_e, id: string) => {
