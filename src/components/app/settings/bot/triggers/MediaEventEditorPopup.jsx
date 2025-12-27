@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useId } from "react";
+import React, { useState, useEffect, useId, useRef } from "react";
 import styled from "styled-components";
 import { useTranslation } from 'react-i18next';
 import {
@@ -310,12 +310,29 @@ const VariablesHint = styled.div`
     }
 `;
 
-const VariableItem = styled.span`
+const VariableItem = styled.button`
     display: inline-block;
-    margin-right: 10px;
+    margin-right: 8px;
+    margin-bottom: 4px;
+    padding: 4px 8px;
     color: #ec4899;
     font-weight: 500;
     font-family: monospace;
+    font-size: 0.8rem;
+    background: rgba(236, 72, 153, 0.1);
+    border: 1px solid rgba(236, 72, 153, 0.3);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.15s ease;
+
+    &:hover {
+        background: rgba(236, 72, 153, 0.2);
+        border-color: rgba(236, 72, 153, 0.5);
+    }
+
+    &:active {
+        transform: scale(0.95);
+    }
 `;
 
 const StyleRow = styled.div`
@@ -384,6 +401,7 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
     const [saving, setSaving] = useState(false);
     const [groups, setGroups] = useState([]);
     const [showLibrary, setShowLibrary] = useState(false);
+    const captionRef = useRef(null);
     const [edited, setEdited] = useState(() => {
         if (mediaEvent) {
             return {
@@ -394,6 +412,11 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
         }
         return { ...DEFAULT_MEDIA_EVENT, id: uuidv4() };
     });
+
+    const insertVariable = (varName) => {
+        const variableText = `\${${varName}}`;
+        captionRef.current?.insertText(variableText);
+    };
 
     // Load groups on mount
     useEffect(() => {
@@ -608,6 +631,7 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
                             <FormGroup>
                                 <Label>{t('settings.bot.triggers.mediaEvent.captionTemplate')}</Label>
                                 <DebouncedTextarea
+                                    ref={captionRef}
                                     value={edited.caption}
                                     onChange={(value) => updateField('caption', value)}
                                     placeholder={t('settings.bot.triggers.mediaEvent.captionPlaceholder')}
@@ -617,9 +641,14 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
                             </FormGroup>
                             {availableVariables.length > 0 && (
                                 <VariablesHint>
-                                    <div className="title">{t('settings.bot.triggers.availableVariables')}:</div>
+                                    <div className="title">{t('settings.bot.triggers.availableVariables')} ({t('settings.bot.triggers.clickToInsert', 'click to insert')}):</div>
                                     {availableVariables.map(v => (
-                                        <VariableItem key={v.name} title={v.description}>
+                                        <VariableItem
+                                            key={v.name}
+                                            title={v.description}
+                                            onClick={() => insertVariable(v.name)}
+                                            type="button"
+                                        >
                                             ${`{${v.name}}`}
                                         </VariableItem>
                                     ))}

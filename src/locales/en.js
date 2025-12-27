@@ -1385,6 +1385,7 @@ const en = {
                     addAction: 'Add action',
                     messagePlaceholder: 'Message text...',
                     availableVariables: 'Available variables',
+                    clickToInsert: 'click to insert',
                     variables: {
                         user: 'event initiator (who wrote/followed/raided)',
                         target: 'target user from command argument',
