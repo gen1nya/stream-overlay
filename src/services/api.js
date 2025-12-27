@@ -528,3 +528,31 @@ export const deleteMediaFile = (id) => {
 export const getMediaFileUrl = (id) => {
     return ipcRenderer?.invoke('media-library:get-url', id);
 };
+
+// ============================================
+// Help / Documentation API
+// ============================================
+
+export const openHelp = () => {
+    return ipcRenderer?.invoke('help:open');
+};
+
+export const getDocsTree = (locale) => {
+    return ipcRenderer?.invoke('docs:get-tree', locale);
+};
+
+export const getDocContent = (locale, relativePath) => {
+    return ipcRenderer?.invoke('docs:get-content', locale, relativePath);
+};
+
+export const searchDocs = (locale, query) => {
+    return ipcRenderer?.invoke('docs:search', locale, query);
+};
+
+export const getDocsAvailableLocales = () => {
+    return ipcRenderer?.invoke('docs:get-available-locales');
+};
+
+export const hasDocsForLocale = (locale) => {
+    return ipcRenderer?.invoke('docs:has-documents', locale);
+};

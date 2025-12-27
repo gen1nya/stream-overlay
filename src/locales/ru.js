@@ -1690,6 +1690,7 @@ const ru = {
                 },
                 social: {
                     title: 'Контакты и социальные сети',
+                    help: 'Справка',
                     github: 'GitHub',
                     twitch: 'Twitch',
                     website: 'Веб-сайт',
@@ -1859,6 +1860,18 @@ const ru = {
             selectMedia: 'Выбрать медиа-ивент',
             createNew: 'Создать новый медиа-ивент',
             noEvents: 'Нет доступных медиа-ивентов. Создайте новый!',
+        },
+        help: {
+            title: 'Документация',
+            searchPlaceholder: 'Поиск...',
+            loading: 'Загрузка...',
+            searching: 'Поиск...',
+            noResults: 'Ничего не найдено',
+            welcome: 'Добро пожаловать в документацию',
+            selectDocument: 'Выберите документ из меню слева',
+            documentNotFound: 'Документ не найден',
+            loadError: 'Не удалось загрузить документ',
+            back: 'Назад',
         },
     },
 };

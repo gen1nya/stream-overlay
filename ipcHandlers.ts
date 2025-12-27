@@ -7,7 +7,7 @@ import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, createMediaOverlayEditorWindow, createMediaOverlayWindow, closeMediaOverlayWindow, isMediaOverlayWindowOpen, setChatGameMode, getChatGameMode} from './windowsManager';
+import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, createMediaOverlayEditorWindow, createMediaOverlayWindow, closeMediaOverlayWindow, isMediaOverlayWindowOpen, setChatGameMode, getChatGameMode, createHelpWindow} from './windowsManager';
 import {BackendLogService} from './services/BackendLogService';
 import {LogService} from "./services/logService";
 import {
@@ -106,6 +106,9 @@ export function registerIpcHandlers(
   ipcMain.handle('media:open-overlay', () => createMediaOverlayWindow());
   ipcMain.handle('media:close-overlay', () => closeMediaOverlayWindow());
   ipcMain.handle('media:is-overlay-open', () => isMediaOverlayWindowOpen());
+
+  // Help window handler
+  ipcMain.handle('help:open', () => createHelpWindow());
   ipcMain.handle('utils:open_url', async (_e, url) => { await shell.openExternal(url); });
   ipcMain.handle('system:get-stats', () => ({ startTime: appStartTime, lastEventSub: twitchClient.getLastEventSubTimestamp(), lastIRC: twitchClient.getLastChatTimestamp() }));
   ipcMain.handle('system:reconnect', async () => {

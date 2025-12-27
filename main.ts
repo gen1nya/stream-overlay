@@ -35,6 +35,7 @@ import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
+import {DocsService} from "./services/DocsService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -399,6 +400,10 @@ app.whenReady().then(() => {
   mediaEventsService.registerIpcHandlers();
   mediaDisplayGroupService.registerIpcHandlers();
   mediaLibraryService.registerIpcHandlers();
+
+  // Docs service for help window
+  const docsService = new DocsService();
+  docsService.registerIpcHandlers();
 
   // Media test handler - needs access to mediaEventsController
   ipcMain.handle('media:test', async (_e, mediaEventId: string) => {

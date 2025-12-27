@@ -1696,6 +1696,7 @@ const en = {
                 },
                 social: {
                     title: 'Contacts & social',
+                    help: 'Help',
                     github: 'GitHub',
                     twitch: 'Twitch',
                     website: 'Website',
@@ -1859,6 +1860,18 @@ const en = {
             selectMedia: 'Select Media Event',
             createNew: 'Create New Media Event',
             noEvents: 'No media events available. Create a new one!',
+        },
+        help: {
+            title: 'Documentation',
+            searchPlaceholder: 'Search...',
+            loading: 'Loading...',
+            searching: 'Searching...',
+            noResults: 'No results found',
+            welcome: 'Welcome to Documentation',
+            selectDocument: 'Select a document from the sidebar to get started',
+            documentNotFound: 'Document not found',
+            loadError: 'Failed to load document',
+            back: 'Back',
         },
     },
 };

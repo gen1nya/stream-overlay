@@ -28,6 +28,7 @@ export let terminalWindow: BrowserWindow | null = null;
 export let backendLogsWindow: BrowserWindow | null = null;
 export let mediaOverlayEditorWindow: BrowserWindow | null = null;
 export let mediaOverlayWindow: BrowserWindow | null = null;
+export let helpWindow: BrowserWindow | null = null;
 
 // Store reference for persisting settings
 let store: Store<StoreSchema> | null = null;
@@ -68,7 +69,7 @@ export function createTerminalWindow(): void {
  * Close all child windows (chat, preview, terminal, backend logs)
  */
 function closeAllChildWindows(): void {
-  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow, mediaOverlayEditorWindow, mediaOverlayWindow];
+  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow, mediaOverlayEditorWindow, mediaOverlayWindow, helpWindow];
   for (const win of windows) {
     if (win && !win.isDestroyed()) {
       win.close();
@@ -331,4 +332,34 @@ export function closeMediaOverlayWindow(): void {
  */
 export function isMediaOverlayWindowOpen(): boolean {
   return mediaOverlayWindow !== null && !mediaOverlayWindow.isDestroyed();
+}
+
+/**
+ * Create or focus the Help window
+ */
+export function createHelpWindow(): void {
+  if (helpWindow && !helpWindow.isDestroyed()) {
+    helpWindow.focus();
+    return;
+  }
+
+  helpWindow = new BrowserWindow({
+    width: 1100,
+    height: 750,
+    minWidth: 800,
+    minHeight: 500,
+    title: 'Help',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+  });
+
+  helpWindow.setMenuBarVisibility(false);
+  helpWindow.loadURL('http://localhost:5173/help');
+
+  helpWindow.on('closed', () => {
+    helpWindow = null;
+  });
 }
