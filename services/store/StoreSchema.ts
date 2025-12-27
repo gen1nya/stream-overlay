@@ -26,6 +26,17 @@ export interface StoreSchema {
     chatWindow: ChatWindowConfig;
     mediaEvents: MediaEventConfig[];  // Standalone media events storage
     mediaDisplayGroups: MediaDisplayGroup[];  // Media display groups configuration
+    mediaOverlaySettings: MediaOverlaySettings;  // Media overlay debug/preview settings
+}
+
+export interface MediaOverlaySettings {
+    customResolution: {
+        enabled: boolean;
+        width: number;
+        height: number;
+        color: string;
+        label: string;
+    };
 }
 
 export interface IrcConfig {

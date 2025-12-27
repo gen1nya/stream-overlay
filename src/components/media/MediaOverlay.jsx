@@ -307,6 +307,7 @@ export default function MediaOverlay() {
 
     // Debug mode state (controlled via WebSocket)
     const [debugMode, setDebugMode] = useState(false);
+    const [overlaySettings, setOverlaySettings] = useState(null);
 
     // Update refs when state changes
     useEffect(() => {
@@ -323,12 +324,18 @@ export default function MediaOverlay() {
             // Request initial state
             socket.send(JSON.stringify({ channel: 'media-groups:get-all' }));
             socket.send(JSON.stringify({ channel: 'media-overlay:get-debug' }));
+            socket.send(JSON.stringify({ channel: 'media-overlay:get-settings' }));
         },
         onMessage: (event) => {
             const { channel, payload } = JSON.parse(event.data);
 
             if (channel === 'media-groups:updated') {
                 setGroups(payload || []);
+                return;
+            }
+
+            if (channel === 'media-overlay:settings-updated') {
+                setOverlaySettings(payload);
                 return;
             }
 
@@ -520,6 +527,16 @@ export default function MediaOverlay() {
                                 height: RESOLUTIONS['720p'].height
                             }}
                         />
+                        {overlaySettings?.customResolution?.enabled && (
+                            <ResolutionGuide
+                                $color={overlaySettings.customResolution.color}
+                                $label={`${overlaySettings.customResolution.width}×${overlaySettings.customResolution.height}`}
+                                style={{
+                                    width: overlaySettings.customResolution.width,
+                                    height: overlaySettings.customResolution.height
+                                }}
+                            />
+                        )}
                     </>
                 )}
 

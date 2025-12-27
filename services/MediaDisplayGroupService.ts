@@ -1,6 +1,17 @@
 import { ipcMain } from "electron";
 import ElectronStore from "electron-store";
-import { MediaDisplayGroup, StoreSchema } from "./store/StoreSchema";
+import { MediaDisplayGroup, MediaOverlaySettings, StoreSchema } from "./store/StoreSchema";
+
+// Default overlay settings
+export const DEFAULT_OVERLAY_SETTINGS: MediaOverlaySettings = {
+    customResolution: {
+        enabled: false,
+        width: 1600,
+        height: 900,
+        color: '#f59e0b',  // amber
+        label: 'Custom'
+    }
+};
 
 // Default group configuration
 export const DEFAULT_GROUP: Omit<MediaDisplayGroup, 'id' | 'name'> = {
@@ -149,6 +160,27 @@ export class MediaDisplayGroupService {
         }
     }
 
+    // Overlay settings methods
+    getOverlaySettings(): MediaOverlaySettings {
+        const settings = this.appStorage.get('mediaOverlaySettings');
+        if (!settings) {
+            this.appStorage.set('mediaOverlaySettings', DEFAULT_OVERLAY_SETTINGS);
+            return DEFAULT_OVERLAY_SETTINGS;
+        }
+        return settings;
+    }
+
+    saveOverlaySettings(settings: MediaOverlaySettings): boolean {
+        try {
+            this.appStorage.set('mediaOverlaySettings', settings);
+            this.broadcast('media-overlay:settings-updated', settings);
+            return true;
+        } catch (error) {
+            console.error('[MediaDisplayGroupService] Failed to save overlay settings:', error);
+            return false;
+        }
+    }
+
     registerIpcHandlers(): void {
         ipcMain.handle('media-groups:get-all', async () => {
             return this.getAll();
@@ -168,6 +200,14 @@ export class MediaDisplayGroupService {
 
         ipcMain.handle('media-groups:reorder', async (_e, orderedIds: string[]) => {
             return this.reorder(orderedIds);
+        });
+
+        ipcMain.handle('media-overlay:get-settings', async () => {
+            return this.getOverlaySettings();
+        });
+
+        ipcMain.handle('media-overlay:save-settings', async (_e, settings: MediaOverlaySettings) => {
+            return this.saveOverlaySettings(settings);
         });
     }
 }

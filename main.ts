@@ -76,6 +76,15 @@ const store = new Store<StoreSchema>({
     },
     mediaEvents: [],
     mediaDisplayGroups: [],
+    mediaOverlaySettings: {
+      customResolution: {
+        enabled: false,
+        width: 1600,
+        height: 900,
+        color: '#f59e0b',
+        label: 'Custom'
+      }
+    },
   },
 });
 
@@ -459,6 +468,13 @@ app.whenReady().then(() => {
           break;
         case 'media-overlay:get-debug':
           broadcast('media-overlay:debug', { enabled: mediaOverlayDebugMode });
+          break;
+        case 'media-overlay:get-settings':
+          const overlaySettings = mediaDisplayGroupService.getOverlaySettings();
+          broadcast('media-overlay:settings-updated', overlaySettings);
+          break;
+        case 'media-overlay:save-settings':
+          mediaDisplayGroupService.saveOverlaySettings(payload);
           break;
         case 'theme:get-by-name':
             const themeName = payload.name;

@@ -573,6 +573,17 @@ export default function MediaOverlayEditor() {
     // Debug mode state
     const [debugMode, setDebugMode] = useState(false);
 
+    // Overlay settings (custom resolution)
+    const [overlaySettings, setOverlaySettings] = useState({
+        customResolution: {
+            enabled: false,
+            width: 1600,
+            height: 900,
+            color: '#f59e0b',
+            label: 'Custom'
+        }
+    });
+
     useEffect(() => {
         loadData();
     }, []);
@@ -588,6 +599,14 @@ export default function MediaOverlayEditor() {
             setMediaEvents(mediaData || []);
             if (groupsData?.length > 0 && !selectedGroupId) {
                 setSelectedGroupId(groupsData[0].id);
+            }
+
+            // Load overlay settings via IPC
+            if (window.electron?.ipcRenderer) {
+                const settings = await window.electron.ipcRenderer.invoke('media-overlay:get-settings');
+                if (settings) {
+                    setOverlaySettings(settings);
+                }
             }
         } catch (error) {
             console.error('Failed to load data:', error);
@@ -615,6 +634,20 @@ export default function MediaOverlayEditor() {
         const enabled = e.target.checked;
         setDebugMode(enabled);
         send({ channel: 'media-overlay:set-debug', payload: { enabled } });
+    };
+
+    // Update custom resolution settings
+    const updateCustomResolution = (updates) => {
+        const newSettings = {
+            ...overlaySettings,
+            customResolution: {
+                ...overlaySettings.customResolution,
+                ...updates
+            }
+        };
+        setOverlaySettings(newSettings);
+        // Save via WebSocket (broadcasts to overlay)
+        send({ channel: 'media-overlay:save-settings', payload: newSettings });
     };
 
     // Test selected group
@@ -926,6 +959,62 @@ export default function MediaOverlayEditor() {
                                     </OrphanList>
                                 </OrphanSection>
                             )}
+
+                            {/* Custom Resolution Section */}
+                            <Section style={{ marginTop: '16px' }}>
+                                <SectionTitle><FiBox />{t('mediaOverlay.customResolution', 'Custom Resolution')}</SectionTitle>
+                                <FormGroup style={{ marginBottom: '8px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <Switch
+                                            checked={overlaySettings.customResolution?.enabled || false}
+                                            onChange={(e) => updateCustomResolution({ enabled: e.target.checked })}
+                                        />
+                                        <span style={{ fontSize: '0.85rem', color: '#888' }}>
+                                            {t('mediaOverlay.showCustomFrame', 'Show in debug mode')}
+                                        </span>
+                                    </div>
+                                </FormGroup>
+                                {overlaySettings.customResolution?.enabled && (
+                                    <>
+                                        <FormRow>
+                                            <FormGroup>
+                                                <Label>{t('mediaOverlay.resWidth', 'Width')}</Label>
+                                                <NumericEditorComponent
+                                                    value={overlaySettings.customResolution?.width || 1600}
+                                                    onChange={(v) => updateCustomResolution({ width: v })}
+                                                    min={100} max={3840}
+                                                    width="100%"
+                                                />
+                                            </FormGroup>
+                                            <FormGroup>
+                                                <Label>{t('mediaOverlay.resHeight', 'Height')}</Label>
+                                                <NumericEditorComponent
+                                                    value={overlaySettings.customResolution?.height || 900}
+                                                    onChange={(v) => updateCustomResolution({ height: v })}
+                                                    min={100} max={2160}
+                                                    width="100%"
+                                                />
+                                            </FormGroup>
+                                        </FormRow>
+                                        <FormGroup>
+                                            <Label>{t('mediaOverlay.resColor', 'Color')}</Label>
+                                            <div style={{ display: 'flex', gap: '8px' }}>
+                                                <input
+                                                    type="color"
+                                                    value={overlaySettings.customResolution?.color || '#f59e0b'}
+                                                    onChange={(e) => updateCustomResolution({ color: e.target.value })}
+                                                    style={{ width: '40px', height: '30px', border: 'none', borderRadius: '4px', cursor: 'pointer' }}
+                                                />
+                                                <Input
+                                                    value={overlaySettings.customResolution?.color || '#f59e0b'}
+                                                    onChange={(e) => updateCustomResolution({ color: e.target.value })}
+                                                    style={{ flex: 1 }}
+                                                />
+                                            </div>
+                                        </FormGroup>
+                                    </>
+                                )}
+                            </Section>
                         </>
                     )}
                 </SidebarContent>
