@@ -254,7 +254,7 @@ const ItemActions = styled.div`
     transition: opacity 0.2s;
 `;
 
-const ActionButton = styled.button`
+const ActionButton = styled.div`
     width: 28px;
     height: 28px;
     border: none;
@@ -266,6 +266,12 @@ const ActionButton = styled.button`
     align-items: center;
     justify-content: center;
     transition: all 0.2s;
+
+    svg {
+        width: 14px;
+        height: 14px;
+        color: #fff;
+    }
 
     &:hover {
         transform: scale(1.1);
@@ -714,13 +720,11 @@ export default function MediaLibraryPopup({
                                         {file.type}
                                     </TypeBadge>
 
-                                    {!isPicker && (
-                                        <ItemActions className="actions">
-                                            <ActionButton $danger onClick={(e) => handleDelete(e, file.id)}>
-                                                <FiTrash2 size={14} />
-                                            </ActionButton>
-                                        </ItemActions>
-                                    )}
+                                    <ItemActions className="actions">
+                                        <ActionButton $danger onClick={(e) => handleDelete(e, file.id)} title="Delete">
+                                            <FiTrash2 />
+                                        </ActionButton>
+                                    </ItemActions>
 
                                     {isPicker && selectedIds.has(file.id) && (
                                         <SelectOverlay>
