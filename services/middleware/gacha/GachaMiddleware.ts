@@ -4,7 +4,7 @@ import { BotConfig, StoreSchema } from "../../store/StoreSchema";
 import ElectronStore from "electron-store";
 import GachaEngine from "./GachaEngine";
 import { ActionTypes } from "../ActionTypes";
-import { GachaTrigger, GachaBannerMessages } from "./types";
+import { GachaTrigger, GachaBannerMessages, PullResult } from "./types";
 import { migrateGachaConfig, getDefaultBannerMessages } from "./migration";
 
 /**
@@ -15,6 +15,43 @@ function formatMessage(template: string, variables: Record<string, string | numb
     return template.replace(/\$\{(\w+)\}/g, (match, key) => {
         return variables[key]?.toString() ?? match;
     });
+}
+
+/**
+ * Generate SHOW_MEDIA actions for a gacha pull result
+ */
+function generateMediaActions(
+    result: PullResult,
+    userName: string,
+    userId: string
+): Array<{ type: string; payload: any }> {
+    const actions: Array<{ type: string; payload: any }> = [];
+
+    const mediaEventIds = result.item.mediaEventIds;
+    if (!mediaEventIds || mediaEventIds.length === 0) {
+        return actions;
+    }
+
+    const stars = '⭐'.repeat(result.item.rarity);
+
+    for (const mediaEventId of mediaEventIds) {
+        actions.push({
+            type: ActionTypes.SHOW_MEDIA,
+            payload: {
+                mediaEventId,
+                context: {
+                    user: userName,
+                    userId: userId,
+                    item: result.item.name,
+                    rarity: result.item.rarity,
+                    stars: stars,
+                    pullNumber: result.pullNumber
+                }
+            }
+        });
+    }
+
+    return actions;
 }
 
 export class GachaMiddleware extends Middleware {
@@ -102,6 +139,8 @@ export class GachaMiddleware extends Middleware {
         const messages = bannerConfig?.messages || getDefaultBannerMessages();
 
         let response = "";
+        let mediaActions: Array<{ type: string; payload: any }> = [];
+
         try {
             if (trigger.amount === 1) {
                 console.log('[GachaMiddleware] Executing single pull for banner:', bannerId);
@@ -131,6 +170,9 @@ export class GachaMiddleware extends Middleware {
                 if (result.wasSoftPity) {
                     response += formatMessage(messages.softPity, { pullNumber: result.pullNumber });
                 }
+
+                // Generate media actions for the pulled item
+                mediaActions = generateMediaActions(result, userName, userId);
             } else {
                 console.log(`[GachaMiddleware] Executing multi-pull (${trigger.amount}x) for banner:`, bannerId);
                 const results = this.gachaEngine.multiPull(userId, trigger.amount, userName, bannerId);
@@ -193,6 +235,12 @@ export class GachaMiddleware extends Middleware {
                 }
 
                 response += parts.join(' | ');
+
+                // Generate media actions for 4★ and 5★ items in multi-pull
+                for (const item of [..._5items, ..._4items]) {
+                    const itemMediaActions = generateMediaActions(item.result, userName, userId);
+                    mediaActions.push(...itemMediaActions);
+                }
             }
         } catch (error) {
             console.error('[GachaMiddleware] Error during pull:', error);
@@ -209,8 +257,9 @@ export class GachaMiddleware extends Middleware {
             payload: { message: response, forwardToUi: true }
         };
 
+        console.log('[GachaMiddleware] Media actions count:', mediaActions.length);
         console.log('[GachaMiddleware] ========== processMessage END (success) ==========');
-        return Promise.resolve({ message, actions: [action], accepted: true });
+        return Promise.resolve({ message, actions: [action, ...mediaActions], accepted: true });
     }
 
     updateConfig(botConfig: BotConfig): void {

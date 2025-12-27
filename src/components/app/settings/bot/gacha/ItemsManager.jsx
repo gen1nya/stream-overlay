@@ -1,10 +1,20 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
-import { FiPlus, FiEdit2, FiTrash2 } from 'react-icons/fi';
+import { FiPlus, FiEdit2, FiTrash2, FiFilm } from 'react-icons/fi';
 import { AddButton, ErrorText, FormRow, NameInput } from '../SharedBotStyles';
 import RadioGroup from '../../../../utils/TextRadioGroup';
 import Popup from '../../../../utils/PopupComponent';
+import MediaEventPicker from '../../../../utils/MediaEventPicker';
 import { useTranslation } from 'react-i18next';
+
+// Gacha-specific variables for media captions
+const GACHA_VARIABLES = [
+    { name: 'user', description: 'Username who rolled' },
+    { name: 'item', description: 'Item name' },
+    { name: 'rarity', description: 'Star rarity (3/4/5)' },
+    { name: 'stars', description: 'Star representation (⭐⭐⭐)' },
+    { name: 'pullNumber', description: 'Pulls since last 5-star' },
+];
 
 const ItemsGrid = styled.div`
     display: grid;
@@ -192,6 +202,24 @@ const ConfirmText = styled.p`
     line-height: 1.5;
 `;
 
+const SectionTitle = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #aaa;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #333;
+
+    svg {
+        width: 16px;
+        height: 16px;
+        color: #646cff;
+    }
+`;
+
 // Item Form Popup
 function ItemFormPopup({ item, allItems, onClose, onSave }) {
     const { t } = useTranslation();
@@ -200,7 +228,8 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
         id: '',
         name: '',
         rarity: 5,
-        isLimited: false
+        isLimited: false,
+        mediaEventIds: []
     });
     const [errors, setErrors] = useState({});
 
@@ -293,6 +322,19 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
                         <span>{t('settings.bot.gacha.items.form.fields.isLimited')}</span>
                     </CheckboxLabel>
                 )}
+
+                <div>
+                    <SectionTitle>
+                        <FiFilm />
+                        {t('settings.bot.gacha.items.form.fields.media', 'Media Events')}
+                    </SectionTitle>
+                    <MediaEventPicker
+                        value={formData.mediaEventIds || []}
+                        onChange={(ids) => setFormData({ ...formData, mediaEventIds: ids })}
+                        availableVariables={GACHA_VARIABLES}
+                        maxItems={2}
+                    />
+                </div>
 
                 <PopupButtons>
                     <PopupButton onClick={onClose}>
@@ -452,6 +494,12 @@ export default function ItemsManager({ items, bannerId, updateConfig }) {
                             {item.isLimited && (
                                 <Badge $bg="rgba(251, 191, 36, 0.2)" $color="#fbbf24">
                                     {t('settings.bot.gacha.items.badges.limited')}
+                                </Badge>
+                            )}
+                            {item.mediaEventIds?.length > 0 && (
+                                <Badge $bg="rgba(236, 72, 153, 0.2)" $color="#ec4899">
+                                    <FiFilm style={{ width: 10, height: 10, marginRight: 4 }} />
+                                    {item.mediaEventIds.length}
                                 </Badge>
                             )}
                         </ItemBadges>

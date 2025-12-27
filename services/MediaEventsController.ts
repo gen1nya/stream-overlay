@@ -3,14 +3,23 @@ import { MediaEventConfig } from './store/StoreSchema';
 import { MediaEventsService } from './MediaEventsService';
 
 export interface MediaEventContext {
+    // Common
     user: string;
     userId: string;
+
+    // Triggers
     reward?: string;
     rewardCost?: number;
     target?: string;
     args?: string[];
     raider?: string;
     viewers?: number;
+
+    // Gacha
+    item?: string;
+    rarity?: number;
+    stars?: string;
+    pullNumber?: number;
 }
 
 export interface ShowMediaPayload {
@@ -76,13 +85,21 @@ export class MediaEventsController {
     private interpolateCaption(template: string, context: MediaEventContext): string {
         let result = template;
 
-        // Basic variable replacements
+        // Common variables
         result = result.replace(/\$\{user\}/g, context.user || '');
+
+        // Trigger variables
         result = result.replace(/\$\{target\}/g, context.target || '');
         result = result.replace(/\$\{reward\}/g, context.reward || '');
         result = result.replace(/\$\{reward_cost\}/g, String(context.rewardCost || ''));
         result = result.replace(/\$\{raider\}/g, context.raider || '');
         result = result.replace(/\$\{viewers\}/g, String(context.viewers || ''));
+
+        // Gacha variables
+        result = result.replace(/\$\{item\}/g, context.item || '');
+        result = result.replace(/\$\{rarity\}/g, String(context.rarity || ''));
+        result = result.replace(/\$\{stars\}/g, context.stars || '');
+        result = result.replace(/\$\{pullNumber\}/g, String(context.pullNumber || ''));
 
         // Handle args[N]
         result = result.replace(/\$\{args\[(\d+)\]\}/g, (_, index) => {

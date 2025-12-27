@@ -383,7 +383,17 @@ const DEFAULT_MEDIA_EVENT = {
     style: DEFAULT_STYLE
 };
 
-export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
+// Default variables for triggers (backwards compatibility)
+const DEFAULT_TRIGGER_VARIABLES = [
+    { name: 'user', description: 'Username who triggered' },
+    { name: 'target', description: 'Target user' },
+    { name: 'reward', description: 'Reward name' },
+    { name: 'reward_cost', description: 'Reward cost' },
+    { name: 'raider', description: 'Raider channel' },
+    { name: 'viewers', description: 'Viewer count' },
+];
+
+export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, availableVariables = DEFAULT_TRIGGER_VARIABLES }) {
     const { t } = useTranslation();
     const [saving, setSaving] = useState(false);
     const [groups, setGroups] = useState([]);
@@ -614,15 +624,16 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose }) {
                                     minHeight="60px"
                                 />
                             </FormGroup>
-                            <VariablesHint>
-                                <div className="title">{t('settings.bot.triggers.availableVariables')}:</div>
-                                <VariableItem>${'{user}'}</VariableItem>
-                                <VariableItem>${'{target}'}</VariableItem>
-                                <VariableItem>${'{reward}'}</VariableItem>
-                                <VariableItem>${'{reward_cost}'}</VariableItem>
-                                <VariableItem>${'{raider}'}</VariableItem>
-                                <VariableItem>${'{viewers}'}</VariableItem>
-                            </VariablesHint>
+                            {availableVariables.length > 0 && (
+                                <VariablesHint>
+                                    <div className="title">{t('settings.bot.triggers.availableVariables')}:</div>
+                                    {availableVariables.map(v => (
+                                        <VariableItem key={v.name} title={v.description}>
+                                            ${`{${v.name}}`}
+                                        </VariableItem>
+                                    ))}
+                                </VariablesHint>
+                            )}
                         </SectionContent>
                     </Section>
 

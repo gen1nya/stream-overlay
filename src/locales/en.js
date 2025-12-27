@@ -1853,6 +1853,12 @@ const en = {
             chooseFromLibrary: 'Choose from library',
             invalidType: 'Unsupported file type',
         },
+        mediaEventPicker: {
+            addMedia: 'Add Media Event',
+            selectMedia: 'Select Media Event',
+            createNew: 'Create New Media Event',
+            noEvents: 'No media events available. Create a new one!',
+        },
     },
 };
 
