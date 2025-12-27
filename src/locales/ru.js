@@ -1790,6 +1790,10 @@ const ru = {
             dropHere: 'Перетащите сюда',
             orphanedMedia: 'Непривязанные медиа',
             dragToGroup: 'Перетащите в группу',
+            openInBrowser: 'Открыть',
+            copyUrl: 'Копировать URL',
+            debug: 'Отладка',
+            noMediaToTest: 'Нет медиа в этой группе',
         },
     },
 };

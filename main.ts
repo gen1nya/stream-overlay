@@ -1,4 +1,4 @@
-import {app} from 'electron';
+import {app, ipcMain} from 'electron';
 import WebSocket from 'ws';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
@@ -263,6 +263,7 @@ const botService = new BotConfigService(
 
 // Track current user ID for trigger repository access
 let currentUserId: string | null = null;
+let mediaOverlayDebugMode = false;
 
 const actionScheduler = new ActionScheduler({
     getRepository: () => {
@@ -315,6 +316,7 @@ backendLogService.setBroadcastCallback((logs) => {
 
 mediaEventsService.setBroadcastCallback(broadcast);
 mediaDisplayGroupService.setBroadcastCallback(broadcast);
+mediaEventsController.setBroadcastCallback(broadcast);
 
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
@@ -384,6 +386,61 @@ app.whenReady().then(() => {
   mediaEventsService.registerIpcHandlers();
   mediaDisplayGroupService.registerIpcHandlers();
 
+  // Media test handler - needs access to mediaEventsController
+  ipcMain.handle('media:test', async (_e, mediaEventId: string) => {
+    const mediaEvent = mediaEventsController.getMediaEventById(mediaEventId);
+    if (!mediaEvent) {
+      console.log('[Media Test] Media event not found:', mediaEventId);
+      return { success: false, error: 'Media event not found' };
+    }
+
+    await mediaEventsController.showMedia({
+      mediaEventId,
+      context: {
+        user: 'TestUser',
+        userId: '12345',
+        reward: 'Test Reward',
+        rewardCost: 100,
+        target: 'TestTarget',
+        args: ['arg1', 'arg2', 'arg3'],
+        raider: 'TestRaider',
+        viewers: 42
+      }
+    });
+
+    return { success: true };
+  });
+
+  // Test media for a group (shows first available media in the group)
+  ipcMain.handle('media:test-group', async (_e, groupId: string) => {
+    const allEvents = mediaEventsController.getAllMediaEvents();
+    const groupEvents = allEvents.filter(e => e.groupId === groupId);
+
+    if (groupEvents.length === 0) {
+      console.log('[Media Test] No media events in group:', groupId);
+      return { success: false, error: 'No media events in this group' };
+    }
+
+    // Pick a random event from the group
+    const randomEvent = groupEvents[Math.floor(Math.random() * groupEvents.length)];
+
+    await mediaEventsController.showMedia({
+      mediaEventId: randomEvent.id,
+      context: {
+        user: 'TestUser',
+        userId: '12345',
+        reward: 'Test Reward',
+        rewardCost: 100,
+        target: 'TestTarget',
+        args: ['arg1', 'arg2', 'arg3'],
+        raider: 'TestRaider',
+        viewers: 42
+      }
+    });
+
+    return { success: true, mediaName: randomEvent.name };
+  });
+
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
       const { channel, payload } = JSON.parse(message.toString());
@@ -391,6 +448,17 @@ app.whenReady().then(() => {
         case 'theme:get-all':
           const themes = store.get('themes');
           broadcast('themes:get', { themes, currentThemeName });
+          break;
+        case 'media-groups:get-all':
+          const groups = mediaDisplayGroupService.getAll();
+          broadcast('media-groups:updated', groups);
+          break;
+        case 'media-overlay:set-debug':
+          mediaOverlayDebugMode = payload?.enabled ?? false;
+          broadcast('media-overlay:debug', { enabled: mediaOverlayDebugMode });
+          break;
+        case 'media-overlay:get-debug':
+          broadcast('media-overlay:debug', { enabled: mediaOverlayDebugMode });
           break;
         case 'theme:get-by-name':
             const themeName = payload.name;

@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styled, { createGlobalStyle, keyframes, css } from 'styled-components';
-import { useWebSocket } from '../../context/WebSocketContext';
-import { getAllMediaDisplayGroups } from '../../services/api';
+import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 
 // Animation keyframes
 const fadeIn = keyframes`from { opacity: 0; } to { opacity: 1; }`;
@@ -74,6 +73,80 @@ const Container = styled.div`
     pointer-events: none;
 `;
 
+// Connection status indicator
+const ConnectionIndicator = styled.div`
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: ${({ $connected }) => $connected ? '#22c55e' : '#ef4444'};
+    box-shadow: 0 0 4px ${({ $connected }) => $connected ? '#22c55e' : '#ef4444'};
+    opacity: ${({ $connected }) => $connected ? 0 : 1};
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 9999;
+`;
+
+// Debug mode styles
+const ResolutionGuide = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 2px dashed ${props => props.$color || '#666'};
+    pointer-events: none;
+    box-sizing: border-box;
+
+    &::after {
+        content: '${props => props.$label}';
+        position: absolute;
+        top: 4px;
+        right: 8px;
+        font-size: 14px;
+        font-family: monospace;
+        color: ${props => props.$color || '#666'};
+        background: rgba(0, 0, 0, 0.7);
+        padding: 2px 8px;
+        border-radius: 4px;
+    }
+`;
+
+const DebugGroupBorder = styled.div`
+    position: absolute;
+    border: 2px dashed rgba(100, 108, 255, 0.8);
+    background: rgba(100, 108, 255, 0.1);
+    pointer-events: none;
+    box-sizing: border-box;
+
+    &::before {
+        content: '${props => props.$name}';
+        position: absolute;
+        top: -24px;
+        left: 0;
+        font-size: 12px;
+        font-family: monospace;
+        color: #646cff;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 2px 8px;
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+
+    &::after {
+        content: '${props => props.$coords}';
+        position: absolute;
+        bottom: 4px;
+        right: 4px;
+        font-size: 10px;
+        font-family: monospace;
+        color: #888;
+        background: rgba(0, 0, 0, 0.8);
+        padding: 2px 6px;
+        border-radius: 3px;
+    }
+`;
+
 const GroupContainer = styled.div`
     position: absolute;
     display: flex;
@@ -83,24 +156,12 @@ const GroupContainer = styled.div`
     pointer-events: auto;
 
     ${({ $position, $size }) => {
-        const { anchor, offsetX, offsetY } = $position;
-        const width = $size.width || $size.maxWidth || 400;
-        const height = $size.height || $size.maxHeight || 300;
-
-        let styles = `
+        return `
+            left: ${$position.x || 0}px;
+            top: ${$position.y || 0}px;
             max-width: ${$size.maxWidth || 400}px;
             max-height: ${$size.maxHeight || 300}px;
         `;
-
-        if (anchor.includes('left')) styles += `left: ${20 + offsetX}px;`;
-        else if (anchor.includes('right')) styles += `right: ${20 - offsetX}px;`;
-        else styles += `left: calc(50% - ${width / 2}px + ${offsetX}px);`;
-
-        if (anchor.includes('top')) styles += `top: ${20 + offsetY}px;`;
-        else if (anchor.includes('bottom')) styles += `bottom: ${20 - offsetY}px;`;
-        else styles += `top: calc(50% - ${height / 2}px + ${offsetY}px);`;
-
-        return styles;
     }}
 `;
 
@@ -167,36 +228,56 @@ const Caption = styled.div`
 // Queue item structure
 // { id, mediaEvent, groupId, phase: 'entering' | 'visible' | 'exiting', startTime, duration }
 
+// Resolution presets for debug mode
+const RESOLUTIONS = {
+    '1080p': { width: 1920, height: 1080, color: '#646cff', label: '1920×1080' },
+    '720p': { width: 1280, height: 720, color: '#22c55e', label: '1280×720' }
+};
+
 export default function MediaOverlay() {
-    const { subscribe, isConnected } = useWebSocket();
     const [groups, setGroups] = useState([]);
     const [activeItems, setActiveItems] = useState(new Map()); // groupId -> item[]
     const queuesRef = useRef(new Map()); // groupId -> item[]
     const timersRef = useRef(new Map()); // itemId -> timer
+    const groupsRef = useRef([]); // Keep groups in ref for callbacks
 
-    // Load groups
+    // Debug mode state (controlled via WebSocket)
+    const [debugMode, setDebugMode] = useState(false);
+
+    // Update ref when groups change
     useEffect(() => {
-        const loadGroups = async () => {
-            try {
-                const groupsData = await getAllMediaDisplayGroups();
-                setGroups(groupsData || []);
-            } catch (error) {
-                console.error('Failed to load media groups:', error);
+        groupsRef.current = groups;
+    }, [groups]);
+
+    const { isConnected } = useReconnectingWebSocket('ws://localhost:42001', {
+        onOpen: (_, socket) => {
+            console.log('[MediaOverlay] WebSocket connected');
+            // Request initial state
+            socket.send(JSON.stringify({ channel: 'media-groups:get-all' }));
+            socket.send(JSON.stringify({ channel: 'media-overlay:get-debug' }));
+        },
+        onMessage: (event) => {
+            const { channel, payload } = JSON.parse(event.data);
+
+            if (channel === 'media-groups:updated') {
+                setGroups(payload || []);
+                return;
             }
-        };
-        loadGroups();
-    }, []);
 
-    // Subscribe to groups update
-    useEffect(() => {
-        if (!isConnected) return;
+            if (channel === 'media-overlay:debug') {
+                setDebugMode(payload?.enabled ?? false);
+                return;
+            }
 
-        const unsubscribe = subscribe('media-groups:updated', (payload) => {
-            setGroups(payload || []);
-        });
-
-        return unsubscribe;
-    }, [isConnected, subscribe]);
+            if (channel === 'media:show') {
+                handleMediaShowEvent(payload);
+                return;
+            }
+        },
+        onClose: () => {
+            console.log('[MediaOverlay] WebSocket disconnected');
+        }
+    });
 
     // Process queue for a group
     const processQueue = useCallback((groupId) => {
@@ -303,22 +384,17 @@ export default function MediaOverlay() {
         timersRef.current.set(newItem.id, exitTimer);
     }, [groups, activeItems]);
 
-    // Handle media show event
-    const handleMediaShow = useCallback((payload) => {
+    // Handle media show event (called from onMessage)
+    const handleMediaShowEvent = (payload) => {
         const { mediaEvent, context } = payload;
         if (!mediaEvent) return;
 
         const groupId = mediaEvent.groupId;
-        if (!groupId) {
-            console.warn('Media event has no groupId:', mediaEvent);
-            return;
-        }
+        if (!groupId) return;
 
-        const group = groups.find(g => g.id === groupId);
-        if (!group || !group.enabled) {
-            console.warn('Group not found or disabled:', groupId);
-            return;
-        }
+        // Use ref to get current groups (avoid stale closure)
+        const group = groupsRef.current.find(g => g.id === groupId);
+        if (!group || !group.enabled) return;
 
         // Interpolate caption with context
         let caption = mediaEvent.caption || '';
@@ -342,15 +418,7 @@ export default function MediaOverlay() {
 
         // Process queue
         processQueue(groupId);
-    }, [groups, processQueue]);
-
-    // Subscribe to media show events
-    useEffect(() => {
-        if (!isConnected) return;
-
-        const unsubscribe = subscribe('media:show', handleMediaShow);
-        return unsubscribe;
-    }, [isConnected, subscribe, handleMediaShow]);
+    };
 
     // Cleanup timers on unmount
     useEffect(() => {
@@ -363,7 +431,46 @@ export default function MediaOverlay() {
     return (
         <>
             <GlobalStyle />
+            <ConnectionIndicator $connected={isConnected} />
             <Container>
+                {/* Debug: Resolution guides */}
+                {debugMode && (
+                    <>
+                        <ResolutionGuide
+                            $color={RESOLUTIONS['1080p'].color}
+                            $label={RESOLUTIONS['1080p'].label}
+                            style={{
+                                width: RESOLUTIONS['1080p'].width,
+                                height: RESOLUTIONS['1080p'].height
+                            }}
+                        />
+                        <ResolutionGuide
+                            $color={RESOLUTIONS['720p'].color}
+                            $label={RESOLUTIONS['720p'].label}
+                            style={{
+                                width: RESOLUTIONS['720p'].width,
+                                height: RESOLUTIONS['720p'].height
+                            }}
+                        />
+                    </>
+                )}
+
+                {/* Debug: Group boundaries */}
+                {debugMode && groups.filter(g => g.enabled).map(group => (
+                    <DebugGroupBorder
+                        key={`debug-${group.id}`}
+                        $name={group.name}
+                        $coords={`${group.position.x}, ${group.position.y}`}
+                        style={{
+                            left: group.position.x,
+                            top: group.position.y,
+                            width: group.size.width || group.size.maxWidth || 400,
+                            height: group.size.height || group.size.maxHeight || 300,
+                            zIndex: group.zIndex - 1
+                        }}
+                    />
+                ))}
+
                 {groups.filter(g => g.enabled).map(group => {
                     const items = activeItems.get(group.id) || [];
                     if (items.length === 0) return null;

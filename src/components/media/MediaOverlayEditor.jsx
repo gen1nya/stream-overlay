@@ -3,7 +3,7 @@ import styled from "styled-components";
 import { useTranslation } from 'react-i18next';
 import {
     FiPlus, FiTrash2, FiLayers, FiImage, FiPlay,
-    FiMaximize, FiChevronLeft, FiMove, FiBox, FiZap, FiList, FiSettings,
+    FiExternalLink, FiCopy, FiMove, FiBox, FiZap, FiList, FiSettings,
     FiAlertTriangle, FiVideo
 } from 'react-icons/fi';
 import {
@@ -11,10 +11,14 @@ import {
     saveMediaDisplayGroup,
     deleteMediaDisplayGroup,
     getAllMediaEvents,
-    saveMediaEvent
+    saveMediaEvent,
+    testMediaGroup,
+    openExternalLink
 } from "../../services/api";
+import { useWebSocket } from "../../context/WebSocketContext";
 import { v4 as uuidv4 } from 'uuid';
 import NumericEditorComponent from "../utils/NumericEditorComponent";
+import Switch from "../utils/Switch";
 
 // Layout
 const Container = styled.div`
@@ -94,6 +98,72 @@ const PreviewCanvas = styled.div`
     background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
     background-color: #222;
     overflow: hidden;
+`;
+
+const CanvasViewport = styled.div`
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+`;
+
+const ResolutionGuide = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    border: 1px dashed ${props => props.$color || '#666'};
+    pointer-events: none;
+
+    &::after {
+        content: '${props => props.$label}';
+        position: absolute;
+        top: 2px;
+        right: 4px;
+        font-size: 10px;
+        color: ${props => props.$color || '#666'};
+        background: rgba(0, 0, 0, 0.5);
+        padding: 1px 4px;
+        border-radius: 2px;
+    }
+`;
+
+const CoordinateOrigin = styled.div`
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 12px;
+    height: 12px;
+    pointer-events: none;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 5px;
+        width: 2px;
+        height: 12px;
+        background: #ef4444;
+    }
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 5px;
+        left: 0;
+        width: 12px;
+        height: 2px;
+        background: #22c55e;
+    }
+`;
+
+const OriginLabel = styled.div`
+    position: absolute;
+    top: -16px;
+    left: 0;
+    font-size: 9px;
+    color: #888;
+    white-space: nowrap;
 `;
 
 const EditorPanel = styled.div`
@@ -438,19 +508,13 @@ const DragGhost = styled.div`
 `;
 
 // Constants
-const POSITION_ANCHORS = [
-    'top-left', 'top-center', 'top-right',
-    'center-left', 'center', 'center-right',
-    'bottom-left', 'bottom-center', 'bottom-right'
-];
-
 const ANIMATION_TYPES = ['none', 'fade', 'slide-up', 'slide-down', 'slide-left', 'slide-right', 'scale', 'bounce'];
 const QUEUE_MODES = ['sequential', 'replace', 'stack'];
 const EASING_TYPES = ['linear', 'ease', 'ease-in', 'ease-out', 'ease-in-out'];
 
 const DEFAULT_GROUP = {
     enabled: true,
-    position: { anchor: 'center', offsetX: 0, offsetY: 0 },
+    position: { x: 100, y: 100 },
     size: { width: 0, height: 0, maxWidth: 400, maxHeight: 300 },
     animation: { in: 'fade', out: 'fade', inDuration: 300, outDuration: 300, easing: 'ease-out' },
     queue: { mode: 'sequential', maxItems: 10, gapBetween: 500 },
@@ -458,23 +522,26 @@ const DEFAULT_GROUP = {
     zIndex: 100
 };
 
-// Helper to calculate preview position
+// Resolution presets
+const RESOLUTIONS = {
+    '1080p': { width: 1920, height: 1080, color: '#646cff', label: '1080p' },
+    '720p': { width: 1280, height: 720, color: '#22c55e', label: '720p' }
+};
+
+// Canvas scale factor (to fit resolutions on screen)
+const CANVAS_SCALE = 0.5;
+
+// Helper to calculate preview position (scaled for display)
 const getPositionStyle = (position, size) => {
-    const { anchor, offsetX, offsetY } = position;
-    const width = size.width || size.maxWidth || 200;
-    const height = size.height || size.maxHeight || 150;
+    const width = (size.width || size.maxWidth || 200) * CANVAS_SCALE;
+    const height = (size.height || size.maxHeight || 150) * CANVAS_SCALE;
 
-    let style = { width, height };
-
-    if (anchor.includes('left')) style.left = 20 + offsetX;
-    else if (anchor.includes('right')) style.right = 20 - offsetX;
-    else style.left = `calc(50% - ${width / 2}px + ${offsetX}px)`;
-
-    if (anchor.includes('top')) style.top = 20 + offsetY;
-    else if (anchor.includes('bottom')) style.bottom = 20 - offsetY;
-    else style.top = `calc(50% - ${height / 2}px + ${offsetY}px)`;
-
-    return style;
+    return {
+        left: position.x * CANVAS_SCALE,
+        top: position.y * CANVAS_SCALE,
+        width,
+        height
+    };
 };
 
 export default function MediaOverlayEditor() {
@@ -492,6 +559,15 @@ export default function MediaOverlayEditor() {
     const [mediaDragState, setMediaDragState] = useState(null); // { mediaId, fromGroupId, mediaName, mediaType }
     const [hoverGroupId, setHoverGroupId] = useState(null);
     const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
+
+    // WebSocket for debug mode
+    const { send } = useWebSocket();
+
+    // Overlay URL
+    const OVERLAY_URL = 'http://localhost:5173/media-overlay';
+
+    // Debug mode state
+    const [debugMode, setDebugMode] = useState(false);
 
     useEffect(() => {
         loadData();
@@ -513,6 +589,41 @@ export default function MediaOverlayEditor() {
             console.error('Failed to load data:', error);
         } finally {
             setLoading(false);
+        }
+    };
+
+    // Open overlay in external browser
+    const handleOpenInBrowser = () => {
+        openExternalLink(OVERLAY_URL);
+    };
+
+    // Copy overlay URL to clipboard
+    const handleCopyUrl = async () => {
+        try {
+            await navigator.clipboard.writeText(OVERLAY_URL);
+        } catch (error) {
+            console.error('Failed to copy URL:', error);
+        }
+    };
+
+    // Toggle debug mode via WebSocket
+    const handleDebugToggle = (e) => {
+        const enabled = e.target.checked;
+        setDebugMode(enabled);
+        send({ channel: 'media-overlay:set-debug', payload: { enabled } });
+    };
+
+    // Test selected group
+    const handleTestGroup = async () => {
+        if (!selectedGroupId) return;
+
+        try {
+            const result = await testMediaGroup(selectedGroupId);
+            if (!result.success) {
+                console.warn('Test failed:', result.error);
+            }
+        } catch (error) {
+            console.error('Failed to test group:', error);
         }
     };
 
@@ -594,36 +705,30 @@ export default function MediaOverlayEditor() {
             groupId: group.id,
             startX: e.clientX,
             startY: e.clientY,
-            initialOffsetX: group.position.offsetX,
-            initialOffsetY: group.position.offsetY
+            initialX: group.position.x,
+            initialY: group.position.y
         });
     }, []);
 
     const handleDrag = useCallback((e) => {
         if (!dragState) return;
 
-        const deltaX = e.clientX - dragState.startX;
-        const deltaY = e.clientY - dragState.startY;
+        // Convert mouse delta to unscaled coordinates
+        const deltaX = (e.clientX - dragState.startX) / CANVAS_SCALE;
+        const deltaY = (e.clientY - dragState.startY) / CANVAS_SCALE;
 
-        const group = groups.find(g => g.id === dragState.groupId);
-        if (!group) return;
-
-        const newOffsetX = dragState.initialOffsetX + deltaX;
-        const newOffsetY = dragState.initialOffsetY + deltaY;
+        const newX = Math.max(0, Math.round(dragState.initialX + deltaX));
+        const newY = Math.max(0, Math.round(dragState.initialY + deltaY));
 
         // Update local state immediately for smooth dragging
         setGroups(prev => prev.map(g => {
             if (g.id !== dragState.groupId) return g;
             return {
                 ...g,
-                position: {
-                    ...g.position,
-                    offsetX: newOffsetX,
-                    offsetY: newOffsetY
-                }
+                position: { x: newX, y: newY }
             };
         }));
-    }, [dragState, groups]);
+    }, [dragState]);
 
     const handleDragEnd = useCallback(async () => {
         if (!dragState) return;
@@ -770,7 +875,7 @@ export default function MediaOverlayEditor() {
                                         <div className="group-info">
                                             <h4>{group.name}</h4>
                                             <div className="meta">
-                                                {group.position.anchor} | {group.animation.in} | {getGroupMedia(group.id).length} media
+                                                {group.position.x}, {group.position.y} | {group.animation.in} | {getGroupMedia(group.id).length} media
                                             </div>
                                         </div>
                                         {isDropTarget && isHovered && (
@@ -827,27 +932,71 @@ export default function MediaOverlayEditor() {
                 <PreviewHeader>
                     <h3>{t('mediaOverlay.preview', 'Preview')}</h3>
                     <div className="preview-controls">
-                        <Button disabled><FiPlay />{t('mediaOverlay.test', 'Test')}</Button>
-                        <Button disabled><FiMaximize />{t('mediaOverlay.fullscreen', 'Fullscreen')}</Button>
+                        <Button
+                            onClick={handleTestGroup}
+                            disabled={!selectedGroupId || getGroupMedia(selectedGroupId).length === 0}
+                            title={getGroupMedia(selectedGroupId || '').length === 0 ? t('mediaOverlay.noMediaToTest', 'No media in this group') : ''}
+                        >
+                            <FiPlay />{t('mediaOverlay.test', 'Test')}
+                        </Button>
+                        <Button onClick={handleOpenInBrowser}>
+                            <FiExternalLink />{t('mediaOverlay.openInBrowser', 'Open')}
+                        </Button>
+                        <Button onClick={handleCopyUrl} title={OVERLAY_URL}>
+                            <FiCopy />
+                        </Button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginLeft: '8px' }}>
+                            <Switch checked={debugMode} onChange={handleDebugToggle} />
+                            <span style={{ fontSize: '0.8rem', color: '#888' }}>{t('mediaOverlay.debug', 'Debug')}</span>
+                        </div>
                     </div>
                 </PreviewHeader>
 
                 <PreviewCanvas ref={canvasRef}>
-                    {groups.map(group => {
-                        const groupMedia = getGroupMedia(group.id);
-                        const isDropTarget = mediaDragState && mediaDragState.fromGroupId !== group.id;
+                    {/* Viewport with resolution guides */}
+                    <CanvasViewport style={{
+                        width: RESOLUTIONS['1080p'].width * CANVAS_SCALE,
+                        height: RESOLUTIONS['1080p'].height * CANVAS_SCALE
+                    }}>
+                        {/* Resolution guides */}
+                        <ResolutionGuide
+                            $color={RESOLUTIONS['1080p'].color}
+                            $label="1920×1080"
+                            style={{
+                                width: RESOLUTIONS['1080p'].width * CANVAS_SCALE,
+                                height: RESOLUTIONS['1080p'].height * CANVAS_SCALE
+                            }}
+                        />
+                        <ResolutionGuide
+                            $color={RESOLUTIONS['720p'].color}
+                            $label="1280×720"
+                            style={{
+                                width: RESOLUTIONS['720p'].width * CANVAS_SCALE,
+                                height: RESOLUTIONS['720p'].height * CANVAS_SCALE
+                            }}
+                        />
 
-                        return (
-                            <PreviewGroup
-                                key={group.id}
-                                $selected={selectedGroupId === group.id}
-                                $dragging={dragState?.groupId === group.id}
-                                style={getPositionStyle(group.position, group.size)}
-                                onMouseDown={(e) => {
-                                    if (!mediaDragState) handleDragStart(e, group);
-                                }}
-                                onMouseEnter={() => isDropTarget && setHoverGroupId(group.id)}
-                                onMouseLeave={() => setHoverGroupId(null)}
+                        {/* Origin marker */}
+                        <CoordinateOrigin>
+                            <OriginLabel>0,0</OriginLabel>
+                        </CoordinateOrigin>
+
+                        {/* Groups */}
+                        {groups.map(group => {
+                            const groupMedia = getGroupMedia(group.id);
+                            const isDropTarget = mediaDragState && mediaDragState.fromGroupId !== group.id;
+
+                            return (
+                                <PreviewGroup
+                                    key={group.id}
+                                    $selected={selectedGroupId === group.id}
+                                    $dragging={dragState?.groupId === group.id}
+                                    style={getPositionStyle(group.position, group.size)}
+                                    onMouseDown={(e) => {
+                                        if (!mediaDragState) handleDragStart(e, group);
+                                    }}
+                                    onMouseEnter={() => isDropTarget && setHoverGroupId(group.id)}
+                                    onMouseLeave={() => setHoverGroupId(null)}
                                 onMouseUp={() => isDropTarget && handleMediaDrop(group.id)}
                             >
                                 <span style={{ position: 'absolute', top: 4, left: 0, right: 0, textAlign: 'center' }}>
@@ -880,13 +1029,14 @@ export default function MediaOverlayEditor() {
                         );
                     })}
 
-                    {groups.length === 0 && !loading && (
-                        <EmptyState style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
-                            <FiLayers />
-                            <h4>{t('mediaOverlay.noGroups', 'No display groups')}</h4>
-                            <p>{t('mediaOverlay.noGroupsHint', 'Create a group to start')}</p>
-                        </EmptyState>
-                    )}
+                        {groups.length === 0 && !loading && (
+                            <EmptyState style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)' }}>
+                                <FiLayers />
+                                <h4>{t('mediaOverlay.noGroups', 'No display groups')}</h4>
+                                <p>{t('mediaOverlay.noGroupsHint', 'Create a group to start')}</p>
+                            </EmptyState>
+                        )}
+                    </CanvasViewport>
                 </PreviewCanvas>
             </PreviewArea>
 
@@ -914,33 +1064,22 @@ export default function MediaOverlayEditor() {
                             {/* Position */}
                             <Section>
                                 <SectionTitle><FiMove />{t('mediaOverlay.position', 'Position')}</SectionTitle>
-                                <FormGroup>
-                                    <Label>{t('mediaOverlay.anchor', 'Anchor')}</Label>
-                                    <Select
-                                        value={selectedGroup.position.anchor}
-                                        onChange={(e) => updateGroupNested('position.anchor', e.target.value)}
-                                    >
-                                        {POSITION_ANCHORS.map(a => (
-                                            <option key={a} value={a}>{a}</option>
-                                        ))}
-                                    </Select>
-                                </FormGroup>
                                 <FormRow>
                                     <FormGroup>
-                                        <Label>{t('mediaOverlay.offsetX', 'Offset X')}</Label>
+                                        <Label>X</Label>
                                         <NumericEditorComponent
-                                            value={selectedGroup.position.offsetX}
-                                            onChange={(v) => updateGroupNested('position.offsetX', v)}
-                                            min={-1000} max={1000}
+                                            value={selectedGroup.position.x}
+                                            onChange={(v) => updateGroupNested('position.x', v)}
+                                            min={0} max={1920}
                                             width="100%"
                                         />
                                     </FormGroup>
                                     <FormGroup>
-                                        <Label>{t('mediaOverlay.offsetY', 'Offset Y')}</Label>
+                                        <Label>Y</Label>
                                         <NumericEditorComponent
-                                            value={selectedGroup.position.offsetY}
-                                            onChange={(v) => updateGroupNested('position.offsetY', v)}
-                                            min={-1000} max={1000}
+                                            value={selectedGroup.position.y}
+                                            onChange={(v) => updateGroupNested('position.y', v)}
+                                            min={0} max={1080}
                                             width="100%"
                                         />
                                     </FormGroup>

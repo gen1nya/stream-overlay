@@ -6,9 +6,8 @@ import { MediaDisplayGroup, StoreSchema } from "./store/StoreSchema";
 export const DEFAULT_GROUP: Omit<MediaDisplayGroup, 'id' | 'name'> = {
     enabled: true,
     position: {
-        anchor: 'center',
-        offsetX: 0,
-        offsetY: 0
+        x: 560,  // Centered in 1920 viewport (1920/2 - 400)
+        y: 240   // Centered in 1080 viewport (1080/2 - 300)
     },
     size: {
         width: 0,      // auto

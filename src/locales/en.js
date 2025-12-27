@@ -1790,6 +1790,10 @@ const en = {
             dropHere: 'Drop here',
             orphanedMedia: 'Unassigned Media',
             dragToGroup: 'Drag to a group',
+            openInBrowser: 'Open',
+            copyUrl: 'Copy URL',
+            debug: 'Debug',
+            noMediaToTest: 'No media in this group',
         },
     },
 };

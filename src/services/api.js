@@ -478,3 +478,25 @@ export const reorderMediaDisplayGroups = (orderedIds) => {
 export const openMediaOverlayEditor = () => {
     return ipcRenderer?.invoke('media-overlay:open-editor');
 };
+
+// Media Overlay Window (for displaying media events)
+export const openMediaOverlay = () => {
+    return ipcRenderer?.invoke('media:open-overlay');
+};
+
+export const closeMediaOverlay = () => {
+    return ipcRenderer?.invoke('media:close-overlay');
+};
+
+export const isMediaOverlayOpen = () => {
+    return ipcRenderer?.invoke('media:is-overlay-open');
+};
+
+// Media testing
+export const testMediaEvent = (mediaEventId) => {
+    return ipcRenderer?.invoke('media:test', mediaEventId);
+};
+
+export const testMediaGroup = (groupId) => {
+    return ipcRenderer?.invoke('media:test-group', groupId);
+};

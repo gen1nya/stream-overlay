@@ -411,12 +411,6 @@ export interface MediaEventStyle {
     backgroundOpacity: number;
 }
 
-// Position anchor for media display groups
-export type PositionAnchor =
-    | 'top-left' | 'top-center' | 'top-right'
-    | 'center-left' | 'center' | 'center-right'
-    | 'bottom-left' | 'bottom-center' | 'bottom-right';
-
 // Animation types for media display
 export type AnimationType = 'none' | 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right' | 'scale' | 'bounce';
 
@@ -425,9 +419,8 @@ export type QueueMode = 'sequential' | 'replace' | 'stack';
 
 // Media display group position configuration
 export interface MediaGroupPosition {
-    anchor: PositionAnchor;
-    offsetX: number;                 // Offset from anchor in pixels
-    offsetY: number;
+    x: number;                       // X coordinate from top-left (0,0)
+    y: number;                       // Y coordinate from top-left (0,0)
 }
 
 // Media display group size configuration
