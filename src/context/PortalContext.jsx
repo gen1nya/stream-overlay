@@ -46,16 +46,37 @@ export function PortalProvider({ children }) {
         });
     }, []);
 
-    const closeModal = useCallback((id) => {
-        setModals(prev => prev.filter(m => m.id !== id));
+    const closeModal = useCallback((id, options = {}) => {
+        setModals(prev => {
+            const modal = prev.find(m => m.id === id);
+            if (!modal) return prev;
+            if (modal.options?.onClose && !options.skipOnClose) {
+                modal.options.onClose();
+            }
+            return prev.filter(m => m.id !== id);
+        });
     }, []);
 
     const closeAll = useCallback(() => {
-        setModals([]);
+        setModals(prev => {
+            prev.forEach(modal => {
+                if (modal?.options?.onClose) {
+                    modal.options.onClose();
+                }
+            });
+            return [];
+        });
     }, []);
 
     const closeTopModal = useCallback(() => {
-        setModals(prev => prev.slice(0, -1));
+        setModals(prev => {
+            if (prev.length === 0) return prev;
+            const topModal = prev[prev.length - 1];
+            if (topModal?.options?.onClose) {
+                topModal.options.onClose();
+            }
+            return prev.slice(0, -1);
+        });
     }, []);
 
     // Handle Escape key to close top modal
@@ -174,7 +195,8 @@ export function Portal({
         });
 
         return () => {
-            closeModal(id);
+            // Skip onClose callback during unmount - parent already knows about the close
+            closeModal(id, { skipOnClose: true });
         };
     }, [id, children, openModal, closeModal, onClose, transparentOverlay, overlayBackground, padding, preventOverlayClose, preventEscapeClose]);
 
