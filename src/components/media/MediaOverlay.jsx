@@ -343,9 +343,7 @@ const MediaItem = styled.div`
 
 const MediaContent = styled.div`
     position: relative;
-    border-radius: 8px;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
 
     ${({ $scale, $mediaWidth, $mediaHeight, $maxWidth, $maxHeight }) => {
         // Use media size if specified, otherwise fall back to max size

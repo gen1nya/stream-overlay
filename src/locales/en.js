@@ -262,6 +262,7 @@ const en = {
                 botLottery: { title: 'Lottery', label: 'Lottery' },
                 botTriggers: { title: 'Triggers', label: 'Triggers' },
                 botTimers: { title: 'Timers', label: 'Timers' },
+                mediaEvents: { title: 'Media Events', label: 'Media' },
                 players: { title: 'Player settings', label: 'Players' },
                 youtube: { title: 'YouTube chat', label: 'YouTube Chat' },
                 followersGoal: { title: 'Follower progress', label: 'Progress' },
@@ -1708,6 +1709,34 @@ const en = {
                 line2: 'Something broke. Ping me directly.',
             },
             unknownPage: 'Unknown page',
+            mediaEvents: {
+                searchPlaceholder: 'Search by name...',
+                addMedia: 'Add media',
+                filters: {
+                    all: 'All ({{count}})',
+                    images: 'Images ({{count}})',
+                    videos: 'Videos ({{count}})',
+                    audio: 'Audio ({{count}})',
+                },
+                noGroup: 'No group',
+                noPreview: 'No preview',
+                empty: {
+                    title: 'No media events found',
+                    description: 'Create your first media event to get started',
+                    noResults: 'Nothing found',
+                    tryDifferent: 'Try changing search parameters',
+                },
+                actions: {
+                    test: 'Test',
+                    edit: 'Edit',
+                    delete: 'Delete',
+                },
+                confirmDelete: {
+                    title: 'Delete media event?',
+                    message: 'Are you sure you want to delete "{{name}}"?',
+                    warning: 'This action cannot be undone. Media may be used in triggers or gacha.',
+                },
+            },
         },
         twitchUsers: {
             title: 'Twitch users',

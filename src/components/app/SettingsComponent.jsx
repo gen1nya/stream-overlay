@@ -36,7 +36,8 @@ import {
     FiDatabase,
     FiUsers,
     FiClock,
-    FiExternalLink
+    FiExternalLink,
+    FiFilm
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -67,6 +68,7 @@ import RouletteHistoryPopup from "./settings/bot/roulette/RouletteHistoryPopup";
 import AboutCard from "./settings/About";
 import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
+import MediaEventsManager from "./settings/MediaEventsManager";
 import Switch from "../utils/Switch";
 import { EnabledToggle, StatusBadge, HelpButton, HelpInfoPopup } from "./settings/bot/SharedBotStyles";
 import { Spacer } from "../utils/Separator";
@@ -264,6 +266,7 @@ export default function Settings() {
         bot_lottery: {title: t('settings.pages.botLottery.title'), icon: <FiHeart/>},
         bot_triggers: {title: t('settings.pages.botTriggers.title'), icon: <FiZap/>},
         bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
+        media_events: {title: t('settings.pages.mediaEvents.title', 'Media Events'), icon: <FiFilm/>},
         media_overlay: {title: t('settings.pages.mediaOverlay.title', 'Media Overlay'), icon: <FiLayers/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
@@ -501,6 +504,7 @@ export default function Settings() {
                                 {key: "bot_timers", icon: <FiClock/>, label: t('settings.pages.botTimers.label'), enabled: botConfig?.timers?.enabled},
                             ]
                         },
+                        {key: "media_events", icon: <FiFilm/>, label: t('settings.pages.mediaEvents.label', 'Media Events')},
                         {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
@@ -847,6 +851,13 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                             </p>
                         </NoConfigCard>
                     )}
+                </Content>
+            );
+
+        case "media_events":
+            return (
+                <Content>
+                    <MediaEventsManager />
                 </Content>
             );
 

@@ -262,6 +262,7 @@ const ru = {
                 botLottery: { title: 'Розыгрыш', label: 'Розыгрыш' },
                 botTriggers: { title: 'Триггеры', label: 'Триггеры' },
                 botTimers: { title: 'Таймеры', label: 'Таймеры' },
+                mediaEvents: { title: 'Медиа события', label: 'Медиа' },
                 players: { title: 'Настройки плееров', label: 'Плееры' },
                 youtube: { title: 'Чат ютуба', label: 'YouTube Чат' },
                 followersGoal: { title: 'Прогресс фоловеров', label: 'Прогресс' },
@@ -1702,6 +1703,34 @@ const ru = {
                 line2: 'Чтото сломалось. Стучите в личку',
             },
             unknownPage: 'Неизвестная страница',
+            mediaEvents: {
+                searchPlaceholder: 'Поиск по названию...',
+                addMedia: 'Добавить медиа',
+                filters: {
+                    all: 'Все ({{count}})',
+                    images: 'Картинки ({{count}})',
+                    videos: 'Видео ({{count}})',
+                    audio: 'Аудио ({{count}})',
+                },
+                noGroup: 'Без группы',
+                noPreview: 'Нет превью',
+                empty: {
+                    title: 'Медиа события не найдены',
+                    description: 'Создайте первое медиа событие для начала работы',
+                    noResults: 'Ничего не найдено',
+                    tryDifferent: 'Попробуйте изменить параметры поиска',
+                },
+                actions: {
+                    test: 'Тест',
+                    edit: 'Редактировать',
+                    delete: 'Удалить',
+                },
+                confirmDelete: {
+                    title: 'Удалить медиа событие?',
+                    message: 'Вы уверены, что хотите удалить "{{name}}"?',
+                    warning: 'Это действие нельзя отменить. Медиа может использоваться в триггерах или гаче.',
+                },
+            },
         },
         twitchUsers: {
             title: 'Пользователи Twitch',
