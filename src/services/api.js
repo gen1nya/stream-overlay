@@ -407,6 +407,10 @@ export const updateBackendLogsConfig = (config) => {
     return ipcRenderer?.invoke('backend-logs:update-config', config);
 };
 
+export const testBackendCrash = (type = 'exception') => {
+    return ipcRenderer?.invoke('backend-logs:test-crash', type);
+};
+
 // Trigger System API
 export const getScheduledActions = () => {
     return ipcRenderer?.invoke('triggers:get-scheduled');
@@ -434,4 +438,125 @@ export const getTriggerExecutions = (options) => {
 
 export const getUserScheduledActions = (userId) => {
     return ipcRenderer?.invoke('triggers:get-user-scheduled', userId);
+};
+
+// Media Events API
+export const getAllMediaEvents = () => {
+    return ipcRenderer?.invoke('media:get-all');
+};
+
+export const getMediaEvent = (id) => {
+    return ipcRenderer?.invoke('media:get', id);
+};
+
+export const saveMediaEvent = (mediaEvent) => {
+    return ipcRenderer?.invoke('media:save', mediaEvent);
+};
+
+export const deleteMediaEvent = (id) => {
+    return ipcRenderer?.invoke('media:delete', id);
+};
+
+// Media Display Groups API
+export const getAllMediaDisplayGroups = () => {
+    return ipcRenderer?.invoke('media-groups:get-all');
+};
+
+export const getMediaDisplayGroup = (id) => {
+    return ipcRenderer?.invoke('media-groups:get', id);
+};
+
+export const saveMediaDisplayGroup = (group) => {
+    return ipcRenderer?.invoke('media-groups:save', group);
+};
+
+export const deleteMediaDisplayGroup = (id) => {
+    return ipcRenderer?.invoke('media-groups:delete', id);
+};
+
+export const reorderMediaDisplayGroups = (orderedIds) => {
+    return ipcRenderer?.invoke('media-groups:reorder', orderedIds);
+};
+
+// Media Overlay Editor
+export const openMediaOverlayEditor = () => {
+    return ipcRenderer?.invoke('media-overlay:open-editor');
+};
+
+// Media Overlay Window (for displaying media events)
+export const openMediaOverlay = () => {
+    return ipcRenderer?.invoke('media:open-overlay');
+};
+
+export const closeMediaOverlay = () => {
+    return ipcRenderer?.invoke('media:close-overlay');
+};
+
+export const isMediaOverlayOpen = () => {
+    return ipcRenderer?.invoke('media:is-overlay-open');
+};
+
+// Media testing
+export const testMediaEvent = (mediaEventId) => {
+    return ipcRenderer?.invoke('media:test', mediaEventId);
+};
+
+export const testMediaGroup = (groupId) => {
+    return ipcRenderer?.invoke('media:test-group', groupId);
+};
+
+// ============================================
+// Media Library
+// ============================================
+
+export const getAllMediaFiles = () => {
+    return ipcRenderer?.invoke('media-library:get-all');
+};
+
+export const getMediaFilesByType = (type) => {
+    return ipcRenderer?.invoke('media-library:get-by-type', type);
+};
+
+export const getMediaFile = (id) => {
+    return ipcRenderer?.invoke('media-library:get', id);
+};
+
+export const saveMediaFile = (originalName, buffer, mimeType, dimensions) => {
+    return ipcRenderer?.invoke('media-library:save', originalName, buffer, mimeType, dimensions);
+};
+
+export const deleteMediaFile = (id) => {
+    return ipcRenderer?.invoke('media-library:delete', id);
+};
+
+export const getMediaFileUrl = (id) => {
+    return ipcRenderer?.invoke('media-library:get-url', id);
+};
+
+// ============================================
+// Help / Documentation API
+// ============================================
+
+export const openHelp = () => {
+    return ipcRenderer?.invoke('help:open');
+};
+
+export const getDocsTree = (locale) => {
+    return ipcRenderer?.invoke('docs:get-tree', locale);
+};
+
+export const getDocContent = (locale, relativePath) => {
+    return ipcRenderer?.invoke('docs:get-content', locale, relativePath);
+};
+
+export const searchDocs = (locale, query) => {
+    return ipcRenderer?.invoke('docs:search', locale, query);
+};
+
+export const getDocsAvailableLocales = () => {
+    return ipcRenderer?.invoke('docs:get-available-locales');
+};
+
+export const hasDocsForLocale = (locale) => {
+    return ipcRenderer?.invoke('docs:has-documents', locale);
 };

@@ -10,6 +10,7 @@ export interface Item {
     rarity: Rarity;
     isLimited: boolean;
     bannerId: number;
+    mediaEventIds?: string[];  // References to MediaEventConfig ids
 }
 
 export interface PullResult {

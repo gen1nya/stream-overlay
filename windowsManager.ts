@@ -26,6 +26,9 @@ export let chatWindow: BrowserWindow | null = null;
 export let previewWindow: BrowserWindow | null = null;
 export let terminalWindow: BrowserWindow | null = null;
 export let backendLogsWindow: BrowserWindow | null = null;
+export let mediaOverlayEditorWindow: BrowserWindow | null = null;
+export let mediaOverlayWindow: BrowserWindow | null = null;
+export let helpWindow: BrowserWindow | null = null;
 
 // Store reference for persisting settings
 let store: Store<StoreSchema> | null = null;
@@ -66,7 +69,7 @@ export function createTerminalWindow(): void {
  * Close all child windows (chat, preview, terminal, backend logs)
  */
 function closeAllChildWindows(): void {
-  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow];
+  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow, mediaOverlayEditorWindow, mediaOverlayWindow, helpWindow];
   for (const win of windows) {
     if (win && !win.isDestroyed()) {
       win.close();
@@ -239,4 +242,124 @@ export function setChatGameMode(enabled: boolean): boolean {
  */
 export function getChatGameMode(): boolean {
   return isGameModeEnabled;
+}
+
+/**
+ * Create or focus the Media Overlay Editor window
+ */
+export function createMediaOverlayEditorWindow(): void {
+  if (mediaOverlayEditorWindow && !mediaOverlayEditorWindow.isDestroyed()) {
+    mediaOverlayEditorWindow.focus();
+    return;
+  }
+
+  mediaOverlayEditorWindow = new BrowserWindow({
+    width: 1400,
+    height: 900,
+    minWidth: 1000,
+    minHeight: 700,
+    title: 'Media Overlay Editor',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+  });
+
+  mediaOverlayEditorWindow.setMenuBarVisibility(false);
+  mediaOverlayEditorWindow.loadURL('http://localhost:5173/media-overlay-editor');
+
+  mediaOverlayEditorWindow.on('closed', () => {
+    mediaOverlayEditorWindow = null;
+  });
+}
+
+/**
+ * Create or focus the Media Overlay window (for displaying media events)
+ * This is a transparent, always-on-top, click-through window
+ */
+export function createMediaOverlayWindow(): void {
+  if (mediaOverlayWindow && !mediaOverlayWindow.isDestroyed()) {
+    mediaOverlayWindow.focus();
+    return;
+  }
+
+  // Get primary display size for fullscreen
+  const primaryDisplay = screen.getPrimaryDisplay();
+  const { width, height } = primaryDisplay.workAreaSize;
+
+  mediaOverlayWindow = new BrowserWindow({
+    width,
+    height,
+    x: 0,
+    y: 0,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    titleBarStyle: 'hidden',
+    frame: false,
+    thickFrame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: false,
+  });
+
+  mediaOverlayWindow.setMenuBarVisibility(false);
+  mediaOverlayWindow.setIgnoreMouseEvents(true, { forward: true });
+  mediaOverlayWindow.setAlwaysOnTop(true, 'screen-saver');
+  mediaOverlayWindow.loadURL('http://localhost:5173/media-overlay');
+
+  mediaOverlayWindow.on('closed', () => {
+    mediaOverlayWindow = null;
+  });
+}
+
+/**
+ * Close the media overlay window
+ */
+export function closeMediaOverlayWindow(): void {
+  if (mediaOverlayWindow && !mediaOverlayWindow.isDestroyed()) {
+    mediaOverlayWindow.close();
+    mediaOverlayWindow = null;
+  }
+}
+
+/**
+ * Check if media overlay window is open
+ */
+export function isMediaOverlayWindowOpen(): boolean {
+  return mediaOverlayWindow !== null && !mediaOverlayWindow.isDestroyed();
+}
+
+/**
+ * Create or focus the Help window
+ */
+export function createHelpWindow(): void {
+  if (helpWindow && !helpWindow.isDestroyed()) {
+    helpWindow.focus();
+    return;
+  }
+
+  helpWindow = new BrowserWindow({
+    width: 1100,
+    height: 750,
+    minWidth: 800,
+    minHeight: 500,
+    title: 'Help',
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+  });
+
+  helpWindow.setMenuBarVisibility(false);
+  helpWindow.loadURL('http://localhost:5173/help');
+
+  helpWindow.on('closed', () => {
+    helpWindow = null;
+  });
 }

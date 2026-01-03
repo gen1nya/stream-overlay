@@ -530,6 +530,24 @@ export default class TriggerMiddleware extends Middleware {
                     }
                 };
 
+            case 'show_media':
+                return {
+                    type: ActionTypes.SHOW_MEDIA,
+                    payload: {
+                        mediaEventId: action.params.mediaEventId,
+                        context: {
+                            user: context.sender.displayName || context.sender.name,
+                            userId: context.sender.id,
+                            target: targetUser?.displayName || targetUser?.name,
+                            args: context.args,
+                            reward: context.reward?.title,
+                            rewardCost: context.reward?.cost,
+                            raider: context.raid?.fromName,
+                            viewers: context.raid?.viewers
+                        }
+                    }
+                };
+
             default:
                 return null;
         }

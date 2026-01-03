@@ -208,19 +208,19 @@ const Wrapper = styled.div`
     height: 100%;
 `;
 
-const ConnectionLost = styled.div`
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 32px;
-    color: red;
-    background: rgba(0,0,0,0.5);
-    z-index: 10;
+const ConnectionIndicator = styled.div`
+    position: fixed;
+    top: 8px;
+    right: 8px;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: ${({ $connected }) => $connected ? '#22c55e' : '#ef4444'};
+    box-shadow: 0 0 4px ${({ $connected }) => $connected ? '#22c55e' : '#ef4444'};
+    opacity: ${({ $connected }) => $connected ? 0 : 1};
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 9999;
 `;
 
 const FixedMarquee = styled(Marquee)`
@@ -525,7 +525,7 @@ export default function AudioPlayerComponent() {
                 )}
 
             </AudioPlayerContainer>
-            {!(metaConnected && themeConnected) && <ConnectionLost>нет связи с источником</ConnectionLost>}
+            <ConnectionIndicator $connected={metaConnected && themeConnected} />
             </Wrapper>
         </ThemeProvider>
     );

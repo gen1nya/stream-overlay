@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
-import { FiInfo, FiGithub, FiGlobe } from 'react-icons/fi';
+import { FiInfo, FiGithub, FiGlobe, FiHelpCircle } from 'react-icons/fi';
 import {
     CardContent,
     Section,
@@ -13,7 +13,7 @@ import sora_1 from "../../../assets/sora_silent.png";
 import sora_2 from "../../../assets/sora_speak.png";
 import hny_sora_1 from "../../../assets/hny_sora_silent.png";
 import hny_sora_2 from "../../../assets/hny_sora_speak.png";
-import {openExternalLink, openTerminal} from "../../../services/api";
+import {openExternalLink, openTerminal, openHelp} from "../../../services/api";
 import {AiFillTwitch} from "react-icons/ai";
 import { Trans, useTranslation } from "react-i18next";
 import { isEventActive } from "../../../utils/seasonalEvents";
@@ -247,6 +247,10 @@ export default function AboutCard() {
                         </SectionHeader>
 
                         <SocialLinks>
+                            <SocialLink onClick={openHelp} style={{cursor: 'pointer'}}>
+                                <FiHelpCircle />
+                                {t('settings.about.social.help', 'Help')}
+                            </SocialLink>
                             <ExternalLink href="https://github.com/gen1nya/stream-overlay" target="_blank" rel="noopener noreferrer">
                                 <FiGithub />
                                 {t('settings.about.social.github')}

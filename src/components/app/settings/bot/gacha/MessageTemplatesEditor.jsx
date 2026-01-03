@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
 import { FiInfo } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
@@ -158,10 +158,11 @@ function formatPreview(template, variables) {
 function TemplateField({ templateKey, value, onChange, t }) {
     const config = TEMPLATE_CONFIG[templateKey];
     const previewText = formatPreview(value || DEFAULT_MESSAGES[templateKey], config.preview);
+    const textareaRef = useRef(null);
 
-    const handleVariableClick = (variable) => {
-        const newValue = (value || '') + '${' + variable + '}';
-        onChange(newValue);
+    const insertVariable = (variable) => {
+        const variableText = '${' + variable + '}';
+        textareaRef.current?.insertText(variableText);
     };
 
     return (
@@ -169,6 +170,7 @@ function TemplateField({ templateKey, value, onChange, t }) {
             <Label>{t(`settings.bot.gacha.messages.fields.${templateKey}.label`)}</Label>
             <InfoText>{t(`settings.bot.gacha.messages.fields.${templateKey}.hint`)}</InfoText>
             <DebouncedTextarea
+                ref={textareaRef}
                 value={value || ''}
                 onChange={onChange}
                 placeholder={DEFAULT_MESSAGES[templateKey]}
@@ -179,10 +181,16 @@ function TemplateField({ templateKey, value, onChange, t }) {
             {config.variables.length > 0 && (
                 <VariablesHint>
                     <span style={{ fontSize: '0.75rem', color: '#666' }}>
-                        {t('settings.bot.gacha.messages.variablesLabel')}:
+                        {t('settings.bot.gacha.messages.variablesLabel')} ({t('settings.bot.triggers.clickToInsert', 'click to insert')}):
                     </span>
                     {config.variables.map(v => (
-                        <VariableTag key={v} onClick={() => handleVariableClick(v)}>
+                        <VariableTag
+                            key={v}
+                            onMouseDown={(e) => {
+                                e.preventDefault();
+                                insertVariable(v);
+                            }}
+                        >
                             {'${' + v + '}'}
                         </VariableTag>
                     ))}

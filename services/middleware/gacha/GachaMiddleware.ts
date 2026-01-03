@@ -4,7 +4,7 @@ import { BotConfig, StoreSchema } from "../../store/StoreSchema";
 import ElectronStore from "electron-store";
 import GachaEngine from "./GachaEngine";
 import { ActionTypes } from "../ActionTypes";
-import { GachaTrigger, GachaBannerMessages } from "./types";
+import { GachaTrigger, GachaBannerMessages, PullResult } from "./types";
 import { migrateGachaConfig, getDefaultBannerMessages } from "./migration";
 
 /**
@@ -17,9 +17,47 @@ function formatMessage(template: string, variables: Record<string, string | numb
     });
 }
 
+/**
+ * Generate SHOW_MEDIA actions for a gacha pull result
+ */
+function generateMediaActions(
+    result: PullResult,
+    userName: string,
+    userId: string
+): Array<{ type: string; payload: any }> {
+    const actions: Array<{ type: string; payload: any }> = [];
+
+    const mediaEventIds = result.item.mediaEventIds;
+    if (!mediaEventIds || mediaEventIds.length === 0) {
+        return actions;
+    }
+
+    const stars = '⭐'.repeat(result.item.rarity);
+
+    for (const mediaEventId of mediaEventIds) {
+        actions.push({
+            type: ActionTypes.SHOW_MEDIA,
+            payload: {
+                mediaEventId,
+                context: {
+                    user: userName,
+                    userId: userId,
+                    item: result.item.name,
+                    rarity: result.item.rarity,
+                    stars: stars,
+                    pullNumber: result.pullNumber
+                }
+            }
+        });
+    }
+
+    return actions;
+}
+
 export class GachaMiddleware extends Middleware {
     private store: ElectronStore<StoreSchema>;
     private gachaEngine: GachaEngine;
+    private enabled: boolean = false;
 
     // Map: rewardId -> { bannerId, amount }
     private triggerMap: Map<string, { bannerId: number; amount: number }> = new Map();
@@ -41,6 +79,8 @@ export class GachaMiddleware extends Middleware {
         // Мигрируем конфиг если нужно
         const gachaConfig = bot?.gacha ? migrateGachaConfig(bot.gacha) : undefined;
 
+        this.enabled = gachaConfig?.enabled ?? false;
+        console.log('[GachaMiddleware] Enabled:', this.enabled);
         console.log('[GachaMiddleware] Gacha triggers:', JSON.stringify(gachaConfig?.triggers, null, 2));
         console.log('[GachaMiddleware] Gacha banners:', gachaConfig?.banners?.length || 0);
         console.log('[GachaMiddleware] Gacha items count:', gachaConfig?.items?.length || 0);
@@ -64,6 +104,11 @@ export class GachaMiddleware extends Middleware {
     processMessage(message: AppEvent) {
         console.log('[GachaMiddleware] ========== processMessage START ==========');
         console.log('[GachaMiddleware] Message type:', message.type);
+
+        if (!this.enabled) {
+            console.log('[GachaMiddleware] Gacha is disabled, skipping');
+            return Promise.resolve({ message, actions: [], accepted: false });
+        }
 
         if (message.type !== 'redemption') {
             console.log('[GachaMiddleware] Not a redemption event, skipping');
@@ -102,6 +147,8 @@ export class GachaMiddleware extends Middleware {
         const messages = bannerConfig?.messages || getDefaultBannerMessages();
 
         let response = "";
+        let mediaActions: Array<{ type: string; payload: any }> = [];
+
         try {
             if (trigger.amount === 1) {
                 console.log('[GachaMiddleware] Executing single pull for banner:', bannerId);
@@ -131,6 +178,9 @@ export class GachaMiddleware extends Middleware {
                 if (result.wasSoftPity) {
                     response += formatMessage(messages.softPity, { pullNumber: result.pullNumber });
                 }
+
+                // Generate media actions for the pulled item
+                mediaActions = generateMediaActions(result, userName, userId);
             } else {
                 console.log(`[GachaMiddleware] Executing multi-pull (${trigger.amount}x) for banner:`, bannerId);
                 const results = this.gachaEngine.multiPull(userId, trigger.amount, userName, bannerId);
@@ -193,6 +243,12 @@ export class GachaMiddleware extends Middleware {
                 }
 
                 response += parts.join(' | ');
+
+                // Generate media actions for 4★ and 5★ items in multi-pull
+                for (const item of [..._5items, ..._4items]) {
+                    const itemMediaActions = generateMediaActions(item.result, userName, userId);
+                    mediaActions.push(...itemMediaActions);
+                }
             }
         } catch (error) {
             console.error('[GachaMiddleware] Error during pull:', error);
@@ -209,8 +265,9 @@ export class GachaMiddleware extends Middleware {
             payload: { message: response, forwardToUi: true }
         };
 
+        console.log('[GachaMiddleware] Media actions count:', mediaActions.length);
         console.log('[GachaMiddleware] ========== processMessage END (success) ==========');
-        return Promise.resolve({ message, actions: [action], accepted: true });
+        return Promise.resolve({ message, actions: [action, ...mediaActions], accepted: true });
     }
 
     updateConfig(botConfig: BotConfig): void {
@@ -218,13 +275,18 @@ export class GachaMiddleware extends Middleware {
 
         if (!botConfig?.gacha) {
             console.warn('[GachaMiddleware] No gacha config provided');
+            this.enabled = false;
             return;
         }
 
         // Мигрируем конфиг если нужно
         const gachaConfig = migrateGachaConfig(botConfig.gacha);
 
+        // Обновляем enabled
+        this.enabled = gachaConfig.enabled ?? false;
+
         console.log('[GachaMiddleware] Migrated config:');
+        console.log('[GachaMiddleware]   - enabled:', this.enabled);
         console.log('[GachaMiddleware]   - banners:', gachaConfig.banners?.length || 0);
         console.log('[GachaMiddleware]   - items:', gachaConfig.items?.length || 0);
         console.log('[GachaMiddleware]   - triggers:', gachaConfig.triggers?.length || 0);

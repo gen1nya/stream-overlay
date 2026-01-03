@@ -5,13 +5,14 @@ import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
     FiClock, FiPlus, FiTrash2, FiChevronDown, FiStar, FiShield, FiSettings,
-    FiArrowRight, FiUsers, FiExternalLink
+    FiArrowRight, FiUsers, FiExternalLink, FiImage, FiEdit2
 } from 'react-icons/fi';
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
-import { getTwitchRewards } from "../../../../../services/api";
+import { getTwitchRewards, getAllMediaEvents } from "../../../../../services/api";
 import { v4 as uuidv4 } from 'uuid';
+import MediaEventEditorPopup from "./MediaEventEditorPopup";
 import {Spacer} from "../../../../utils/Separator";
 
 const PopupOverlay = styled.div`
@@ -474,6 +475,7 @@ const ACTION_TYPES = [
     { value: 'remove_mod', icon: FiShield, color: 'rgba(220, 38, 38, 0.2)', iconColor: '#dc2626' },
     { value: 'timeout', icon: FiClock, color: 'rgba(251, 191, 36, 0.2)', iconColor: '#fbbf24' },
     { value: 'delete_message', icon: FiTrash2, color: 'rgba(107, 114, 128, 0.2)', iconColor: '#6b7280' },
+    { value: 'show_media', icon: FiImage, color: 'rgba(236, 72, 153, 0.2)', iconColor: '#ec4899' },
 ];
 
 const DELAY_UNITS = ['seconds', 'minutes', 'hours', 'days'];
@@ -483,12 +485,21 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     const [editedRule, setEditedRule] = useState(rule);
     const [rewards, setRewards] = useState([]);
     const [loadingRewards, setLoadingRewards] = useState(false);
+    const [mediaEvents, setMediaEvents] = useState([]);
+    const [loadingMediaEvents, setLoadingMediaEvents] = useState(false);
+    const [editingMediaEvent, setEditingMediaEvent] = useState(null);
+    const [mediaEventEditorOpen, setMediaEventEditorOpen] = useState(false);
+    const [currentActionIdForMediaEvent, setCurrentActionIdForMediaEvent] = useState(null);
 
     useEffect(() => {
         if (editedRule.condition.eventType === 'redemption') {
             loadRewards();
         }
     }, [editedRule.condition.eventType]);
+
+    useEffect(() => {
+        loadMediaEvents();
+    }, []);
 
     const loadRewards = async () => {
         setLoadingRewards(true);
@@ -500,6 +511,57 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
         } finally {
             setLoadingRewards(false);
         }
+    };
+
+    const loadMediaEvents = async () => {
+        setLoadingMediaEvents(true);
+        try {
+            const events = await getAllMediaEvents();
+            setMediaEvents(events || []);
+        } catch (error) {
+            console.error('Failed to load media events:', error);
+        } finally {
+            setLoadingMediaEvents(false);
+        }
+    };
+
+    const handleOpenMediaEventEditor = (actionId, mediaEventId = null) => {
+        setCurrentActionIdForMediaEvent(actionId);
+        if (mediaEventId) {
+            const existingEvent = mediaEvents.find(e => e.id === mediaEventId);
+            setEditingMediaEvent(existingEvent || null);
+        } else {
+            setEditingMediaEvent(null);
+        }
+        setMediaEventEditorOpen(true);
+    };
+
+    const handleSaveMediaEvent = (mediaEvent) => {
+        // Update local mediaEvents list for display (already saved via API in MediaEventEditorPopup)
+        setMediaEvents(prev => {
+            const existingIndex = prev.findIndex(e => e.id === mediaEvent.id);
+            if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = mediaEvent;
+                return updated;
+            }
+            return [...prev, mediaEvent];
+        });
+
+        // Update action params with the media event ID
+        if (currentActionIdForMediaEvent) {
+            updateActionParams(currentActionIdForMediaEvent, { mediaEventId: mediaEvent.id });
+        }
+
+        setMediaEventEditorOpen(false);
+        setEditingMediaEvent(null);
+        setCurrentActionIdForMediaEvent(null);
+    };
+
+    const handleCloseMediaEventEditor = () => {
+        setMediaEventEditorOpen(false);
+        setEditingMediaEvent(null);
+        setCurrentActionIdForMediaEvent(null);
     };
 
     const updateRule = (updates) => {
@@ -622,10 +684,12 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     const eventConfig = EVENT_TYPE_CONFIG[editedRule.condition.eventType] || EVENT_TYPE_CONFIG.command;
     const portalRoot = document.getElementById('popup-root') || document.body;
 
-    return ReactDOM.createPortal(
-        <PopupOverlay onClick={onClose}>
-            <PopupContainer onClick={(e) => e.stopPropagation()}>
-                <PopupHeader>
+    return (
+        <>
+            {ReactDOM.createPortal(
+                <PopupOverlay onClick={onClose}>
+                    <PopupContainer onClick={(e) => e.stopPropagation()}>
+                        <PopupHeader>
                     <h3>
                         <FiZap />
                         {editedRule.id ? t('settings.bot.triggers.editRule') : t('settings.bot.triggers.newRule')}
@@ -871,6 +935,53 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                                     </FormRow>
                                                 )}
 
+                                                {/* Show media settings */}
+                                                {action.type === 'show_media' && (
+                                                    <FormRow $align="center">
+                                                        <FormGroup $flex={2}>
+                                                            <Label>{t('settings.bot.triggers.mediaEvent.selectEvent')}</Label>
+                                                            {loadingMediaEvents ? (
+                                                                <span style={{ color: '#888', fontSize: '0.9rem' }}>{t('common.loading')}</span>
+                                                            ) : (
+                                                                <Select
+                                                                    value={action.params.mediaEventId || ''}
+                                                                    onChange={(e) => updateActionParams(action.id, { mediaEventId: e.target.value })}
+                                                                >
+                                                                    <option value="">{t('settings.bot.triggers.mediaEvent.selectEventPlaceholder')}</option>
+                                                                    {mediaEvents.map(event => (
+                                                                        <option key={event.id} value={event.id}>
+                                                                            {event.name} ({event.mediaType})
+                                                                        </option>
+                                                                    ))}
+                                                                </Select>
+                                                            )}
+                                                        </FormGroup>
+                                                        <FormGroup $flex={0} $minWidth="auto" style={{ alignSelf: 'flex-end', marginBottom: '1px' }}>
+                                                            {action.params.mediaEventId ? (
+                                                                <AddActionButton
+                                                                    $hoverColor="#ec4899"
+                                                                    $hoverBg="rgba(236, 72, 153, 0.1)"
+                                                                    onClick={() => handleOpenMediaEventEditor(action.id, action.params.mediaEventId)}
+                                                                    style={{ height: '40px', borderStyle: 'solid' }}
+                                                                >
+                                                                    <FiEdit2 />
+                                                                    {t('settings.bot.triggers.mediaEvent.edit')}
+                                                                </AddActionButton>
+                                                            ) : (
+                                                                <AddActionButton
+                                                                    $hoverColor="#ec4899"
+                                                                    $hoverBg="rgba(236, 72, 153, 0.1)"
+                                                                    onClick={() => handleOpenMediaEventEditor(action.id)}
+                                                                    style={{ height: '40px' }}
+                                                                >
+                                                                    <FiPlus />
+                                                                    {t('settings.bot.triggers.mediaEvent.create')}
+                                                                </AddActionButton>
+                                                            )}
+                                                        </FormGroup>
+                                                    </FormRow>
+                                                )}
+
                                                 {/* Delay toggle */}
                                                 <FormRow $align="center">
                                                     <Switch
@@ -982,10 +1093,20 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                 </div>
                             </div>
                         </FlowStepContent>
-                    </FlowStep>
-                </PopupContent>
-            </PopupContainer>
-        </PopupOverlay>,
-        portalRoot
+                        </FlowStep>
+                    </PopupContent>
+                </PopupContainer>
+            </PopupOverlay>,
+            portalRoot
+        )}
+
+            {mediaEventEditorOpen && (
+                <MediaEventEditorPopup
+                    mediaEvent={editingMediaEvent}
+                    onSave={handleSaveMediaEvent}
+                    onClose={handleCloseMediaEventEditor}
+                />
+            )}
+        </>
     );
 }
