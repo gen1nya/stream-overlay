@@ -199,6 +199,19 @@ export function registerIpcHandlers(
     return null;
   });
 
+  // TEST: Simulate crash (remove in production)
+  ipcMain.handle('backend-logs:test-crash', (_e, type: 'exception' | 'rejection' = 'exception') => {
+    console.warn('Test crash triggered:', type);
+    if (type === 'rejection') {
+      Promise.reject(new Error('Test unhandled rejection for logging'));
+    } else {
+      setTimeout(() => {
+        throw new Error('Test uncaught exception for logging');
+      }, 100);
+    }
+    return { scheduled: true, type };
+  });
+
   // ============================================
   // Trigger System IPC Handlers
   // ============================================

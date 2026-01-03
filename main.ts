@@ -71,6 +71,9 @@ const store = new Store<StoreSchema>({
     irc: {
         useWebSocket: false,  // Default to TCP
     },
+    logging: {
+        writeToFile: false,
+    },
     chatWindow: {
         width: 400,
         height: 640,
@@ -105,9 +108,8 @@ const mediaLibraryService = new MediaLibraryService(store);
 const backendLogService = new BackendLogService({
   enabled: true,
   broadcastViaWebSocket: true,
-  writeToFile: false,
   maxBufferSize: 1000,
-});
+}, store);
 
 const audiosessionManager = new AudiosessionManager(store, logService);
 const proxy = new ProxyService();
@@ -537,10 +539,12 @@ app.whenReady().then(() => {
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  backendLogService.logCrash(error, 'UNCAUGHT_EXCEPTION');
   app.exit(1);
 });
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
+  backendLogService.logCrash(reason, 'UNHANDLED_REJECTION');
   app.exit(1);
 });
 app.on('window-all-closed', () => {

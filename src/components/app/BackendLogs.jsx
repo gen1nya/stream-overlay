@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
 import { useWebSocket } from '../../context/WebSocketContext';
-import { FiTrash2, FiPause, FiPlay, FiSettings, FiDownload } from 'react-icons/fi';
-import { getBackendLogsBuffer, clearBackendLogs } from '../../services/api';
+import { FiTrash2, FiPause, FiPlay, FiDownload, FiFile, FiAlertTriangle } from 'react-icons/fi';
+import { getBackendLogsBuffer, clearBackendLogs, getBackendLogsConfig, updateBackendLogsConfig, testBackendCrash } from '../../services/api';
+import Switch from '../utils/Switch';
 
 const Wrapper = styled.div`
     width: 100%;
@@ -185,11 +186,45 @@ const Stats = styled.div`
     justify-content: space-between;
 `;
 
+const FileWriteSection = styled.div`
+    padding: 8px 16px;
+    background: #202020;
+    border-bottom: 1px solid #444;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+`;
+
+const FileWriteLabel = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #ccc;
+
+    svg {
+        color: #888;
+    }
+`;
+
+const FilePath = styled.span`
+    font-size: 11px;
+    color: #666;
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    margin-left: auto;
+    max-width: 400px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+`;
+
 export default function BackendLogs() {
     const [logs, setLogs] = useState([]);
     const [isPaused, setIsPaused] = useState(false);
     const [autoScroll, setAutoScroll] = useState(true);
     const [levelFilter, setLevelFilter] = useState(new Set(['log', 'info', 'warn', 'error', 'debug']));
+    const [writeToFile, setWriteToFile] = useState(false);
+    const [logFilePath, setLogFilePath] = useState('');
     const logsEndRef = useRef(null);
     const containerRef = useRef(null);
     const { subscribe, send } = useWebSocket();
@@ -222,6 +257,21 @@ export default function BackendLogs() {
             logsEndRef.current.scrollIntoView({ behavior: 'smooth' });
         }
     }, [logs, autoScroll]);
+
+    useEffect(() => {
+        getBackendLogsConfig().then(config => {
+            if (config) {
+                setWriteToFile(config.writeToFile || false);
+                setLogFilePath(config.logFilePath || '');
+            }
+        });
+    }, []);
+
+    const handleWriteToFileChange = async (e) => {
+        const newValue = e.target.checked;
+        setWriteToFile(newValue);
+        await updateBackendLogsConfig({ writeToFile: newValue });
+    };
 
     const handleClear = async () => {
         await clearBackendLogs();
@@ -282,6 +332,10 @@ export default function BackendLogs() {
                         <FiTrash2 />
                         Clear
                     </Button>
+                    <Button onClick={() => testBackendCrash('exception')} className="danger" title="Test crash logging">
+                        <FiAlertTriangle />
+                        Test Crash
+                    </Button>
                 </Controls>
             </Header>
 
@@ -318,6 +372,15 @@ export default function BackendLogs() {
                     Debug
                 </FilterButton>
             </FilterBar>
+
+            <FileWriteSection>
+                <FileWriteLabel>
+                    <FiFile />
+                    Write to file
+                </FileWriteLabel>
+                <Switch checked={writeToFile} onChange={handleWriteToFileChange} />
+                {logFilePath && <FilePath title={logFilePath}>{logFilePath}</FilePath>}
+            </FileWriteSection>
 
             <LogsContainer ref={containerRef}>
                 {filteredLogs.map((log, index) => (

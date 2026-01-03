@@ -41,6 +41,7 @@ export interface StoreSchema {
     audio: AudioConfig;
     youtube: YoutubeConfig;
     irc: IrcConfig;
+    logging: LoggingConfig;
     chatWindow: ChatWindowConfig;
     mediaEvents: MediaEventConfig[];  // Standalone media events storage
     mediaDisplayGroups: MediaDisplayGroup[];  // Media display groups configuration
@@ -60,6 +61,10 @@ export interface MediaOverlaySettings {
 
 export interface IrcConfig {
     useWebSocket: boolean;
+}
+
+export interface LoggingConfig {
+    writeToFile: boolean;
 }
 
 export interface AudioConfig {

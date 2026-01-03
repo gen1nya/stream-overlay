@@ -407,6 +407,10 @@ export const updateBackendLogsConfig = (config) => {
     return ipcRenderer?.invoke('backend-logs:update-config', config);
 };
 
+export const testBackendCrash = (type = 'exception') => {
+    return ipcRenderer?.invoke('backend-logs:test-crash', type);
+};
+
 // Trigger System API
 export const getScheduledActions = () => {
     return ipcRenderer?.invoke('triggers:get-scheduled');
