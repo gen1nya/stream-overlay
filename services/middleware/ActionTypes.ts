@@ -10,6 +10,9 @@ export const ActionTypes = {
   ADD_MOD: 'ADD_MOD',
   REMOVE_MOD: 'REMOVE_MOD',
   SHOUTOUT: 'SHOUTOUT',
+
+  // Media events
+  SHOW_MEDIA: 'SHOW_MEDIA',
 } as const;
 
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes];

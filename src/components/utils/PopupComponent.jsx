@@ -1,16 +1,6 @@
-import React from 'react';
-import ReactDOM from 'react-dom';
+import React, { useId } from 'react';
 import styled from "styled-components";
-
-const Overlay = styled.div`
-  position: fixed;
-  top: 0; left: 0; right: 0; bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-`;
+import { Portal } from "../../context/PortalContext";
 
 const PopupContainer = styled.div`
     background: #2e2e2e;
@@ -20,12 +10,13 @@ const PopupContainer = styled.div`
 `;
 
 export default function Popup({ children, onClose }) {
-    return ReactDOM.createPortal(
-        <Overlay onClick={onClose}>
-            <PopupContainer onClick={(e) => e.stopPropagation()}>
+    const id = useId();
+
+    return (
+        <Portal id={`popup-${id}`} onClose={onClose}>
+            <PopupContainer>
                 {children}
             </PopupContainer>
-        </Overlay>,
-        document.getElementById('popup-root')
+        </Portal>
     );
 }

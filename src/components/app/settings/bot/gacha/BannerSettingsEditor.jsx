@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { Row } from '../../../SettingsComponent';
 import { AddCommandForm, FormRow, NameInput, ErrorText } from '../SharedBotStyles';
@@ -113,6 +113,11 @@ export default function BannerSettingsEditor({ banner, items, updateConfig }) {
     const { t } = useTranslation();
     const [bannerName, setBannerName] = useState(banner.name);
 
+    // Синхронизируем локальное состояние при смене баннера
+    useEffect(() => {
+        setBannerName(banner.name || '');
+    }, [banner.id, banner.name]);
+
     const fiveStarItems = items.filter(item => item.rarity === 5) || [];
     const fourStarItems = items.filter(item => item.rarity === 4) || [];
 
@@ -123,52 +128,32 @@ export default function BannerSettingsEditor({ banner, items, updateConfig }) {
 
     const handleNameBlur = () => {
         if (bannerName.trim() && bannerName !== banner.name) {
-            updateConfig(prev => ({
-                ...prev,
-                banner: {
-                    ...prev.banner,
-                    name: bannerName.trim()
-                }
-            }));
+            updateConfig({ name: bannerName.trim() });
         }
     };
 
     const handleFeatured5StarChange = (e) => {
         const value = e.target.value || null;
-        updateConfig(prev => ({
-            ...prev,
-            banner: {
-                ...prev.banner,
-                featured5StarId: value
-            }
-        }));
+        updateConfig({ featured5StarId: value });
     };
 
     const handleFeatured4StarToggle = (itemId) => {
-        updateConfig(prev => {
-            const current = prev.banner.featured4StarIds || [];
-            const isSelected = current.includes(itemId);
+        const current = banner.featured4StarIds || [];
+        const isSelected = current.includes(itemId);
 
-            let newFeatured;
-            if (isSelected) {
-                newFeatured = current.filter(id => id !== itemId);
+        let newFeatured;
+        if (isSelected) {
+            newFeatured = current.filter(id => id !== itemId);
+        } else {
+            // Ограничиваем до 3 персонажей
+            if (current.length >= 3) {
+                newFeatured = [...current.slice(1), itemId];
             } else {
-                // Ограничиваем до 3 персонажей
-                if (current.length >= 3) {
-                    newFeatured = [...current.slice(1), itemId];
-                } else {
-                    newFeatured = [...current, itemId];
-                }
+                newFeatured = [...current, itemId];
             }
+        }
 
-            return {
-                ...prev,
-                banner: {
-                    ...prev.banner,
-                    featured4StarIds: newFeatured
-                }
-            };
-        });
+        updateConfig({ featured4StarIds: newFeatured });
     };
 
     return (

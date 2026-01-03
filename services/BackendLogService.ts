@@ -1,6 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { app } from 'electron';
+import Store from 'electron-store';
+import { StoreSchema } from './store/StoreSchema';
 
 export interface BackendLogEntry {
     timestamp: string;
@@ -19,6 +21,15 @@ export interface BackendLogConfig {
 
 type LogBroadcastCallback = (logs: BackendLogEntry[]) => void;
 
+function generateSessionLogFilename(): string {
+    const now = new Date();
+    const dateStr = now.toISOString()
+        .replace(/:/g, '-')
+        .replace(/\.\d{3}Z$/, '')
+        .replace('T', '_');
+    return `backend-logs_${dateStr}.txt`;
+}
+
 export class BackendLogService {
     private config: BackendLogConfig;
     private buffer: BackendLogEntry[] = [];
@@ -31,16 +42,29 @@ export class BackendLogService {
     };
     private broadcastCallback?: LogBroadcastCallback;
     private fileStream?: fs.WriteStream;
+    private store?: Store<StoreSchema>;
+    private readonly sessionLogFilename: string;
 
-    constructor(config?: Partial<BackendLogConfig>) {
+    constructor(config?: Partial<BackendLogConfig>, store?: Store<StoreSchema>) {
+        this.store = store;
+        this.sessionLogFilename = generateSessionLogFilename();
+
+        // Load writeToFile from store if available
+        const storedWriteToFile = store ? store.get('logging.writeToFile') === true : false;
+
         this.config = {
             enabled: true,
             broadcastViaWebSocket: true,
-            writeToFile: false,
+            writeToFile: storedWriteToFile,
             maxBufferSize: 1000,
-            logFilePath: path.join(app.getPath('userData'), 'backend-logs.txt'),
-            ...config
+            logFilePath: path.join(app.getPath('userData'), 'logs', this.sessionLogFilename),
+            ...config,
         };
+
+        // Store value takes precedence over config
+        if (store) {
+            this.config.writeToFile = storedWriteToFile;
+        }
 
         this.originalConsole = {
             log: console.log,
@@ -49,6 +73,12 @@ export class BackendLogService {
             error: console.error,
             debug: console.debug
         };
+
+        // Ensure logs directory exists
+        const logsDir = path.join(app.getPath('userData'), 'logs');
+        if (!fs.existsSync(logsDir)) {
+            fs.mkdirSync(logsDir, { recursive: true });
+        }
 
         if (this.config.enabled) {
             this.interceptConsole();
@@ -128,6 +158,55 @@ export class BackendLogService {
         this.fileStream.write(logLine);
     }
 
+    public flushSync(): void {
+        if (this.fileStream && this.config.logFilePath) {
+            try {
+                this.fileStream.end();
+                this.fileStream = undefined;
+            } catch {
+                // ignore
+            }
+        }
+    }
+
+    public logCrash(error: Error | unknown, label: string = 'CRASH'): void {
+        const timestamp = new Date().toISOString();
+        let message: string;
+
+        if (error instanceof Error) {
+            message = `${error.name}: ${error.message}\n${error.stack}`;
+        } else {
+            try {
+                message = JSON.stringify(error, null, 2);
+            } catch {
+                message = String(error);
+            }
+        }
+
+        const logLine = `[${timestamp}] [${label}] ${message}\n`;
+
+        // Write synchronously to ensure it's saved before exit
+        if (this.config.writeToFile && this.config.logFilePath) {
+            try {
+                fs.appendFileSync(this.config.logFilePath, logLine);
+            } catch (err) {
+                this.originalConsole.error('Failed to write crash log:', err);
+            }
+        }
+
+        // Also add to buffer and broadcast
+        const entry: BackendLogEntry = {
+            timestamp,
+            level: 'error',
+            message: `[${label}] ${message}`
+        };
+        this.buffer.push(entry);
+
+        if (this.broadcastCallback) {
+            this.broadcastCallback([entry]);
+        }
+    }
+
     public setBroadcastCallback(callback: LogBroadcastCallback): void {
         this.broadcastCallback = callback;
     }
@@ -150,6 +229,11 @@ export class BackendLogService {
             ...this.config,
             ...newConfig
         };
+
+        // Persist writeToFile setting to store
+        if (this.store && newConfig.writeToFile !== undefined) {
+            this.store.set('logging.writeToFile', newConfig.writeToFile);
+        }
 
         if (!wasFileWritingEnabled && this.config.writeToFile) {
             this.initFileStream();

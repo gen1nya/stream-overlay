@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { FiAlertCircle } from 'react-icons/fi';
 import Switch from '../../../../utils/Switch';
@@ -98,6 +98,19 @@ export default function AdvancedSettings({ banner, updateConfig }) {
         hasCapturingRadiance: banner.hasCapturingRadiance !== false
     });
 
+    // Синхронизируем локальное состояние при смене баннера
+    useEffect(() => {
+        setSettings({
+            hardPity5Star: banner.hardPity5Star || 90,
+            hardPity4Star: banner.hardPity4Star || 10,
+            softPityStart: banner.softPityStart || 74,
+            baseRate5Star: banner.baseRate5Star || 0.006,
+            baseRate4Star: banner.baseRate4Star || 0.051,
+            featuredRate4Star: banner.featuredRate4Star || 0.5,
+            hasCapturingRadiance: banner.hasCapturingRadiance !== false
+        });
+    }, [banner.id]);
+
     const warningLines = useMemo(
         () => t('settings.bot.gacha.advanced.warning', { returnObjects: true }),
         [t]
@@ -113,25 +126,13 @@ export default function AdvancedSettings({ banner, updateConfig }) {
 
     const handleBlur = () => {
         // Применяем изменения при потере фокуса
-        updateConfig(prev => ({
-            ...prev,
-            banner: {
-                ...prev.banner,
-                ...settings
-            }
-        }));
+        updateConfig(settings);
     };
 
     const handleCapturingRadianceToggle = (checked) => {
         const newSettings = { ...settings, hasCapturingRadiance: checked };
         setSettings(newSettings);
-        updateConfig(prev => ({
-            ...prev,
-            banner: {
-                ...prev.banner,
-                hasCapturingRadiance: checked
-            }
-        }));
+        updateConfig({ hasCapturingRadiance: checked });
     };
 
     const formatPercent = (value) => {

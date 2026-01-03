@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styled from 'styled-components';
 import Popup from '../../../../utils/PopupComponent';
 import {
@@ -10,7 +10,8 @@ import {
     FiChevronLeft,
     FiChevronRight,
     FiSave,
-    FiCheck
+    FiCheck,
+    FiLayers
 } from 'react-icons/fi';
 import { getGachaUsers, searchGachaUsers, deleteGachaUser, updateGachaUser } from '../../../../../services/api';
 import {
@@ -189,7 +190,50 @@ const SaveButton = styled(Button)`
 
 const ITEMS_PER_PAGE = 50;
 
-export default function GachaUsersPopup({ onClose }) {
+const BannerSelectContainer = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+`;
+
+const BannerSelectLabel = styled.label`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #d6d6d6;
+    font-size: 0.9rem;
+    font-weight: 500;
+
+    svg {
+        color: #646cff;
+    }
+`;
+
+const BannerSelect = styled.select`
+    padding: 10px 14px;
+    border: 1px solid #555;
+    border-radius: 8px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 0.95rem;
+    cursor: pointer;
+    min-width: 200px;
+    transition: all 0.2s ease;
+
+    &:focus {
+        outline: none;
+        border-color: #646cff;
+        background: #252525;
+    }
+
+    option {
+        background: #1e1e1e;
+        color: #fff;
+    }
+`;
+
+export default function GachaUsersPopup({ onClose, banners = [] }) {
     const { t } = useTranslation();
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(false);
@@ -200,18 +244,23 @@ export default function GachaUsersPopup({ onClose }) {
     const [editingUser, setEditingUser] = useState(null);
     const [editForm, setEditForm] = useState(null);
     const [saving, setSaving] = useState(false);
+    const [selectedBannerId, setSelectedBannerId] = useState(() => banners[0]?.id ?? 0);
 
     const searchTimeoutRef = useRef(null);
 
-    const loadUsers = async (offset = 0, query = '', reset = false) => {
+    const selectedBanner = useMemo(() => {
+        return banners.find(b => b.id === selectedBannerId) || banners[0];
+    }, [banners, selectedBannerId]);
+
+    const loadUsers = async (offset = 0, query = '', reset = false, bannerId = selectedBannerId) => {
         try {
             setLoading(true);
 
             let result;
             if (query.trim()) {
-                result = await searchGachaUsers(query.trim(), offset, ITEMS_PER_PAGE);
+                result = await searchGachaUsers(bannerId, query.trim(), offset, ITEMS_PER_PAGE);
             } else {
-                result = await getGachaUsers(offset, ITEMS_PER_PAGE);
+                result = await getGachaUsers(bannerId, offset, ITEMS_PER_PAGE);
             }
 
             const newUsers = result.users || [];
@@ -236,8 +285,8 @@ export default function GachaUsersPopup({ onClose }) {
     };
 
     useEffect(() => {
-        loadUsers(0, '', true);
-    }, []);
+        loadUsers(0, '', true, selectedBannerId);
+    }, [selectedBannerId]);
 
     useEffect(() => {
         if (searchTimeoutRef.current) {
@@ -307,7 +356,7 @@ export default function GachaUsersPopup({ onClose }) {
 
         try {
             setSaving(true);
-            await updateGachaUser(editingUser.userId, editForm.userName, {
+            await updateGachaUser(editingUser.userId, selectedBannerId, editForm.userName, {
                 pullsSince5Star: parseInt(editForm.pullsSince5Star),
                 pullsSince4Star: parseInt(editForm.pullsSince4Star),
                 pity4StarFailedRateUp: parseInt(editForm.pity4StarFailedRateUp),
@@ -345,13 +394,20 @@ export default function GachaUsersPopup({ onClose }) {
         }
 
         try {
-            await deleteGachaUser(userId);
+            await deleteGachaUser(userId, selectedBannerId);
             setUsers(prev => prev.filter(u => u.userId !== userId));
             setTotalCount(prev => prev - 1);
         } catch (error) {
             console.error('Failed to delete user:', error);
             alert(t('settings.bot.gacha.users.notifications.deleteError'));
         }
+    };
+
+    const handleBannerChange = (e) => {
+        const newBannerId = parseInt(e.target.value);
+        setSelectedBannerId(newBannerId);
+        setCurrentPage(0);
+        setSearchQuery('');
     };
 
     const handleFormChange = (field, value) => {
@@ -367,6 +423,22 @@ export default function GachaUsersPopup({ onClose }) {
                         <FiX />
                     </CloseButton>
                 </Header>
+
+                {banners.length > 1 && (
+                    <BannerSelectContainer>
+                        <BannerSelectLabel>
+                            <FiLayers />
+                            {t('settings.bot.gacha.users.bannerSelect.label')}
+                        </BannerSelectLabel>
+                        <BannerSelect value={selectedBannerId} onChange={handleBannerChange}>
+                            {banners.map(banner => (
+                                <option key={banner.id} value={banner.id}>
+                                    {banner.name || `Banner ${banner.id + 1}`}
+                                </option>
+                            ))}
+                        </BannerSelect>
+                    </BannerSelectContainer>
+                )}
 
                 <SearchSection>
                     <SearchInputWrapper>

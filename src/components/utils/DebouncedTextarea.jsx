@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import styled from 'styled-components';
 
 const TextareaWrapper = styled.div`
@@ -52,8 +52,12 @@ const CharCounter = styled.div`
  * @param {boolean} showCounter - Show character counter (default: true)
  * @param {string} placeholder - Placeholder text
  * @param {string} minHeight - Minimum height CSS value
+ *
+ * Ref methods:
+ * - insertText(text): Insert text at cursor position or at end
+ * - focus(): Focus the textarea
  */
-export default function DebouncedTextarea({
+const DebouncedTextarea = forwardRef(function DebouncedTextarea({
     value,
     onChange,
     maxLength = 500,
@@ -62,10 +66,67 @@ export default function DebouncedTextarea({
     placeholder,
     minHeight,
     ...props
-}) {
+}, ref) {
     const [localValue, setLocalValue] = useState(value || '');
     const debounceTimerRef = useRef(null);
     const isInitialMount = useRef(true);
+    const textareaRef = useRef(null);
+    const lastSelectionRef = useRef({ start: 0, end: 0 });
+
+    // Track selection on every interaction
+    const updateSelection = useCallback(() => {
+        if (textareaRef.current) {
+            lastSelectionRef.current = {
+                start: textareaRef.current.selectionStart,
+                end: textareaRef.current.selectionEnd
+            };
+        }
+    }, []);
+
+    // Expose methods via ref
+    useImperativeHandle(ref, () => ({
+        insertText: (text) => {
+            const textarea = textareaRef.current;
+            if (!textarea) return;
+
+            // Use current selection from DOM if textarea is focused, otherwise use last known
+            const start = document.activeElement === textarea
+                ? textarea.selectionStart
+                : lastSelectionRef.current.start;
+            const end = document.activeElement === textarea
+                ? textarea.selectionEnd
+                : lastSelectionRef.current.end;
+
+            const before = localValue.substring(0, start);
+            const after = localValue.substring(end);
+            const newValue = before + text + after;
+
+            // Check max length
+            if (maxLength && newValue.length > maxLength) {
+                return;
+            }
+
+            setLocalValue(newValue);
+
+            // Trigger onChange immediately for better UX
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+            onChange?.(newValue);
+
+            // Set cursor position after the inserted text
+            const newCursorPos = start + text.length;
+            // Use setTimeout to ensure state has updated, then focus and set cursor
+            setTimeout(() => {
+                textarea.focus();
+                textarea.setSelectionRange(newCursorPos, newCursorPos);
+                lastSelectionRef.current = { start: newCursorPos, end: newCursorPos };
+            }, 0);
+        },
+        focus: () => {
+            textareaRef.current?.focus();
+        }
+    }), [localValue, onChange, maxLength]);
 
     // Sync local value when external value changes
     useEffect(() => {
@@ -127,9 +188,13 @@ export default function DebouncedTextarea({
     return (
         <TextareaWrapper>
             <StyledTextarea
+                ref={textareaRef}
                 value={localValue}
                 onChange={handleChange}
                 onBlur={handleBlur}
+                onSelect={updateSelection}
+                onKeyUp={updateSelection}
+                onClick={updateSelection}
                 placeholder={placeholder}
                 $minHeight={minHeight}
                 $showCounter={showCounter}
@@ -143,4 +208,6 @@ export default function DebouncedTextarea({
             )}
         </TextareaWrapper>
     );
-}
+});
+
+export default DebouncedTextarea;

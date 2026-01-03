@@ -78,16 +78,22 @@ export class DbRepository {
             )
         `).run();
 
+        // Создаем таблицу user_pity с новой схемой (с banner_id)
         this.db.prepare(`
             CREATE TABLE IF NOT EXISTS user_pity (
-                user_id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                banner_id INTEGER NOT NULL DEFAULT 0,
                 user_name TEXT DEFAULT 'unknown',
                 pulls_since_5_star INTEGER DEFAULT 0,
                 pulls_since_4_star INTEGER DEFAULT 0,
                 pity_4_star_failed_rate_up INTEGER DEFAULT 0,
-                is_guaranteed_5_star INTEGER DEFAULT 0
+                is_guaranteed_5_star INTEGER DEFAULT 0,
+                PRIMARY KEY (user_id, banner_id)
             )
         `).run();
+
+        // Миграция старой схемы (если необходимо)
+        this._migrateUserPitySchema();
 
         // Lottery tables
         this.db.prepare(`
@@ -202,5 +208,85 @@ export class DbRepository {
             CREATE INDEX IF NOT EXISTS idx_roulette_plays_user
             ON roulette_plays(user_id, created_at)
         `).run();
+
+        // Индексы для user_pity
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_user_pity_user_id
+            ON user_pity(user_id)
+        `).run();
+
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_user_pity_banner_id
+            ON user_pity(banner_id)
+        `).run();
+    }
+
+    /**
+     * Мигрирует старую схему user_pity (без banner_id) в новую
+     */
+    private _migrateUserPitySchema() {
+        // Проверяем структуру таблицы
+        const tableInfo = this.db.prepare("PRAGMA table_info(user_pity)").all() as Array<{
+            cid: number;
+            name: string;
+            type: string;
+            notnull: number;
+            dflt_value: any;
+            pk: number;
+        }>;
+
+        const hasBannerId = tableInfo.some(col => col.name === 'banner_id');
+
+        // Если banner_id уже есть - миграция не нужна
+        if (hasBannerId) {
+            return;
+        }
+
+        // Проверяем, есть ли данные в старой таблице
+        const count = this.db.prepare("SELECT COUNT(*) as count FROM user_pity").get() as { count: number };
+
+        if (count.count === 0) {
+            // Таблица пустая - просто пересоздаём с новой схемой
+            this.db.prepare("DROP TABLE user_pity").run();
+            this.db.prepare(`
+                CREATE TABLE user_pity (
+                    user_id TEXT NOT NULL,
+                    banner_id INTEGER NOT NULL DEFAULT 0,
+                    user_name TEXT DEFAULT 'unknown',
+                    pulls_since_5_star INTEGER DEFAULT 0,
+                    pulls_since_4_star INTEGER DEFAULT 0,
+                    pity_4_star_failed_rate_up INTEGER DEFAULT 0,
+                    is_guaranteed_5_star INTEGER DEFAULT 0,
+                    PRIMARY KEY (user_id, banner_id)
+                )
+            `).run();
+            return;
+        }
+
+        // Есть данные - мигрируем
+        this.db.exec(`
+            -- Создаём новую таблицу
+            CREATE TABLE user_pity_new (
+                user_id TEXT NOT NULL,
+                banner_id INTEGER NOT NULL DEFAULT 0,
+                user_name TEXT DEFAULT 'unknown',
+                pulls_since_5_star INTEGER DEFAULT 0,
+                pulls_since_4_star INTEGER DEFAULT 0,
+                pity_4_star_failed_rate_up INTEGER DEFAULT 0,
+                is_guaranteed_5_star INTEGER DEFAULT 0,
+                PRIMARY KEY (user_id, banner_id)
+            );
+
+            -- Копируем данные с banner_id = 0
+            INSERT INTO user_pity_new (user_id, banner_id, user_name, pulls_since_5_star, pulls_since_4_star, pity_4_star_failed_rate_up, is_guaranteed_5_star)
+            SELECT user_id, 0, user_name, pulls_since_5_star, pulls_since_4_star, pity_4_star_failed_rate_up, is_guaranteed_5_star
+            FROM user_pity;
+
+            -- Удаляем старую таблицу
+            DROP TABLE user_pity;
+
+            -- Переименовываем новую
+            ALTER TABLE user_pity_new RENAME TO user_pity;
+        `);
     }
 }

@@ -26,7 +26,8 @@
       "channels.js",
       "default-theme.json",
       "services/**/*",
-      "dist/**/*"
+      "dist/**/*",
+      "docs/**/*"
     ],
     "asar": true,
     "asarUnpack": [
@@ -68,6 +69,7 @@
     "lodash": "^4.17.21",
     "lodash.merge": "^4.6.2",
     "lodash.throttle": "^4.1.1",
+    "mermaid": "^11.12.2",
     "mime-types": "^3.0.1",
     "node-fetch": "^3.3.2",
     "node-gyp-build": "^4.8.4",
@@ -77,10 +79,13 @@
     "react-dom": "^19.1.0",
     "react-fast-marquee": "^1.6.5",
     "react-i18next": "^16.2.4",
+    "react-markdown": "^10.1.0",
     "react-pick-color": "^2.0.0",
     "react-router-dom": "^7.6.0",
     "react-transition-group": "^4.4.5",
     "react-window": "^1.8.11",
+    "rehype-highlight": "^7.0.2",
+    "remark-gfm": "^4.0.1",
     "socks-proxy-agent": "^8.0.5",
     "styled-components": "^6.1.18",
     "uuid": "^11.1.0",

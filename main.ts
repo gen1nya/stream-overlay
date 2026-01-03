@@ -1,4 +1,4 @@
-import {app} from 'electron';
+import {app, ipcMain} from 'electron';
 import WebSocket from 'ws';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
@@ -31,6 +31,11 @@ import {BotConfigService} from "./services/BotConfigService";
 import {DbRepository} from "./services/db/DbRepository";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {BackendLogService} from "./services/BackendLogService";
+import {MediaEventsController} from "./services/MediaEventsController";
+import {MediaEventsService} from "./services/MediaEventsService";
+import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
+import {MediaLibraryService} from "./services/MediaLibraryService";
+import {DocsService} from "./services/DocsService";
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -66,11 +71,26 @@ const store = new Store<StoreSchema>({
     irc: {
         useWebSocket: false,  // Default to TCP
     },
+    logging: {
+        writeToFile: false,
+    },
     chatWindow: {
         width: 400,
         height: 640,
         gameMode: false,
-    }
+    },
+    mediaEvents: [],
+    mediaDisplayGroups: [],
+    mediaOverlaySettings: {
+      customResolution: {
+        enabled: false,
+        width: 1600,
+        height: 900,
+        color: '#f59e0b',
+        label: 'Custom'
+      }
+    },
+    mediaLibrary: [],
   },
 });
 
@@ -80,12 +100,16 @@ const logService = new LogService((logs) => {
   broadcast('log:updated', { logs });
 }, 100);
 
+const mediaEventsService = new MediaEventsService(store);
+const mediaDisplayGroupService = new MediaDisplayGroupService(store);
+const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
+const mediaLibraryService = new MediaLibraryService(store);
+
 const backendLogService = new BackendLogService({
   enabled: true,
   broadcastViaWebSocket: true,
-  writeToFile: false,
   maxBufferSize: 1000,
-});
+}, store);
 
 const audiosessionManager = new AudiosessionManager(store, logService);
 const proxy = new ProxyService();
@@ -210,6 +234,10 @@ const applyAction = async (action: { type: string; payload: any }) => {
       }
       break;
 
+    case ActionTypes.SHOW_MEDIA:
+      await mediaEventsController.showMedia(action.payload);
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -250,6 +278,7 @@ const botService = new BotConfigService(
 
 // Track current user ID for trigger repository access
 let currentUserId: string | null = null;
+let mediaOverlayDebugMode = false;
 
 const actionScheduler = new ActionScheduler({
     getRepository: () => {
@@ -299,6 +328,11 @@ function broadcast(channel: string, payload: any) {
 backendLogService.setBroadcastCallback((logs) => {
   broadcast('backend-logs:update', logs);
 });
+
+mediaEventsService.setBroadcastCallback(broadcast);
+mediaDisplayGroupService.setBroadcastCallback(broadcast);
+mediaEventsController.setBroadcastCallback(broadcast);
+mediaLibraryService.setBroadcastCallback(broadcast);
 
 twitchClient.on('event', async ({ destination, event }) => {
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
@@ -365,6 +399,68 @@ app.whenReady().then(() => {
   );
   audiosessionManager.registerIPCs();
   scraper.setupIPCs();
+  mediaEventsService.registerIpcHandlers();
+  mediaDisplayGroupService.registerIpcHandlers();
+  mediaLibraryService.registerIpcHandlers();
+
+  // Docs service for help window
+  const docsService = new DocsService();
+  docsService.registerIpcHandlers();
+
+  // Media test handler - needs access to mediaEventsController
+  ipcMain.handle('media:test', async (_e, mediaEventId: string) => {
+    const mediaEvent = mediaEventsController.getMediaEventById(mediaEventId);
+    if (!mediaEvent) {
+      console.log('[Media Test] Media event not found:', mediaEventId);
+      return { success: false, error: 'Media event not found' };
+    }
+
+    await mediaEventsController.showMedia({
+      mediaEventId,
+      context: {
+        user: 'TestUser',
+        userId: '12345',
+        reward: 'Test Reward',
+        rewardCost: 100,
+        target: 'TestTarget',
+        args: ['arg1', 'arg2', 'arg3'],
+        raider: 'TestRaider',
+        viewers: 42
+      }
+    });
+
+    return { success: true };
+  });
+
+  // Test media for a group (shows first available media in the group)
+  ipcMain.handle('media:test-group', async (_e, groupId: string) => {
+    const allEvents = mediaEventsController.getAllMediaEvents();
+    const groupEvents = allEvents.filter(e => e.groupId === groupId);
+
+    if (groupEvents.length === 0) {
+      console.log('[Media Test] No media events in group:', groupId);
+      return { success: false, error: 'No media events in this group' };
+    }
+
+    // Pick a random event from the group
+    const randomEvent = groupEvents[Math.floor(Math.random() * groupEvents.length)];
+
+    await mediaEventsController.showMedia({
+      mediaEventId: randomEvent.id,
+      context: {
+        user: 'TestUser',
+        userId: '12345',
+        reward: 'Test Reward',
+        rewardCost: 100,
+        target: 'TestTarget',
+        args: ['arg1', 'arg2', 'arg3'],
+        raider: 'TestRaider',
+        viewers: 42
+      }
+    });
+
+    return { success: true, mediaName: randomEvent.name };
+  });
 
   wss.on('connection', (ws) => {
     ws.on('message', (message) => {
@@ -373,6 +469,24 @@ app.whenReady().then(() => {
         case 'theme:get-all':
           const themes = store.get('themes');
           broadcast('themes:get', { themes, currentThemeName });
+          break;
+        case 'media-groups:get-all':
+          const groups = mediaDisplayGroupService.getAll();
+          broadcast('media-groups:updated', groups);
+          break;
+        case 'media-overlay:set-debug':
+          mediaOverlayDebugMode = payload?.enabled ?? false;
+          broadcast('media-overlay:debug', { enabled: mediaOverlayDebugMode });
+          break;
+        case 'media-overlay:get-debug':
+          broadcast('media-overlay:debug', { enabled: mediaOverlayDebugMode });
+          break;
+        case 'media-overlay:get-settings':
+          const overlaySettings = mediaDisplayGroupService.getOverlaySettings();
+          broadcast('media-overlay:settings-updated', overlaySettings);
+          break;
+        case 'media-overlay:save-settings':
+          mediaDisplayGroupService.saveOverlaySettings(payload);
           break;
         case 'theme:get-by-name':
             const themeName = payload.name;
@@ -425,10 +539,12 @@ app.whenReady().then(() => {
 
 process.on('uncaughtException', (error) => {
   console.error('Uncaught Exception:', error);
+  backendLogService.logCrash(error, 'UNCAUGHT_EXCEPTION');
   app.exit(1);
 });
 process.on('unhandledRejection', (reason) => {
   console.error('Unhandled Rejection:', reason);
+  backendLogService.logCrash(reason, 'UNHANDLED_REJECTION');
   app.exit(1);
 });
 app.on('window-all-closed', () => {

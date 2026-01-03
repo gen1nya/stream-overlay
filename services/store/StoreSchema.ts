@@ -1,6 +1,24 @@
 import {GachaStoreSchema} from "../middleware/gacha/types";
 import {LotteryBotConfig} from "../middleware/lottery/types";
 
+// ============================================
+// Media Library Types
+// ============================================
+
+export type MediaFileType = 'image' | 'video' | 'audio';
+
+export interface MediaFile {
+    id: string;                    // UUID
+    filename: string;              // Stored filename (uuid + extension)
+    originalName: string;          // Original upload name
+    type: MediaFileType;
+    mimeType: string;              // 'image/png', 'video/mp4', 'audio/mp3'
+    size: number;                  // File size in bytes
+    dateAdded: number;             // Unix timestamp
+    width?: number;                // For image/video
+    height?: number;               // For image/video
+    duration?: number;             // For video/audio (seconds)
+}
 
 export interface ChatWindowConfig {
     x?: number;
@@ -23,11 +41,30 @@ export interface StoreSchema {
     audio: AudioConfig;
     youtube: YoutubeConfig;
     irc: IrcConfig;
+    logging: LoggingConfig;
     chatWindow: ChatWindowConfig;
+    mediaEvents: MediaEventConfig[];  // Standalone media events storage
+    mediaDisplayGroups: MediaDisplayGroup[];  // Media display groups configuration
+    mediaOverlaySettings: MediaOverlaySettings;  // Media overlay debug/preview settings
+    mediaLibrary: MediaFile[];  // Media library files storage
+}
+
+export interface MediaOverlaySettings {
+    customResolution: {
+        enabled: boolean;
+        width: number;
+        height: number;
+        color: string;
+        label: string;
+    };
 }
 
 export interface IrcConfig {
     useWebSocket: boolean;
+}
+
+export interface LoggingConfig {
+    writeToFile: boolean;
 }
 
 export interface AudioConfig {
@@ -320,13 +357,14 @@ export interface TriggerActionParams {
     message?: string;      // For send_message (supports ${user}, ${target}, ${args[N]})
     duration?: number;     // For timeout (seconds)
     reason?: string;       // For timeout
+    mediaEventId?: string; // For show_media - reference to MediaEventConfig.id
 }
 
 // Trigger action ("THEN" part)
 export interface TriggerAction {
     id: string;            // UUID for UI identification
     type: 'send_message' | 'add_vip' | 'remove_vip' |
-          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout';
+          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout' | 'show_media';
 
     // Action target
     target: 'sender' | 'arg_user';  // sender = message author, arg_user = from argument
@@ -383,6 +421,130 @@ export interface TimerBotConfig {
     timers: TimerConfig[];
 }
 
+// ============================================
+// Media Events Types
+// ============================================
+
+// Media event style configuration
+export interface MediaEventStyle {
+    // Text settings
+    fontSize: number;
+    fontFamily: string;
+    fontUrl: string;
+    fontColor: string;
+    fontOpacity: number;
+
+    // Text shadow
+    shadowColor: string;
+    shadowOpacity: number;
+    shadowRadius: number;
+    shadowOffsetX: number;
+    shadowOffsetY: number;
+
+    // Background
+    backgroundColor: string;
+    backgroundOpacity: number;
+}
+
+// Animation types for media display
+export type AnimationType = 'none' | 'fade' | 'slide-up' | 'slide-down' | 'slide-left' | 'slide-right' | 'scale' | 'bounce';
+
+// Queue mode for handling multiple media events
+export type QueueMode = 'sequential' | 'replace' | 'stack';
+
+// Layout mode for positioning items within group (legacy, kept for compatibility)
+export type LayoutMode = 'overlay' | 'stack-vertical' | 'stack-horizontal';
+
+// Placement mode for positioning items within group
+export type PlacementMode = 'fixed' | 'random' | 'stack';
+
+// Stack direction for stack placement mode
+export type StackDirection = 'horizontal' | 'vertical';
+
+// Anchor point for content positioning
+export type AnchorPoint = 'top-left' | 'top-center' | 'top-right' | 'center-left' | 'center' | 'center-right' | 'bottom-left' | 'bottom-center' | 'bottom-right';
+
+// Random placement settings
+export interface RandomPlacementSettings {
+    rotationEnabled: boolean;        // Enable random rotation
+    maxRotation: number;             // Max rotation angle in degrees (e.g., 15 means -15 to +15)
+}
+
+// Stack placement settings
+export interface StackPlacementSettings {
+    direction: StackDirection;       // Stack direction
+    gap: number;                     // Gap between items in pixels
+    wrap: boolean;                   // Wrap to next row/column when full
+}
+
+// Media display group position configuration
+export interface MediaGroupPosition {
+    x: number;                       // X coordinate from top-left (0,0)
+    y: number;                       // Y coordinate from top-left (0,0)
+}
+
+// Media display group size configuration
+export interface MediaGroupSize {
+    width: number;                   // Width in pixels (0 = auto)
+    height: number;                  // Height in pixels (0 = auto)
+    maxWidth: number;                // Max width constraint
+    maxHeight: number;               // Max height constraint
+    contentScale: number;            // Content scale multiplier (1 = 100%)
+    mediaWidth: number;              // Media container width (0 = auto, use group size)
+    mediaHeight: number;             // Media container height (0 = auto, use group size)
+}
+
+// Animation configuration
+export interface MediaGroupAnimation {
+    in: AnimationType;
+    out: AnimationType;
+    inDuration: number;              // Animation duration in ms
+    outDuration: number;
+    easing: string;                  // CSS easing function
+}
+
+// Queue configuration
+export interface MediaGroupQueue {
+    mode: QueueMode;
+    maxItems: number;                // Max items in queue (0 = unlimited)
+    gapBetween: number;              // Gap between items in ms (for sequential)
+}
+
+// Media display group definition
+export interface MediaDisplayGroup {
+    id: string;                      // UUID
+    name: string;                    // Display name
+    enabled: boolean;
+    position: MediaGroupPosition;
+    size: MediaGroupSize;
+    layout: LayoutMode;              // Legacy: How items are positioned within group
+    placement: PlacementMode;        // Placement mode: fixed, random, stack
+    randomSettings: RandomPlacementSettings;  // Settings for random placement
+    stackSettings: StackPlacementSettings;    // Settings for stack placement
+    anchor: AnchorPoint;             // Content anchor point within group
+    animation: MediaGroupAnimation;
+    queue: MediaGroupQueue;
+    defaultDuration: number;         // Default display duration in seconds
+    zIndex: number;                  // Layer order
+}
+
+// Media event definition
+export interface MediaEventConfig {
+    id: string;                      // UUID
+    name: string;                    // Display name for UI
+    groupId?: string;                // Reference to MediaDisplayGroup (optional for backwards compat)
+    mediaType: 'image' | 'video' | 'audio';
+    mediaUrl: string;                // URL to image/video/audio
+    caption: string;                 // Template with ${user}, ${reward}, etc.
+    displayDuration: number;         // Seconds to show (0 = use group default, -1 = until media ends)
+    style: MediaEventStyle;
+}
+
+// Media events bot configuration
+export interface MediaEventsBotConfig {
+    events: MediaEventConfig[];
+}
+
 // Main bot configuration interface
 export interface BotConfig {
     roulette: RouletteBotConfig;
@@ -392,4 +554,5 @@ export interface BotConfig {
     lottery: LotteryBotConfig;
     triggers: TriggersBotConfig;
     timers: TimerBotConfig;
+    mediaEvents: MediaEventsBotConfig;
 }

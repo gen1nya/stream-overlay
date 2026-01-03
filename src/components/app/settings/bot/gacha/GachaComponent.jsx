@@ -1,7 +1,7 @@
 import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
 import {
-    FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap
+    FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap, FiMessageSquare
 } from 'react-icons/fi';
 import {
     Section,
@@ -11,10 +11,12 @@ import {
 import {
     HelpInfoPopup
 } from "../SharedBotStyles";
+import BannerSelector from './BannerSelector';
 import BannerSettingsEditor from './BannerSettingsEditor';
 import ItemsManager from './ItemsManager';
 import TriggersManager from './TriggersManager';
 import AdvancedSettings from './AdvancedSettings';
+import MessageTemplatesEditor from './MessageTemplatesEditor';
 import {useTranslation} from 'react-i18next';
 
 const InfoCard = styled.div`
@@ -87,21 +89,38 @@ const StatValue = styled.span`
     color: #e0e0e0;
 `;
 
+const BannerSelectorSection = styled.div`
+    margin-bottom: 16px;
+`;
+
+const DEFAULT_MESSAGES = {
+    singlePull: '@${user}, you got: ${item} ${stars}',
+    multiPullIntro: '@${user} pulls ${count}x and gets: ',
+    won5050: ' ✅ (50/50 Won!)',
+    lost5050: ' ❌ (50/50 Lost)',
+    capturingRadiance: ' 💫 (Capturing Radiance!)',
+    softPity: ' 🔥 (Pull #${pullNumber})',
+    error: '@${user}, error during pull: ${error}'
+};
+
+const createDefaultBanner = (id, name) => ({
+    id,
+    name: name || `Banner ${id + 1}`,
+    featured5StarId: null,
+    featured4StarIds: [],
+    hardPity5Star: 90,
+    hardPity4Star: 10,
+    softPityStart: 74,
+    baseRate5Star: 0.006,
+    baseRate4Star: 0.051,
+    featuredRate4Star: 0.5,
+    hasCapturingRadiance: true,
+    messages: DEFAULT_MESSAGES
+});
+
 const createDefaultConfig = (defaultBannerName) => ({
     enabled: false,
-    banner: {
-        id: 0,
-        name: defaultBannerName,
-        featured5StarId: null,
-        featured4StarIds: [],
-        hardPity5Star: 90,
-        hardPity4Star: 10,
-        softPityStart: 74,
-        baseRate5Star: 0.006,
-        baseRate4Star: 0.051,
-        featuredRate4Star: 0.5,
-        hasCapturingRadiance: true
-    },
+    banners: [createDefaultBanner(0, defaultBannerName)],
     items: [],
     triggers: []
 });
@@ -114,26 +133,86 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
         createDefaultConfig(t('settings.bot.gacha.component.defaults.bannerName'))
     ), [t]);
 
+    // Инициализация конфига (с миграцией старого формата)
     const [config, setConfig] = useState(() => {
-        if (!gachaConfig || !gachaConfig.items || !Array.isArray(gachaConfig.items) || !gachaConfig.banner || !gachaConfig.triggers) {
+        if (!gachaConfig) {
             const newConfig = getDefaultConfig();
-            apply((prev) => {
-                return {
-                    ...prev,
-                    gacha: newConfig,
-                };
-            });
+            apply((prev) => ({
+                ...prev,
+                gacha: newConfig,
+            }));
             return newConfig;
-        } else {
-            return gachaConfig
         }
+
+        // Если старый формат (banner вместо banners) - мигрируем
+        if (gachaConfig.banner && !gachaConfig.banners) {
+            const migratedConfig = {
+                enabled: gachaConfig.enabled,
+                banners: [gachaConfig.banner],
+                items: (gachaConfig.items || []).map(item => ({
+                    ...item,
+                    bannerId: item.bannerId ?? 0
+                })),
+                triggers: (gachaConfig.triggers || []).map(trigger => ({
+                    ...trigger,
+                    bannerId: trigger.bannerId ?? 0
+                }))
+            };
+            apply((prev) => ({
+                ...prev,
+                gacha: migratedConfig,
+            }));
+            return migratedConfig;
+        }
+
+        return gachaConfig;
+    });
+
+    // Текущий выбранный баннер
+    const [selectedBannerId, setSelectedBannerId] = useState(() => {
+        return config?.banners?.[0]?.id ?? 0;
     });
 
     useEffect(() => {
         if (gachaConfig) {
-            setConfig(gachaConfig || getDefaultConfig());
+            // Проверяем формат и мигрируем если нужно
+            if (gachaConfig.banner && !gachaConfig.banners) {
+                const migratedConfig = {
+                    enabled: gachaConfig.enabled,
+                    banners: [gachaConfig.banner],
+                    items: (gachaConfig.items || []).map(item => ({
+                        ...item,
+                        bannerId: item.bannerId ?? 0
+                    })),
+                    triggers: (gachaConfig.triggers || []).map(trigger => ({
+                        ...trigger,
+                        bannerId: trigger.bannerId ?? 0
+                    }))
+                };
+                setConfig(migratedConfig);
+            } else {
+                setConfig(gachaConfig);
+            }
         }
-    }, [gachaConfig, getDefaultConfig]);
+    }, [gachaConfig]);
+
+    // Текущий баннер
+    const currentBanner = useMemo(() => {
+        return config?.banners?.find(b => b.id === selectedBannerId) || config?.banners?.[0];
+    }, [config?.banners, selectedBannerId]);
+
+    // Предметы текущего баннера
+    const currentItems = useMemo(() => {
+        return (config?.items || []).filter(item => item.bannerId === selectedBannerId);
+    }, [config?.items, selectedBannerId]);
+
+    // Триггеры текущего баннера
+    const currentTriggers = useMemo(() => {
+        return (config?.triggers || []).filter(t => t.bannerId === selectedBannerId);
+    }, [config?.triggers, selectedBannerId]);
+
+    // Все триггеры (для валидации в TriggersManager)
+    const allTriggers = useMemo(() => config?.triggers || [], [config?.triggers]);
 
     const updateGachaConfig = useCallback((updater) => {
         apply((prev) => {
@@ -147,16 +226,74 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
         });
     }, [apply]);
 
+    // Обновить конкретный баннер
+    const updateBannerConfig = useCallback((bannerId, updater) => {
+        updateGachaConfig((prev) => ({
+            ...prev,
+            banners: prev.banners.map(banner =>
+                banner.id === bannerId
+                    ? (typeof updater === 'function' ? updater(banner) : {...banner, ...updater})
+                    : banner
+            )
+        }));
+    }, [updateGachaConfig]);
+
+    // Генерация нового ID баннера
+    const generateNewBannerId = useCallback(() => {
+        const existingIds = (config?.banners || []).map(b => b.id);
+        return Math.max(0, ...existingIds) + 1;
+    }, [config?.banners]);
+
+    // Добавление нового баннера
+    const handleAddBanner = useCallback(() => {
+        const newId = generateNewBannerId();
+        const newBanner = createDefaultBanner(
+            newId,
+            t('settings.bot.gacha.bannerSelector.newBannerName', { id: newId + 1 })
+        );
+
+        updateGachaConfig((prev) => ({
+            ...prev,
+            banners: [...(prev.banners || []), newBanner]
+        }));
+
+        setSelectedBannerId(newId);
+    }, [generateNewBannerId, updateGachaConfig, t]);
+
+    // Удаление баннера
+    const handleDeleteBanner = useCallback((bannerId) => {
+        if ((config?.banners?.length || 0) <= 1) {
+            return;
+        }
+
+        updateGachaConfig((prev) => ({
+            ...prev,
+            banners: prev.banners.filter(b => b.id !== bannerId),
+            items: prev.items.filter(i => i.bannerId !== bannerId),
+            triggers: prev.triggers.filter(t => t.bannerId !== bannerId)
+        }));
+
+        // Выбрать другой баннер
+        const remainingBanners = config.banners.filter(b => b.id !== bannerId);
+        if (remainingBanners.length > 0 && selectedBannerId === bannerId) {
+            setSelectedBannerId(remainingBanners[0].id);
+        }
+    }, [config?.banners, selectedBannerId, updateGachaConfig]);
+
     const stats = useMemo(() => ({
-        totalItems: config.items?.length || 0,
-        fiveStarCount: config.items?.filter(item => item.rarity === 5).length || 0,
-        fourStarCount: config.items?.filter(item => item.rarity === 4).length || 0,
-        triggersCount: config.triggers?.length || 0,
-    }), [config.items, config.triggers]);
+        totalItems: currentItems.length,
+        fiveStarCount: currentItems.filter(item => item.rarity === 5).length,
+        fourStarCount: currentItems.filter(item => item.rarity === 4).length,
+        triggersCount: currentTriggers.length,
+    }), [currentItems, currentTriggers]);
 
     const infoDetails = useMemo(() => (
         t('settings.bot.gacha.component.info.details', {returnObjects: true})
     ), [t]);
+
+    if (!currentBanner) {
+        return null;
+    }
 
     return (
         <>
@@ -217,6 +354,17 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                 </InfoCard>
             </Section>
 
+            {/* Выбор баннера */}
+            <BannerSelectorSection>
+                <BannerSelector
+                    banners={config?.banners || []}
+                    selectedBannerId={selectedBannerId}
+                    onSelect={setSelectedBannerId}
+                    onAdd={handleAddBanner}
+                    onDelete={handleDeleteBanner}
+                />
+            </BannerSelectorSection>
+
             {/* Настройки баннера */}
             <Section>
                 <SectionHeader>
@@ -226,9 +374,9 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                     </SectionTitle>
                 </SectionHeader>
                 <BannerSettingsEditor
-                    banner={config.banner}
-                    items={config.items}
-                    updateConfig={updateGachaConfig}
+                    banner={currentBanner}
+                    items={currentItems}
+                    updateConfig={(updater) => updateBannerConfig(selectedBannerId, updater)}
                 />
             </Section>
 
@@ -241,7 +389,8 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                     </SectionTitle>
                 </SectionHeader>
                 <ItemsManager
-                    items={config.items}
+                    items={currentItems}
+                    bannerId={selectedBannerId}
                     updateConfig={updateGachaConfig}
                 />
             </Section>
@@ -255,8 +404,24 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                     </SectionTitle>
                 </SectionHeader>
                 <TriggersManager
-                    triggers={config.triggers}
+                    triggers={currentTriggers}
+                    allTriggers={allTriggers}
+                    bannerId={selectedBannerId}
                     updateConfig={updateGachaConfig}
+                />
+            </Section>
+
+            {/* Шаблоны сообщений */}
+            <Section>
+                <SectionHeader>
+                    <SectionTitle>
+                        <FiMessageSquare/>
+                        {t('settings.bot.gacha.component.sections.messages')}
+                    </SectionTitle>
+                </SectionHeader>
+                <MessageTemplatesEditor
+                    banner={currentBanner}
+                    updateConfig={(updater) => updateBannerConfig(selectedBannerId, updater)}
                 />
             </Section>
 
@@ -269,8 +434,8 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                     </SectionTitle>
                 </SectionHeader>
                 <AdvancedSettings
-                    banner={config.banner}
-                    updateConfig={updateGachaConfig}
+                    banner={currentBanner}
+                    updateConfig={(updater) => updateBannerConfig(selectedBannerId, updater)}
                 />
             </Section>
         </>

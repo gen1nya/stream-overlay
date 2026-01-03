@@ -142,6 +142,7 @@ export function startHttpServer(port: number): Server {
   const appServer   = express();
   const distPath    = resolveDistPath();
   const userDataPath = path.join(app.getPath('userData'), 'images');
+  const mediaBasePath = path.join(app.getPath('userData'), 'media');
 
   console.log(`[http] serving dist from: ${distPath} (exists=${fs.existsSync(distPath)})`);
 
@@ -166,6 +167,10 @@ export function startHttpServer(port: number): Server {
 
   appServer.use(express.static(distPath));
   appServer.use('/images', express.static(userDataPath));
+  // Media library routes
+  appServer.use('/media/images', express.static(path.join(mediaBasePath, 'images')));
+  appServer.use('/media/videos', express.static(path.join(mediaBasePath, 'videos')));
+  appServer.use('/media/audio', express.static(path.join(mediaBasePath, 'audio')));
   appServer.use(FONT_ROUTE, handleFontProxy);
 
   appServer.get('/', (_req, res) => {
@@ -193,11 +198,16 @@ export function startDevStaticServer(): Server {
   const devServer   = express();
   const distPath    = resolveDistPath();
   const userDataPath = path.join(app.getPath('userData'), 'images');
+  const mediaBasePath = path.join(app.getPath('userData'), 'media');
 
   console.log(`[http-dev] serving dist from: ${distPath} (exists=${fs.existsSync(distPath)})`);
 
   devServer.use(express.static(distPath));
   devServer.use('/images', express.static(userDataPath));
+  // Media library routes
+  devServer.use('/media/images', express.static(path.join(mediaBasePath, 'images')));
+  devServer.use('/media/videos', express.static(path.join(mediaBasePath, 'videos')));
+  devServer.use('/media/audio', express.static(path.join(mediaBasePath, 'audio')));
   devServer.use(FONT_ROUTE, handleFontProxy);
 
   const DEV_PORT = 5123;

@@ -7,7 +7,7 @@ import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, setChatGameMode, getChatGameMode} from './windowsManager';
+import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, createMediaOverlayEditorWindow, createMediaOverlayWindow, closeMediaOverlayWindow, isMediaOverlayWindowOpen, setChatGameMode, getChatGameMode, createHelpWindow} from './windowsManager';
 import {BackendLogService} from './services/BackendLogService';
 import {LogService} from "./services/logService";
 import {
@@ -101,6 +101,14 @@ export function registerIpcHandlers(
   ipcMain.handle('chat:set-game-mode', (_e, enabled: boolean) => setChatGameMode(enabled));
   ipcMain.handle('chat:get-game-mode', () => getChatGameMode());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());
+
+  // Media overlay handlers
+  ipcMain.handle('media:open-overlay', () => createMediaOverlayWindow());
+  ipcMain.handle('media:close-overlay', () => closeMediaOverlayWindow());
+  ipcMain.handle('media:is-overlay-open', () => isMediaOverlayWindowOpen());
+
+  // Help window handler
+  ipcMain.handle('help:open', () => createHelpWindow());
   ipcMain.handle('utils:open_url', async (_e, url) => { await shell.openExternal(url); });
   ipcMain.handle('system:get-stats', () => ({ startTime: appStartTime, lastEventSub: twitchClient.getLastEventSubTimestamp(), lastIRC: twitchClient.getLastChatTimestamp() }));
   ipcMain.handle('system:reconnect', async () => {
@@ -167,6 +175,9 @@ export function registerIpcHandlers(
   });
   ipcMain.handle('utils:get_image_url', (_e, fileName) => `/images/${encodeURIComponent(fileName)}`);
 
+  // Media overlay editor handler
+  ipcMain.handle('media-overlay:open-editor', () => createMediaOverlayEditorWindow());
+
   // Backend logs handlers
   ipcMain.handle('backend-logs:open', () => createBackendLogsWindow());
   ipcMain.handle('backend-logs:get-buffer', () => {
@@ -186,6 +197,19 @@ export function registerIpcHandlers(
       return backendLogService.getConfig();
     }
     return null;
+  });
+
+  // TEST: Simulate crash (remove in production)
+  ipcMain.handle('backend-logs:test-crash', (_e, type: 'exception' | 'rejection' = 'exception') => {
+    console.warn('Test crash triggered:', type);
+    if (type === 'rejection') {
+      Promise.reject(new Error('Test unhandled rejection for logging'));
+    } else {
+      setTimeout(() => {
+        throw new Error('Test uncaught exception for logging');
+      }, 100);
+    }
+    return { scheduled: true, type };
   });
 
   // ============================================
