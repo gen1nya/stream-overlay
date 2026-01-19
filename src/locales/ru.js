@@ -130,7 +130,9 @@ const ru = {
                 'kurosakissora',
                 'qvik_l',
                 'gena_zogii',
-                'spiritusunite'
+                'spiritus_unit',
+                'kuyanchuk',
+                'evg_on'
             ],
             cards: {
                 account: {
