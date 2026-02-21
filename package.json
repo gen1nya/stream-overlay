@@ -14,7 +14,9 @@
     "build:ts": "tsc",
     "postbuild": "node scripts/copy-native.js",
     "postinstall": "electron-rebuild -f -w better-sqlite3",
-    "sync-version": "node scripts/sync-version.js"
+    "sync-version": "node scripts/sync-version.js",
+    "test:native": "cd native/fft && node-gyp build && build\\Release\\fft_test.exe",
+    "test:fft": "node --test native/fft/test/test_lifecycle.mjs"
   },
   "build": {
     "appId": "com.twitch.watcher",
