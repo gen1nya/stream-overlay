@@ -38,7 +38,8 @@ public:
 private:
   void start();
   void stop();
-  void workerLoop();
+  bool initCapture();
+  void releaseCapture();
   void computeFftAndPublish(const float* frame);
   void computeAndPublishVu();
   void publishWaveform();
@@ -53,10 +54,12 @@ private:
   Microsoft::WRL::ComPtr<IAudioClient> audioClient_;
   Microsoft::WRL::ComPtr<IAudioCaptureClient> cap_;
 
+  std::string deviceId_;
   WAVEFORMATEX* wfx_ = nullptr;
   std::thread th_;
   std::atomic<bool> running_{false};
   HANDLE stopEvent_ = nullptr;
+  HANDLE captureEvent_ = nullptr;
 
   BandPlan plan_{};
   BinMap binmap_{};
@@ -80,11 +83,15 @@ private:
   struct Kiss;
   Kiss* kiss_ = nullptr;
 
-  std::vector<float> waveformBuf_;
+  FloatRingBuffer waveformBuf_{2048};
   std::mutex waveformMutex_;
 
   // VU meter state
   int nChannels_ = 0;
-  std::vector<std::vector<float>> vuBufs_;
+  std::vector<FloatRingBuffer> vuBufs_;
   std::mutex vuMutex_;
+
+  // Device disconnect recovery
+  int consecutiveGetBufferFailures_ = 0;
+  static constexpr int kMaxConsecutiveFailures = 3;
 };

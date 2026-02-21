@@ -77,6 +77,7 @@ bool WasapiEngine::setDevice(const std::string& deviceId){
   std::wstring wDeviceId = stringToWstring(deviceId);
   HRESULT hr = enumr_->GetDevice(wDeviceId.c_str(), &device_);
   if(FAILED(hr)) return false;
+  deviceId_ = deviceId;
   Microsoft::WRL::ComPtr<IMMEndpoint> ep; dataflow_ = eRender;
   if(SUCCEEDED(device_->QueryInterface(IID_PPV_ARGS(&ep)))){
     ep->GetDataFlow(&dataflow_);
@@ -129,79 +130,174 @@ void WasapiEngine::enable(bool on){
   if(on){ start(); } else { stop(); }
 }
 
+bool WasapiEngine::initCapture(){
+  try {
+    // Re-acquire the device by stored ID (handles reconnected devices)
+    device_.Reset();
+    if(!deviceId_.empty()){
+      std::wstring wid = stringToWstring(deviceId_);
+      HRESULT hr = enumr_->GetDevice(wid.c_str(), &device_);
+      if(FAILED(hr)){
+        std::cerr << "[WasapiEngine] initCapture: GetDevice failed (hr=0x"
+                  << std::hex << hr << std::dec << ")" << std::endl;
+        return false;
+      }
+    } else {
+      HRESULT hr = enumr_->GetDefaultAudioEndpoint(eRender, eConsole, &device_);
+      if(FAILED(hr)){
+        std::cerr << "[WasapiEngine] initCapture: GetDefaultAudioEndpoint failed" << std::endl;
+        return false;
+      }
+      // Store the ID so we can re-acquire on reconnect
+      LPWSTR id = nullptr; device_->GetId(&id);
+      deviceId_ = wstringToString(std::wstring(id));
+      CoTaskMemFree(id);
+    }
+
+    check(device_->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, &audioClient_), "Activate IAudioClient");
+    check(audioClient_->GetMixFormat(&wfx_), "GetMixFormat");
+
+    REFERENCE_TIME dur = 10000000;
+    DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
+    if(dataflow_ == eRender && loopback_) flags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
+    check(audioClient_->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, dur, 0, wfx_, nullptr), "Initialize");
+    check(audioClient_->GetService(IID_PPV_ARGS(&cap_)), "GetService IAudioCaptureClient");
+
+    WORD nChannels = 0; DWORD sampleRate = 0;
+    if(wfx_->wFormatTag == WAVE_FORMAT_EXTENSIBLE){
+      auto* fext = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(wfx_);
+      nChannels = fext->Format.nChannels; sampleRate = fext->Format.nSamplesPerSec;
+    } else {
+      nChannels = wfx_->nChannels; sampleRate = wfx_->nSamplesPerSec;
+    }
+    sampleRate_ = (int)sampleRate;
+    binmap_ = makeBinMap(sampleRate_, plan_.fftSize, plan_.columns);
+    nChannels_ = (int)nChannels;
+
+    kiss_ = new Kiss();
+    kiss_->in.resize(plan_.fftSize);
+    kiss_->out.resize(plan_.fftSize/2+1);
+    kiss_->cfg = kiss_fftr_alloc(plan_.fftSize, 0, nullptr, nullptr);
+
+    waveformBuf_ = FloatRingBuffer(2048);
+    sampleBuf_ = FloatRingBuffer(4096*4);
+
+    vuBufs_.clear();
+    vuBufs_.reserve(nChannels_);
+    for(int i = 0; i < nChannels_; ++i) {
+      vuBufs_.emplace_back(4096);
+    }
+
+    consecutiveGetBufferFailures_ = 0;
+
+    captureEvent_ = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+    check(audioClient_->SetEventHandle(captureEvent_), "SetEventHandle");
+    check(audioClient_->Start(), "Start");
+
+    std::cerr << "[WasapiEngine] initCapture: success (sr=" << sampleRate_
+              << " ch=" << nChannels_ << ")" << std::endl;
+    return true;
+  } catch(const std::exception& e) {
+    std::cerr << "[WasapiEngine] initCapture failed: " << e.what() << std::endl;
+    releaseCapture();
+    return false;
+  } catch(...) {
+    std::cerr << "[WasapiEngine] initCapture failed: unknown exception" << std::endl;
+    releaseCapture();
+    return false;
+  }
+}
+
+void WasapiEngine::releaseCapture(){
+  if(audioClient_) audioClient_->Stop();
+  if(kiss_){ kiss_fft_free(kiss_->cfg); delete kiss_; kiss_ = nullptr; }
+  if(wfx_){ CoTaskMemFree(wfx_); wfx_ = nullptr; }
+  cap_.Reset();
+  audioClient_.Reset();
+  device_.Reset();
+  if(captureEvent_){ CloseHandle(captureEvent_); captureEvent_ = nullptr; }
+}
+
 void WasapiEngine::start(){
   if(running_) return;
-  if(!device_) {
-    enumr_->GetDefaultAudioEndpoint(eRender, eConsole, &device_);
-    dataflow_ = eRender;
-  }
-  check(device_->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, &audioClient_), "Activate IAudioClient");
-  check(audioClient_->GetMixFormat(&wfx_), "GetMixFormat");
 
-  bool isFloat = false; WORD nChannels = 0; DWORD sampleRate = 0;
-  if(wfx_->wFormatTag == WAVE_FORMAT_EXTENSIBLE){
-    auto* fext = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(wfx_);
-    isFloat = IsEqualGUID(fext->SubFormat, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) != 0;
-    nChannels = fext->Format.nChannels; sampleRate = fext->Format.nSamplesPerSec;
-  } else {
-    isFloat = (wfx_->wFormatTag == WAVE_FORMAT_IEEE_FLOAT);
-    nChannels = wfx_->nChannels; sampleRate = wfx_->nSamplesPerSec;
-  }
-
-  REFERENCE_TIME dur = 10000000;
-  DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
-  if(dataflow_ == eRender && loopback_) flags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
-  check(audioClient_->Initialize(AUDCLNT_SHAREMODE_SHARED, flags, dur, 0, wfx_, nullptr), "Initialize");
-  check(audioClient_->GetService(IID_PPV_ARGS(&cap_)), "GetService IAudioCaptureClient");
-  sampleRate_ = (int)sampleRate; binmap_ = makeBinMap(sampleRate_, plan_.fftSize, plan_.columns);
-  nChannels_ = (int)nChannels;
-
-  kiss_ = new Kiss();
-  kiss_->in.resize(plan_.fftSize);
-  kiss_->out.resize(plan_.fftSize/2+1);
-  kiss_->cfg = kiss_fftr_alloc(plan_.fftSize, 0, nullptr, nullptr);
-
-  waveformBuf_.clear();
-  waveformBuf_.reserve(2048);
-
-  vuBufs_.clear();
-  vuBufs_.resize(nChannels_);
-  for(auto& buf : vuBufs_) {
-    buf.reserve(4096);
+  // If no device set, get default and store its ID
+  if(deviceId_.empty() && !device_){
+    Microsoft::WRL::ComPtr<IMMDevice> defDev;
+    if(SUCCEEDED(enumr_->GetDefaultAudioEndpoint(eRender, eConsole, &defDev))){
+      LPWSTR id = nullptr; defDev->GetId(&id);
+      deviceId_ = wstringToString(std::wstring(id));
+      CoTaskMemFree(id);
+      dataflow_ = eRender;
+    }
+  } else if(!device_ && !deviceId_.empty()) {
+    // deviceId_ already set (from setDevice), device_ will be re-acquired in initCapture
+  } else if(device_ && deviceId_.empty()) {
+    // device_ set but no ID cached — grab it
+    LPWSTR id = nullptr; device_->GetId(&id);
+    deviceId_ = wstringToString(std::wstring(id));
+    CoTaskMemFree(id);
   }
 
-  HANDLE evt = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-  check(audioClient_->SetEventHandle(evt), "SetEventHandle");
-  ResetEvent(stopEvent_);  // Reset stop event before starting
+  ResetEvent(stopEvent_);
   running_ = true;
-  th_ = std::thread([&,evt,isFloat,nChannels]{
-    DWORD taskIndex = 0; HANDLE task = AvSetMmThreadCharacteristicsW(L"Pro Audio", &taskIndex);
 
-    auto lastWavePublish = std::chrono::high_resolution_clock::now();
-    const double wavePublishInterval = 1.0 / 60.0;
+  th_ = std::thread([this]{
+    DWORD taskIndex = 0;
+    HANDLE mmTask = AvSetMmThreadCharacteristicsW(L"Pro Audio", &taskIndex);
 
-    try{
-      check(audioClient_->Start(), "Start");
-      BYTE* data=nullptr; UINT32 frames=0; DWORD flags=0; UINT64 pos=0; UINT64 qpc=0;
+    // Outer retry loop — keeps running until stop() is called
+    while(running_){
+      if(!initCapture()){
+        std::cerr << "[WasapiEngine] initCapture failed, retrying in 2s..." << std::endl;
+        WaitForSingleObject(stopEvent_, 2000);
+        continue;
+      }
+
+      // Determine format
+      bool isFloat = false;
+      if(wfx_->wFormatTag == WAVE_FORMAT_EXTENSIBLE){
+        auto* fext = reinterpret_cast<WAVEFORMATEXTENSIBLE*>(wfx_);
+        isFloat = IsEqualGUID(fext->SubFormat, KSDATAFORMAT_SUBTYPE_IEEE_FLOAT) != 0;
+      } else {
+        isFloat = (wfx_->wFormatTag == WAVE_FORMAT_IEEE_FLOAT);
+      }
+      int nChannels = nChannels_;
+
+      auto lastWavePublish = std::chrono::high_resolution_clock::now();
+      const double wavePublishInterval = 1.0 / 60.0;
+
+      BYTE* data = nullptr; UINT32 frames = 0; DWORD bufFlags = 0; UINT64 pos = 0; UINT64 qpc = 0;
       std::vector<float> hop(plan_.hopSize);
       size_t hopFill = 0;
+      bool deviceLost = false;
 
+      // Inner capture loop
       while(running_){
-        HANDLE events[2] = {evt, stopEvent_};
+        HANDLE events[2] = {captureEvent_, stopEvent_};
         DWORD result = WaitForMultipleObjects(2, events, FALSE, 2000);
 
-        // If stop event signaled, break immediately
         if(result == WAIT_OBJECT_0 + 1 || !running_){
           break;
         }
-        UINT32 p=0; audioClient_->GetCurrentPadding(&p);
+        UINT32 p = 0; audioClient_->GetCurrentPadding(&p);
 
         for(;;){
-          HRESULT hr = cap_->GetBuffer(&data, &frames, &flags, &pos, &qpc);
-          if(hr==AUDCLNT_S_BUFFER_EMPTY) break;
-          if(FAILED(hr)) break;
+          HRESULT hr = cap_->GetBuffer(&data, &frames, &bufFlags, &pos, &qpc);
+          if(hr == AUDCLNT_S_BUFFER_EMPTY){ consecutiveGetBufferFailures_ = 0; break; }
+          if(FAILED(hr)){
+            ++consecutiveGetBufferFailures_;
+            if(hr == AUDCLNT_E_DEVICE_INVALIDATED || hr == AUDCLNT_E_SERVICE_NOT_RUNNING
+               || consecutiveGetBufferFailures_ >= kMaxConsecutiveFailures){
+              std::cerr << "[WasapiEngine] Device lost (hr=0x"
+                        << std::hex << hr << std::dec << ")" << std::endl;
+              deviceLost = true;
+            }
+            break;
+          }
+          consecutiveGetBufferFailures_ = 0;
 
-          const bool silent = (flags & AUDCLNT_BUFFERFLAGS_SILENT) != 0;
+          const bool silent = (bufFlags & AUDCLNT_BUFFERFLAGS_SILENT) != 0;
 
           if(isFloat){
             const float* f = reinterpret_cast<const float*>(data);
@@ -220,10 +316,7 @@ void WasapiEngine::start(){
               {
                 std::lock_guard<std::mutex> lock(waveformMutex_);
                 for(size_t k = 0; k < toCopy; ++k){
-                  waveformBuf_.push_back(hop[hopFill + k]);
-                  if(waveformBuf_.size() > 2048) {
-                    waveformBuf_.erase(waveformBuf_.begin(), waveformBuf_.begin() + (waveformBuf_.size() - 2048));
-                  }
+                  waveformBuf_.writeSingle(hop[hopFill + k]);
                 }
               }
 
@@ -232,10 +325,7 @@ void WasapiEngine::start(){
                 for(size_t k = 0; k < toCopy; ++k){
                   for(int ch = 0; ch < nChannels_; ++ch){
                     float sample = silent ? 0.0f : f[(i + (UINT32)k) * nChannels_ + ch];
-                    vuBufs_[ch].push_back(sample);
-                    if(vuBufs_[ch].size() > 4096) {
-                      vuBufs_[ch].erase(vuBufs_[ch].begin());
-                    }
+                    vuBufs_[ch].writeSingle(sample);
                   }
                 }
               }
@@ -270,10 +360,7 @@ void WasapiEngine::start(){
               {
                 std::lock_guard<std::mutex> lock(waveformMutex_);
                 for(size_t k = 0; k < toCopy; ++k){
-                  waveformBuf_.push_back(hop[hopFill + k]);
-                  if(waveformBuf_.size() > 2048) {
-                    waveformBuf_.erase(waveformBuf_.begin(), waveformBuf_.begin() + (waveformBuf_.size() - 2048));
-                  }
+                  waveformBuf_.writeSingle(hop[hopFill + k]);
                 }
               }
 
@@ -282,10 +369,7 @@ void WasapiEngine::start(){
                 for(size_t k = 0; k < toCopy; ++k){
                   for(int ch = 0; ch < nChannels_; ++ch){
                     float sample = silent ? 0.0f : s[(i + (UINT32)k) * nChannels_ + ch] / 32768.0f;
-                    vuBufs_[ch].push_back(sample);
-                    if(vuBufs_[ch].size() > 4096) {
-                      vuBufs_[ch].erase(vuBufs_[ch].begin());
-                    }
+                    vuBufs_[ch].writeSingle(sample);
                   }
                 }
               }
@@ -308,6 +392,8 @@ void WasapiEngine::start(){
           cap_->ReleaseBuffer(frames);
         }
 
+        if(deviceLost) break;
+
         auto now = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> elapsed = now - lastWavePublish;
 
@@ -317,63 +403,41 @@ void WasapiEngine::start(){
           lastWavePublish = now;
         }
       }
-      audioClient_->Stop();
-    } catch(...) {
+
+      // Clean up this capture session
+      releaseCapture();
+
+      // If still running, it was a device loss — retry after delay
+      if(running_){
+        std::cerr << "[WasapiEngine] Device lost, retrying in 2s..." << std::endl;
+        WaitForSingleObject(stopEvent_, 2000);
+      }
     }
-    if(task) AvRevertMmThreadCharacteristics(task); CloseHandle(evt);
+
+    if(mmTask) AvRevertMmThreadCharacteristics(mmTask);
   });
 }
 
 void WasapiEngine::stop(){
-  std::cout << "[WasapiEngine] ===== stop() called =====" << std::endl;
-  std::cout.flush();
-  if(!running_) {
-    std::cout << "[WasapiEngine] stop: already stopped (running_ = false)" << std::endl;
-    std::cout.flush();
-    return;
-  }
+  std::cerr << "[WasapiEngine] stop() called" << std::endl;
+  if(!running_) return;
 
-  std::cout << "[WasapiEngine] stop: setting running_ = false" << std::endl;
-  std::cout.flush();
-  running_=false;
+  running_ = false;
+  if(stopEvent_) SetEvent(stopEvent_);
 
-  // Signal stop event to wake up worker thread immediately
-  if(stopEvent_) {
-    std::cout << "[WasapiEngine] stop: signaling stopEvent_" << std::endl;
-    std::cout.flush();
-    SetEvent(stopEvent_);
-  }
-
-  // Now join will be fast because worker thread will wake up and exit
-  std::cout << "[WasapiEngine] stop: waiting for worker thread to join..." << std::endl;
-  std::cout.flush();
-  if(th_.joinable()) {
-    th_.join();
-    std::cout << "[WasapiEngine] stop: worker thread joined" << std::endl;
-    std::cout.flush();
-  } else {
-    std::cout << "[WasapiEngine] stop: worker thread was not joinable" << std::endl;
-    std::cout.flush();
-  }
-
-  std::cout << "[WasapiEngine] stop: cleaning up resources..." << std::endl;
-  std::cout.flush();
-  if(kiss_){ kiss_fft_free(kiss_->cfg); delete kiss_; kiss_=nullptr;}
-  if(wfx_){ CoTaskMemFree(wfx_); wfx_=nullptr;}
-  cap_.Reset();
-  audioClient_.Reset();
-  std::cout << "[WasapiEngine] ===== stop: completed =====" << std::endl;
-  std::cout.flush();
+  if(th_.joinable()) th_.join();
+  // Thread already called releaseCapture() before exiting
+  std::cerr << "[WasapiEngine] stop: completed" << std::endl;
 }
 
 void WasapiEngine::publishWaveform(){
   if(!waveCb_) return;
 
-  std::vector<float> waveSamples;
+  float waveSamples[2048];
   {
     std::lock_guard<std::mutex> lock(waveformMutex_);
-    if(waveformBuf_.size() < 2048) return;
-    waveSamples = waveformBuf_;
+    if(waveformBuf_.count() < 2048) return;
+    waveformBuf_.readLatest(waveSamples, 2048);
   }
 
   std::vector<int16_t> downsampled(1024);
@@ -390,41 +454,34 @@ void WasapiEngine::publishWaveform(){
 void WasapiEngine::computeAndPublishVu(){
   if(!vuCb_ || nChannels_ == 0) return;
 
-  std::vector<float> channelSamples[8];
+  std::vector<uint8_t> vuLevels(nChannels_);
+
   {
     std::lock_guard<std::mutex> lock(vuMutex_);
     for(int ch = 0; ch < nChannels_ && ch < 8; ++ch){
-      if(vuBufs_[ch].empty()) return;
-      channelSamples[ch] = vuBufs_[ch];
+      if(vuBufs_[ch].count() == 0){
+        vuLevels[ch] = 0;
+        continue;
+      }
+
+      double sumSquares = 0.0;
+      size_t n = 0;
+      vuBufs_[ch].iterLatest(1024, [&](float s){
+        sumSquares += (double)s * (double)s;
+        ++n;
+      });
+
+      if(n == 0){ vuLevels[ch] = 0; continue; }
+
+      double rms = std::sqrt(sumSquares / n);
+      rms *= masterGain_;
+      double db = 20.0 * std::log10(rms + 1e-10);
+
+      double normalized = (db + 60.0) / 60.0;
+      normalized = std::max(0.0, std::min(1.0, normalized));
+
+      vuLevels[ch] = static_cast<uint8_t>(std::round(normalized * 255.0));
     }
-  }
-
-  std::vector<uint8_t> vuLevels(nChannels_);
-
-  for(int ch = 0; ch < nChannels_; ++ch){
-    const auto& samples = channelSamples[ch];
-    if(samples.empty()) {
-      vuLevels[ch] = 0;
-      continue;
-    }
-
-    size_t n = std::min<size_t>(1024, samples.size());
-    size_t start = samples.size() - n;
-
-    double sumSquares = 0.0;
-    for(size_t i = start; i < samples.size(); ++i){
-      double s = samples[i];
-      sumSquares += s * s;
-    }
-
-    double rms = std::sqrt(sumSquares / n);
-    rms *= masterGain_;
-    double db = 20.0 * std::log10(rms + 1e-10);
-
-    double normalized = (db + 60.0) / 60.0;
-    normalized = std::max(0.0, std::min(1.0, normalized));
-
-    vuLevels[ch] = static_cast<uint8_t>(std::round(normalized * 255.0));
   }
 
   vuCb_(vuLevels);

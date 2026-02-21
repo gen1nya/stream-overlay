@@ -265,6 +265,18 @@ private:
       std::cerr << "[GSMTC] Pump: entering main loop" << std::endl;
       while (running_) {
         std::this_thread::sleep_for(std::chrono::milliseconds(200));
+
+        // Heartbeat: if no event for 30s and we have a session, emit a snapshot as fallback poll
+        auto nowMs = std::chrono::duration_cast<std::chrono::milliseconds>(
+          std::chrono::steady_clock::now().time_since_epoch()).count();
+        auto lastMs = lastEventTimeMs_.load(std::memory_order_relaxed);
+        if (lastMs > 0 && (nowMs - lastMs) > 30000) {
+          std::lock_guard<std::mutex> lock(mutex_);
+          if (session_ && running_) {
+            try { EmitSnapshot(session_); }
+            catch (...) {}
+          }
+        }
       }
       std::cerr << "[GSMTC] Pump: exited main loop (running_ = false)" << std::endl;
 
@@ -346,6 +358,12 @@ private:
   void EmitSnapshot(GlobalSystemMediaTransportControlsSession const& s) {
     if (!running_ || !s) return;
 
+    // Update heartbeat timestamp
+    auto now = std::chrono::steady_clock::now();
+    lastEventTimeMs_.store(
+      std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()).count(),
+      std::memory_order_relaxed);
+
     EventData ev;
 
     // media properties
@@ -358,19 +376,33 @@ private:
           ev.artist = winrt::to_string(props.Artist());
           ev.album  = winrt::to_string(props.AlbumTitle());
 
-          if (auto thumb = props.Thumbnail()) {
-            try {
-              auto rop = thumb.OpenReadAsync();
-              if (rop && wait_for(rop)) {
-                auto rs = rop.get();
-                ev.thumbnail = ReadAll(rs); // внутри тоже с таймаутом
+          // Only re-read thumbnail when track identity changes
+          bool trackChanged = (ev.title != lastThumbTitle_
+                            || ev.artist != lastThumbArtist_
+                            || ev.album != lastThumbAlbum_);
+
+          if (trackChanged) {
+            lastThumbTitle_  = ev.title;
+            lastThumbArtist_ = ev.artist;
+            lastThumbAlbum_  = ev.album;
+            cachedThumbnail_.clear();
+
+            if (auto thumb = props.Thumbnail()) {
+              try {
+                auto rop = thumb.OpenReadAsync();
+                if (rop && wait_for(rop)) {
+                  auto rs = rop.get();
+                  cachedThumbnail_ = ReadAll(rs);
+                }
+              } catch (const winrt::hresult_error& e) {
+                LogError("EmitSnapshot/Thumbnail", winrt::to_string(e.message()), e.code());
+              } catch (...) {
+                LogError("EmitSnapshot/Thumbnail", "Failed to read thumbnail");
               }
-            } catch (const winrt::hresult_error& e) {
-              LogError("EmitSnapshot/Thumbnail", winrt::to_string(e.message()), e.code());
-            } catch (...) {
-              LogError("EmitSnapshot/Thumbnail", "Failed to read thumbnail");
             }
           }
+
+          ev.thumbnail = cachedThumbnail_;
         }
       }
     } catch (const winrt::hresult_error& e) {
@@ -463,6 +495,15 @@ private:
   event_token mediaPropsToken_{};
   event_token playbackToken_{};
   event_token timelineToken_{};
+
+  // Thumbnail cache: only re-read thumbnail when track identity changes
+  std::string lastThumbTitle_;
+  std::string lastThumbArtist_;
+  std::string lastThumbAlbum_;
+  std::vector<uint8_t> cachedThumbnail_;
+
+  // Heartbeat: emit snapshot if no events received for a while
+  std::atomic<int64_t> lastEventTimeMs_{0};
 };
 
 Napi::Object InitAll(Napi::Env env, Napi::Object exports) {

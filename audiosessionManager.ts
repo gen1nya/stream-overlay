@@ -29,6 +29,10 @@ export class AudiosessionManager {
     private currentMediaMetadata: MediaMetadata | null = null;
     private currentFFTSpectrum: number[] | null = null;
 
+    // Thumbnail cache: skip re-encoding when bytes are identical
+    private lastThumbnailBuffer: Buffer | null = null;
+    private lastThumbnailBase64: string | null = null;
+
     constructor(store: ElectronStore<StoreSchema>, logService: LogService) {
         this.appStorage = store;
         this.config = this.appStorage.get("audio")
@@ -129,102 +133,77 @@ export class AudiosessionManager {
     }
 
     private setupMediaBridges() {
-        const vuSource = new Promise((resolve) => {
-            this.fftbridge.onVu((vu: Uint8Array) => {
-                this.mediaWss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(this.createMessage(2, vu));
-                    }
-                });
-            })
-        });
-        const waveFormSource = new Promise((resolve) => {
-            this.fftbridge.onWave((waveform: Int16Array) => {
-                this.mediaWss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(this.createMessage(0, waveform));
-                    }
-                });
-            })
-        });
-        const fftSource = new Promise((resolve) => {
-            this.fftbridge.onFft((spectrum: Uint8Array) => {
-                const spectrumValues = Object.values(spectrum) as number[];
-                this.currentFFTSpectrum = spectrumValues;
-                this.broadcastMedia('fft', spectrumValues);
-                this.mediaWss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(this.createMessage(1, spectrum));
-                    }
-                });
-            })
-        });
-
-        const mediaSessionSource = new Promise((resolve) => {
-            this.gsmtcBridge.start((s) => {
-                const status =
-                    s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
-
-                // Sticky state: ignore empty/invalid data from temporary tab switches
-                // Only update if we have valid data (non-empty title)
-                const hasValidData = s.title && s.title.trim().length > 0;
-
-                if (!hasValidData) {
-                    // Invalid/empty data (e.g., tab switch in browser) - keep current state
-                    // This includes "Stopped" with empty appId/title which is just noise
-                    return;
+        this.fftbridge.onVu((vu: Uint8Array) => {
+            this.mediaWss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(this.createMessage(2, vu));
                 }
-
-                let albumArt: string | undefined = undefined;
-
-                if (s.imageUrl) {
-                    // если Linux дал URL — используем его
-                    albumArt = s.imageUrl;
-                } else if (s.thumbnail && (s.thumbnail as Buffer).length) {
-                    // иначе — Windows thumbnail → base64
-                    const mime = this.detectMime(s.thumbnail as Buffer);
-                    const b64 = (s.thumbnail as Buffer).toString("base64");
-                    albumArt = `data:${mime};base64,${b64}`;
-                }
-
-                const metadata: MediaMetadata = {
-                    title: s.title,
-                    artist: s.artist,
-                    albumTitle: s.album,
-                    appId: s.appId,
-                    duration: s.durationMs / 1000,
-                    position: s.positionMs / 1000,
-                    status,
-                    albumArtBase64: albumArt,
-                };
-
-                this.currentMediaMetadata = metadata;
-                this.broadcastMedia("metadata", metadata);
             });
         });
 
-        mediaSessionSource.then(() => {
-            console.log("GSMTCBridge finished successfully");
-        }).catch((err) => {
-            console.error("Error starting GSMTCBridge:", err);
+        this.fftbridge.onWave((waveform: Int16Array) => {
+            this.mediaWss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(this.createMessage(0, waveform));
+                }
+            });
         });
 
-        fftSource.then(() => {
-            console.log("FftBridge finished successfully");
-        }).catch((err) => {
-            console.error("Error starting FftBridge:", err);
+        this.fftbridge.onFft((spectrum: Uint8Array) => {
+            const spectrumValues = Array.from(spectrum) as number[];
+            this.currentFFTSpectrum = spectrumValues;
+            this.broadcastMedia('fft', spectrumValues);
+            this.mediaWss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(this.createMessage(1, spectrum));
+                }
+            });
         });
 
-        waveFormSource.then(() => {
-            console.log("Waveform source finished successfully");
-        }).catch((err) => {
-            console.error("Error in waveform source:", err);
-        });
+        this.gsmtcBridge.start((s) => {
+            const status =
+                s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
 
-        vuSource.then(() => {
-            console.log("VU source finished successfully");
-        }).catch((err) => {
-            console.error("Error in VU source:", err);
+            // Sticky state: ignore empty/invalid data from temporary tab switches
+            // Only update if we have valid data (non-empty title)
+            const hasValidData = s.title && s.title.trim().length > 0;
+
+            if (!hasValidData) {
+                // Invalid/empty data (e.g., tab switch in browser) - keep current state
+                return;
+            }
+
+            let albumArt: string | undefined = undefined;
+
+            if (s.imageUrl) {
+                albumArt = s.imageUrl;
+            } else if (s.thumbnail && (s.thumbnail as Buffer).length) {
+                const thumbBuf = s.thumbnail as Buffer;
+                // Use cached base64 if thumbnail bytes are identical
+                if (this.lastThumbnailBuffer && this.lastThumbnailBuffer.equals(thumbBuf)) {
+                    albumArt = this.lastThumbnailBase64!;
+                } else {
+                    const mime = this.detectMime(thumbBuf);
+                    const b64 = thumbBuf.toString("base64");
+                    albumArt = `data:${mime};base64,${b64}`;
+                    this.lastThumbnailBuffer = thumbBuf;
+                    this.lastThumbnailBase64 = albumArt;
+                }
+            }
+
+            const metadata: MediaMetadata = {
+                title: s.title,
+                artist: s.artist,
+                albumTitle: s.album,
+                appId: s.appId,
+                duration: s.durationMs / 1000,
+                position: s.positionMs / 1000,
+                status,
+                albumArtBase64: albumArt,
+            };
+
+            this.currentMediaMetadata = metadata;
+            this.broadcastMedia("metadata", metadata);
         });
     }
 
@@ -286,6 +265,8 @@ export class AudiosessionManager {
 
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
+        this.lastThumbnailBuffer = null;
+        this.lastThumbnailBase64 = null;
 
         console.log("✅ [AudiosessionManager] AudiosessionManager closed");
     }
