@@ -1,12 +1,14 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import styled, { ThemeProvider } from "styled-components";
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from "./ChatMessage";
+import ChatMessageV2 from "./ChatMessageV2";
 import ChatFollow from './ChatFollow';
-import {defaultTheme} from "../../theme";
+import {defaultTheme, defaultV2Message} from "../../theme";
 import ChatRedemption from "./ChatRedemption";
 import {registerFontFace} from "../utils/fontsCache";
 import { useTranslation } from "react-i18next";
+import merge from 'lodash/merge';
 
 const BackgroundContainer = styled.div`
     position: absolute;
@@ -120,6 +122,16 @@ export default function PreviewComponent() {
                         payload.chatMessage.messageFont.family,
                         payload.chatMessage.messageFont.url
                     );
+                    // V2 fonts
+                    if (payload.v2?.message) {
+                        const v2msg = payload.v2.message;
+                        if (v2msg.content?.header?.font) {
+                            registerFontFace(v2msg.content.header.font.family, v2msg.content.header.font.url);
+                        }
+                        if (v2msg.content?.text?.font) {
+                            registerFontFace(v2msg.content.text.font.family, v2msg.content.text.font.url);
+                        }
+                    }
                     console.log(t('preview.logs.themeUpdated'), payload);
                     break;
                 default:
@@ -129,18 +141,21 @@ export default function PreviewComponent() {
         onClose: () => console.log(t('preview.logs.wsDisconnected')),
     });
 
+    const sampleBadge = '<img src="https://static-cdn.jtvnw.net/badges/v1/5527c58c-fb7d-422d-b71b-f309dcb85cc1/1" alt="badge" style="width:18px;height:18px;vertical-align:middle;margin-right:2px">';
+    const sampleEmote = '<img src="https://static-cdn.jtvnw.net/emoticons/v2/425618/default/dark/1.0" alt="LUL" style="width:28px;height:28px;vertical-align:middle">';
+
     const message = {
         userName: t('preview.sampleMessage.userName'),
         color: "#ffffff",
-        htmlBadges: "",
-        htmlMessage: t('preview.sampleMessage.shortMessage'),
+        htmlBadges: sampleBadge,
+        htmlMessage: `${t('preview.sampleMessage.shortMessage')} ${sampleEmote}`,
     };
 
     const longMessage = {
         userName: t('preview.sampleMessage.userName'),
         color: "#ffffff",
         htmlBadges: "",
-        htmlMessage: t('preview.sampleMessage.longMessage')
+        htmlMessage: `${t('preview.sampleMessage.longMessage')} ${sampleEmote} ${sampleEmote}`
     };
 
     const followMessage = {
@@ -155,12 +170,22 @@ export default function PreviewComponent() {
         }
     }
 
+    const v2Config = theme.v2?.message;
+    const mergedV2 = useMemo(
+        () => v2Config ? merge({}, defaultV2Message, v2Config) : null,
+        [v2Config]
+    );
+
+    const ChatMsg = mergedV2
+        ? (props) => <ChatMessageV2 {...props} v2Config={mergedV2} />
+        : ChatMessage;
+
     return <ThemeProvider theme={theme}>
         <>
             <BackgroundContainer />
             <MessagePreviewContainer>
-                <ChatMessage message={message} showSourceChannel={false}/>
-                <ChatMessage message={longMessage} showSourceChannel={false}/>
+                <ChatMsg message={message} showSourceChannel={false}/>
+                <ChatMsg message={longMessage} showSourceChannel={false}/>
                 {theme.redeemMessage?.map((_, index) => (
                     <ChatRedemption
                         key={index}

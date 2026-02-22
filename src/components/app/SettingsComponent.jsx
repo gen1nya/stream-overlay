@@ -13,6 +13,7 @@ import {
     openMediaOverlayEditor,
 } from '../../services/api';
 import MessageSettingsBlock from "./settings/MessageSettingsBlock";
+import MessageSettingsBlockV2 from "./settings/MessageSettingsBlockV2";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
 import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
 import {defaultTheme} from '../../theme';
@@ -615,7 +616,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
         case "chat":
             return (
                 <Content>
-                    <MessageSettingsBlock
+                    <MessageSettingsBlockV2
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}

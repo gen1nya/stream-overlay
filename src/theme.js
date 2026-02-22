@@ -756,3 +756,104 @@ export const defaultTheme = {
         }
     }
 };
+
+// ─── V2 Message Theme Defaults ────────────────────────────────────
+export const defaultV2Message = {
+    background: {
+        headerDecor: { image: null, translate: { x: 0, y: 0 } },
+        footerDecor: { image: null, translate: { x: 0, y: 0 } },
+
+        type: 'color', // 'color' | 'gradient' | 'image'
+
+        color: {
+            color: '#422434',
+            opacity: 0.77,
+            borderColor: '#0af0d5',
+            borderOpacity: 1,
+            borderRadius: 12,
+            shadowColor: '#ffffff',
+            shadowOpacity: 1,
+            shadowRadius: 5
+        },
+
+        gradient: {
+            gradients: []
+        },
+
+        image: {
+            src: null,
+            backgroundColor: '#000000',
+            borderColor: '#ffffff',
+            borderWidth: 0,
+            borderRadius: 0,
+            shadowColor: '#000000',
+            shadowRadius: 0
+        },
+
+        margin: { horizontal: 10, vertical: 3 },
+        padding: { top: 7, right: 8, bottom: 7, left: 8 },
+
+        layerInset: {
+            color:    { top: 0, right: 0, bottom: 0, left: 0 },
+            gradient: { top: 0, right: 0, bottom: 0, left: 0 },
+            image:    { top: 0, right: 0, bottom: 0, left: 0 }
+        }
+    },
+
+    content: {
+        header: {
+            layout: 'top',       // 'top' | 'left'
+            position: 'inside',  // 'inside' | 'outside'
+            align: 'left',       // 'left' | 'center' | 'right'
+            translate: { x: 0, y: 0 },
+
+            font: {
+                family: 'Roboto',
+                url: null,
+                size: 20
+            },
+
+            customColor: {
+                enabled: false,
+                color: '#ffffff'
+            },
+
+            background: {
+                enabled: false,
+                color: '#000000',
+                opacity: 0.5,
+                borderColor: '#ffffff',
+                borderOpacity: 1,
+                borderWidth: 0,
+                borderRadius: 8,
+                shadowColor: '#000000',
+                shadowOpacity: 0,
+                shadowRadius: 0,
+                paddingV: 2,
+                paddingH: 6
+            },
+
+            emotes: {
+                position: 'inside',  // 'inside' | 'outside'
+                source: 'twitch',    // 'twitch' | 'custom'
+                placement: 'right',  // 'left' | 'right' (only for outside)
+                gap: 4
+            }
+        },
+
+        text: {
+            color: '#ffffff',
+            opacity: 1,
+            align: 'left',  // 'left' | 'center' | 'right'
+            font: {
+                family: 'Roboto',
+                url: null,
+                size: 24
+            },
+            shadowColor: '#000000',
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            emoteSize: 24
+        }
+    }
+};

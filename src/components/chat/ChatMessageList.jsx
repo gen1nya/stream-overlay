@@ -3,9 +3,12 @@ import styled, { ThemeProvider } from 'styled-components';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
+import ChatMessageV2 from './ChatMessageV2';
 import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
 import { registerFontFace } from '../utils/fontsCache';
+import { defaultV2Message } from '../../theme';
+import merge from 'lodash/merge';
 
 /* ---------- Chat container ---------- */
 const ChatContainer = styled.div`
@@ -265,6 +268,13 @@ export default function ChatMessageList({
         };
     }, []);
 
+    /* ---------- v2 config (memoised per theme) ---------- */
+    const v2Config = theme.v2?.message;
+    const mergedV2 = React.useMemo(
+        () => v2Config ? merge({}, defaultV2Message, v2Config) : null,
+        [v2Config]
+    );
+
     /* ---------- Render ---------- */
     return (
         <ThemeProvider theme={theme}>
@@ -303,7 +313,14 @@ export default function ChatMessageList({
                             const handleMessageClick = onMessageClick ? () => onMessageClick(msg) : undefined;
 
                             let Content;
-                            if (msg.type === 'chat') {
+                            if (msg.type === 'chat' && mergedV2) {
+                                Content = <ChatMessageV2
+                                    message={msg}
+                                    showSourceChannel={showSourceChannel}
+                                    onClick={handleMessageClick}
+                                    v2Config={mergedV2}
+                                />;
+                            } else if (msg.type === 'chat') {
                                 Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} onClick={handleMessageClick} />;
                             } else if (msg.type === 'follow') {
                                 Content = <ChatFollow message={msg} currentTheme={theme} index={followIndex} />;
