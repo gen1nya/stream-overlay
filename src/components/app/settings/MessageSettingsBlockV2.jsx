@@ -11,12 +11,12 @@ import Switch from '../../utils/Switch';
 import {ImageUploadField, darkTheme as imageUploadTheme} from '../../utils/BackgroundImageEditorComponent';
 import {defaultV2Message} from '../../../theme';
 import {
-    FiMessageSquare, FiImage, FiType, FiLayout, FiMove,
+    FiImage, FiType, FiLayout,
     FiAlignCenter, FiSquare, FiGrid
 } from 'react-icons/fi';
 import {
-    CardContent, CardHeader, CardTitle, ControlGroup,
-    Section, SectionHeader, SectionTitle, SettingsCard,
+    ControlGroup,
+    Section, SectionHeader, SectionTitle,
     TabSection, TabHeader, TabTitle, TabContent
 } from './SharedSettingsStyles';
 import {Spacer} from '../../utils/Separator';
@@ -24,32 +24,39 @@ import {Row} from '../SettingsComponent';
 import {useTranslation} from 'react-i18next';
 
 // ─── Styled helpers ──────────────────────────────────────────────
+const Wrapper = styled.div`
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    padding: 12px;
+    box-sizing: border-box;
+`;
+
 const TabBar = styled.div`
     display: flex;
-    gap: 0;
-    border-bottom: 2px solid #333;
-    margin-bottom: 4px;
+    gap: 4px;
+    align-self: flex-start;
 `;
 
 const TabButton = styled.button`
-    flex: 1;
-    padding: 12px 16px;
-    background: ${({$active}) => $active ? 'rgba(100, 108, 255, 0.15)' : 'transparent'};
-    border: none;
-    border-bottom: 2px solid ${({$active}) => $active ? '#646cff' : 'transparent'};
+    padding: 8px 20px;
+    background: ${({$active}) => $active ? 'rgba(100, 108, 255, 0.2)' : 'rgba(40, 40, 40, 0.5)'};
+    border: 1px solid ${({$active}) => $active ? '#646cff' : '#333'};
+    border-radius: 8px;
     color: ${({$active}) => $active ? '#fff' : '#888'};
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    justify-content: center;
     gap: 8px;
 
     &:hover {
         color: #ccc;
-        background: rgba(100, 108, 255, 0.08);
+        background: rgba(100, 108, 255, 0.12);
+        border-color: #555;
     }
 
     svg {
@@ -72,6 +79,9 @@ const OffsetGrid = styled.div`
 `;
 
 const OffsetCard = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
     background: rgba(40, 40, 40, 0.3);
     border: 1px solid #333;
     border-radius: 8px;
@@ -84,16 +94,15 @@ const SwitchRow = styled.div`
     gap: 8px;
 `;
 
-const Label = styled.label`
-    font-size: 0.9rem;
-    font-weight: 500;
-    color: #e0e0e0;
-    margin-bottom: 4px;
-`;
-
 const SmallLabel = styled.span`
     font-size: 0.85rem;
     color: #999;
+`;
+
+const SubTitle = styled.div`
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: #bbb;
 `;
 
 // ─── Component ──────────────────────────────────────────────────
@@ -238,14 +247,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
     // RENDER
     // ═════════════════════════════════════════════════════════════
     return (
-        <SettingsCard>
-            <CardHeader>
-                <CardTitle>
-                    <FiMessageSquare/>
-                    Сообщения v2
-                </CardTitle>
-            </CardHeader>
-
+        <Wrapper>
             <TabBar>
                 <TabButton $active={activeTab === 'background'} onClick={() => setActiveTab('background')}>
                     <FiImage/> Фон
@@ -255,11 +257,9 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                 </TabButton>
             </TabBar>
 
-            <CardContent>
-                {activeTab === 'background' && renderBackgroundTab()}
-                {activeTab === 'content' && renderContentTab()}
-            </CardContent>
-        </SettingsCard>
+            {activeTab === 'background' && renderBackgroundTab()}
+            {activeTab === 'content' && renderContentTab()}
+        </Wrapper>
     );
 
     // ═════════════════════════════════════════════════════════════
@@ -284,17 +284,15 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                                     onClear={() => updateDecor('headerDecor', 'image', null)}
                                 />
                             </ThemeProvider>
-                            <div style={{marginTop: 12}}>
-                                <XYPad
-                                    title="Смещение шапки"
-                                    valueX={bg.headerDecor.translate.x}
-                                    valueY={bg.headerDecor.translate.y}
-                                    min={-100}
-                                    max={100}
-                                    size={100}
-                                    onChange={({x, y}) => updateDecor('headerDecor', 'translate', {x, y})}
-                                />
-                            </div>
+                            <XYPad
+                                title="Смещение шапки"
+                                valueX={bg.headerDecor.translate.x}
+                                valueY={bg.headerDecor.translate.y}
+                                min={-100}
+                                max={100}
+                                size={100}
+                                onChange={({x, y}) => updateDecor('headerDecor', 'translate', {x, y})}
+                            />
                         </OffsetCard>
 
                         <OffsetCard>
@@ -306,17 +304,15 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                                     onClear={() => updateDecor('footerDecor', 'image', null)}
                                 />
                             </ThemeProvider>
-                            <div style={{marginTop: 12}}>
-                                <XYPad
-                                    title="Смещение подвала"
-                                    valueX={bg.footerDecor.translate.x}
-                                    valueY={bg.footerDecor.translate.y}
-                                    min={-100}
-                                    max={100}
-                                    size={100}
-                                    onChange={({x, y}) => updateDecor('footerDecor', 'translate', {x, y})}
-                                />
-                            </div>
+                            <XYPad
+                                title="Смещение подвала"
+                                valueX={bg.footerDecor.translate.x}
+                                valueY={bg.footerDecor.translate.y}
+                                min={-100}
+                                max={100}
+                                size={100}
+                                onChange={({x, y}) => updateDecor('footerDecor', 'translate', {x, y})}
+                            />
                         </OffsetCard>
                     </OffsetGrid>
                 </Section>
@@ -472,7 +468,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                         />
                     </ThemeProvider>
 
-                    <Row gap="16px" style={{marginTop: 12}}>
+                    <Row gap="16px">
                         <ControlGroup>
                             <ColorSelectorButton
                                 title="Цвет фона"
@@ -543,7 +539,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
     function renderMarginPadding() {
         return (
             <>
-                <Label>Внешние отступы (margin)</Label>
+                <SubTitle>Внешние отступы (margin)</SubTitle>
                 <Row gap="16px">
                     <ControlGroup flex="1">
                         <SeekbarComponent
@@ -575,7 +571,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
-                <Label style={{marginTop: 16}}>Внутренние отступы (padding)</Label>
+                <SubTitle>Внутренние отступы (padding)</SubTitle>
                 <InsetGrid>
                     <ControlGroup>
                         <SeekbarComponent
@@ -709,7 +705,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
     function renderHeaderSettings() {
         return (
             <>
-                <Row gap="16px">
+                <Row>
                     <ControlGroup>
                         <RadioGroup
                             title="Расположение"
@@ -744,7 +740,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
-                <Row gap="16px">
+                <Row>
                     <ControlGroup>
                         <XYPad
                             title="Смещение заголовка"
@@ -772,10 +768,8 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
-                {/* Custom color */}
                 <Row gap="16px">
                     <ControlGroup>
-                        <Label>Кастомный цвет</Label>
                         <SwitchRow>
                             <Switch
                                 checked={header.customColor.enabled}
@@ -956,7 +950,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
     function renderTextSettings() {
         return (
             <>
-                <Row gap="16px">
+                <Row>
                     <ControlGroup>
                         <ColorSelectorButton
                             title="Цвет текста"
@@ -982,23 +976,21 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
-                <Row gap="16px">
-                    <ControlGroup>
-                        <FontAndSizeEditor
-                            title="Шрифт текста"
-                            fontSize={text.font.size}
-                            fontFamily={text.font.family}
-                            onFontChange={({family, url}) =>
-                                updateText('font', {...text.font, family, url})
-                            }
-                            onFontSizeChange={(v) =>
-                                updateText('font', {...text.font, size: v})
-                            }
-                        />
-                    </ControlGroup>
-                </Row>
+                <ControlGroup>
+                    <FontAndSizeEditor
+                        title="Шрифт текста"
+                        fontSize={text.font.size}
+                        fontFamily={text.font.family}
+                        onFontChange={({family, url}) =>
+                            updateText('font', {...text.font, family, url})
+                        }
+                        onFontSizeChange={(v) =>
+                            updateText('font', {...text.font, size: v})
+                        }
+                    />
+                </ControlGroup>
 
-                <Row gap="16px">
+                <Row>
                     <ControlGroup>
                         <ColorSelectorButton
                             title="Цвет тени"
@@ -1022,16 +1014,14 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
-                <Row gap="16px">
-                    <ControlGroup flex="1">
-                        <SeekbarComponent
-                            title="Размер эмоутов"
-                            min={12} max={64} step={1}
-                            value={text.emoteSize}
-                            onChange={(v) => updateText('emoteSize', v)}
-                        />
-                    </ControlGroup>
-                </Row>
+                <ControlGroup>
+                    <SeekbarComponent
+                        title="Размер эмоутов"
+                        min={12} max={64} step={1}
+                        value={text.emoteSize}
+                        onChange={(v) => updateText('emoteSize', v)}
+                    />
+                </ControlGroup>
             </>
         );
     }
