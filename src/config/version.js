@@ -1,5 +1,5 @@
 // Auto-generated from version.json - do not edit manually
 // Run: npm run sync-version
 
-export const APP_VERSION = '0.8.2-beta';
-export const BUILD_DATE = '22.02.2026';
+export const APP_VERSION = '0.8.3-beta';
+export const BUILD_DATE = '28.02.2026';

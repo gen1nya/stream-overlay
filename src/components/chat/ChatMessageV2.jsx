@@ -77,7 +77,7 @@ const ColorBgLayer = styled(BgLayerBase)`
         return css`
             background-color: ${hexToRgba(c.color, c.opacity)};
             border-radius: ${c.borderRadius}px;
-            border: 1px solid ${hexToRgba(c.borderColor, c.borderOpacity)};
+            border: ${c.borderWidth ?? 1}px solid ${hexToRgba(c.borderColor, c.borderOpacity)};
             box-shadow: 0 0 ${c.shadowRadius}px ${hexToRgba(c.shadowColor, c.shadowOpacity)};
         `;
     }}

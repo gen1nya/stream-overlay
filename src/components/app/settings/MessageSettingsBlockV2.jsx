@@ -407,6 +407,14 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     <Row gap="16px">
                         <ControlGroup flex="1">
                             <SeekbarComponent
+                                title="Ширина обводки"
+                                min={0} max={10} step={1}
+                                value={bgColor.borderWidth}
+                                onChange={(v) => updateBgNested('color', 'borderWidth', v)}
+                            />
+                        </ControlGroup>
+                        <ControlGroup flex="1">
+                            <SeekbarComponent
                                 title="Скругление"
                                 min={0} max={50} step={1}
                                 value={bgColor.borderRadius}

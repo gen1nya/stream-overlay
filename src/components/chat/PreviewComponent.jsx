@@ -53,14 +53,17 @@ const MessagePreviewContainer = styled.div`
         return `${theme.overlay?.paddingTop || 0}px 0px 0px ${theme.overlay?.paddingLeft || 0}px`;
     }};
 
-    ${({theme}) =>
-            theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
-                    ?
-                    `
-            width: ${(theme.overlay.chatWidth || 500)}px;
-            height: ${(theme.overlay.chatHeight || 500)}px;
-        `
-                    : ''}
+    ${({theme}) => {
+        const o = theme.overlay;
+        const hasImageSize = o?.backgroundType === 'image' && o?.backgroundImageAspectRatio;
+        const isManual = o?.autoSize === false;
+        return (hasImageSize || isManual)
+            ? `
+                width: ${(o?.chatWidth || 500)}px;
+                height: ${(o?.chatHeight || 500)}px;
+            `
+            : '';
+    }}
     &::-webkit-scrollbar {
         width: 0 !important;
         height: 0 !important;

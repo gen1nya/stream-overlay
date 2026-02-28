@@ -123,7 +123,8 @@ export const windowModeThemeDark = {
     overlay: {
         backgroundType: "none",
         backgroundColor: null,
-        backgroundImage: null
+        backgroundImage: null,
+        autoSize: true
     }
 };
 
@@ -770,6 +771,7 @@ export const defaultV2Message = {
             opacity: 0.77,
             borderColor: '#0af0d5',
             borderOpacity: 1,
+            borderWidth: 1,
             borderRadius: 12,
             shadowColor: '#ffffff',
             shadowOpacity: 1,

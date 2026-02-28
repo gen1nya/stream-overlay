@@ -503,6 +503,7 @@ const en = {
                             borderRadius: 'Corner radius',
                             paddingLeft: 'Left padding',
                             paddingTop: 'Top padding',
+                            manualSize: 'Set size manually',
                             backgroundOnlyTooltip: 'Available only for image background',
                         },
                         background: {

@@ -194,7 +194,8 @@
   "overlay": {
     "backgroundType": "none",
     "backgroundColor": null,
-    "backgroundImage": null
+    "backgroundImage": null,
+    "autoSize": true
   },
   "followersGoal": {
     "target": 1000,

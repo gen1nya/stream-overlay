@@ -503,6 +503,7 @@ const ru = {
                             borderRadius: 'Скругление углов',
                             paddingLeft: 'Отступ слева',
                             paddingTop: 'Отступ сверху',
+                            manualSize: 'Задать размер вручную',
                             backgroundOnlyTooltip: 'Доступно только для фона-изображения',
                         },
                         background: {
