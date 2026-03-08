@@ -87,11 +87,16 @@ const GradientBgLayer = styled(BgLayerBase)`
     z-index: 1;
     inset: ${({ $cfg }) => insetStr($cfg.background.layerInset.gradient)};
     ${({ $cfg }) => {
-        const grad = v2GradientCSS($cfg.background.gradient);
+        const g = $cfg.background.gradient;
+        const grad = v2GradientCSS(g);
         if (!grad) return '';
-        return css`background: ${grad};`;
+        return css`
+            background: ${grad};
+            border-radius: ${g.borderRadius ?? $cfg.background.color.borderRadius}px;
+            border: ${g.borderWidth ?? 0}px solid ${hexToRgba(g.borderColor ?? '#ffffff', g.borderOpacity ?? 1)};
+            box-shadow: 0 0 ${g.shadowRadius ?? 0}px ${hexToRgba(g.shadowColor ?? '#000000', g.shadowOpacity ?? 1)};
+        `;
     }}
-    border-radius: ${({ $cfg }) => $cfg.background.color.borderRadius}px;
 `;
 
 const ImageBgLayer = styled(BgLayerBase)`

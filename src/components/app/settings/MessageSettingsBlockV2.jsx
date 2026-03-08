@@ -239,6 +239,7 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
     // ─── Shorthand refs ──────────────────────────────────────────
     const bg = cfg.background;
     const bgColor = bg.color;
+    const bgGrad = bg.gradient;
     const bgImage = bg.image;
     const header = cfg.content.header;
     const text = cfg.content.text;
@@ -456,6 +457,58 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                             }));
                         }}
                     />
+                    <Row gap="16px">
+                        <ControlGroup>
+                            <ColorSelectorButton
+                                title="Цвет обводки"
+                                hex={bgGrad.borderColor}
+                                alpha={bgGrad.borderOpacity}
+                                openColorPopup={openColorPopup}
+                                onColorChange={({color, alpha}) => {
+                                    updateBgNested('gradient', 'borderColor', color);
+                                    updateBgNested('gradient', 'borderOpacity', alpha);
+                                }}
+                            />
+                        </ControlGroup>
+                        <ControlGroup>
+                            <ColorSelectorButton
+                                title="Цвет тени"
+                                hex={bgGrad.shadowColor}
+                                alpha={bgGrad.shadowOpacity}
+                                openColorPopup={openColorPopup}
+                                onColorChange={({color, alpha}) => {
+                                    updateBgNested('gradient', 'shadowColor', color);
+                                    updateBgNested('gradient', 'shadowOpacity', alpha);
+                                }}
+                            />
+                        </ControlGroup>
+                    </Row>
+                    <Row gap="16px">
+                        <ControlGroup flex="1">
+                            <SeekbarComponent
+                                title="Ширина обводки"
+                                min={0} max={10} step={1}
+                                value={bgGrad.borderWidth}
+                                onChange={(v) => updateBgNested('gradient', 'borderWidth', v)}
+                            />
+                        </ControlGroup>
+                        <ControlGroup flex="1">
+                            <SeekbarComponent
+                                title="Скругление"
+                                min={0} max={50} step={1}
+                                value={bgGrad.borderRadius}
+                                onChange={(v) => updateBgNested('gradient', 'borderRadius', v)}
+                            />
+                        </ControlGroup>
+                        <ControlGroup flex="1">
+                            <SeekbarComponent
+                                title="Радиус тени"
+                                min={0} max={30} step={1}
+                                value={bgGrad.shadowRadius}
+                                onChange={(v) => updateBgNested('gradient', 'shadowRadius', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
                 </TabContent>
             </TabSection>
         );

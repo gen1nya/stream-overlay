@@ -779,7 +779,14 @@ export const defaultV2Message = {
         },
 
         gradient: {
-            gradients: []
+            gradients: [],
+            borderColor: '#ffffff',
+            borderOpacity: 1,
+            borderWidth: 0,
+            borderRadius: 12,
+            shadowColor: '#000000',
+            shadowOpacity: 1,
+            shadowRadius: 0
         },
 
         image: {
