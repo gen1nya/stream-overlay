@@ -5,6 +5,7 @@ import { PityRepository } from './PityRepository';
 import { LotteryRepository } from './LotteryRepository';
 import { TriggerRepository } from './TriggerRepository';
 import { RouletteRepository } from './RouletteRepository';
+import { ChatStatsRepository } from './ChatStatsRepository';
 import fs from "fs";
 import path from "path";
 
@@ -20,6 +21,7 @@ export class DbRepository {
     public lottery: LotteryRepository;
     public triggers: TriggerRepository;
     public roulette: RouletteRepository;
+    public chatStats: ChatStatsRepository;
 
     private constructor(user: string) {
         this.user = user;
@@ -38,6 +40,7 @@ export class DbRepository {
         this.lottery = new LotteryRepository(this.db);
         this.triggers = new TriggerRepository(this.db);
         this.roulette = new RouletteRepository(this.db);
+        this.chatStats = new ChatStatsRepository(this.db);
     }
 
     public static getInstance(user: string): DbRepository {
@@ -207,6 +210,42 @@ export class DbRepository {
         this.db.prepare(`
             CREATE INDEX IF NOT EXISTS idx_roulette_plays_user
             ON roulette_plays(user_id, created_at)
+        `).run();
+
+        // Chat stats tables
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS stream_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                started_at INTEGER NOT NULL,
+                ended_at INTEGER,
+                total_messages INTEGER DEFAULT 0,
+                unique_chatters INTEGER DEFAULT 0,
+                peak_messages_per_minute REAL DEFAULT 0,
+                status TEXT DEFAULT 'active'
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE TABLE IF NOT EXISTS stream_chat_stats (
+                session_id INTEGER NOT NULL,
+                user_id TEXT NOT NULL,
+                user_name TEXT NOT NULL,
+                message_count INTEGER DEFAULT 0,
+                first_message_at INTEGER,
+                last_message_at INTEGER,
+                PRIMARY KEY (session_id, user_id),
+                FOREIGN KEY (session_id) REFERENCES stream_sessions(id)
+            )
+        `).run();
+
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_stream_sessions_started
+            ON stream_sessions(started_at)
+        `).run();
+
+        this.db.prepare(`
+            CREATE INDEX IF NOT EXISTS idx_stream_chat_stats_session
+            ON stream_chat_stats(session_id)
         `).run();
 
         // Индексы для user_pity

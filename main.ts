@@ -18,7 +18,8 @@ import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow, initWindowsManager} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
-import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID} from "./services/twitch/esService";
+import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID, EVENT_BROADCASTING} from "./services/twitch/esService";
+import {ChatStatsService} from "./services/ChatStatsService";
 import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
 import {LogService} from "./services/logService";
 import {UserData} from "./services/twitch/types/UserData";
@@ -289,6 +290,11 @@ const actionScheduler = new ActionScheduler({
     sendMessage: (message: string) => twitchClient.sendMessage(message)
 })
 
+const chatStatsService = new ChatStatsService(broadcast, () => {
+    if (!currentUserId) return null;
+    return DbRepository.getInstance(currentUserId);
+});
+
 const scraper = new YouTubeLiveStreamsScraper(
     store,
     message => {
@@ -335,6 +341,14 @@ mediaEventsController.setBroadcastCallback(broadcast);
 mediaLibraryService.setBroadcastCallback(broadcast);
 
 twitchClient.on('event', async ({ destination, event }) => {
+  if (destination === `status:${EVENT_BROADCASTING}`) {
+    if (event.isOnline) {
+      chatStatsService.onStreamOnline();
+    } else {
+      chatStatsService.onStreamOffline();
+    }
+  }
+
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
     messageCache.processMessage(event);
   } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
@@ -351,6 +365,7 @@ twitchClient.on('event', async ({ destination, event }) => {
 });
 
 twitchClient.on('chat', async (parsedMessage) => {
+  chatStatsService.onChatMessage(parsedMessage);
   const result = await middlewareProcessor.processMessage(parsedMessage);
   if (result) {
     messageCache.processMessage(result);
@@ -520,6 +535,9 @@ app.whenReady().then(() => {
             console.log('🪟 Client requested window cache, sending', windowCache.messages.length, 'messages');
             broadcast('chat:window-messages', windowCache);
             break;
+        case 'chat-stats:get':
+            broadcast('chat-stats:update', chatStatsService.getStats());
+            break;
         default:
           console.log('unknown channel', channel, payload);
       }
@@ -553,6 +571,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', async (event) => {
   event.preventDefault();
+  chatStatsService.stop();
   scraper.dispose();
   twitchClient.stop()
   audiosessionManager.close();

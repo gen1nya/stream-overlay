@@ -328,6 +328,23 @@ export const clearAllRouletteData = async () => {
     return await ipcRenderer?.invoke('roulette:clear-all');
 };
 
+// chat stats api
+export const getChatStatsSessions = async (options = {}) => {
+    return await ipcRenderer?.invoke('chat-stats:get-sessions', options);
+};
+
+export const getChatStatsSessionDetails = async (sessionId) => {
+    return await ipcRenderer?.invoke('chat-stats:get-session-details', sessionId);
+};
+
+export const getChatStatsSessionUsers = async (sessionId, options = {}) => {
+    return await ipcRenderer?.invoke('chat-stats:get-session-users', sessionId, options);
+};
+
+export const getChatStatsChatters = async () => {
+    return await ipcRenderer?.invoke('chat-stats:get-chatters');
+};
+
 // listener
 export const onLogout = (callback) => {
     ipcRenderer.on('logout:success', callback);

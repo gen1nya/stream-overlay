@@ -24,6 +24,7 @@ import {
     FiCopy,
     FiLayers,
     FiMonitor,
+    FiUsers,
 } from 'react-icons/fi';
 import ConnectionStatus from './ConnectionStatus';
 import {Row} from "./SettingsComponent";
@@ -38,6 +39,7 @@ import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./
 import Switch from "../utils/Switch";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
+import ChatStatsPopup from "./ChatStatsPopup";
 import {useWebSocket} from "../../context/WebSocketContext";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
@@ -363,6 +365,38 @@ const FollowersCounter = styled.div`
     }
 `;
 
+const ChatStatsBadge = styled.div`
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+    padding: 4px 10px;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    font-size: 0.75rem;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+
+    &:hover {
+        border-color: #646cff;
+        color: #fff;
+        background: #333;
+    }
+
+    svg {
+        width: 12px;
+        height: 12px;
+        color: #646cff;
+    }
+
+    .separator {
+        color: #555;
+    }
+`;
+
 export default function Dashboard() {
     const navigate = useNavigate();
     const called = useRef(false);
@@ -377,6 +411,8 @@ export default function Dashboard() {
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', open: false });
     const [showUsersPopup, setShowUsersPopup] = useState(false);
     const [isGameMode, setIsGameMode] = useState(false);
+    const [chatStats, setChatStats] = useState(null);
+    const [showChatStatsPopup, setShowChatStatsPopup] = useState(false);
 
     // Load initial game mode state
     useEffect(() => {
@@ -603,6 +639,7 @@ export default function Dashboard() {
         if (isConnected) {
             send({channel: 'log:get'});
             send({channel: 'status:get_broadcasting'});
+            send({channel: 'chat-stats:get'});
         }
 
         // Подписка на статус трансляции
@@ -617,9 +654,15 @@ export default function Dashboard() {
             setLogs(payload.logs);
         });
 
+        // Подписка на статистику чата
+        const unsubscribeChatStats = subscribe('chat-stats:update', (payload) => {
+            setChatStats(payload);
+        });
+
         return () => {
             unsubscribeBroadcasting();
             unsubscribeLogs();
+            unsubscribeChatStats();
         };
     }, [isConnected, send, subscribe]);
 
@@ -641,6 +684,12 @@ export default function Dashboard() {
                 <BotConfigPopup
                     onClose={closeBotConfig}
                     onBotChange={handleBotChange}
+                />
+            )}
+            {showChatStatsPopup && (
+                <ChatStatsPopup
+                    onClose={() => setShowChatStatsPopup(false)}
+                    chatStats={chatStats}
                 />
             )}
             {isThemeSelectorOpen && (
@@ -690,6 +739,10 @@ export default function Dashboard() {
                                 >
                                     <span className="live-name">LIVE</span>
                                 </OnlineIndicator>
+                                <ChatStatsBadge onClick={() => setShowChatStatsPopup(true)}>
+                                    <FiUsers size={12} />
+                                    {chatStats?.currentChatters ?? 0}
+                                </ChatStatsBadge>
                             </CardTitle>
                         </DashboardCardHeader>
                         <CardContent>

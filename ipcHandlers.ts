@@ -21,6 +21,7 @@ import {
 import {updateRoles} from "./services/twitch/roleUpdater";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {DbRepository} from "./services/db/DbRepository";
+import {ChattersService} from "./services/twitch/ChattersService";
 
 export function registerIpcHandlers(
     store: Store,
@@ -338,5 +339,43 @@ export function registerIpcHandlers(
     if (!repo) return false;
     repo.clearAllData();
     return true;
+  });
+
+  // ============================================
+  // Chat Stats Handlers
+  // ============================================
+
+  const getChatStatsRepository = () => {
+    const userId = twitchClient.getUserId();
+    if (!userId) return null;
+    return DbRepository.getInstance(userId).chatStats;
+  };
+
+  ipcMain.handle('chat-stats:get-sessions', async (_e, options?: { limit?: number; offset?: number }) => {
+    const repo = getChatStatsRepository();
+    if (!repo) return [];
+    return repo.getRecentSessions(options?.limit ?? 20, options?.offset ?? 0);
+  });
+
+  ipcMain.handle('chat-stats:get-session-details', async (_e, sessionId: number) => {
+    const repo = getChatStatsRepository();
+    if (!repo) return null;
+    const session = repo.getSession(sessionId);
+    const topChatters = repo.getTopChatters(sessionId, 50);
+    return { session, topChatters };
+  });
+
+  ipcMain.handle('chat-stats:get-session-users', async (_e, sessionId: number, options?: { limit?: number; offset?: number }) => {
+    const repo = getChatStatsRepository();
+    if (!repo) return [];
+    return repo.getSessionUserStats(sessionId, options);
+  });
+
+  ipcMain.handle('chat-stats:get-chatters', async () => {
+    try {
+      return ChattersService.getInstance().getAllChatters();
+    } catch {
+      return [];
+    }
   });
 }

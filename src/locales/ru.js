@@ -162,6 +162,43 @@ const ru = {
                     followersGoal: 'Цель фолловеров/стрим'
                 }
             },
+            chatStats: {
+                badge: {
+                    msgPerMin: '{{count}} сбщ/мин',
+                    chatters: '{{count}} чаттеров',
+                },
+                title: 'Статистика чата',
+                tabs: {
+                    current: 'Текущий стрим',
+                    chat: 'Чат',
+                    history: 'История',
+                },
+                current: {
+                    duration: 'Длительность стрима',
+                    totalMessages: 'Всего сообщений',
+                    messagesPerMinute: 'Сообщений/мин',
+                    peakMpm: 'Пик сбщ/мин',
+                    currentChatters: 'В чате',
+                    uniqueParticipants: 'Уникальных участников',
+                    topChatters: 'Топ по сообщениям',
+                    inRoom: 'В комнате',
+                    noChatters: 'Никого в чате',
+                },
+                history: {
+                    date: 'Дата',
+                    duration: 'Длительность',
+                    messages: 'Сообщения',
+                    chatters: 'Чаттеры',
+                    peakMpm: 'Пик сбщ/мин',
+                    noSessions: 'Нет записанных сессий',
+                    viewDetails: 'Подробнее',
+                },
+                table: {
+                    rank: '#',
+                    user: 'Пользователь',
+                    messages: 'Сообщения',
+                },
+            },
             logs: {
                 title: 'Логи'
             },
