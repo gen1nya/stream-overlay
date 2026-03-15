@@ -16,7 +16,7 @@ export interface ChatStatsPayload {
     peakMessagesPerMinute: number;
     currentChatters: number;
     uniqueParticipants: number;
-    topChatters: Array<{ userName: string; messageCount: number }>;
+    topChatters: Array<{ userId: string; userName: string; messageCount: number }>;
 }
 
 export class ChatStatsService {
@@ -149,10 +149,10 @@ export class ChatStatsService {
             // ChattersService may not be initialized
         }
 
-        const topChatters = Array.from(this.allTimeParticipants.values())
-            .sort((a, b) => b.messageCount - a.messageCount)
+        const topChatters = Array.from(this.allTimeParticipants.entries())
+            .sort((a, b) => b[1].messageCount - a[1].messageCount)
             .slice(0, 10)
-            .map(p => ({ userName: p.userName, messageCount: p.messageCount }));
+            .map(([userId, p]) => ({ userId, userName: p.userName, messageCount: p.messageCount }));
 
         const mpm = this.isTracking
             ? this.pruneAndCount(this.messageTimestamps)

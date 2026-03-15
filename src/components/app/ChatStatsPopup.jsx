@@ -9,6 +9,7 @@ import {
 } from '../utils/tablePopupSharedStyles';
 import { useTranslation } from 'react-i18next';
 import { getChatStatsSessions, getChatStatsSessionDetails, getChatStatsChatters } from '../../services/api';
+import UserInfoPopup from './UserInfoPopup';
 
 const StatsPopupContent = styled(PopupContent)`
     min-width: 600px;
@@ -88,6 +89,10 @@ const StatLabel = styled.div`
     color: #999;
     text-transform: uppercase;
     letter-spacing: 0.5px;
+`;
+
+const ClickableRow = styled(TableRow)`
+    cursor: pointer;
 `;
 
 const SectionTitle = styled.h3`
@@ -184,7 +189,7 @@ function formatDate(timestamp) {
 // Chatters Table (reused in current view)
 // ============================================
 
-function ChattersTable({ chatters, t }) {
+function ChattersTable({ chatters, t, onUserClick }) {
     if (!chatters || chatters.length === 0) {
         return (
             <EmptyContainer>
@@ -205,9 +210,12 @@ function ChattersTable({ chatters, t }) {
                     </TableHeader>
                     <TableBody>
                         {chatters.map(chatter => (
-                            <TableRow key={chatter.login}>
+                            <ClickableRow
+                                key={chatter.login}
+                                onClick={() => onUserClick?.(chatter.userId, chatter.displayName || chatter.login)}
+                            >
                                 <TableCell>{chatter.displayName || chatter.login}</TableCell>
-                            </TableRow>
+                            </ClickableRow>
                         ))}
                     </TableBody>
                 </Table>
@@ -220,7 +228,7 @@ function ChattersTable({ chatters, t }) {
 // Current / Chat Tab
 // ============================================
 
-function CurrentView({ chatStats, t }) {
+function CurrentView({ chatStats, t, onUserClick }) {
     const [chatters, setChatters] = useState([]);
 
     useEffect(() => {
@@ -288,11 +296,14 @@ function CurrentView({ chatStats, t }) {
                                 </TableHeader>
                                 <TableBody>
                                     {chatStats.topChatters.map((chatter, index) => (
-                                        <TableRow key={chatter.userName}>
+                                        <ClickableRow
+                                            key={chatter.userId}
+                                            onClick={() => onUserClick?.(chatter.userId, chatter.userName)}
+                                        >
                                             <RankCell $rank={index + 1}>{index + 1}</RankCell>
                                             <TableCell>{chatter.userName}</TableCell>
                                             <TableCell>{chatter.messageCount}</TableCell>
-                                        </TableRow>
+                                        </ClickableRow>
                                     ))}
                                 </TableBody>
                             </Table>
@@ -305,7 +316,7 @@ function CurrentView({ chatStats, t }) {
                 <FiUsers size={16} />
                 {t('dashboard.chatStats.current.inRoom')} ({chatters.length})
             </SectionTitle>
-            <ChattersTable chatters={chatters} t={t} />
+            <ChattersTable chatters={chatters} t={t} onUserClick={onUserClick} />
         </TabContent>
     );
 }
@@ -314,7 +325,7 @@ function CurrentView({ chatStats, t }) {
 // History Tab
 // ============================================
 
-function HistoryView({ t }) {
+function HistoryView({ t, onUserClick }) {
     const [sessions, setSessions] = useState([]);
     const [selectedSession, setSelectedSession] = useState(null);
     const [sessionDetails, setSessionDetails] = useState(null);
@@ -385,11 +396,14 @@ function HistoryView({ t }) {
                                     </TableHeader>
                                     <TableBody>
                                         {sessionDetails.topChatters.map((chatter, index) => (
-                                            <TableRow key={chatter.userId}>
+                                            <ClickableRow
+                                                key={chatter.userId}
+                                                onClick={() => onUserClick?.(chatter.userId, chatter.userName)}
+                                            >
                                                 <RankCell $rank={index + 1}>{index + 1}</RankCell>
                                                 <TableCell>{chatter.userName}</TableCell>
                                                 <TableCell>{chatter.messageCount}</TableCell>
-                                            </TableRow>
+                                            </ClickableRow>
                                         ))}
                                     </TableBody>
                                 </Table>
@@ -442,6 +456,13 @@ function HistoryView({ t }) {
 export default function ChatStatsPopup({ onClose, chatStats }) {
     const { t } = useTranslation();
     const [activeTab, setActiveTab] = useState('current');
+    const [userInfoPopup, setUserInfoPopup] = useState({ id: '', userName: '', open: false });
+
+    const handleUserClick = (userId, userName) => {
+        if (userId) {
+            setUserInfoPopup({ id: userId, userName, open: true });
+        }
+    };
 
     const currentTabLabel = chatStats?.isStreamActive
         ? t('dashboard.chatStats.tabs.current')
@@ -450,25 +471,32 @@ export default function ChatStatsPopup({ onClose, chatStats }) {
     return (
         <Popup onClose={onClose}>
             <StatsPopupContent>
-                <Header>
-                    <Title>{t('dashboard.chatStats.title')}</Title>
-                    <CloseButton onClick={onClose}>
-                        <FiX />
-                    </CloseButton>
-                </Header>
+                    <Header>
+                        <Title>{t('dashboard.chatStats.title')}</Title>
+                        <CloseButton onClick={onClose}>
+                            <FiX />
+                        </CloseButton>
+                    </Header>
 
-                <TabBar>
-                    <Tab $active={activeTab === 'current'} onClick={() => setActiveTab('current')}>
-                        {currentTabLabel}
-                    </Tab>
-                    <Tab $active={activeTab === 'history'} onClick={() => setActiveTab('history')}>
-                        {t('dashboard.chatStats.tabs.history')}
-                    </Tab>
-                </TabBar>
+                    <TabBar>
+                        <Tab $active={activeTab === 'current'} onClick={() => setActiveTab('current')}>
+                            {currentTabLabel}
+                        </Tab>
+                        <Tab $active={activeTab === 'history'} onClick={() => setActiveTab('history')}>
+                            {t('dashboard.chatStats.tabs.history')}
+                        </Tab>
+                    </TabBar>
 
-                {activeTab === 'current' && <CurrentView chatStats={chatStats} t={t} />}
-                {activeTab === 'history' && <HistoryView t={t} />}
-            </StatsPopupContent>
-        </Popup>
+                    {activeTab === 'current' && <CurrentView chatStats={chatStats} t={t} onUserClick={handleUserClick} />}
+                    {activeTab === 'history' && <HistoryView t={t} onUserClick={handleUserClick} />}
+                </StatsPopupContent>
+                {userInfoPopup.open && (
+                    <UserInfoPopup
+                        userId={userInfoPopup.id}
+                        userName={userInfoPopup.userName}
+                        onClose={() => setUserInfoPopup({ id: '', userName: '', open: false })}
+                    />
+                )}
+            </Popup>
     );
 }

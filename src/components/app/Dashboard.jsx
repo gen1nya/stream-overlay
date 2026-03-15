@@ -370,6 +370,7 @@ const ChatStatsBadge = styled.div`
     align-items: center;
     gap: 6px;
     margin-top: 4px;
+    height: 20px;
     padding: 4px 10px;
     background: #2a2a2a;
     border: 1px solid #444;
