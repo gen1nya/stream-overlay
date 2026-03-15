@@ -2,4 +2,4 @@
 // Run: npm run sync-version
 
 export const APP_VERSION = '0.8.5-beta';
-export const BUILD_DATE = '09.03.2026';
+export const BUILD_DATE = '16.03.2026';

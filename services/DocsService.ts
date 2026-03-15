@@ -22,14 +22,9 @@ export class DocsService {
     private docsPath: string;
 
     constructor() {
-        // In development, docs are in project root
-        // In production, docs are bundled in ASAR
-        if (app.isPackaged) {
-            this.docsPath = path.join(process.resourcesPath, 'docs');
-        } else {
-            // __dirname is dist-backend/services/, so go up 2 levels to project root
-            this.docsPath = path.join(app.getAppPath(), 'docs');
-        }
+        // app.getAppPath() works in both dev (project root) and production (app.asar)
+        // Electron's patched fs reads from ASAR transparently
+        this.docsPath = path.join(app.getAppPath(), 'docs');
         console.log('[DocsService] Docs path:', this.docsPath);
         console.log('[DocsService] Exists:', fs.existsSync(this.docsPath));
     }
