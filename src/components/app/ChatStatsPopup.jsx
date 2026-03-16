@@ -459,9 +459,7 @@ export default function ChatStatsPopup({ onClose, chatStats }) {
     const [userInfoPopup, setUserInfoPopup] = useState({ id: '', userName: '', open: false });
 
     const handleUserClick = (userId, userName) => {
-        if (userId) {
-            setUserInfoPopup({ id: userId, userName, open: true });
-        }
+        setUserInfoPopup({ id: userId || '', userName, open: true });
     };
 
     const currentTabLabel = chatStats?.isStreamActive
