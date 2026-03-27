@@ -16,6 +16,7 @@ import {preloadAllFonts} from "./components/utils/fontsCache";
 import fonts from './components/utils/cyrillic_fonts_minimal.json';
 import WaveformDemo from "./components/player/WaveformDemo";
 import FollowersGoalWidget from "./components/followers/FollowersGoalWidget";
+import DonationGoalOverlay from "./components/donationGoal/DonationGoalOverlay";
 import {WebSocketProvider} from "./context/WebSocketContext";
 import {PortalProvider} from "./context/PortalContext";
 import Terminal from "./components/app/SonaARG";
@@ -58,6 +59,7 @@ export default function App() {
                             <Route path="/settings" element={<Settings/>} />
                             <Route path="/chat-overlay" element={<ChatOverlay/>} />
                             <Route path="/new-followers-overlay" element={<FollowersGoalWidget/>} />
+                            <Route path="/donation-goal-overlay" element={<DonationGoalOverlay/>} />
                             <Route path="/dashboard" element={<Dashboard/>} />
                             <Route path="/auth" element={<AuthScreen/>} />
                             <Route path="/tty" element={<Terminal/>} />

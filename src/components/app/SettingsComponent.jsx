@@ -54,6 +54,7 @@ import Socks5ProxyComponent from "./settings/Socks5ProxyComponent";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsComponent";
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
+import DonationGoalSettingsComponent from "./settings/DonationGoalSettingsComponent";
 import {ActionButton, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
 import HolidayHeader from "../seasonal/HolidayHeader";
 import {useThemeManager} from "../../hooks/useThemeManager";
@@ -272,6 +273,7 @@ export default function Settings() {
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
         followers_goal: {title: t('settings.pages.followersGoal.title'), icon: <FiTarget/>},
+        donation_goal: {title: 'Цель сбора (DA)', icon: <FiGift/>},
         about: {title: t('settings.pages.about.title'), icon: <FiAlertCircle/>},
     }), [t]);
 
@@ -510,6 +512,7 @@ export default function Settings() {
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                         {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},
+                        {key: "donation_goal", icon: <FiGift/>, label: "Цель сбора (DA)"},
                         {key : "about", icon: <FiAlertCircle/>, label: t('settings.pages.about.label')},
                     ]}
                 />
@@ -889,6 +892,16 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     <FollowersGoalSettingsComponent
+                        current={selectedTheme}
+                        onChange={updaterOrTheme => apply(updaterOrTheme)}
+                        openColorPopup={openColorPopup}
+                    />
+                </Content>
+            );
+        case "donation_goal":
+            return (
+                <Content>
+                    <DonationGoalSettingsComponent
                         current={selectedTheme}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}

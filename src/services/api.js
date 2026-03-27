@@ -43,6 +43,22 @@ export const openOverlay = () => {
     return ipcRenderer?.invoke('chat:open-overlay');
 };
 
+export const openDonationGoalOverlay = () => {
+    return ipcRenderer?.invoke('da:open-goal-overlay');
+};
+
+export const setDaWidgetUrl = (url) => {
+    return ipcRenderer?.invoke('da:set-widget-url', url);
+};
+
+export const getDaWidgetUrl = () => {
+    return ipcRenderer?.invoke('da:get-widget-url');
+};
+
+export const getDaStatus = () => {
+    return ipcRenderer?.invoke('da:get-status');
+};
+
 export const setChatGameMode = (enabled) => {
     return ipcRenderer?.invoke('chat:set-game-mode', enabled);
 };

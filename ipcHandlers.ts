@@ -7,7 +7,7 @@ import { TwitchClient } from './services/twitch/TwitchClient';
 import Store from 'electron-store';
 import defaultTheme from './default-theme.json';
 import { MiddlewareProcessor } from './services/middleware/MiddlewareProcessor';
-import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, createMediaOverlayEditorWindow, createMediaOverlayWindow, closeMediaOverlayWindow, isMediaOverlayWindowOpen, setChatGameMode, getChatGameMode, createHelpWindow} from './windowsManager';
+import {createChatWindow, createPreviewWindow, createTerminalWindow, createBackendLogsWindow, createMediaOverlayEditorWindow, createMediaOverlayWindow, closeMediaOverlayWindow, isMediaOverlayWindowOpen, setChatGameMode, getChatGameMode, createHelpWindow, createDonationGoalWindow} from './windowsManager';
 import {BackendLogService} from './services/BackendLogService';
 import {LogService} from "./services/logService";
 import {
@@ -99,6 +99,7 @@ export function registerIpcHandlers(
 
   ipcMain.handle('arg:create-terminal', async (_e, userId?: string) => createTerminalWindow());
   ipcMain.handle('chat:open-overlay', () => createChatWindow());
+  ipcMain.handle('da:open-goal-overlay', () => createDonationGoalWindow());
   ipcMain.handle('chat:set-game-mode', (_e, enabled: boolean) => setChatGameMode(enabled));
   ipcMain.handle('chat:get-game-mode', () => getChatGameMode());
   ipcMain.handle('setting:open-preview', () => createPreviewWindow());
