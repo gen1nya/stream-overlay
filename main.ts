@@ -34,6 +34,7 @@ import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
+import {ObsService} from "./services/ObsService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
@@ -95,6 +96,13 @@ const store = new Store<StoreSchema>({
       }
     },
     mediaLibrary: [],
+    obsActions: [],
+    obsConnection: {
+      enabled: false,
+      host: 'localhost',
+      port: 4455,
+      autoConnect: false,
+    },
   },
 });
 
@@ -108,6 +116,7 @@ const mediaEventsService = new MediaEventsService(store);
 const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 const mediaLibraryService = new MediaLibraryService(store);
+const obsService = new ObsService(store);
 
 const backendLogService = new BackendLogService({
   enabled: true,
@@ -342,6 +351,7 @@ mediaEventsService.setBroadcastCallback(broadcast);
 mediaDisplayGroupService.setBroadcastCallback(broadcast);
 mediaEventsController.setBroadcastCallback(broadcast);
 mediaLibraryService.setBroadcastCallback(broadcast);
+obsService.setBroadcastCallback(broadcast);
 
 // ─── DonationAlerts Goal Service ─────────────────────────────────
 const daService = new DonationAlertsService(broadcast);
@@ -454,6 +464,7 @@ app.whenReady().then(() => {
   mediaEventsService.registerIpcHandlers();
   mediaDisplayGroupService.registerIpcHandlers();
   mediaLibraryService.registerIpcHandlers();
+  obsService.registerIpcHandlers();
 
   // Docs service for help window
   const docsService = new DocsService();
