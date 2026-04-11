@@ -16,6 +16,24 @@ const DEFAULT_CONNECTION: ObsConnectionConfig = {
 
 const BACKOFF_STEPS_MS = [1000, 2000, 4000, 8000, 15000, 30000];
 
+function formatObsError(err: any): string {
+    if (!err) return '';
+    // obs-websocket-js OBSWebSocketError carries { code, message }. The
+    // native WebSocket also produces errors whose .message is sometimes
+    // literally "Error" — in that case we fall through to the .code.
+    const msg = err?.message;
+    const code = err?.code;
+    if (msg && msg !== 'Error' && msg !== '[object Object]') {
+        return code ? `${msg} (code=${code})` : msg;
+    }
+    if (code !== undefined && code !== null) return `code=${code}`;
+    try {
+        return String(err);
+    } catch {
+        return 'unknown error';
+    }
+}
+
 export type ObsConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 export interface ObsStatusSnapshot {
@@ -179,7 +197,9 @@ export class ObsService {
 
         const config = this.getConnectionConfig();
         this.userInitiatedDisconnect = false;
-        this.cancelReconnect();
+        // Clear any pending auto-reconnect timer, but preserve the attempt
+        // counter so backoff continues to grow across failing attempts.
+        this.clearReconnectTimer();
         this.setStatus('connecting');
 
         const password = (await this.getStoredPassword()) || undefined;
@@ -193,9 +213,10 @@ export class ObsService {
             console.log(`[ObsService] Connected to ${url}`);
             return true;
         } catch (error: any) {
-            const message = error?.message || String(error);
+            const message = formatObsError(error);
             console.warn(`[ObsService] Connect failed: ${message}`);
             this.setStatus('error', message);
+            // ConnectionClosed handler may have already scheduled — idempotent.
             this.scheduleReconnect();
             return false;
         }
@@ -203,7 +224,7 @@ export class ObsService {
 
     async disconnect(): Promise<void> {
         this.userInitiatedDisconnect = true;
-        this.cancelReconnect();
+        this.resetReconnectState();
         if (this.client) {
             try {
                 await this.client.disconnect();
@@ -225,18 +246,18 @@ export class ObsService {
         const client = new OBSWebSocket();
         client.on('ConnectionClosed', (err) => {
             if (this.isShuttingDown) return;
-            const message = err?.message || null;
+            const message = formatObsError(err);
             console.log(`[ObsService] Connection closed${message ? `: ${message}` : ''}`);
             if (this.userInitiatedDisconnect) {
                 this.setStatus('disconnected');
             } else {
-                this.setStatus('error', message);
+                this.setStatus('error', message || null);
                 this.scheduleReconnect();
             }
         });
         client.on('ConnectionError', (err) => {
             if (this.isShuttingDown) return;
-            const message = err?.message || String(err);
+            const message = formatObsError(err);
             console.warn(`[ObsService] Connection error: ${message}`);
             this.setStatus('error', message);
         });
@@ -245,6 +266,10 @@ export class ObsService {
     }
 
     private scheduleReconnect(): void {
+        // Idempotent: if a timer is already pending, the first caller wins.
+        // This matters because a failed connect() fires both ConnectionClosed
+        // and the catch block — we must schedule exactly one retry.
+        if (this.reconnectTimer) return;
         if (this.isShuttingDown || this.userInitiatedDisconnect) return;
         const config = this.getConnectionConfig();
         if (!config.enabled) return;
@@ -259,11 +284,15 @@ export class ObsService {
         }, delay);
     }
 
-    private cancelReconnect(): void {
+    private clearReconnectTimer(): void {
         if (this.reconnectTimer) {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
+    }
+
+    private resetReconnectState(): void {
+        this.clearReconnectTimer();
         this.reconnectAttempt = 0;
     }
 
