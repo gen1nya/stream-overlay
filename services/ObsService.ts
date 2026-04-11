@@ -41,6 +41,10 @@ export interface ObsStatusSnapshot {
     lastError: string | null;
     host: string;
     port: number;
+    // Timestamp (ms since epoch) when the next auto-reconnect attempt
+    // will fire, or null if there is no pending retry. The renderer
+    // uses this to render a live countdown next to the status badge.
+    nextRetryAt: number | null;
 }
 
 export interface ObsSceneInfo {
@@ -77,6 +81,7 @@ export class ObsService {
     private userInitiatedDisconnect = false;
     private reconnectTimer: NodeJS.Timeout | null = null;
     private reconnectAttempt = 0;
+    private nextRetryAt: number | null = null;
     private isShuttingDown = false;
 
     // Live-data caches, invalidated on disconnect.
@@ -211,6 +216,7 @@ export class ObsService {
             lastError: this.lastError,
             host: config.host,
             port: config.port,
+            nextRetryAt: this.nextRetryAt,
         };
     }
 
@@ -549,10 +555,15 @@ export class ObsService {
 
         const delay = BACKOFF_STEPS_MS[Math.min(this.reconnectAttempt, BACKOFF_STEPS_MS.length - 1)];
         this.reconnectAttempt += 1;
+        this.nextRetryAt = Date.now() + delay;
         console.log(`[ObsService] Scheduling reconnect in ${delay}ms (attempt ${this.reconnectAttempt})`);
+        // Re-broadcast so the renderer picks up the new nextRetryAt
+        // without waiting for the next status transition.
+        this.broadcast('obs:status', this.getStatusSnapshot());
 
         this.reconnectTimer = setTimeout(() => {
             this.reconnectTimer = null;
+            this.nextRetryAt = null;
             this.connect().catch(() => { /* handled */ });
         }, delay);
     }
@@ -562,6 +573,7 @@ export class ObsService {
             clearTimeout(this.reconnectTimer);
             this.reconnectTimer = null;
         }
+        this.nextRetryAt = null;
     }
 
     private resetReconnectState(): void {

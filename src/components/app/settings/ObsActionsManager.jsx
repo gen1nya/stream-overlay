@@ -20,6 +20,7 @@ import {
 import { useObsStatus } from '../../../hooks/useObsStatus';
 import ObsActionEditorPopup from './bot/triggers/ObsActionEditorPopup';
 import Popup from '../../utils/PopupComponent';
+import Switch from '../../utils/Switch';
 
 // ─── Styles ─────────────────────────────────────────────────────
 
@@ -41,8 +42,7 @@ const ConnectionCard = styled.div`
 const ConnectionHeader = styled.div`
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 12px;
+    gap: 10px;
     flex-wrap: wrap;
 
     h3 {
@@ -58,6 +58,12 @@ const ConnectionHeader = styled.div`
     }
 `;
 
+const HeaderSeparator = styled.div`
+    width: 1px;
+    align-self: stretch;
+    background: #333;
+`;
+
 const StatusBadge = styled.span`
     display: inline-flex;
     align-items: center;
@@ -66,6 +72,7 @@ const StatusBadge = styled.span`
     border-radius: 999px;
     font-size: 0.75rem;
     font-weight: 500;
+    margin-left: auto;
     background: ${p => {
         if (p.$status === 'connected') return 'rgba(16, 185, 129, 0.18)';
         if (p.$status === 'connecting') return 'rgba(234, 179, 8, 0.18)';
@@ -115,23 +122,12 @@ const FieldInput = styled.input`
     &:focus { border-color: #3b82f6; }
 `;
 
-const CheckboxRow = styled.div`
+const SwitchRow = styled.div`
     display: flex;
-    gap: 18px;
-    flex-wrap: wrap;
-    font-size: 0.82rem;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.85rem;
     color: #ccc;
-
-    label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-    }
-
-    input[type="checkbox"] {
-        cursor: pointer;
-    }
 `;
 
 const ConnectionButtons = styled.div`
@@ -164,10 +160,16 @@ const ConnectionButton = styled.button`
     }
 `;
 
-const ErrorLine = styled.div`
-    font-size: 0.75rem;
+const ErrorInline = styled.span`
+    font-size: 0.78rem;
     color: #ef4444;
-    margin-top: -6px;
+    line-height: 1.3;
+`;
+
+const RetryInline = styled.span`
+    font-size: 0.78rem;
+    color: #eab308;
+    line-height: 1.3;
 `;
 
 const Hint = styled.div`
@@ -244,82 +246,102 @@ const AddButton = styled.button`
     svg { width: 18px; height: 18px; }
 `;
 
-const Grid = styled.div`
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 16px;
-`;
-
-const Card = styled.div`
-    background: linear-gradient(135deg, #1e1e1e 0%, #232323 100%);
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 14px 16px;
+const ActionsTable = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 10px;
-    transition: border-color 0.15s;
+    border: 1px solid #2a2a2a;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #161616;
+`;
+
+const TableHeaderRow = styled.div`
+    display: grid;
+    grid-template-columns: minmax(160px, 1.2fr) minmax(140px, auto) minmax(200px, 2fr) auto;
+    gap: 14px;
+    padding: 10px 14px;
+    background: rgba(255, 255, 255, 0.02);
+    border-bottom: 1px solid #2a2a2a;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #666;
+`;
+
+const TableRow = styled.div`
+    display: grid;
+    grid-template-columns: minmax(160px, 1.2fr) minmax(140px, auto) minmax(200px, 2fr) auto;
+    gap: 14px;
+    padding: 10px 14px;
+    align-items: center;
+    border-bottom: 1px solid #2a2a2a;
+    transition: background 0.15s;
+
+    &:last-child {
+        border-bottom: none;
+    }
 
     &:hover {
-        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.05);
     }
 `;
 
-const CardHeader = styled.div`
+const RowName = styled.div`
     display: flex;
     align-items: center;
     gap: 8px;
-`;
-
-const CardName = styled.div`
     font-weight: 600;
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     color: #fff;
-    flex: 1;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+
+    svg { color: #3b82f6; flex-shrink: 0; }
 `;
 
 const OperationBadge = styled.div`
-    align-self: flex-start;
+    justify-self: start;
     padding: 4px 10px;
     border-radius: 999px;
     font-size: 0.7rem;
     background: rgba(59, 130, 246, 0.15);
     color: #3b82f6;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
+    white-space: nowrap;
 `;
 
-const CardDescription = styled.div`
+const RowDescription = styled.div`
     font-size: 0.8rem;
     color: #888;
-    min-height: 1.2em;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 `;
 
-const CardActions = styled.div`
+const RowActions = styled.div`
     display: flex;
-    gap: 6px;
-    margin-top: auto;
-    padding-top: 8px;
-    border-top: 1px solid #2a2a2a;
+    gap: 4px;
+    justify-self: end;
 `;
 
 const ActionIconButton = styled.button`
-    flex: 1;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 4px;
-    padding: 6px 8px;
-    border: 1px solid #333;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: 1px solid transparent;
     border-radius: 6px;
     background: transparent;
     color: ${p => p.$color || '#888'};
     cursor: pointer;
-    font-size: 0.75rem;
     transition: all 0.15s;
+
+    svg {
+        width: 14px;
+        height: 14px;
+    }
 
     &:hover:not(:disabled) {
         border-color: ${p => p.$color || '#555'};
@@ -402,6 +424,24 @@ const ConfirmPopupButton = styled.button`
 
 // ─── Helpers ────────────────────────────────────────────────────
 
+// Map the raw lastError string produced by ObsService.formatObsError
+// (things like "code=1006" or "... (code=4009)") into a friendly
+// translation key where we know the code; otherwise fall through.
+function parseObsError(raw, t) {
+    if (!raw) return null;
+    const codeMatch = raw.match(/code=(\d+)/);
+    const code = codeMatch ? codeMatch[1] : null;
+    switch (code) {
+        case '1006':
+            return t('settings.obsActions.connection.errors.notReachable');
+        case '4009':
+        case '4008':
+            return t('settings.obsActions.connection.errors.authFailed');
+    }
+    if (code) return t('settings.obsActions.connection.errors.unknownCode', { code });
+    return raw;
+}
+
 function describeAction(action, t) {
     if (!action) return '';
     switch (action.operation) {
@@ -433,14 +473,16 @@ export default function ObsActionsManager() {
     const [actions, setActions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [searchQuery, setSearchQuery] = useState('');
+    const [nowTick, setNowTick] = useState(() => Date.now());
 
     const [editorOpen, setEditorOpen] = useState(false);
     const [editTarget, setEditTarget] = useState(null);
     const [deleteTarget, setDeleteTarget] = useState(null);
 
-    // Connection form state (separate from saved config — user edits locally)
+    // Connection form state — user edits host/port/autoConnect locally.
+    // The master `enabled` flag lives on the Settings toolbar above, so
+    // we deliberately don't mirror it here to avoid stale overwrites.
     const [connectionForm, setConnectionForm] = useState({
-        enabled: false,
         host: 'localhost',
         port: 4455,
         autoConnect: false,
@@ -464,11 +506,36 @@ export default function ObsActionsManager() {
         loadActions();
     }, [loadActions]);
 
+    // Tick a local clock while a reconnect is pending so the countdown
+    // next to the status badge updates live without depending on
+    // backend re-broadcasts.
+    useEffect(() => {
+        if (obsStatus.status !== 'error' || !obsStatus.nextRetryAt) return;
+        const id = setInterval(() => setNowTick(Date.now()), 500);
+        return () => clearInterval(id);
+    }, [obsStatus.status, obsStatus.nextRetryAt]);
+
+    const retryInSec = useMemo(() => {
+        if (obsStatus.status !== 'error' || !obsStatus.nextRetryAt) return null;
+        return Math.max(0, Math.ceil((obsStatus.nextRetryAt - nowTick) / 1000));
+    }, [obsStatus.status, obsStatus.nextRetryAt, nowTick]);
+
+    const friendlyError = useMemo(
+        () => (obsStatus.status === 'error' ? parseObsError(obsStatus.lastError, t) : null),
+        [obsStatus.status, obsStatus.lastError, t]
+    );
+
     useEffect(() => {
         (async () => {
             try {
                 const cfg = await getObsConnectionConfig();
-                if (cfg) setConnectionForm(cfg);
+                if (cfg) {
+                    setConnectionForm({
+                        host: cfg.host,
+                        port: cfg.port,
+                        autoConnect: cfg.autoConnect,
+                    });
+                }
                 const hasPw = await hasObsPassword();
                 setPasswordStored(Boolean(hasPw));
             } catch (err) {
@@ -487,8 +554,20 @@ export default function ObsActionsManager() {
         setConnectionForm(prev => ({ ...prev, ...patch }));
     };
 
+    // Read latest config from backend and overlay form fields, so a
+    // toolbar-level `enabled` toggle is never accidentally clobbered.
+    const mergedConfigFromForm = async () => {
+        const latest = await getObsConnectionConfig();
+        return {
+            ...(latest || { enabled: false }),
+            host: connectionForm.host,
+            port: connectionForm.port,
+            autoConnect: connectionForm.autoConnect,
+        };
+    };
+
     const handleSaveConnection = async () => {
-        await saveObsConnectionConfig(connectionForm);
+        await saveObsConnectionConfig(await mergedConfigFromForm());
         if (password) {
             await setObsPassword(password);
             setPassword('');
@@ -498,7 +577,7 @@ export default function ObsActionsManager() {
 
     const handleConnect = async () => {
         // Save current form first so connect uses latest config
-        await saveObsConnectionConfig(connectionForm);
+        await saveObsConnectionConfig(await mergedConfigFromForm());
         if (password) {
             await setObsPassword(password);
             setPassword('');
@@ -581,6 +660,17 @@ export default function ObsActionsManager() {
                         <FiZap />
                         {t('settings.obsActions.connection.title')}
                     </h3>
+                    {friendlyError && (
+                        <>
+                            <HeaderSeparator />
+                            <ErrorInline>{friendlyError}</ErrorInline>
+                        </>
+                    )}
+                    {retryInSec !== null && (
+                        <RetryInline>
+                            {t('settings.obsActions.connection.errors.retryIn', { sec: retryInSec })}
+                        </RetryInline>
+                    )}
                     <StatusBadge $status={obsStatus.status}>
                         {isConnected ? <FiWifi size={12} /> : <FiWifiOff size={12} />}
                         {statusLabel}
@@ -618,28 +708,13 @@ export default function ObsActionsManager() {
                     </Field>
                 </ConnectionGrid>
 
-                <CheckboxRow>
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={connectionForm.enabled}
-                            onChange={(e) => handleConnectionFieldChange({ enabled: e.target.checked })}
-                        />
-                        {t('settings.obsActions.connection.enabled')}
-                    </label>
-                    <label>
-                        <input
-                            type="checkbox"
-                            checked={connectionForm.autoConnect}
-                            onChange={(e) => handleConnectionFieldChange({ autoConnect: e.target.checked })}
-                        />
-                        {t('settings.obsActions.connection.autoConnect')}
-                    </label>
-                </CheckboxRow>
-
-                {obsStatus.status === 'error' && obsStatus.lastError && (
-                    <ErrorLine>{obsStatus.lastError}</ErrorLine>
-                )}
+                <SwitchRow>
+                    <Switch
+                        checked={connectionForm.autoConnect}
+                        onChange={(e) => handleConnectionFieldChange({ autoConnect: e.target.checked })}
+                    />
+                    <span>{t('settings.obsActions.connection.autoConnect')}</span>
+                </SwitchRow>
 
                 <ConnectionButtons>
                     <ConnectionButton onClick={handleSaveConnection}>
@@ -697,18 +772,26 @@ export default function ObsActionsManager() {
                     </p>
                 </EmptyState>
             ) : (
-                <Grid>
+                <ActionsTable>
+                    <TableHeaderRow>
+                        <div>{t('settings.obsActions.editor.nameLabel')}</div>
+                        <div>{t('settings.obsActions.editor.operationLabel')}</div>
+                        <div>{t('settings.obsActions.editor.modeLabel')}</div>
+                        <div />
+                    </TableHeaderRow>
                     {filteredActions.map(action => (
-                        <Card key={action.id}>
-                            <CardHeader>
-                                <FiSliders size={16} style={{ color: '#3b82f6' }} />
-                                <CardName title={action.name}>{action.name}</CardName>
-                            </CardHeader>
+                        <TableRow key={action.id}>
+                            <RowName title={action.name}>
+                                <FiSliders size={14} />
+                                {action.name}
+                            </RowName>
                             <OperationBadge>
                                 {t(`settings.obsActions.operations.${action.operation}`)}
                             </OperationBadge>
-                            <CardDescription>{describeAction(action, t)}</CardDescription>
-                            <CardActions>
+                            <RowDescription title={describeAction(action, t)}>
+                                {describeAction(action, t)}
+                            </RowDescription>
+                            <RowActions>
                                 <ActionIconButton
                                     $color="#22c55e"
                                     onClick={() => handleTest(action)}
@@ -731,10 +814,10 @@ export default function ObsActionsManager() {
                                 >
                                     <FiTrash2 />
                                 </ActionIconButton>
-                            </CardActions>
-                        </Card>
+                            </RowActions>
+                        </TableRow>
                     ))}
-                </Grid>
+                </ActionsTable>
             )}
 
             {editorOpen && (

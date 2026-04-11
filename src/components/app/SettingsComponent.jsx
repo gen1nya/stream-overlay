@@ -11,7 +11,11 @@ import {
     deleteTheme,
     openExternalLink,
     openMediaOverlayEditor,
+    getObsConnectionConfig,
+    saveObsConnectionConfig,
 } from '../../services/api';
+import { useObsStatus } from '../../hooks/useObsStatus';
+import { useWebSocket } from '../../context/WebSocketContext';
 import MessageSettingsBlock from "./settings/MessageSettingsBlock";
 import MessageSettingsBlockV2 from "./settings/MessageSettingsBlockV2";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
@@ -258,6 +262,31 @@ export default function Settings() {
     const navigate = useNavigate();
     const { t } = useTranslation();
 
+    // OBS connection indicator: show a status dot next to "OBS действия"
+    // when the integration is enabled in config. Color reflects live state.
+    const obsStatus = useObsStatus();
+    const { subscribe } = useWebSocket();
+    const [obsConnectionConfig, setObsConnectionConfig] = useState(null);
+    useEffect(() => {
+        getObsConnectionConfig().then((cfg) => {
+            if (cfg) setObsConnectionConfig(cfg);
+        });
+        const unsubscribe = subscribe('obs:connection-updated', (cfg) => {
+            if (cfg) setObsConnectionConfig(cfg);
+        });
+        return () => unsubscribe?.();
+    }, [subscribe]);
+    const obsIndicator = useMemo(() => {
+        if (!obsConnectionConfig?.enabled) return null;
+        switch (obsStatus.status) {
+            case 'connected':    return { color: '#44ff44', borderColor: '#33cc33' };
+            case 'connecting':   return { color: '#eab308', borderColor: '#ca8a04' };
+            case 'error':        return { color: '#ef4444', borderColor: '#b91c1c' };
+            case 'disconnected':
+            default:             return { color: '#6b7280', borderColor: '#4b5563' };
+        }
+    }, [obsConnectionConfig?.enabled, obsStatus.status]);
+
     const pageInfoConfig = useMemo(() => ({
         general: {title: t('settings.pages.general.title'), icon: <FiSettings/>},
         chat_appearance: {title: t('settings.pages.chatAppearance.title'), icon: <FiLayout/>},
@@ -326,6 +355,22 @@ export default function Settings() {
 
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
+    const isObsPage = activePage === 'obs_actions';
+
+    // OBS master switch: flips config.enabled, persists, lets broadcast
+    // round-trip the new state back into obsConnectionConfig.
+    const obsEnabled = Boolean(obsConnectionConfig?.enabled);
+    const toggleObsEnabled = async (newState) => {
+        const base = obsConnectionConfig || {
+            enabled: false,
+            host: 'localhost',
+            port: 4455,
+            autoConnect: false,
+        };
+        const next = { ...base, enabled: newState };
+        setObsConnectionConfig(next);
+        await saveObsConnectionConfig(next);
+    };
 
     // Get bot enabled state based on active page
     const getBotEnabled = () => {
@@ -511,7 +556,15 @@ export default function Settings() {
                             ]
                         },
                         {key: "media_events", icon: <FiFilm/>, label: t('settings.pages.mediaEvents.label', 'Media Events')},
-                        {key: "obs_actions", icon: <FiSliders/>, label: t('settings.pages.obsActions.label', 'OBS Actions')},
+                        {
+                            key: "obs_actions",
+                            icon: <FiSliders/>,
+                            label: t('settings.pages.obsActions.label', 'OBS Actions'),
+                            ...(obsIndicator && {
+                                indicatorColor: obsIndicator.color,
+                                indicatorBorderColor: obsIndicator.borderColor,
+                            }),
+                        },
                         {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
                         {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
@@ -565,6 +618,25 @@ export default function Settings() {
                                     </ToolbarIconButton>
                                 )}
                                 <HelpButton onClick={() => setShowBotHelp(true)} />
+                            </Row>
+                        ) : isObsPage ? (
+                            <Row gap="12px" style={{ flex: 1 }}>
+                                <EnabledToggle enabled={obsEnabled}>
+                                    <Switch
+                                        checked={obsEnabled}
+                                        onChange={(e) => toggleObsEnabled(e.target.checked)}
+                                    />
+                                    <StatusBadge enabled={obsEnabled}>
+                                        {obsEnabled
+                                            ? t('settings.bot.shared.status.enabled')
+                                            : t('settings.bot.shared.status.disabled')}
+                                    </StatusBadge>
+                                </EnabledToggle>
+
+                                <PageTitle style={{ margin: 0 }}>
+                                    {currentPageInfo.icon}
+                                    {currentPageInfo.title}
+                                </PageTitle>
                             </Row>
                         ) : (
                             <PageTitle>

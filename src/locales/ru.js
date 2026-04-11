@@ -1769,6 +1769,12 @@ const ru = {
                         error: 'Ошибка',
                     },
                     hint: 'WebSocket-сервер включается в OBS: Tools → WebSocket Server Settings',
+                    errors: {
+                        notReachable: 'OBS не отвечает',
+                        authFailed: 'Ошибка авторизации',
+                        unknownCode: 'Ошибка {{code}}',
+                        retryIn: 'повтор через {{sec}}с',
+                    },
                 },
                 operations: {
                     switch_scene: 'Переключить сцену',

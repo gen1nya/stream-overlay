@@ -1,7 +1,10 @@
 import React, { useCallback, useEffect, useId, useState } from "react";
 import styled from "styled-components";
 import { useTranslation } from "react-i18next";
-import { FiX, FiSave, FiPlay, FiSliders } from "react-icons/fi";
+import {
+    FiX, FiSave, FiPlay, FiPause, FiSquare, FiSkipForward, FiSkipBack,
+    FiRotateCcw, FiRepeat, FiEye, FiEyeOff, FiSliders,
+} from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 import { Portal } from "../../../../../context/PortalContext";
 import {
@@ -165,7 +168,7 @@ const RadioRow = styled.div`
 
 const RadioButton = styled.button`
     flex: 1;
-    min-width: 80px;
+    min-width: 110px;
     padding: 9px 12px;
     border: 1px solid ${p => p.$active ? '#3b82f6' : '#333'};
     background: ${p => p.$active ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.02)'};
@@ -173,6 +176,13 @@ const RadioButton = styled.button`
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.85rem;
+    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+
+    svg { flex-shrink: 0; }
 
     &:hover { border-color: #3b82f6; color: #fff; }
 `;
@@ -209,6 +219,26 @@ const OPERATIONS = [
 const TOGGLE_MODES = ['on', 'off', 'toggle'];
 const START_STOP_MODES = ['start', 'stop', 'toggle'];
 const MEDIA_ACTIONS = ['play', 'pause', 'restart', 'stop', 'next', 'previous'];
+
+// Icons per mode — scanned visually faster than the Russian labels.
+const MODE_ICONS = {
+    on:       <FiEye size={14} />,
+    off:      <FiEyeOff size={14} />,
+    toggle:   <FiRepeat size={14} />,
+    start:    <FiPlay size={14} />,
+    stop:     <FiSquare size={14} />,
+    play:     <FiPlay size={14} />,
+    pause:    <FiPause size={14} />,
+    restart:  <FiRotateCcw size={14} />,
+    next:     <FiSkipForward size={14} />,
+    previous: <FiSkipBack size={14} />,
+};
+
+// Input kinds that respond to TriggerMediaInputAction. Filtering the
+// source dropdown to just these keeps the media_control subform from
+// listing text/audio-capture/game-capture sources that can't be
+// controlled as media.
+const MEDIA_INPUT_KINDS = new Set(['ffmpeg_source', 'vlc_source', 'slideshow_v2']);
 
 function buildDefaultAction(operation, existingName = '') {
     const base = { id: uuidv4(), name: existingName, operation };
@@ -503,13 +533,20 @@ function renderSubform(ctx) {
         </FormGroup>
     );
 
-    const SourceField = (options = { fromInputs: false }) => (
+    const SourceField = (options = { fromInputs: false, mediaOnly: false }) => (
         <FormGroup>
             <Label>{t('settings.obsActions.editor.sourceLabel')}</Label>
             {(() => {
                 let list = [];
-                if (options.fromInputs) list = inputs.map(i => i.inputName);
-                else list = sceneItemsBySource.map(si => si.sourceName);
+                if (options.fromInputs) {
+                    let filtered = inputs;
+                    if (options.mediaOnly) {
+                        filtered = inputs.filter(i => MEDIA_INPUT_KINDS.has(i.inputKind));
+                    }
+                    list = filtered.map(i => i.inputName);
+                } else {
+                    list = sceneItemsBySource.map(si => si.sourceName);
+                }
 
                 if (isConnected && list.length > 0) {
                     return (
@@ -549,6 +586,7 @@ function renderSubform(ctx) {
                         onClick={() => updateField({ mode: m })}
                         type="button"
                     >
+                        {MODE_ICONS[m]}
                         {t(`settings.obsActions.modes.${m}`)}
                     </RadioButton>
                 ))}
@@ -635,7 +673,7 @@ function renderSubform(ctx) {
         case 'media_control':
             return (
                 <>
-                    {SourceField({ fromInputs: true })}
+                    {SourceField({ fromInputs: true, mediaOnly: true })}
                     <FormGroup>
                         <Label>{t('settings.obsActions.editor.mediaActionLabel')}</Label>
                         <RadioRow>
@@ -646,6 +684,7 @@ function renderSubform(ctx) {
                                     onClick={() => updateField({ mediaAction: a })}
                                     type="button"
                                 >
+                                    {MODE_ICONS[a]}
                                     {t(`settings.obsActions.modes.${a}`)}
                                 </RadioButton>
                             ))}

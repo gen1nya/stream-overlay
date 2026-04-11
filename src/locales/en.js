@@ -1775,6 +1775,12 @@ const en = {
                         error: 'Error',
                     },
                     hint: 'Enable WebSocket server in OBS: Tools → WebSocket Server Settings',
+                    errors: {
+                        notReachable: 'OBS not reachable',
+                        authFailed: 'Auth failed',
+                        unknownCode: 'Error {{code}}',
+                        retryIn: 'retry in {{sec}}s',
+                    },
                 },
                 operations: {
                     switch_scene: 'Switch scene',
