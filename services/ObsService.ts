@@ -361,6 +361,108 @@ export class ObsService {
         ]);
     }
 
+    // ─── Action execution ────────────────────────────────────
+
+    async executeAction(actionId: string): Promise<boolean> {
+        const action = this.get(actionId);
+        if (!action) {
+            console.warn(`[ObsService] executeAction: action not found: ${actionId}`);
+            return false;
+        }
+        return this.executeActionConfig(action);
+    }
+
+    async executeActionConfig(action: ObsActionConfig): Promise<boolean> {
+        if (!this.ensureConnected()) {
+            console.warn('[ObsService] executeActionConfig: not connected');
+            return false;
+        }
+        const client = this.client!;
+        try {
+            switch (action.operation) {
+                case 'switch_scene': {
+                    await client.call('SetCurrentProgramScene', { sceneName: action.sceneName });
+                    return true;
+                }
+                case 'toggle_scene_item': {
+                    // Always resolve sceneItemId fresh — the OBS-side ID can
+                    // change if the user recreates the source, so a cached
+                    // value might point at the wrong item.
+                    const res = await client.call('GetSceneItemList', { sceneName: action.sceneName });
+                    const item = (res.sceneItems as any[]).find(i => i.sourceName === action.sourceName);
+                    if (!item) {
+                        console.warn(`[ObsService] toggle_scene_item: source "${action.sourceName}" not found in scene "${action.sceneName}"`);
+                        return false;
+                    }
+                    const current = Boolean(item.sceneItemEnabled);
+                    const next = action.mode === 'toggle' ? !current : action.mode === 'on';
+                    await client.call('SetSceneItemEnabled', {
+                        sceneName: action.sceneName,
+                        sceneItemId: Number(item.sceneItemId),
+                        sceneItemEnabled: next,
+                    });
+                    return true;
+                }
+                case 'toggle_filter': {
+                    let next: boolean;
+                    if (action.mode === 'toggle') {
+                        const res: any = await client.call('GetSourceFilter', {
+                            sourceName: action.sourceName,
+                            filterName: action.filterName,
+                        });
+                        next = !Boolean(res.filterEnabled);
+                    } else {
+                        next = action.mode === 'on';
+                    }
+                    await client.call('SetSourceFilterEnabled', {
+                        sourceName: action.sourceName,
+                        filterName: action.filterName,
+                        filterEnabled: next,
+                    });
+                    return true;
+                }
+                case 'trigger_hotkey': {
+                    await client.call('TriggerHotkeyByName', { hotkeyName: action.hotkeyName });
+                    return true;
+                }
+                case 'record_control': {
+                    if (action.mode === 'start') await client.call('StartRecord');
+                    else if (action.mode === 'stop') await client.call('StopRecord');
+                    else await client.call('ToggleRecord');
+                    return true;
+                }
+                case 'stream_control': {
+                    if (action.mode === 'start') await client.call('StartStream');
+                    else if (action.mode === 'stop') await client.call('StopStream');
+                    else await client.call('ToggleStream');
+                    return true;
+                }
+                case 'virtualcam_control': {
+                    if (action.mode === 'start') await client.call('StartVirtualCam');
+                    else if (action.mode === 'stop') await client.call('StopVirtualCam');
+                    else await client.call('ToggleVirtualCam');
+                    return true;
+                }
+                case 'media_control': {
+                    const mediaAction = `OBS_WEBSOCKET_MEDIA_INPUT_ACTION_${action.mediaAction.toUpperCase()}`;
+                    await client.call('TriggerMediaInputAction', {
+                        inputName: action.sourceName,
+                        mediaAction,
+                    });
+                    return true;
+                }
+                default: {
+                    const _exhaustive: never = action;
+                    console.warn('[ObsService] Unknown OBS action operation:', _exhaustive);
+                    return false;
+                }
+            }
+        } catch (error) {
+            console.error(`[ObsService] executeActionConfig(${action.operation}) failed:`, formatObsError(error));
+            return false;
+        }
+    }
+
     async connect(): Promise<boolean> {
         if (this.status === 'connecting' || this.status === 'connected') {
             return this.status === 'connected';
@@ -538,6 +640,10 @@ export class ObsService {
         ipcMain.handle('obs:refresh-cache', async () => {
             await this.refreshCache();
             return true;
+        });
+
+        ipcMain.handle('obs:test', async (_e, action: ObsActionConfig) => {
+            return this.executeActionConfig(action);
         });
     }
 }

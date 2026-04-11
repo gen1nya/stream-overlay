@@ -610,6 +610,10 @@ export const refreshObsCache = () => {
     return ipcRenderer?.invoke('obs:refresh-cache');
 };
 
+export const testObsAction = (action) => {
+    return ipcRenderer?.invoke('obs:test', action);
+};
+
 // ============================================
 // Media Library
 // ============================================
