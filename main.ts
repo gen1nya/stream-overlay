@@ -251,6 +251,10 @@ const applyAction = async (action: { type: string; payload: any }) => {
       await mediaEventsController.showMedia(action.payload);
       break;
 
+    case ActionTypes.OBS_ACTION:
+      await obsService.executeAction(action.payload.obsActionId);
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;

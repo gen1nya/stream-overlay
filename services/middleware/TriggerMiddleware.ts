@@ -548,6 +548,14 @@ export default class TriggerMiddleware extends Middleware {
                     }
                 };
 
+            case 'obs_action':
+                return {
+                    type: ActionTypes.OBS_ACTION,
+                    payload: {
+                        obsActionId: action.params.obsActionId
+                    }
+                };
+
             default:
                 return null;
         }
