@@ -1415,6 +1415,7 @@ const ru = {
                         timeout: 'Мут',
                         delete_message: 'Удалить сообщение',
                         show_media: 'Показать медиа',
+                        obs_action: 'OBS действие',
                     },
                     targetSender: 'Отправитель',
                     targetArgUser: 'Пользователь из аргумента',

@@ -303,7 +303,8 @@ const actionScheduler = new ActionScheduler({
         return DbRepository.getInstance(currentUserId).triggers;
     },
     logService,
-    sendMessage: (message: string) => twitchClient.sendMessage(message)
+    sendMessage: (message: string) => twitchClient.sendMessage(message),
+    obsService,
 })
 
 const chatStatsService = new ChatStatsService(broadcast, () => {

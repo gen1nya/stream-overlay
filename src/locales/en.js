@@ -1421,6 +1421,7 @@ const en = {
                         timeout: 'Timeout',
                         delete_message: 'Delete message',
                         show_media: 'Show media',
+                        obs_action: 'OBS action',
                     },
                     targetSender: 'Sender',
                     targetArgUser: 'User from argument',
