@@ -3,9 +3,12 @@ import styled, { ThemeProvider } from 'styled-components';
 import { TransitionGroup, CSSTransition } from 'react-transition-group';
 import useReconnectingWebSocket from '../../hooks/useReconnectingWebSocket';
 import ChatMessage from './ChatMessage';
+import ChatMessageV2 from './ChatMessageV2';
 import ChatFollow from './ChatFollow';
 import ChatRedemption from './ChatRedemption';
 import { registerFontFace } from '../utils/fontsCache';
+import { defaultV2Message } from '../../theme';
+import merge from 'lodash/merge';
 
 /* ---------- Chat container ---------- */
 const ChatContainer = styled.div`
@@ -22,13 +25,17 @@ const ChatContainer = styled.div`
 
     margin: ${({ theme }) => `${theme.overlay?.paddingTop || 0}px  0px 0px ${theme.overlay?.paddingLeft || 0}px`};
 
-    ${({ theme }) =>
-        theme.overlay?.backgroundType === 'image' && theme.overlay?.backgroundImageAspectRatio
+    ${({ theme }) => {
+        const o = theme.overlay;
+        const hasImageSize = o?.backgroundType === 'image' && o?.backgroundImageAspectRatio;
+        const isManual = o?.autoSize === false;
+        return (hasImageSize || isManual)
             ? `
-                width: ${theme.overlay.chatWidth || 500}px;
-                height: ${theme.overlay.chatHeight || 500}px;
+                width: ${o?.chatWidth || 500}px;
+                height: ${o?.chatHeight || 500}px;
             `
-            : ''}
+            : '';
+    }}
 
     ${({ theme }) => {
         switch (theme.overlay?.backgroundType ?? 'none') {
@@ -265,6 +272,13 @@ export default function ChatMessageList({
         };
     }, []);
 
+    /* ---------- v2 config (memoised per theme) ---------- */
+    const v2Config = theme.v2?.message;
+    const mergedV2 = React.useMemo(
+        () => v2Config ? merge({}, defaultV2Message, v2Config) : null,
+        [v2Config]
+    );
+
     /* ---------- Render ---------- */
     return (
         <ThemeProvider theme={theme}>
@@ -303,7 +317,14 @@ export default function ChatMessageList({
                             const handleMessageClick = onMessageClick ? () => onMessageClick(msg) : undefined;
 
                             let Content;
-                            if (msg.type === 'chat') {
+                            if (msg.type === 'chat' && mergedV2) {
+                                Content = <ChatMessageV2
+                                    message={msg}
+                                    showSourceChannel={showSourceChannel}
+                                    onClick={handleMessageClick}
+                                    v2Config={mergedV2}
+                                />;
+                            } else if (msg.type === 'chat') {
                                 Content = <ChatMessage message={msg} showSourceChannel={showSourceChannel} onClick={handleMessageClick} />;
                             } else if (msg.type === 'follow') {
                                 Content = <ChatFollow message={msg} currentTheme={theme} index={followIndex} />;

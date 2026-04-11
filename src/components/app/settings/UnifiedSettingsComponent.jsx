@@ -8,6 +8,7 @@ import {mergeWithDefaults} from "../../utils/defaultBotConfig";
 import {FiSettings, FiMessageSquare, FiEye, FiImage, FiType, FiClock} from "react-icons/fi";
 import {TbShadow} from "react-icons/tb";
 import RadioGroup from "../../utils/TextRadioGroup";
+import Switch from "../../utils/Switch";
 import { useTranslation } from "react-i18next";
 import {
     CardContent,
@@ -20,6 +21,18 @@ import {
 } from "./SharedSettingsStyles";
 import {Row} from "../SettingsComponent";
 
+const SwitchRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const SwitchLabel = styled.span`
+    color: #e0e0e0;
+    font-size: 14px;
+    font-weight: 500;
+`;
+
 // Объединенный компонент настроек
 export default function UnifiedSettingsComponent({current, onChange, openColorPopup}) {
     const { t } = useTranslation();
@@ -31,13 +44,15 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
     const { overlay, allMessages } = cfg;
 
     const isBackgroundImage = overlay?.backgroundType === 'image';
+    const isAutoSize = overlay?.autoSize !== false;
     const hasImageSizes = isBackgroundImage &&
         overlay?.backgroundImage &&
         overlay?.backgroundImageWidth &&
         overlay?.backgroundImageHeight;
 
-    const widthMax = hasImageSizes ? overlay.backgroundImageWidth : 1000;
-    const heightMax = hasImageSizes ? overlay.backgroundImageHeight : 1000;
+    const widthMax = hasImageSizes ? overlay.backgroundImageWidth : 2000;
+    const heightMax = hasImageSizes ? overlay.backgroundImageHeight : 2000;
+    const sizeDisabled = isAutoSize && !isBackgroundImage;
 
     const getOverlaySizes = () => {
         if (isBackgroundImage && overlay?.containerWidth && overlay?.backgroundImageAspectRatio) {
@@ -113,6 +128,28 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
 
                         <Row gap="20px">
                             <ControlGroup>
+                                <SwitchRow>
+                                    <Switch
+                                        checked={!isAutoSize}
+                                        onChange={(e) =>
+                                            handleChange(prev => ({
+                                                ...prev,
+                                                overlay: {
+                                                    ...prev.overlay,
+                                                    autoSize: !e.target.checked,
+                                                },
+                                            }))
+                                        }
+                                    />
+                                    <SwitchLabel>
+                                        {t('settings.unified.overlay.sections.dimensions.manualSize')}
+                                    </SwitchLabel>
+                                </SwitchRow>
+                            </ControlGroup>
+                        </Row>
+
+                        <Row gap="20px">
+                            <ControlGroup>
                                 <SeekbarComponent
                                     title={widthTitle}
                                     min="100"
@@ -120,8 +157,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                                     value={overlay?.chatWidth ?? 0}
                                     step="1"
                                     width="180px"
-                                    disabled={!isBackgroundImage}
-                                    tooltip={backgroundOnlyTooltip}
+                                    disabled={sizeDisabled}
                                     onChange={e =>
                                         handleChange(prev => ({
                                             ...prev,
@@ -142,8 +178,7 @@ export default function UnifiedSettingsComponent({current, onChange, openColorPo
                                     value={overlay?.chatHeight ?? 100}
                                     step="1"
                                     width="180px"
-                                    disabled={!isBackgroundImage}
-                                    tooltip={backgroundOnlyTooltip}
+                                    disabled={sizeDisabled}
                                     onChange={e =>
                                         handleChange(prev => ({
                                             ...prev,

@@ -123,7 +123,8 @@ export const windowModeThemeDark = {
     overlay: {
         backgroundType: "none",
         backgroundColor: null,
-        backgroundImage: null
+        backgroundImage: null,
+        autoSize: true
     }
 };
 
@@ -753,6 +754,264 @@ export const defaultTheme = {
                     triggerType: "contains"
                 }
             ]
+        }
+    }
+};
+
+// ─── V2 Message Theme Defaults ────────────────────────────────────
+export const defaultV2Message = {
+    background: {
+        headerDecor: { image: null, translate: { x: 0, y: 0 } },
+        footerDecor: { image: null, translate: { x: 0, y: 0 } },
+
+        type: 'color', // 'color' | 'gradient' | 'image'
+
+        color: {
+            color: '#422434',
+            opacity: 0.77,
+            borderColor: '#0af0d5',
+            borderOpacity: 1,
+            borderWidth: 1,
+            borderRadius: 12,
+            shadowColor: '#ffffff',
+            shadowOpacity: 1,
+            shadowRadius: 5
+        },
+
+        gradient: {
+            gradients: [],
+            borderColor: '#ffffff',
+            borderOpacity: 1,
+            borderWidth: 0,
+            borderRadius: 12,
+            shadowColor: '#000000',
+            shadowOpacity: 1,
+            shadowRadius: 0
+        },
+
+        image: {
+            src: null,
+            backgroundColor: '#000000',
+            borderColor: '#ffffff',
+            borderWidth: 0,
+            borderRadius: 0,
+            shadowColor: '#000000',
+            shadowRadius: 0
+        },
+
+        margin: { horizontal: 10, vertical: 3 },
+        padding: { top: 7, right: 8, bottom: 7, left: 8 },
+
+        layerInset: {
+            color:    { top: 0, right: 0, bottom: 0, left: 0 },
+            gradient: { top: 0, right: 0, bottom: 0, left: 0 },
+            image:    { top: 0, right: 0, bottom: 0, left: 0 }
+        }
+    },
+
+    content: {
+        header: {
+            layout: 'top',       // 'top' | 'left'
+            position: 'inside',  // 'inside' | 'outside'
+            align: 'left',       // 'left' | 'center' | 'right'
+            translate: { x: 0, y: 0 },
+
+            font: {
+                family: 'Roboto',
+                url: null,
+                size: 20
+            },
+
+            customColor: {
+                enabled: false,
+                color: '#ffffff'
+            },
+
+            background: {
+                enabled: false,
+                color: '#000000',
+                opacity: 0.5,
+                borderColor: '#ffffff',
+                borderOpacity: 1,
+                borderWidth: 0,
+                borderRadius: 8,
+                shadowColor: '#000000',
+                shadowOpacity: 0,
+                shadowRadius: 0,
+                paddingV: 2,
+                paddingH: 6
+            },
+
+            emotes: {
+                position: 'inside',  // 'inside' | 'outside'
+                source: 'twitch',    // 'twitch' | 'custom'
+                placement: 'right',  // 'left' | 'right' (only for outside)
+                gap: 4
+            }
+        },
+
+        text: {
+            color: '#ffffff',
+            opacity: 1,
+            align: 'left',  // 'left' | 'center' | 'right'
+            font: {
+                family: 'Roboto',
+                url: null,
+                size: 24
+            },
+            shadowColor: '#000000',
+            shadowOpacity: 0,
+            shadowRadius: 0,
+            emoteSize: 24
+        }
+    }
+};
+
+// ─── Donation Goal Widget Defaults ───────────────────────────────
+export const defaultDonationGoal = {
+    // ── 1. Контейнер ──
+    container: {
+        width: 500,
+        height: 120,
+        margin: { top: 10, right: 10, bottom: 10, left: 10 },
+        padding: { top: 10, right: 10, bottom: 10, left: 10 },
+        offset: { x: 0, y: 0 }
+    },
+
+    // ── 2. Фон ──
+    background: {
+        type: 'color', // 'color' | 'gradient' | 'image'
+
+        headerDecor: { image: null, translate: { x: 0, y: 0 } },
+        footerDecor: { image: null, translate: { x: 0, y: 0 } },
+
+        color: {
+            color: '#1a1a2e',
+            opacity: 0.9
+        },
+
+        gradient: {
+            gradients: []
+        },
+
+        image: {
+            src: null,
+            mode: 'stretch', // 'stretch' | 'three-part'
+            top: null,
+            middle: null,
+            middleAlign: 'center', // 'top' | 'center' | 'bottom'
+            bottom: null,
+            backgroundColor: '#000000'
+        },
+
+        borderColor: '#ffffff',
+        borderOpacity: 1,
+        borderWidth: 2,
+        borderRadius: 20,
+        shadowColor: '#000000',
+        shadowOpacity: 0,
+        shadowRadius: 0
+    },
+
+    // ── 3. Заголовок ──
+    title: {
+        text: '{goalName}',
+        font: { family: 'Roboto', url: null, size: 22 },
+        color: '#ffffff',
+        opacity: 1,
+        align: 'center', // 'left' | 'center' | 'right'
+        shadowColor: '#000000',
+        shadowOpacity: 0,
+        shadowRadius: 0,
+        margin: { top: 0, bottom: 8 }
+    },
+
+    // ── 4. Прогресс-бар ──
+    bar: {
+        height: 40,
+        borderRadius: 20,
+        borderColor: '#ffffff',
+        borderOpacity: 1,
+        borderWidth: 2,
+
+        background: {
+            type: 'color', // 'color' | 'gradient' | 'image'
+            color: '#2a2a3e',
+            opacity: 0.8,
+            gradient: { gradients: [] },
+            image: { src: null, mode: 'stretch' } // 'stretch' | 'repeat'
+        },
+
+        fill: {
+            padding: { top: 4, right: 4, bottom: 4, left: 4 },
+            borderRadius: 16,
+            background: {
+                type: 'gradient', // 'color' | 'gradient' | 'image'
+                color: '#0af0d5',
+                opacity: 1,
+                gradient: {
+                    gradients: [{
+                        type: 'linear',
+                        angle: 90,
+                        stops: [
+                            { id: '1', color: '#0af0d5', alpha: 1, position: 0 },
+                            { id: '2', color: '#7c3aed', alpha: 1, position: 100 }
+                        ]
+                    }]
+                },
+                image: { src: null, mode: 'stretch' }
+            }
+        },
+
+        cap: {
+            enabled: false,
+            type: 'shape', // 'image' | 'shape'
+            image: {
+                src: null,
+                width: 30,
+                height: 30,
+                offset: { x: 0, y: 0 }
+            },
+            shape: {
+                form: 'circle', // 'circle' | 'diamond' | 'custom'
+                customSvg: null,
+                size: 20,
+                background: {
+                    type: 'color', // 'color' | 'gradient'
+                    color: '#ffffff',
+                    gradient: { gradients: [] }
+                },
+                borderColor: '#ffffff',
+                borderWidth: 0,
+                glow: { color: '#ffffff', radius: 0, opacity: 0 }
+            }
+        }
+    },
+
+    // ── 5. Текст прогресса ──
+    progressLabel: {
+        format: 'currency', // 'currency' | 'percentage'
+        placement: 'on-bar', // 'on-bar' | 'below' | 'hidden'
+        font: { family: 'Roboto', url: null, size: 16 },
+        color: '#ffffff',
+        opacity: 1,
+        align: 'center', // 'left' | 'center' | 'right'
+        shadowColor: '#000000',
+        shadowOpacity: 0,
+        shadowRadius: 0
+    },
+
+    // ── 6. Анимации ──
+    animation: {
+        fillTransition: {
+            enabled: true,
+            duration: 1000,
+            easing: 'ease-out'
+        },
+        celebration: {
+            enabled: true,
+            type: 'pulse', // 'pulse' | 'glow' | 'shake'
+            duration: 3000
         }
     }
 };

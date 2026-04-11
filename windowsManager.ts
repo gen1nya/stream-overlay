@@ -29,6 +29,7 @@ export let backendLogsWindow: BrowserWindow | null = null;
 export let mediaOverlayEditorWindow: BrowserWindow | null = null;
 export let mediaOverlayWindow: BrowserWindow | null = null;
 export let helpWindow: BrowserWindow | null = null;
+export let donationGoalWindow: BrowserWindow | null = null;
 
 // Store reference for persisting settings
 let store: Store<StoreSchema> | null = null;
@@ -69,7 +70,7 @@ export function createTerminalWindow(): void {
  * Close all child windows (chat, preview, terminal, backend logs)
  */
 function closeAllChildWindows(): void {
-  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow, mediaOverlayEditorWindow, mediaOverlayWindow, helpWindow];
+  const windows = [chatWindow, previewWindow, terminalWindow, backendLogsWindow, mediaOverlayEditorWindow, mediaOverlayWindow, helpWindow, donationGoalWindow];
   for (const win of windows) {
     if (win && !win.isDestroyed()) {
       win.close();
@@ -361,5 +362,41 @@ export function createHelpWindow(): void {
 
   helpWindow.on('closed', () => {
     helpWindow = null;
+  });
+}
+
+/**
+ * Create or focus the Donation Goal overlay window
+ */
+export function createDonationGoalWindow(): void {
+  if (donationGoalWindow && !donationGoalWindow.isDestroyed()) {
+    donationGoalWindow.focus();
+    return;
+  }
+
+  donationGoalWindow = new BrowserWindow({
+    width: 550,
+    height: 200,
+    webPreferences: {
+      nodeIntegration: true,
+      contextIsolation: false,
+    },
+    titleBarStyle: 'hidden',
+    frame: false,
+    thickFrame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    focusable: true,
+    icon: path.join(__dirname, 'assets', 'icon.png'),
+  });
+
+  donationGoalWindow.setMenuBarVisibility(false);
+  donationGoalWindow.setTitle('');
+  donationGoalWindow.loadURL('http://localhost:5173/donation-goal-overlay');
+
+  donationGoalWindow.on('closed', () => {
+    donationGoalWindow = null;
   });
 }

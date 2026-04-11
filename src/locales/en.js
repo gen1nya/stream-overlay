@@ -162,6 +162,43 @@ const en = {
                     followersGoal: 'Followers goal / stream'
                 }
             },
+            chatStats: {
+                badge: {
+                    msgPerMin: '{{count}} msg/min',
+                    chatters: '{{count}} chatters',
+                },
+                title: 'Chat Statistics',
+                tabs: {
+                    current: 'Current Stream',
+                    chat: 'Chat',
+                    history: 'History',
+                },
+                current: {
+                    duration: 'Stream Duration',
+                    totalMessages: 'Total Messages',
+                    messagesPerMinute: 'Messages/min',
+                    peakMpm: 'Peak msg/min',
+                    currentChatters: 'In Chat',
+                    uniqueParticipants: 'Unique Participants',
+                    topChatters: 'Top by Messages',
+                    inRoom: 'In Room',
+                    noChatters: 'No one in chat',
+                },
+                history: {
+                    date: 'Date',
+                    duration: 'Duration',
+                    messages: 'Messages',
+                    chatters: 'Chatters',
+                    peakMpm: 'Peak msg/min',
+                    noSessions: 'No stream sessions recorded yet',
+                    viewDetails: 'View details',
+                },
+                table: {
+                    rank: '#',
+                    user: 'User',
+                    messages: 'Messages',
+                },
+            },
             logs: {
                 title: 'Logs'
             },
@@ -503,6 +540,7 @@ const en = {
                             borderRadius: 'Corner radius',
                             paddingLeft: 'Left padding',
                             paddingTop: 'Top padding',
+                            manualSize: 'Set size manually',
                             backgroundOnlyTooltip: 'Available only for image background',
                         },
                         background: {

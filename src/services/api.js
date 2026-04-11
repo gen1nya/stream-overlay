@@ -43,6 +43,22 @@ export const openOverlay = () => {
     return ipcRenderer?.invoke('chat:open-overlay');
 };
 
+export const openDonationGoalOverlay = () => {
+    return ipcRenderer?.invoke('da:open-goal-overlay');
+};
+
+export const setDaWidgetUrl = (url) => {
+    return ipcRenderer?.invoke('da:set-widget-url', url);
+};
+
+export const getDaWidgetUrl = () => {
+    return ipcRenderer?.invoke('da:get-widget-url');
+};
+
+export const getDaStatus = () => {
+    return ipcRenderer?.invoke('da:get-status');
+};
+
 export const setChatGameMode = (enabled) => {
     return ipcRenderer?.invoke('chat:set-game-mode', enabled);
 };
@@ -326,6 +342,23 @@ export const getRoulettePlayCount = async () => {
 
 export const clearAllRouletteData = async () => {
     return await ipcRenderer?.invoke('roulette:clear-all');
+};
+
+// chat stats api
+export const getChatStatsSessions = async (options = {}) => {
+    return await ipcRenderer?.invoke('chat-stats:get-sessions', options);
+};
+
+export const getChatStatsSessionDetails = async (sessionId) => {
+    return await ipcRenderer?.invoke('chat-stats:get-session-details', sessionId);
+};
+
+export const getChatStatsSessionUsers = async (sessionId, options = {}) => {
+    return await ipcRenderer?.invoke('chat-stats:get-session-users', sessionId, options);
+};
+
+export const getChatStatsChatters = async () => {
+    return await ipcRenderer?.invoke('chat-stats:get-chatters');
 };
 
 // listener

@@ -115,6 +115,7 @@ export default function MessageSettingsBlock({current: {chatMessage}, onChange, 
             </CardHeader>
 
             <CardContent>
+
                 {/* Секция текста */}
                 <Section>
                     <SectionHeader>

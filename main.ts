@@ -18,7 +18,8 @@ import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow, initWindowsManager} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
 import {registerIpcHandlers} from './ipcHandlers';
-import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID} from "./services/twitch/esService";
+import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID, EVENT_BROADCASTING} from "./services/twitch/esService";
+import {ChatStatsService} from "./services/ChatStatsService";
 import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
 import {LogService} from "./services/logService";
 import {UserData} from "./services/twitch/types/UserData";
@@ -36,6 +37,9 @@ import {MediaEventsService} from "./services/MediaEventsService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
+import {DonationAlertsService} from "./services/DonationAlertsService";
+import fs from 'fs';
+import path from 'path';
 
 const appStartTime = Date.now();
 let PORT = 5173;
@@ -289,6 +293,11 @@ const actionScheduler = new ActionScheduler({
     sendMessage: (message: string) => twitchClient.sendMessage(message)
 })
 
+const chatStatsService = new ChatStatsService(broadcast, () => {
+    if (!currentUserId) return null;
+    return DbRepository.getInstance(currentUserId);
+});
+
 const scraper = new YouTubeLiveStreamsScraper(
     store,
     message => {
@@ -334,7 +343,49 @@ mediaDisplayGroupService.setBroadcastCallback(broadcast);
 mediaEventsController.setBroadcastCallback(broadcast);
 mediaLibraryService.setBroadcastCallback(broadcast);
 
+// ─── DonationAlerts Goal Service ─────────────────────────────────
+const daService = new DonationAlertsService(broadcast);
+{
+    const savedDaUrl = store.get('donationAlertsWidgetUrl' as any) as string | undefined;
+    if (savedDaUrl) {
+        daService.setWidgetUrl(savedDaUrl).catch(err => {
+            console.error('❌ [DA] Failed to start:', err.message);
+        });
+    }
+}
+
+ipcMain.handle('da:set-widget-url', async (_e, url: string) => {
+    store.set('donationAlertsWidgetUrl' as any, url);
+    if (url) {
+        try {
+            await daService.setWidgetUrl(url);
+            return { success: true };
+        } catch (err: any) {
+            return { success: false, error: err.message };
+        }
+    } else {
+        daService.stop();
+        return { success: true };
+    }
+});
+
+ipcMain.handle('da:get-widget-url', () => {
+    return store.get('donationAlertsWidgetUrl' as any) || '';
+});
+
+ipcMain.handle('da:get-status', () => {
+    return daService.getStatus();
+});
+
 twitchClient.on('event', async ({ destination, event }) => {
+  if (destination === `status:${EVENT_BROADCASTING}`) {
+    if (event.isOnline) {
+      chatStatsService.onStreamOnline();
+    } else {
+      chatStatsService.onStreamOffline();
+    }
+  }
+
   if (destination === `${EVENT_CHANEL}:${EVENT_FOLLOW}`) {
     messageCache.processMessage(event);
   } else if (destination === `${EVENT_CHANEL}:${EVENT_REDEMPTION}`) {
@@ -351,6 +402,7 @@ twitchClient.on('event', async ({ destination, event }) => {
 });
 
 twitchClient.on('chat', async (parsedMessage) => {
+  chatStatsService.onChatMessage(parsedMessage);
   const result = await middlewareProcessor.processMessage(parsedMessage);
   if (result) {
     messageCache.processMessage(result);
@@ -520,6 +572,12 @@ app.whenReady().then(() => {
             console.log('🪟 Client requested window cache, sending', windowCache.messages.length, 'messages');
             broadcast('chat:window-messages', windowCache);
             break;
+        case 'chat-stats:get':
+            broadcast('chat-stats:update', chatStatsService.getStats());
+            break;
+        case 'da:goal-request':
+            broadcast('da:goal-update', daService.getGoalData());
+            break;
         default:
           console.log('unknown channel', channel, payload);
       }
@@ -553,6 +611,7 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', async (event) => {
   event.preventDefault();
+  chatStatsService.stop();
   scraper.dispose();
   twitchClient.stop()
   audiosessionManager.close();
