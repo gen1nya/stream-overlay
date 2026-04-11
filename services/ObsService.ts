@@ -43,6 +43,29 @@ export interface ObsStatusSnapshot {
     port: number;
 }
 
+export interface ObsSceneInfo {
+    sceneName: string;
+}
+
+export interface ObsInputInfo {
+    inputName: string;
+    inputKind: string;
+}
+
+export interface ObsSceneItemInfo {
+    sceneItemId: number;
+    sourceName: string;
+    inputKind: string | null;
+    sceneItemEnabled: boolean;
+    isGroup: boolean;
+}
+
+export interface ObsFilterInfo {
+    filterName: string;
+    filterKind: string;
+    filterEnabled: boolean;
+}
+
 export class ObsService {
     private appStorage: ElectronStore<StoreSchema>;
     private broadcastCallback: ((channel: string, data: any) => void) | null = null;
@@ -55,6 +78,13 @@ export class ObsService {
     private reconnectTimer: NodeJS.Timeout | null = null;
     private reconnectAttempt = 0;
     private isShuttingDown = false;
+
+    // Live-data caches, invalidated on disconnect.
+    private scenesCache: ObsSceneInfo[] | null = null;
+    private inputsCache: ObsInputInfo[] | null = null;
+    private hotkeysCache: string[] | null = null;
+    private sceneItemsCache: Map<string, ObsSceneItemInfo[]> = new Map();
+    private filtersCache: Map<string, ObsFilterInfo[]> = new Map();
 
     constructor(appStorage: ElectronStore<StoreSchema>) {
         this.appStorage = appStorage;
@@ -187,7 +217,148 @@ export class ObsService {
     private setStatus(status: ObsConnectionStatus, error: string | null = null): void {
         this.status = status;
         this.lastError = error;
+        if (status !== 'connected') {
+            this.invalidateCache();
+        }
         this.broadcast('obs:status', this.getStatusSnapshot());
+    }
+
+    // ─── Live data (with lazy cache) ─────────────────────────
+
+    invalidateCache(): void {
+        this.scenesCache = null;
+        this.inputsCache = null;
+        this.hotkeysCache = null;
+        this.sceneItemsCache.clear();
+        this.filtersCache.clear();
+    }
+
+    private ensureConnected(): boolean {
+        return this.status === 'connected' && this.client !== null;
+    }
+
+    async listScenes(force = false): Promise<ObsSceneInfo[]> {
+        if (!force && this.scenesCache) return this.scenesCache;
+        if (!this.ensureConnected()) {
+            console.warn('[ObsService] listScenes: not connected');
+            return [];
+        }
+        try {
+            const res = await this.client!.call('GetSceneList');
+            // obs-websocket returns scenes in reverse order of the OBS UI;
+            // reverse so UI dropdowns match what the user sees in OBS.
+            const scenes: ObsSceneInfo[] = (res.scenes as any[])
+                .slice()
+                .reverse()
+                .map(s => ({ sceneName: String(s.sceneName) }));
+            this.scenesCache = scenes;
+            return scenes;
+        } catch (error) {
+            console.error('[ObsService] listScenes failed:', formatObsError(error));
+            return [];
+        }
+    }
+
+    async listInputs(force = false): Promise<ObsInputInfo[]> {
+        if (!force && this.inputsCache) return this.inputsCache;
+        if (!this.ensureConnected()) {
+            console.warn('[ObsService] listInputs: not connected');
+            return [];
+        }
+        try {
+            const res = await this.client!.call('GetInputList');
+            const inputs: ObsInputInfo[] = (res.inputs as any[]).map(i => ({
+                inputName: String(i.inputName),
+                inputKind: String(i.inputKind ?? ''),
+            }));
+            this.inputsCache = inputs;
+            return inputs;
+        } catch (error) {
+            console.error('[ObsService] listInputs failed:', formatObsError(error));
+            return [];
+        }
+    }
+
+    async listHotkeys(force = false): Promise<string[]> {
+        if (!force && this.hotkeysCache) return this.hotkeysCache;
+        if (!this.ensureConnected()) {
+            console.warn('[ObsService] listHotkeys: not connected');
+            return [];
+        }
+        try {
+            const res = await this.client!.call('GetHotkeyList');
+            const hotkeys = (res.hotkeys as string[]).slice();
+            this.hotkeysCache = hotkeys;
+            return hotkeys;
+        } catch (error) {
+            console.error('[ObsService] listHotkeys failed:', formatObsError(error));
+            return [];
+        }
+    }
+
+    async listSceneItems(sceneName: string, force = false): Promise<ObsSceneItemInfo[]> {
+        if (!force) {
+            const cached = this.sceneItemsCache.get(sceneName);
+            if (cached) return cached;
+        }
+        if (!this.ensureConnected()) {
+            console.warn('[ObsService] listSceneItems: not connected');
+            return [];
+        }
+        try {
+            const res = await this.client!.call('GetSceneItemList', { sceneName });
+            // Reverse so topmost item in OBS UI comes first.
+            const items: ObsSceneItemInfo[] = (res.sceneItems as any[])
+                .slice()
+                .reverse()
+                .map(item => ({
+                    sceneItemId: Number(item.sceneItemId),
+                    sourceName: String(item.sourceName),
+                    inputKind: item.inputKind ? String(item.inputKind) : null,
+                    sceneItemEnabled: Boolean(item.sceneItemEnabled),
+                    isGroup: Boolean(item.isGroup),
+                }));
+            this.sceneItemsCache.set(sceneName, items);
+            return items;
+        } catch (error) {
+            console.error(`[ObsService] listSceneItems(${sceneName}) failed:`, formatObsError(error));
+            return [];
+        }
+    }
+
+    async listSourceFilters(sourceName: string, force = false): Promise<ObsFilterInfo[]> {
+        if (!force) {
+            const cached = this.filtersCache.get(sourceName);
+            if (cached) return cached;
+        }
+        if (!this.ensureConnected()) {
+            console.warn('[ObsService] listSourceFilters: not connected');
+            return [];
+        }
+        try {
+            const res = await this.client!.call('GetSourceFilterList', { sourceName });
+            const filters: ObsFilterInfo[] = (res.filters as any[]).map(f => ({
+                filterName: String(f.filterName),
+                filterKind: String(f.filterKind ?? ''),
+                filterEnabled: Boolean(f.filterEnabled),
+            }));
+            this.filtersCache.set(sourceName, filters);
+            return filters;
+        } catch (error) {
+            console.error(`[ObsService] listSourceFilters(${sourceName}) failed:`, formatObsError(error));
+            return [];
+        }
+    }
+
+    async refreshCache(): Promise<void> {
+        this.invalidateCache();
+        if (!this.ensureConnected()) return;
+        // Warm the top-level caches. Per-scene/per-source caches stay lazy.
+        await Promise.all([
+            this.listScenes(true),
+            this.listInputs(true),
+            this.listHotkeys(true),
+        ]);
     }
 
     async connect(): Promise<boolean> {
@@ -342,6 +513,31 @@ export class ObsService {
 
         ipcMain.handle('obs:status', async () => {
             return this.getStatusSnapshot();
+        });
+
+        ipcMain.handle('obs:list-scenes', async (_e, force?: boolean) => {
+            return this.listScenes(Boolean(force));
+        });
+
+        ipcMain.handle('obs:list-inputs', async (_e, force?: boolean) => {
+            return this.listInputs(Boolean(force));
+        });
+
+        ipcMain.handle('obs:list-hotkeys', async (_e, force?: boolean) => {
+            return this.listHotkeys(Boolean(force));
+        });
+
+        ipcMain.handle('obs:list-scene-items', async (_e, sceneName: string, force?: boolean) => {
+            return this.listSceneItems(sceneName, Boolean(force));
+        });
+
+        ipcMain.handle('obs:list-filters', async (_e, sourceName: string, force?: boolean) => {
+            return this.listSourceFilters(sourceName, Boolean(force));
+        });
+
+        ipcMain.handle('obs:refresh-cache', async () => {
+            await this.refreshCache();
+            return true;
         });
     }
 }
