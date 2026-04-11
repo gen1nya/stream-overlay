@@ -466,6 +466,16 @@ app.whenReady().then(() => {
   mediaLibraryService.registerIpcHandlers();
   obsService.registerIpcHandlers();
 
+  // Auto-connect to OBS if enabled in config
+  {
+    const obsConfig = obsService.getConnectionConfig();
+    if (obsConfig.enabled && obsConfig.autoConnect) {
+      obsService.connect().catch((err) => {
+        console.warn('[main] OBS auto-connect failed:', err);
+      });
+    }
+  }
+
   // Docs service for help window
   const docsService = new DocsService();
   docsService.registerIpcHandlers();
@@ -626,6 +636,7 @@ app.on('before-quit', async (event) => {
   scraper.dispose();
   twitchClient.stop()
   audiosessionManager.close();
+  await obsService.shutdown();
   wss.clients.forEach((client) => {
     client.close();
   });
