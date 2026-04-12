@@ -61,8 +61,12 @@ export function TokenGate({ onConnected }: { onConnected: (conn: Connection) => 
         }}>
             <div style={{ marginBottom: 28, textAlign: 'center' }}>
                 <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px 0' }}>Twitch Companion</h1>
-                <p style={{ fontSize: 13, color: '#888', margin: 0 }}>
-                    Подключение к гейтвею десктопного приложения
+                <p style={{ fontSize: 13, color: '#888', margin: 0, lineHeight: 1.5 }}>
+                    Отсканируй QR-код из десктопного приложения камерой телефона
+                    — подключение произойдёт автоматически.
+                </p>
+                <p style={{ fontSize: 12, color: '#555', margin: '10px 0 0 0', lineHeight: 1.4 }}>
+                    Или введи данные вручную:
                 </p>
             </div>
 
