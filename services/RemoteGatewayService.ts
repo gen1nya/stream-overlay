@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import http, { Server as HttpServer } from 'http';
+import path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { AppEvent } from './twitch/messageParser';
 
@@ -44,6 +45,11 @@ export interface RemoteGatewayConfig {
     // fail-closed so a misconfigured dev env cannot accidentally expose
     // the chat stream to the LAN unauthenticated.
     authToken: string | null;
+    // Absolute path to a built PWA bundle (e.g. repo/dist-pwa). When
+    // set, the gateway serves the bundle at /* with an SPA index.html
+    // fallback so the phone can hit http://<lan-ip>:42010/ directly.
+    // When null/undefined, the gateway returns 404 for non-API paths.
+    staticDir?: string | null;
 }
 
 export interface WindowCacheSnapshot {
@@ -213,7 +219,35 @@ export class RemoteGatewayService {
             res.status(204).end();
         }));
 
+        // Any /api/* path that did not match a route above is a real
+        // 404. Without this, unmatched API requests would fall through
+        // to the static serving layer below and get silently served
+        // the SPA index.html, which is both misleading and a security
+        // smell (leaking the shell of the app on invalid auth scopes).
+        apiRouter.use((_req, res) => {
+            res.status(404).json({ error: 'not found' });
+        });
+
         app.use('/api', apiRouter);
+
+        // PWA static serving. Mounted after /api so there is no way
+        // for a file at `dist-pwa/api/foo` to shadow a real endpoint.
+        const staticDir = this.config.staticDir;
+        if (staticDir) {
+            app.use(express.static(staticDir, { index: 'index.html' }));
+            app.use((req, res, next) => {
+                if (req.method !== 'GET' && req.method !== 'HEAD') return next();
+                // Reserved paths that must never be rewritten to the
+                // SPA shell: API, WebSocket, and health checks.
+                if (req.path.startsWith('/api/') || req.path === '/api'
+                    || req.path.startsWith('/ws/') || req.path === '/health') {
+                    return next();
+                }
+                res.sendFile(path.join(staticDir, 'index.html'), (err) => {
+                    if (err) next(err);
+                });
+            });
+        }
 
         // Centralised error handler — any throw from a route handler
         // lands here via next(err). Logged once, mapped to a generic

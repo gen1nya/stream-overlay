@@ -1,5 +1,8 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } from 'vitest';
 import WebSocket from 'ws';
+import fs from 'fs';
+import path from 'path';
+import os from 'os';
 import type { AppEvent } from './twitch/messageParser';
 import {
     RemoteGatewayService,
@@ -428,6 +431,119 @@ describe('RemoteGatewayService moderation API', () => {
         const body = await res.json();
         expect(body.error).toBe('internal error');
         expect(JSON.stringify(body)).not.toContain('secret internal crash');
+    });
+});
+
+describe('RemoteGatewayService static PWA serving', () => {
+    let tmpDir: string;
+    let service: RemoteGatewayService | null = null;
+    let cache: FakeCacheHandle;
+    let port: number;
+
+    beforeAll(() => {
+        tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'gw-static-'));
+        fs.writeFileSync(path.join(tmpDir, 'index.html'), '<!doctype html><title>PWA</title><div id=root></div>');
+        fs.writeFileSync(path.join(tmpDir, 'app.js'), 'console.log("hi");');
+    });
+
+    afterAll(() => {
+        fs.rmSync(tmpDir, { recursive: true, force: true });
+    });
+
+    beforeEach(async () => {
+        cache = createFakeCache();
+        service = new RemoteGatewayService(
+            makeConfig({ staticDir: tmpDir }),
+            cache.deps,
+        );
+        const { port: actual } = await service.start();
+        port = actual;
+    });
+
+    afterEach(async () => {
+        if (service) {
+            await service.stop();
+            service = null;
+        }
+    });
+
+    it('serves index.html at /', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('<title>PWA</title>');
+    });
+
+    it('serves static assets by name', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/app.js`);
+        expect(res.status).toBe(200);
+        const body = await res.text();
+        expect(body).toContain('hi');
+    });
+
+    it('falls back to index.html for unknown routes (SPA routing)', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/some/client/route`);
+        expect(res.status).toBe(200);
+        const html = await res.text();
+        expect(html).toContain('<title>PWA</title>');
+    });
+
+    it('does not rewrite /api/* to the SPA shell', async () => {
+        // Even without auth, /api/* must return structured 401, not
+        // accidentally leak the PWA index.
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/42`);
+        expect(res.status).toBe(401);
+        const body = await res.json();
+        expect(body.error).toBe('unauthorized');
+    });
+
+    it('returns 404 JSON for unknown /api routes even when authed', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/nothing`, {
+            headers: { Authorization: 'Bearer test-token' },
+        });
+        expect(res.status).toBe(404);
+        const body = await res.json();
+        expect(body.error).toBe('not found');
+    });
+
+    it('keeps /health as JSON, not SPA shell', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/health`);
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.ok).toBe(true);
+    });
+
+    it('ws upgrade still works when static serving is enabled', async () => {
+        const client = await connect(`ws://127.0.0.1:${port}/ws/chat?token=test-token`);
+        const msg = await client.nextMessage();
+        expect(msg.type).toBe('chat:snapshot');
+        const closed = waitForClose(client.ws);
+        client.ws.close();
+        await closed;
+    });
+});
+
+describe('RemoteGatewayService without staticDir returns 404 for unknown paths', () => {
+    let service: RemoteGatewayService | null = null;
+    let port: number;
+
+    beforeEach(async () => {
+        const cache = createFakeCache();
+        service = new RemoteGatewayService(makeConfig(), cache.deps);
+        const { port: actual } = await service.start();
+        port = actual;
+    });
+
+    afterEach(async () => {
+        if (service) {
+            await service.stop();
+            service = null;
+        }
+    });
+
+    it('returns 404 for GET / when staticDir is not configured', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/`);
+        expect(res.status).toBe(404);
     });
 });
 

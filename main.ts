@@ -174,10 +174,36 @@ const remoteGatewayModeration: ModerationDeps = {
   },
 };
 
+// Resolve the built PWA bundle directory. Dev and packaged builds
+// land in different spots, mirror webServer.resolveDistPath logic.
+function resolvePwaStaticDir(): string | null {
+  const candidates = app.isPackaged
+    ? [
+        path.join(process.resourcesPath, 'app', 'dist-pwa'),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'dist-pwa'),
+        path.join(process.resourcesPath, 'app.asar', 'dist-pwa'),
+        path.join(app.getAppPath(), 'dist-pwa'),
+      ]
+    : [
+        path.join(app.getAppPath(), 'dist-pwa'),
+        path.join(process.cwd(), 'dist-pwa'),
+      ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, 'index.html'))) return candidate;
+  }
+  return null;
+}
+
+const remoteGatewayStaticDir = resolvePwaStaticDir();
+if (remoteGatewayDevToken && !remoteGatewayStaticDir) {
+  console.warn('⚠️  Remote gateway: dist-pwa/ not found — run `npm run pwa:build` to enable the PWA from http://<lan>:42010/');
+}
+
 const remoteGatewayService = new RemoteGatewayService(
   {
     port: remoteGatewayConfig.port,
     authToken: remoteGatewayDevToken,
+    staticDir: remoteGatewayStaticDir,
   },
   {
     getWindowCache: () => messageCache.getCurrentWindowCache(),
