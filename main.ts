@@ -35,6 +35,7 @@ import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
 import {ObsService} from "./services/ObsService";
+import {RemoteGatewayService} from "./services/RemoteGatewayService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
@@ -103,6 +104,10 @@ const store = new Store<StoreSchema>({
       port: 4455,
       autoConnect: false,
     },
+    remoteGateway: {
+      enabled: false,
+      port: 42010,
+    },
   },
 });
 
@@ -117,6 +122,25 @@ const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 const mediaLibraryService = new MediaLibraryService(store);
 const obsService = new ObsService(store);
+
+// Remote companion gateway (mobile PWA bridge). Authenticated WS on a
+// separate port, optional — enabled via store config and a dev token
+// pulled from the environment. Slice 1: chat read-only.
+const remoteGatewayConfig = store.get('remoteGateway');
+const remoteGatewayDevToken = process.env.REMOTE_GATEWAY_DEV_TOKEN ?? null;
+const remoteGatewayService = new RemoteGatewayService(
+  {
+    port: remoteGatewayConfig.port,
+    authToken: remoteGatewayDevToken,
+  },
+  {
+    getWindowCache: () => messageCache.getCurrentWindowCache(),
+    subscribeWindow: (listener) => {
+      messageCache.registerWindowMessageHandler(listener);
+      return () => messageCache.unregisterWindowMessageHandler(listener);
+    },
+  },
+);
 
 const backendLogService = new BackendLogService({
   enabled: true,
@@ -431,6 +455,18 @@ app.whenReady().then(() => {
   } else {
     startHttpServer(PORT);
   }
+
+  // Remote companion gateway — only start if the store flag is on AND a
+  // dev token is set in the environment. Slice 1 uses a single env-var
+  // token; pairing-based auth lands in a later slice.
+  if (remoteGatewayConfig.enabled && remoteGatewayDevToken) {
+    remoteGatewayService.start().catch((err) => {
+      console.error('❌ Failed to start remote gateway:', err);
+    });
+  } else if (remoteGatewayConfig.enabled && !remoteGatewayDevToken) {
+    console.warn('⚠️  Remote gateway enabled in store but REMOTE_GATEWAY_DEV_TOKEN is not set — not starting');
+  }
+
   initWindowsManager(store);
   createMainWindow('http://localhost:5173/loading');
   registerIpcHandlers(
@@ -642,6 +678,9 @@ app.on('before-quit', async (event) => {
   twitchClient.stop()
   audiosessionManager.close();
   await obsService.shutdown();
+  if (remoteGatewayService.isRunning()) {
+    await remoteGatewayService.stop();
+  }
   wss.clients.forEach((client) => {
     client.close();
   });
