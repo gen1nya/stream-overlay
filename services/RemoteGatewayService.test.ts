@@ -5,9 +5,48 @@ import {
     RemoteGatewayService,
     type RemoteGatewayConfig,
     type RemoteGatewayDeps,
+    type ModerationDeps,
+    type GatewayUserProfile,
     type WindowCacheSnapshot,
     type WindowListener,
 } from './RemoteGatewayService';
+
+function makeProfile(overrides: Partial<GatewayUserProfile> = {}): GatewayUserProfile {
+    return {
+        id: '12345',
+        login: 'alice',
+        displayName: 'Alice',
+        profileImageUrl: null,
+        createdAt: '2020-01-01T00:00:00Z',
+        isModerator: false,
+        isVip: false,
+        isFollower: true,
+        followedAt: '2021-05-10T00:00:00Z',
+        isBanned: false,
+        banExpiresAt: null,
+        ...overrides,
+    };
+}
+
+function createFakeModeration(): ModerationDeps & { calls: Record<string, any[]> } {
+    const calls: Record<string, any[]> = {
+        getUserById: [],
+        getUserByLogin: [],
+        timeoutUser: [],
+        unbanUser: [],
+        setUserRoles: [],
+        deleteMessage: [],
+    };
+    return {
+        calls,
+        async getUserById(id) { calls.getUserById.push({ id }); return makeProfile({ id }); },
+        async getUserByLogin(login) { calls.getUserByLogin.push({ login }); return makeProfile({ login }); },
+        async timeoutUser(userId, duration, reason) { calls.timeoutUser.push({ userId, duration, reason }); },
+        async unbanUser(userId) { calls.unbanUser.push({ userId }); },
+        async setUserRoles(userId, target) { calls.setUserRoles.push({ userId, target }); },
+        async deleteMessage(messageId) { calls.deleteMessage.push({ messageId }); },
+    };
+}
 
 function makeChat(id: string): AppEvent {
     return {
@@ -28,6 +67,7 @@ interface FakeCacheHandle {
     push: (ev: AppEvent) => void;
     deps: RemoteGatewayDeps;
     listenerCount: () => number;
+    moderation: ReturnType<typeof createFakeModeration>;
 }
 
 // Tiny in-memory stand-in for MessageCacheManager — lets the test
@@ -39,6 +79,7 @@ function createFakeCache(initial: AppEvent[] = []): FakeCacheHandle {
         showSourceChannel: false,
     };
     const listeners: Set<WindowListener> = new Set();
+    const moderation = createFakeModeration();
 
     const deps: RemoteGatewayDeps = {
         getWindowCache: () => ({ messages: [...cache.messages], showSourceChannel: cache.showSourceChannel }),
@@ -46,6 +87,7 @@ function createFakeCache(initial: AppEvent[] = []): FakeCacheHandle {
             listeners.add(listener);
             return () => { listeners.delete(listener); };
         },
+        moderation,
     };
 
     return {
@@ -58,6 +100,7 @@ function createFakeCache(initial: AppEvent[] = []): FakeCacheHandle {
         },
         deps,
         listenerCount: () => listeners.size,
+        moderation,
     };
 }
 
@@ -247,6 +290,144 @@ describe('RemoteGatewayService', () => {
         expect(msg.type).toBe('chat:snapshot');
         alive.ws.close();
         await waitForClose(alive.ws);
+    });
+});
+
+describe('RemoteGatewayService moderation API', () => {
+    let service: RemoteGatewayService | null = null;
+    let cache: FakeCacheHandle;
+    let port: number;
+
+    beforeEach(async () => {
+        cache = createFakeCache();
+        service = new RemoteGatewayService(makeConfig(), cache.deps);
+        const { port: actual } = await service.start();
+        port = actual;
+    });
+
+    afterEach(async () => {
+        if (service) {
+            await service.stop();
+            service = null;
+        }
+    });
+
+    const authHeaders = { Authorization: 'Bearer test-token' };
+
+    it('rejects /api/users/:id without token with 401', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/42`);
+        expect(res.status).toBe(401);
+    });
+
+    it('rejects /api/users/:id with a wrong token', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/42`, {
+            headers: { Authorization: 'Bearer nope' },
+        });
+        expect(res.status).toBe(401);
+    });
+
+    it('accepts ?token= query param for /api/users/:id', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/42?token=test-token`);
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.id).toBe('42');
+    });
+
+    it('GET /api/users/:id returns a normalized profile', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/777`, { headers: authHeaders });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body).toMatchObject({
+            id: '777',
+            login: 'alice',
+            isModerator: false,
+            isVip: false,
+            isFollower: true,
+        });
+        expect(cache.moderation.calls.getUserById).toEqual([{ id: '777' }]);
+    });
+
+    it('GET /api/users/by-login/:login resolves via login', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/by-login/alice`, { headers: authHeaders });
+        expect(res.status).toBe(200);
+        const body = await res.json();
+        expect(body.login).toBe('alice');
+        expect(cache.moderation.calls.getUserByLogin).toEqual([{ login: 'alice' }]);
+    });
+
+    it('POST /api/users/:id/timeout forwards duration and reason', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/555/timeout`, {
+            method: 'POST',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ duration: 600, reason: 'spamming' }),
+        });
+        expect(res.status).toBe(204);
+        expect(cache.moderation.calls.timeoutUser).toEqual([
+            { userId: '555', duration: 600, reason: 'spamming' },
+        ]);
+    });
+
+    it('POST /api/users/:id/timeout without duration = permanent ban', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/555/timeout`, {
+            method: 'POST',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ reason: 'banned forever' }),
+        });
+        expect(res.status).toBe(204);
+        expect(cache.moderation.calls.timeoutUser).toEqual([
+            { userId: '555', duration: null, reason: 'banned forever' },
+        ]);
+    });
+
+    it('POST /api/users/:id/unban calls through to the dep', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/555/unban`, {
+            method: 'POST',
+            headers: authHeaders,
+        });
+        expect(res.status).toBe(204);
+        expect(cache.moderation.calls.unbanUser).toEqual([{ userId: '555' }]);
+    });
+
+    it('POST /api/users/:id/roles forwards isMod/isVip target', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/555/roles`, {
+            method: 'POST',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ isMod: true, isVip: false }),
+        });
+        expect(res.status).toBe(204);
+        expect(cache.moderation.calls.setUserRoles).toEqual([
+            { userId: '555', target: { isMod: true, isVip: false } },
+        ]);
+    });
+
+    it('POST /api/users/:id/roles rejects empty body with 400', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/555/roles`, {
+            method: 'POST',
+            headers: { ...authHeaders, 'Content-Type': 'application/json' },
+            body: JSON.stringify({}),
+        });
+        expect(res.status).toBe(400);
+        expect(cache.moderation.calls.setUserRoles).toHaveLength(0);
+    });
+
+    it('DELETE /api/messages/:id forwards the message id', async () => {
+        const res = await fetch(`http://127.0.0.1:${port}/api/messages/msg-abc-123`, {
+            method: 'DELETE',
+            headers: authHeaders,
+        });
+        expect(res.status).toBe(204);
+        expect(cache.moderation.calls.deleteMessage).toEqual([{ messageId: 'msg-abc-123' }]);
+    });
+
+    it('maps dep errors to 500 without leaking details', async () => {
+        const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+        cache.moderation.getUserById = async () => { throw new Error('secret internal crash'); };
+        const res = await fetch(`http://127.0.0.1:${port}/api/users/42`, { headers: authHeaders });
+        errSpy.mockRestore();
+        expect(res.status).toBe(500);
+        const body = await res.json();
+        expect(body.error).toBe('internal error');
+        expect(JSON.stringify(body)).not.toContain('secret internal crash');
     });
 });
 

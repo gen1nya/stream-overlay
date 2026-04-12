@@ -12,8 +12,12 @@ import {
     addModerator,
     removeModerator,
     deleteMessage,
-    sendShoutout
+    sendShoutout,
+    removeTimeoutOrBan,
+    getExtendedUser,
+    type ExtendedTwitchUser,
 } from './services/twitch/authorizedHelixApi';
+import {updateRoles as updateUserRoles} from './services/twitch/roleUpdater';
 import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow, initWindowsManager} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
@@ -35,7 +39,7 @@ import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
 import {ObsService} from "./services/ObsService";
-import {RemoteGatewayService} from "./services/RemoteGatewayService";
+import {RemoteGatewayService, type GatewayUserProfile, type ModerationDeps} from "./services/RemoteGatewayService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
@@ -125,9 +129,51 @@ const obsService = new ObsService(store);
 
 // Remote companion gateway (mobile PWA bridge). Authenticated WS on a
 // separate port, optional — enabled via store config and a dev token
-// pulled from the environment. Slice 1: chat read-only.
+// pulled from the environment. Slice 1: chat read-only + moderation.
 const remoteGatewayConfig = store.get('remoteGateway');
 const remoteGatewayDevToken = process.env.REMOTE_GATEWAY_DEV_TOKEN ?? null;
+
+function toGatewayProfile(extended: ExtendedTwitchUser): GatewayUserProfile {
+  return {
+    id: extended.user.id,
+    login: extended.user.login,
+    displayName: extended.user.display_name,
+    profileImageUrl: extended.user.profile_image_url ?? null,
+    createdAt: (extended.user as any).created_at ?? '',
+    isModerator: extended.isModerator,
+    isVip: extended.isVIP,
+    isFollower: extended.followedAt !== null,
+    followedAt: extended.followedAt,
+    isBanned: extended.isBanned,
+    banExpiresAt: extended.banExpiresAt ?? null,
+  };
+}
+
+const remoteGatewayModeration: ModerationDeps = {
+  getUserById: async (id) => toGatewayProfile(await getExtendedUser({ id })),
+  getUserByLogin: async (login) => toGatewayProfile(await getExtendedUser({ login })),
+  timeoutUser: async (userId, duration, reason) => {
+    await timeoutUser(userId, duration, reason);
+  },
+  unbanUser: async (userId) => {
+    await removeTimeoutOrBan(userId);
+  },
+  setUserRoles: async (userId, target) => {
+    // The repo's updateRoles needs to know the *current* role state to
+    // diff against — fetch it first, then forward the target as
+    // the `update` slice. One extra Helix roundtrip is acceptable for
+    // the ergonomics of a flat PATCH-style gateway API.
+    const current = await getExtendedUser({ id: userId });
+    await updateUserRoles(userId, {
+      current: { isMod: current.isModerator, isVip: current.isVIP },
+      update: target,
+    });
+  },
+  deleteMessage: async (messageId) => {
+    await deleteMessage(messageId);
+  },
+};
+
 const remoteGatewayService = new RemoteGatewayService(
   {
     port: remoteGatewayConfig.port,
@@ -139,6 +185,7 @@ const remoteGatewayService = new RemoteGatewayService(
       messageCache.registerWindowMessageHandler(listener);
       return () => messageCache.unregisterWindowMessageHandler(listener);
     },
+    moderation: remoteGatewayModeration,
   },
 );
 
