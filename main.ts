@@ -132,10 +132,18 @@ const obsService = new ObsService(store);
 // Remote companion gateway (mobile PWA bridge). Authenticated WS on a
 // separate port, gated by store flag. Token is generated once and
 // persisted — no env var or manual input needed.
+// Short, human-typable auth token for the companion PWA. 8 chars from
+// an unambiguous alphabet (no 0/O/1/l/I) — 30^8 ≈ 656 billion
+// combinations, more than enough for LAN-only auth.
+const TOKEN_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
+function generateGatewayToken(length = 8): string {
+  const bytes = crypto.randomBytes(length);
+  return Array.from(bytes, (b) => TOKEN_ALPHABET[b % TOKEN_ALPHABET.length]).join('');
+}
+
 let remoteGatewayConfig = store.get('remoteGateway');
 if (!remoteGatewayConfig.authToken) {
-  const token = crypto.randomUUID();
-  store.set('remoteGateway.authToken', token);
+  store.set('remoteGateway.authToken', generateGatewayToken());
   remoteGatewayConfig = store.get('remoteGateway');
   console.log('🔑 Generated new remote gateway auth token');
 }
@@ -574,7 +582,7 @@ app.whenReady().then(() => {
   // Regenerate auth token — invalidates every device that has the old
   // one. Restart the service so the new token takes effect immediately.
   ipcMain.handle('remote-gateway:regenerate-token', async () => {
-    const newToken = crypto.randomUUID();
+    const newToken = generateGatewayToken();
     store.set('remoteGateway.authToken', newToken);
     // Recreate the service with the new token. Easiest path is
     // stop → patch config → start; the service itself is stateless

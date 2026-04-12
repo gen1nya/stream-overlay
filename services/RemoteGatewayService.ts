@@ -11,6 +11,10 @@ export interface GatewayStatus {
     // true if config.authToken is a non-empty string — UI uses this to
     // gate the Start button.
     authTokenSet: boolean;
+    // The token itself — shown in the desktop settings page so the
+    // user can read it aloud or type it on the phone if QR is not an
+    // option. Short enough (8 chars) to be human-friendly.
+    authToken: string;
     // true if config.staticDir was resolved to a real directory at
     // service construction time.
     staticDirPresent: boolean;
@@ -188,6 +192,7 @@ export class RemoteGatewayService {
             running: this.isRunning(),
             port: this.config.port,
             authTokenSet: !!this.config.authToken,
+            authToken: this.config.authToken ?? '',
             staticDirPresent: !!this.config.staticDir,
             lanUrls: this.isRunning() ? listLanUrls(this.config.port, this.config.authToken) : [],
         };

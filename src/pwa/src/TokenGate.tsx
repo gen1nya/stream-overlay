@@ -87,17 +87,29 @@ export function TokenGate({ onConnected }: { onConnected: (conn: Connection) => 
                 </label>
 
                 <label style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <span style={{ fontSize: 12, color: '#a1a1aa' }}>Токен</span>
+                    <span style={{ fontSize: 12, color: '#a1a1aa' }}>Код доступа</span>
                     <input
-                        type="password"
+                        type="text"
                         autoCapitalize="off"
                         autoCorrect="off"
+                        autoComplete="off"
                         spellCheck={false}
-                        placeholder="Значение REMOTE_GATEWAY_DEV_TOKEN"
+                        placeholder="8 символов"
+                        maxLength={32}
                         value={token}
-                        onChange={(e) => setToken(e.target.value)}
-                        style={inputStyle}
+                        onChange={(e) => setToken(e.target.value.toLowerCase().trim())}
+                        style={{
+                            ...inputStyle,
+                            fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+                            fontSize: 22,
+                            letterSpacing: '0.2em',
+                            textAlign: 'center',
+                            padding: '14px',
+                        }}
                     />
+                    <span style={{ fontSize: 11, color: '#555', textAlign: 'center' }}>
+                        Код из десктопного приложения (Настройки → Удалённое подключение)
+                    </span>
                 </label>
 
                 {error && (

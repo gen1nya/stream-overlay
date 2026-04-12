@@ -281,6 +281,13 @@ export default function RemoteGatewayManager() {
                     </StatusValue>
                 </StatusRow>
 
+                <StatusRow>
+                    <StatusLabel>{t('settings.pages.remoteGateway.token', 'Код доступа')}</StatusLabel>
+                    <StatusValue style={{ fontFamily: "'JetBrains Mono', 'Consolas', monospace", fontSize: '1.1rem', letterSpacing: '0.15em' }}>
+                        {status.authToken || '—'}
+                    </StatusValue>
+                </StatusRow>
+
                 {!status.staticDirPresent && (
                     <StatusRow>
                         <StatusLabel>{t('settings.pages.remoteGateway.bundle', 'PWA-сборка')}</StatusLabel>
