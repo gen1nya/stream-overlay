@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
 import { QRCodeSVG } from 'qrcode.react';
-import { FiCopy, FiRefreshCw, FiCheck, FiAlertCircle, FiWifi, FiEye, FiEyeOff, FiShield } from 'react-icons/fi';
+import { FiCopy, FiRefreshCw, FiCheck, FiAlertCircle, FiSmartphone, FiEye, FiEyeOff } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import Switch from '../../utils/Switch';
 import { getRemoteGatewayStatus, toggleRemoteGateway, regenerateGatewayToken } from '../../../services/api';
@@ -85,35 +85,6 @@ const Dot = styled.span`
     flex-shrink: 0;
 `;
 
-const ButtonRow = styled.div`
-    display: flex;
-    gap: 8px;
-    margin-top: 12px;
-`;
-
-const ActionButton = styled.button`
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 14px;
-    border-radius: 8px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.15s ease;
-    border: 1px solid;
-    background: ${({ $variant }) => $variant === 'danger' ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.05)'};
-    border-color: ${({ $variant }) => $variant === 'danger' ? 'rgba(239, 68, 68, 0.3)' : '#2a2a2f'};
-    color: ${({ $variant }) => $variant === 'danger' ? '#fca5a5' : '#e0e0e0'};
-
-    &:hover:not(:disabled) {
-        background: ${({ $variant }) => $variant === 'danger' ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.1)'};
-    }
-
-    &:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    svg { width: 14px; height: 14px; }
-`;
 
 const QrList = styled.div`
     display: flex;
@@ -250,19 +221,19 @@ export default function RemoteGatewayManager() {
         <Container>
             <Card>
                 <CardTitle>
-                    <FiWifi/>
-                    {t('settings.pages.remoteGateway.title', 'Удалённое подключение')}
+                    <FiSmartphone/>
+                    {t('settings.pages.remoteGateway.title', 'Мобильный чат')}
                 </CardTitle>
                 <CardHint>
                     {t('settings.pages.remoteGateway.hint',
-                        'Мобильный компаньон — чтение чата и модерация со смартфона по локальной сети.')}
+                        'Чтение чата и модерация со смартфона по локальной сети.')}
                 </CardHint>
 
                 <ToggleRow>
                     <ToggleLabel>
                         {status.enabled
-                            ? t('settings.pages.remoteGateway.enabled', 'Гейтвей включён')
-                            : t('settings.pages.remoteGateway.disabled', 'Гейтвей выключен')}
+                            ? t('settings.pages.remoteGateway.enabled', 'Включено')
+                            : t('settings.pages.remoteGateway.disabled', 'Выключено')}
                     </ToggleLabel>
                     <Switch
                         checked={!!status.enabled}
@@ -276,15 +247,22 @@ export default function RemoteGatewayManager() {
                     <StatusValue>
                         <Dot $color={runningColor}/>
                         {status.running
-                            ? t('settings.pages.remoteGateway.running', 'Запущен на порту :') + status.port
+                            ? t('settings.pages.remoteGateway.running', 'Запущен, порт :') + status.port
                             : t('settings.pages.remoteGateway.stopped', 'Остановлен')}
                     </StatusValue>
                 </StatusRow>
 
                 <StatusRow>
                     <StatusLabel>{t('settings.pages.remoteGateway.token', 'Код доступа')}</StatusLabel>
-                    <StatusValue style={{ fontFamily: "'JetBrains Mono', 'Consolas', monospace", fontSize: '1.1rem', letterSpacing: '0.15em' }}>
-                        {status.authToken || '—'}
+                    <StatusValue style={{ gap: 10, flex: 1 }}>
+                        <span style={{ fontFamily: "'JetBrains Mono', 'Consolas', monospace", fontSize: '1.1rem', letterSpacing: '0.15em' }}>
+                            {status.authToken || '—'}
+                        </span>
+                        <SmallButton onClick={handleRegenerate} disabled={busy}
+                            style={{ marginLeft: 4 }}>
+                            <FiRefreshCw/>
+                            {t('settings.pages.remoteGateway.regenerateToken', 'Сменить')}
+                        </SmallButton>
                     </StatusValue>
                 </StatusRow>
 
@@ -293,28 +271,21 @@ export default function RemoteGatewayManager() {
                         <StatusLabel>{t('settings.pages.remoteGateway.bundle', 'PWA-сборка')}</StatusLabel>
                         <StatusValue>
                             <Dot $color="#f59e0b"/>
-                            {t('settings.pages.remoteGateway.bundleMissing', 'Нет dist-pwa/ — выполни `npm run pwa:build`')}
+                            {t('settings.pages.remoteGateway.bundleMissing', 'Нет dist-pwa/ — выполните npm run pwa:build')}
                         </StatusValue>
                     </StatusRow>
                 )}
-
-                <ButtonRow>
-                    <ActionButton $variant="danger" onClick={handleRegenerate} disabled={busy}>
-                        <FiShield/>
-                        {t('settings.pages.remoteGateway.regenerateToken', 'Перегенерировать токен')}
-                    </ActionButton>
-                </ButtonRow>
             </Card>
 
             {status.running && (
                 <Card>
                     <CardTitle>
-                        <FiWifi/>
+                        <FiSmartphone/>
                         {t('settings.pages.remoteGateway.lanUrlsTitle', 'Подключение')}
                     </CardTitle>
                     <CardHint>
                         {t('settings.pages.remoteGateway.lanUrlsHint',
-                            'Отсканируй QR с телефона — приложение откроется с авторизацией. Телефон должен быть в той же Wi-Fi сети.')}
+                            'Отсканируйте QR с телефона — приложение откроется с авторизацией. Телефон должен быть в той же Wi-Fi сети.')}
                     </CardHint>
 
                     {status.lanUrls.length > 0 ? (
@@ -325,7 +296,7 @@ export default function RemoteGatewayManager() {
                                         <QRCodeSVG value={url} size={180} level="M" marginSize={0}/>
                                     </QrBox>
                                     <QrHint>
-                                        {t('settings.pages.remoteGateway.scanHint', 'Наведи камеру телефона')}
+                                        {t('settings.pages.remoteGateway.scanHint', 'Наведите камеру телефона')}
                                     </QrHint>
                                     <UrlSpoiler>
                                         <SmallButton onClick={() => setShowUrl((s) => ({ ...s, [url]: !s[url] }))}>

@@ -44,7 +44,7 @@ import {
     FiExternalLink,
     FiFilm,
     FiSliders,
-    FiWifi
+    FiSmartphone
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -303,7 +303,7 @@ export default function Settings() {
         bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
         media_events: {title: t('settings.pages.mediaEvents.title', 'Media Events'), icon: <FiFilm/>},
         obs_actions: {title: t('settings.pages.obsActions.title', 'OBS Actions'), icon: <FiSliders/>},
-        remote_gateway: {title: t('settings.pages.remoteGateway.title', 'Удалённое подключение'), icon: <FiWifi/>},
+        remote_gateway: {title: t('settings.pages.remoteGateway.title', 'Мобильный чат'), icon: <FiSmartphone/>},
         media_overlay: {title: t('settings.pages.mediaOverlay.title', 'Media Overlay'), icon: <FiLayers/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
@@ -570,8 +570,8 @@ export default function Settings() {
                         },
                         {
                             key: "remote_gateway",
-                            icon: <FiWifi/>,
-                            label: t('settings.pages.remoteGateway.label', 'Удалённое подключение'),
+                            icon: <FiSmartphone/>,
+                            label: t('settings.pages.remoteGateway.label', 'Мобильный чат'),
                         },
                         {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},

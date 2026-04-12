@@ -162,7 +162,7 @@ export function UserSheet({ conn, userId, userLogin, messageId, onClose, onDelet
                                     {profile.displayName}
                                 </div>
                                 <div style={{ fontSize: 13, color: '#888' }}>
-                                    {profile.login} · на Twitch с {accountAge}
+                                    {profile.login} · аккаунт с {accountAge}
                                 </div>
                             </div>
                         </div>

@@ -296,7 +296,7 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
-                padding: '12px 16px',
+                padding: `calc(12px + env(safe-area-inset-top, 0px)) 16px 12px 16px`,
                 borderBottom: '1px solid #2a2a2f',
                 background: '#18181b',
                 position: 'sticky',

@@ -57,16 +57,16 @@ export function TokenGate({ onConnected }: { onConnected: (conn: Connection) => 
             flexDirection: 'column',
             justifyContent: 'center',
             minHeight: '100%',
-            padding: 24,
+            padding: `calc(24px + env(safe-area-inset-top, 0px)) 24px calc(24px + env(safe-area-inset-bottom, 0px)) 24px`,
         }}>
             <div style={{ marginBottom: 28, textAlign: 'center' }}>
-                <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px 0' }}>Twitch Companion</h1>
+                <h1 style={{ fontSize: 22, fontWeight: 700, margin: '0 0 8px 0' }}>Stream Companion</h1>
                 <p style={{ fontSize: 13, color: '#888', margin: 0, lineHeight: 1.5 }}>
-                    Отсканируй QR-код из десктопного приложения камерой телефона
+                    Отсканируйте QR-код из десктопного приложения камерой телефона
                     — подключение произойдёт автоматически.
                 </p>
                 <p style={{ fontSize: 12, color: '#555', margin: '10px 0 0 0', lineHeight: 1.4 }}>
-                    Или введи данные вручную:
+                    Или введите данные вручную:
                 </p>
             </div>
 
@@ -108,7 +108,7 @@ export function TokenGate({ onConnected }: { onConnected: (conn: Connection) => 
                         }}
                     />
                     <span style={{ fontSize: 11, color: '#555', textAlign: 'center' }}>
-                        Код из десктопного приложения (Настройки → Удалённое подключение)
+                        Код из десктопного приложения (Настройки → Мобильный чат)
                     </span>
                 </label>
 

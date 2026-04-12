@@ -1,7 +1,7 @@
 {
-  "name": "Twitch Companion",
+  "name": "Stream Companion",
   "short_name": "Companion",
-  "description": "Чат и модерация Twitch-стрима с телефона",
+  "description": "Чат и модерация стрима с телефона",
   "start_url": "./",
   "display": "standalone",
   "orientation": "portrait",
