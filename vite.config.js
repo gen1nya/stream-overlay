@@ -26,6 +26,10 @@ export default defineConfig({
     emptyOutDir: true,
     chunkSizeWarningLimit: 2000,
     rollupOptions: {
+      // src/pwa/ is built by vite.config.pwa.ts into dist-pwa/ — keep
+      // it out of the desktop bundle so PWA code never ships inside
+      // the Electron ASAR.
+      external: (id) => id.includes('/src/pwa/'),
       output: {
         manualChunks: undefined
       }

@@ -8,6 +8,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:backend": "vitest run",
+    "pwa:dev": "vite --config vite.config.pwa.ts",
+    "pwa:build": "vite build --config vite.config.pwa.ts",
     "preview": "vite preview",
     "dev": "concurrently \"npm:start-react\" \"npm:start-electron\"",
     "start-react": "vite",
