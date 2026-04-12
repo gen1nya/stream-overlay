@@ -13,6 +13,8 @@ import {
     openMediaOverlayEditor,
     getObsConnectionConfig,
     saveObsConnectionConfig,
+    getRemoteGatewayStatus,
+    toggleRemoteGateway,
 } from '../../services/api';
 import { useObsStatus } from '../../hooks/useObsStatus';
 import { useWebSocket } from '../../context/WebSocketContext';
@@ -359,9 +361,19 @@ export default function Settings() {
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
     const isObsPage = activePage === 'obs_actions';
+    const isGatewayPage = activePage === 'remote_gateway';
 
     // OBS master switch: flips config.enabled, persists, lets broadcast
     // round-trip the new state back into obsConnectionConfig.
+    // Gateway master switch
+    const [gatewayStatus, setGatewayStatus] = useState(null);
+    useEffect(() => { getRemoteGatewayStatus().then(setGatewayStatus); }, []);
+    const gatewayEnabled = Boolean(gatewayStatus?.enabled);
+    const toggleGatewayEnabled = async (newState) => {
+        const data = await toggleRemoteGateway(newState);
+        setGatewayStatus(data);
+    };
+
     const obsEnabled = Boolean(obsConnectionConfig?.enabled);
     const toggleObsEnabled = async (newState) => {
         const base = obsConnectionConfig || {
@@ -660,6 +672,25 @@ export default function Settings() {
                                     {currentPageInfo.title}
                                 </PageTitle>
                             </Row>
+                        ) : isGatewayPage ? (
+                            <Row gap="12px" style={{ flex: 1 }}>
+                                <EnabledToggle enabled={gatewayEnabled}>
+                                    <Switch
+                                        checked={gatewayEnabled}
+                                        onChange={(e) => toggleGatewayEnabled(e.target.checked)}
+                                    />
+                                    <StatusBadge enabled={gatewayEnabled}>
+                                        {gatewayEnabled
+                                            ? t('settings.bot.shared.status.enabled')
+                                            : t('settings.bot.shared.status.disabled')}
+                                    </StatusBadge>
+                                </EnabledToggle>
+
+                                <PageTitle style={{ margin: 0 }}>
+                                    {currentPageInfo.icon}
+                                    {currentPageInfo.title}
+                                </PageTitle>
+                            </Row>
                         ) : (
                             <PageTitle>
                                 {currentPageInfo.icon}
@@ -678,6 +709,7 @@ export default function Settings() {
                         applyBotConfig={applyBotConfig}
                         showBotHelp={showBotHelp}
                         setShowBotHelp={setShowBotHelp}
+                        gatewayStatus={gatewayStatus}
                     />
                 </MainContainer>
             </ContentWrapper>
@@ -685,7 +717,7 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp}) => {
+const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp, gatewayStatus}) => {
     const { t } = useTranslation();
     switch (page) {
         case "general":
@@ -973,7 +1005,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
         case "remote_gateway":
             return (
                 <Content>
-                    <RemoteGatewayManager />
+                    <RemoteGatewayManager externalStatus={gatewayStatus} />
                 </Content>
             );
 
