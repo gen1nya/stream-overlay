@@ -58,6 +58,10 @@ export interface StoreSchema {
 export interface RemoteGatewayStoreConfig {
     enabled: boolean;
     port: number;
+    // Random persistent auth token. Generated on first app start,
+    // persisted across restarts. Regenerating it invalidates all
+    // currently paired devices.
+    authToken: string;
 }
 
 export interface MediaOverlaySettings {

@@ -43,7 +43,8 @@ import {
     FiClock,
     FiExternalLink,
     FiFilm,
-    FiSliders
+    FiSliders,
+    FiWifi
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -77,6 +78,7 @@ import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
 import MediaEventsManager from "./settings/MediaEventsManager";
 import ObsActionsManager from "./settings/ObsActionsManager";
+import RemoteGatewayManager from "./settings/RemoteGatewayManager";
 import Switch from "../utils/Switch";
 import { EnabledToggle, StatusBadge, HelpButton, HelpInfoPopup } from "./settings/bot/SharedBotStyles";
 import { Spacer } from "../utils/Separator";
@@ -301,6 +303,7 @@ export default function Settings() {
         bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
         media_events: {title: t('settings.pages.mediaEvents.title', 'Media Events'), icon: <FiFilm/>},
         obs_actions: {title: t('settings.pages.obsActions.title', 'OBS Actions'), icon: <FiSliders/>},
+        remote_gateway: {title: t('settings.pages.remoteGateway.title', 'Удалённое подключение'), icon: <FiWifi/>},
         media_overlay: {title: t('settings.pages.mediaOverlay.title', 'Media Overlay'), icon: <FiLayers/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
@@ -564,6 +567,11 @@ export default function Settings() {
                                 indicatorColor: obsIndicator.color,
                                 indicatorBorderColor: obsIndicator.borderColor,
                             }),
+                        },
+                        {
+                            key: "remote_gateway",
+                            icon: <FiWifi/>,
+                            label: t('settings.pages.remoteGateway.label', 'Удалённое подключение'),
                         },
                         {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
@@ -945,6 +953,13 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     <ObsActionsManager />
+                </Content>
+            );
+
+        case "remote_gateway":
+            return (
+                <Content>
+                    <RemoteGatewayManager />
                 </Content>
             );
 

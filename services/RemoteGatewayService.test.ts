@@ -6,6 +6,7 @@ import os from 'os';
 import type { AppEvent } from './twitch/messageParser';
 import {
     RemoteGatewayService,
+    listLanUrls,
     type RemoteGatewayConfig,
     type RemoteGatewayDeps,
     type ModerationDeps,
@@ -544,6 +545,69 @@ describe('RemoteGatewayService without staticDir returns 404 for unknown paths',
     it('returns 404 for GET / when staticDir is not configured', async () => {
         const res = await fetch(`http://127.0.0.1:${port}/`);
         expect(res.status).toBe(404);
+    });
+});
+
+describe('RemoteGatewayService.getStatus', () => {
+    it('reports not-running state before start()', () => {
+        const cache = createFakeCache();
+        const service = new RemoteGatewayService(makeConfig(), cache.deps);
+        const status = service.getStatus();
+        expect(status.running).toBe(false);
+        expect(status.authTokenSet).toBe(true);
+        expect(status.staticDirPresent).toBe(false);
+        expect(status.lanUrls).toEqual([]);
+    });
+
+    it('reports running=true after start() and running=false after stop()', async () => {
+        const cache = createFakeCache();
+        const service = new RemoteGatewayService(makeConfig({ staticDir: '/tmp/definitely-does-not-exist-12345' }), cache.deps);
+        await service.start();
+        try {
+            const running = service.getStatus();
+            expect(running.running).toBe(true);
+            expect(running.staticDirPresent).toBe(true);
+        } finally {
+            await service.stop();
+        }
+        const stopped = service.getStatus();
+        expect(stopped.running).toBe(false);
+        expect(stopped.lanUrls).toEqual([]);
+    });
+
+    it('reports authTokenSet=false when authToken is null', () => {
+        const cache = createFakeCache();
+        const service = new RemoteGatewayService(makeConfig({ authToken: null }), cache.deps);
+        expect(service.getStatus().authTokenSet).toBe(false);
+    });
+});
+
+describe('listLanUrls', () => {
+    it('returns tokenless URLs when no token is passed', () => {
+        const urls = listLanUrls(42010);
+        for (const url of urls) {
+            expect(url).toMatch(/^http:\/\/\d+\.\d+\.\d+\.\d+:42010\/$/);
+        }
+    });
+
+    it('embeds ?token=... when token is passed', () => {
+        const urls = listLanUrls(42010, 'my-secret');
+        for (const url of urls) {
+            expect(url).toMatch(/^http:\/\/\d+\.\d+\.\d+\.\d+:42010\/\?token=my-secret$/);
+        }
+    });
+
+    it('url-encodes tokens with special characters', () => {
+        const urls = listLanUrls(42010, 'a b+c/d=e');
+        for (const url of urls) {
+            // encodeURIComponent: space→%20, +→%2B, /→%2F, =→%3D
+            expect(url).toContain('token=a%20b%2Bc%2Fd%3De');
+        }
+    });
+
+    it('never includes loopback addresses', () => {
+        const urls = listLanUrls(80);
+        expect(urls.some((u) => u.includes('127.0.0.1'))).toBe(false);
     });
 });
 

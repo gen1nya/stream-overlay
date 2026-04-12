@@ -1,8 +1,50 @@
 import express, { Express, Request, Response, NextFunction } from 'express';
 import http, { Server as HttpServer } from 'http';
+import os from 'os';
 import path from 'path';
 import { WebSocketServer, WebSocket } from 'ws';
 import type { AppEvent } from './twitch/messageParser';
+
+export interface GatewayStatus {
+    running: boolean;
+    port: number;
+    // true if config.authToken is a non-empty string — UI uses this to
+    // gate the Start button.
+    authTokenSet: boolean;
+    // true if config.staticDir was resolved to a real directory at
+    // service construction time.
+    staticDirPresent: boolean;
+    // Enumerated LAN URLs the phone can hit. IPv4-only, external
+    // interfaces only. Empty while the service is not running.
+    lanUrls: string[];
+}
+
+// Walk os.networkInterfaces() for non-internal IPv4 entries and format
+// each as http://<ip>:<port>/[?token=...]. Used by the desktop
+// settings page to show the user which URL to type (or QR-scan) from
+// the phone. When a token is passed, it is embedded in the query so
+// the PWA can auto-login on first load — trading some hygiene (token
+// in URL history) for a zero-keystroke onboarding path.
+export function listLanUrls(port: number, token?: string | null): string[] {
+    const entries: { address: string; priority: number }[] = [];
+    const suffix = token ? `?token=${encodeURIComponent(token)}` : '';
+    const interfaces = os.networkInterfaces();
+    for (const name of Object.keys(interfaces)) {
+        const list = interfaces[name] || [];
+        for (const iface of list) {
+            if (iface.family !== 'IPv4') continue;
+            if (iface.internal) continue;
+            // Home-network 192.168.0.0/16 gets top priority, then
+            // 10.0.0.0/8 and 172.16-31.x.x, then everything else.
+            let priority = 2;
+            if (iface.address.startsWith('192.168.')) priority = 0;
+            else if (iface.address.startsWith('10.') || iface.address.startsWith('172.')) priority = 1;
+            entries.push({ address: iface.address, priority });
+        }
+    }
+    entries.sort((a, b) => a.priority - b.priority);
+    return entries.map((e) => `http://${e.address}:${port}/${suffix}`);
+}
 
 // Wire-format DTO the gateway returns to clients. Intentionally
 // decoupled from the internal ExtendedTwitchUser shape so backend
@@ -140,6 +182,16 @@ export class RemoteGatewayService {
         return this.httpServer !== null;
     }
 
+    getStatus(): GatewayStatus {
+        return {
+            running: this.isRunning(),
+            port: this.config.port,
+            authTokenSet: !!this.config.authToken,
+            staticDirPresent: !!this.config.staticDir,
+            lanUrls: this.isRunning() ? listLanUrls(this.config.port, this.config.authToken) : [],
+        };
+    }
+
     private buildHttpApp(): Express {
         const app = express();
 
@@ -234,7 +286,18 @@ export class RemoteGatewayService {
         // for a file at `dist-pwa/api/foo` to shadow a real endpoint.
         const staticDir = this.config.staticDir;
         if (staticDir) {
-            app.use(express.static(staticDir, { index: 'index.html' }));
+            // index.html must NEVER be cached — asset files have
+            // content-hashed names so they're fine, but the shell
+            // references the current hash and needs to be fresh on
+            // every reload or PWA updates silently break.
+            app.use(express.static(staticDir, {
+                index: 'index.html',
+                setHeaders: (res, filePath) => {
+                    if (filePath.endsWith('index.html')) {
+                        res.setHeader('Cache-Control', 'no-store');
+                    }
+                },
+            }));
             app.use((req, res, next) => {
                 if (req.method !== 'GET' && req.method !== 'HEAD') return next();
                 // Reserved paths that must never be rewritten to the
@@ -243,6 +306,7 @@ export class RemoteGatewayService {
                     || req.path.startsWith('/ws/') || req.path === '/health') {
                     return next();
                 }
+                res.setHeader('Cache-Control', 'no-store');
                 res.sendFile(path.join(staticDir, 'index.html'), (err) => {
                     if (err) next(err);
                 });
@@ -301,28 +365,35 @@ export class RemoteGatewayService {
         this.wss = wss;
 
         server.on('upgrade', (req, socket, head) => {
+            const remoteAddr = req.socket?.remoteAddress ?? '?';
+            console.log(`[gw] upgrade from ${remoteAddr}, url=${req.url}, clients=${this.chatClients.size}`);
+
             let url: URL;
             try {
                 url = new URL(req.url ?? '/', 'http://localhost');
             } catch {
+                console.log(`[gw] → 400 bad url`);
                 socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
                 socket.destroy();
                 return;
             }
 
             if (url.pathname !== '/ws/chat') {
+                console.log(`[gw] → 404 path=${url.pathname}`);
                 socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
                 socket.destroy();
                 return;
             }
 
             if (!this.isAuthorized(url, req.headers)) {
+                console.log(`[gw] → 401 unauthorized`);
                 socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
                 socket.destroy();
                 return;
             }
 
             wss.handleUpgrade(req, socket, head, (ws) => {
+                console.log(`[gw] → accepted, total clients=${this.chatClients.size + 1}`);
                 this.handleChatConnection(ws);
             });
         });
@@ -363,11 +434,12 @@ export class RemoteGatewayService {
             console.error('❌ Remote gateway initial snapshot failed:', err);
         }
 
-        ws.on('close', () => {
+        ws.on('close', (code, reason) => {
             this.chatClients.delete(ws);
+            console.log(`[gw] client disconnected, code=${code}, remaining=${this.chatClients.size}`);
         });
         ws.on('error', (err) => {
-            console.error('❌ Remote gateway chat ws error:', err);
+            console.error(`[gw] client error:`, err?.message ?? err);
         });
     }
 

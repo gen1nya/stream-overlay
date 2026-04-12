@@ -108,52 +108,91 @@ function FeedItem({ accent, children }: { accent?: string; children: React.React
     );
 }
 
+interface LogEntry { ts: string; text: string }
+function now(): string { return new Date().toLocaleTimeString('ru-RU', { hour12: false }); }
+
 export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => void }) {
     const [messages, setMessages] = useState<FeedEvent[]>([]);
     const [status, setStatus] = useState<Status>('connecting');
     const [lastError, setLastError] = useState<string | null>(null);
+    const [showDebug, setShowDebug] = useState(false);
+    const [log, setLog] = useState<LogEntry[]>([]);
     const wsRef = useRef<WebSocket | null>(null);
     const listEndRef = useRef<HTMLDivElement | null>(null);
+
+    const addLog = (text: string) =>
+        setLog((prev) => [...prev.slice(-50), { ts: now(), text }]);
 
     useEffect(() => {
         let cancelled = false;
         let retryTimer: number | null = null;
+        let attempt = 0;
 
         function connect() {
             if (cancelled) return;
+            attempt++;
             setStatus('connecting');
             setLastError(null);
             const url = wsUrl(conn.baseUrl, '/ws/chat', conn.token);
-            const ws = new WebSocket(url);
+            addLog(`#${attempt} ws → ${url}`);
+            let ws: WebSocket;
+            try {
+                ws = new WebSocket(url);
+            } catch (e: any) {
+                addLog(`#${attempt} new WebSocket threw: ${e?.message ?? e}`);
+                setStatus('error');
+                setLastError(String(e?.message ?? e));
+                retryTimer = window.setTimeout(connect, 3000);
+                return;
+            }
             wsRef.current = ws;
 
             ws.onopen = () => {
                 if (cancelled) return;
                 setStatus('open');
+                addLog(`#${attempt} open`);
             };
             ws.onmessage = (ev) => {
                 try {
                     const frame = JSON.parse(ev.data) as WsFrame;
+                    if (frame.type === 'chat:snapshot') {
+                        addLog(`#${attempt} snapshot: ${frame.messages?.length ?? 0} msgs`);
+                    }
                     if (frame.type === 'chat:snapshot' || frame.type === 'chat:update') {
                         setMessages(frame.messages ?? []);
                     }
                 } catch (err) {
-                    console.error('Failed to parse ws frame', err);
+                    addLog(`#${attempt} parse error: ${err}`);
                 }
             };
-            ws.onerror = () => {
+            ws.onerror = (ev: any) => {
                 if (cancelled) return;
                 setStatus('error');
-                setLastError('Соединение оборвалось');
+                const info = ev?.message || ev?.type || 'unknown';
+                setLastError(String(info));
+                addLog(`#${attempt} onerror: ${info}`);
             };
-            ws.onclose = () => {
+            ws.onclose = (ev) => {
                 if (cancelled) return;
                 setStatus('closed');
-                // Simple linear retry — 2s. The gateway is on LAN so
-                // reconnect latency is not a problem.
+                addLog(`#${attempt} close code=${ev.code} reason=${ev.reason || '—'} clean=${ev.wasClean}`);
                 retryTimer = window.setTimeout(connect, 2000);
             };
         }
+
+        addLog(`baseUrl=${conn.baseUrl}`);
+        addLog(`token=${conn.token}`);
+        addLog(`ua=${navigator.userAgent.slice(0, 80)}`);
+
+        // HTTP sanity check before ws — if this fails, it's network, not ws-specific.
+        fetch(`${conn.baseUrl}/health`)
+            .then(async (r) => {
+                const body = await r.text().catch(() => '(no body)');
+                addLog(`GET /health → ${r.status} ${body.slice(0, 60)}`);
+            })
+            .catch((e) => {
+                addLog(`GET /health FAILED: ${e?.message ?? e}`);
+            });
 
         connect();
         return () => {
@@ -217,6 +256,15 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
                         {statusLabel[status]}{lastError ? ` · ${lastError}` : ''}
                     </div>
                 </div>
+                <button onClick={() => setShowDebug((v) => !v)} style={{
+                    background: showDebug ? 'rgba(124, 58, 237, 0.2)' : 'transparent',
+                    color: showDebug ? '#a78bfa' : '#888',
+                    border: '1px solid #2a2a2f',
+                    borderRadius: 6,
+                    padding: '6px 10px',
+                    fontSize: 12,
+                    cursor: 'pointer',
+                }}>Log</button>
                 <button onClick={handleSignOut} style={{
                     background: 'transparent',
                     color: '#888',
@@ -227,6 +275,26 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
                     cursor: 'pointer',
                 }}>Выйти</button>
             </header>
+
+            {showDebug && (
+                <div style={{
+                    padding: '10px 16px',
+                    background: '#111113',
+                    borderBottom: '1px solid #2a2a2f',
+                    maxHeight: 200,
+                    overflowY: 'auto',
+                    fontFamily: "'JetBrains Mono', 'Consolas', monospace",
+                    fontSize: 11,
+                    lineHeight: 1.6,
+                    color: '#888',
+                    WebkitOverflowScrolling: 'touch',
+                }}>
+                    {log.map((e, i) => (
+                        <div key={i}><span style={{ color: '#555' }}>{e.ts}</span> {e.text}</div>
+                    ))}
+                    {log.length === 0 && <div>Нет событий</div>}
+                </div>
+            )}
 
             <div style={{
                 flex: 1,

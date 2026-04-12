@@ -44,6 +44,7 @@ import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
 import {DonationAlertsService} from "./services/DonationAlertsService";
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -111,6 +112,7 @@ const store = new Store<StoreSchema>({
     remoteGateway: {
       enabled: false,
       port: 42010,
+      authToken: '',
     },
   },
 });
@@ -128,10 +130,15 @@ const mediaLibraryService = new MediaLibraryService(store);
 const obsService = new ObsService(store);
 
 // Remote companion gateway (mobile PWA bridge). Authenticated WS on a
-// separate port, optional — enabled via store config and a dev token
-// pulled from the environment. Slice 1: chat read-only + moderation.
-const remoteGatewayConfig = store.get('remoteGateway');
-const remoteGatewayDevToken = process.env.REMOTE_GATEWAY_DEV_TOKEN ?? null;
+// separate port, gated by store flag. Token is generated once and
+// persisted — no env var or manual input needed.
+let remoteGatewayConfig = store.get('remoteGateway');
+if (!remoteGatewayConfig.authToken) {
+  const token = crypto.randomUUID();
+  store.set('remoteGateway.authToken', token);
+  remoteGatewayConfig = store.get('remoteGateway');
+  console.log('🔑 Generated new remote gateway auth token');
+}
 
 function toGatewayProfile(extended: ExtendedTwitchUser): GatewayUserProfile {
   return {
@@ -195,14 +202,14 @@ function resolvePwaStaticDir(): string | null {
 }
 
 const remoteGatewayStaticDir = resolvePwaStaticDir();
-if (remoteGatewayDevToken && !remoteGatewayStaticDir) {
+if (!remoteGatewayStaticDir) {
   console.warn('⚠️  Remote gateway: dist-pwa/ not found — run `npm run pwa:build` to enable the PWA from http://<lan>:42010/');
 }
 
 const remoteGatewayService = new RemoteGatewayService(
   {
     port: remoteGatewayConfig.port,
-    authToken: remoteGatewayDevToken,
+    authToken: remoteGatewayConfig.authToken,
     staticDir: remoteGatewayStaticDir,
   },
   {
@@ -529,15 +536,59 @@ app.whenReady().then(() => {
     startHttpServer(PORT);
   }
 
-  // Remote companion gateway — started whenever REMOTE_GATEWAY_DEV_TOKEN
-  // is present in the environment. The store flag will gate a proper
-  // UI toggle in a later slice; during dev the env var alone is the
-  // opt-in. Without the env var the gateway stays off.
-  if (remoteGatewayDevToken) {
+  // Remote companion gateway — started when the store flag is on.
+  if (remoteGatewayConfig.enabled) {
     remoteGatewayService.start().catch((err) => {
       console.error('❌ Failed to start remote gateway:', err);
     });
   }
+
+  // Build enriched status for the settings page. Adds `enabled` from
+  // the store to the service's runtime-only snapshot.
+  function getEnrichedGatewayStatus() {
+    const cfg = store.get('remoteGateway');
+    return { ...remoteGatewayService.getStatus(), enabled: cfg.enabled };
+  }
+
+  ipcMain.handle('remote-gateway:get-status', async () => {
+    return getEnrichedGatewayStatus();
+  });
+
+  // Master toggle — writes the store flag AND starts/stops the service
+  // in one call so the UI stays reactive.
+  ipcMain.handle('remote-gateway:toggle-enabled', async (_e, enabled: boolean) => {
+    store.set('remoteGateway.enabled', enabled);
+    if (enabled && !remoteGatewayService.isRunning()) {
+      try { await remoteGatewayService.start(); } catch (err) {
+        console.error('❌ Failed to start remote gateway:', err);
+      }
+    } else if (!enabled && remoteGatewayService.isRunning()) {
+      await remoteGatewayService.stop();
+    }
+    return getEnrichedGatewayStatus();
+  });
+
+  // Regenerate auth token — invalidates every device that has the old
+  // one. Restart the service so the new token takes effect immediately.
+  ipcMain.handle('remote-gateway:regenerate-token', async () => {
+    const newToken = crypto.randomUUID();
+    store.set('remoteGateway.authToken', newToken);
+    // Recreate the service with the new token. Easiest path is
+    // stop → patch config → start; the service itself is stateless
+    // beyond the HTTP/WS server handle.
+    const wasRunning = remoteGatewayService.isRunning();
+    if (wasRunning) await remoteGatewayService.stop();
+    // The service reads config at construction, so we need a new
+    // instance. But since it's module-scoped, we reassign the outer
+    // variable — acceptable because nothing else holds a ref.
+    Object.assign(remoteGatewayService['config'], { authToken: newToken });
+    if (wasRunning) {
+      try { await remoteGatewayService.start(); } catch (err) {
+        console.error('❌ Failed to restart remote gateway:', err);
+      }
+    }
+    return getEnrichedGatewayStatus();
+  });
 
   initWindowsManager(store);
   createMainWindow('http://localhost:5173/loading');

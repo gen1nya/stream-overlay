@@ -669,3 +669,15 @@ export const getDocsAvailableLocales = () => {
 export const hasDocsForLocale = (locale) => {
     return ipcRenderer?.invoke('docs:has-documents', locale);
 };
+
+export const getRemoteGatewayStatus = () => {
+    return ipcRenderer?.invoke('remote-gateway:get-status');
+};
+
+export const toggleRemoteGateway = (enabled) => {
+    return ipcRenderer?.invoke('remote-gateway:toggle-enabled', enabled);
+};
+
+export const regenerateGatewayToken = () => {
+    return ipcRenderer?.invoke('remote-gateway:regenerate-token');
+};
