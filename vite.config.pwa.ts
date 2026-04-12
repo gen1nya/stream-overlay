@@ -10,6 +10,13 @@ export default defineConfig({
   root: path.resolve(__dirname, 'src/pwa'),
   base: './',
   plugins: [react()],
+  resolve: {
+    // The PWA's root is src/pwa but node_modules lives at the repo
+    // root. Without dedupe, vite's dep optimizer and the app end up
+    // resolving two different React instances and hooks blow up with
+    // "Cannot read properties of null (reading 'useState')".
+    dedupe: ['react', 'react-dom'],
+  },
   build: {
     outDir: path.resolve(__dirname, 'dist-pwa'),
     emptyOutDir: true,

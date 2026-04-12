@@ -136,6 +136,30 @@ export class RemoteGatewayService {
 
     private buildHttpApp(): Express {
         const app = express();
+
+        // Permissive CORS for the LAN-only PWA. The gateway already
+        // fails closed on auth, so a wide-open origin policy is fine
+        // here — the real access control is the bearer token, not the
+        // Origin header. Echo the requesting origin (not '*') so that
+        // if we ever need credentials later, the header stays valid.
+        app.use((req, res, next) => {
+            const origin = req.headers.origin;
+            if (typeof origin === 'string' && origin.length > 0) {
+                res.setHeader('Access-Control-Allow-Origin', origin);
+                res.setHeader('Vary', 'Origin');
+            } else {
+                res.setHeader('Access-Control-Allow-Origin', '*');
+            }
+            res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+            res.setHeader('Access-Control-Allow-Headers', 'Authorization, Content-Type');
+            res.setHeader('Access-Control-Max-Age', '600');
+            if (req.method === 'OPTIONS') {
+                res.status(204).end();
+                return;
+            }
+            next();
+        });
+
         app.use(express.json({ limit: '64kb' }));
 
         app.get('/health', (_req, res) => {

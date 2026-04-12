@@ -503,15 +503,14 @@ app.whenReady().then(() => {
     startHttpServer(PORT);
   }
 
-  // Remote companion gateway — only start if the store flag is on AND a
-  // dev token is set in the environment. Slice 1 uses a single env-var
-  // token; pairing-based auth lands in a later slice.
-  if (remoteGatewayConfig.enabled && remoteGatewayDevToken) {
+  // Remote companion gateway — started whenever REMOTE_GATEWAY_DEV_TOKEN
+  // is present in the environment. The store flag will gate a proper
+  // UI toggle in a later slice; during dev the env var alone is the
+  // opt-in. Without the env var the gateway stays off.
+  if (remoteGatewayDevToken) {
     remoteGatewayService.start().catch((err) => {
       console.error('❌ Failed to start remote gateway:', err);
     });
-  } else if (remoteGatewayConfig.enabled && !remoteGatewayDevToken) {
-    console.warn('⚠️  Remote gateway enabled in store but REMOTE_GATEWAY_DEV_TOKEN is not set — not starting');
   }
 
   initWindowsManager(store);

@@ -1,23 +1,115 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Connection, wsUrl, clearConnection } from './config';
 
-interface ChatMessage {
+interface BaseEvent {
     id?: string;
     type?: string;
     userName?: string;
-    htmlMessage?: string;
     color?: string;
     timestamp?: number;
 }
+interface ChatEvent extends BaseEvent {
+    type: 'chat';
+    htmlMessage?: string;
+    htmlBadges?: string;
+}
+interface FollowEvent extends BaseEvent {
+    type: 'follow';
+}
+interface RedemptionEvent extends BaseEvent {
+    type: 'redemption';
+    reward?: { id?: string; cost?: number; title?: string };
+}
+interface RaidEvent extends BaseEvent {
+    type: 'raid';
+    viewers?: number;
+}
+type FeedEvent = ChatEvent | FollowEvent | RedemptionEvent | RaidEvent | BaseEvent;
 
 type WsFrame =
-    | { type: 'chat:snapshot'; messages: ChatMessage[]; showSourceChannel?: boolean }
-    | { type: 'chat:update'; messages: ChatMessage[]; showSourceChannel?: boolean };
+    | { type: 'chat:snapshot'; messages: FeedEvent[]; showSourceChannel?: boolean }
+    | { type: 'chat:update'; messages: FeedEvent[]; showSourceChannel?: boolean };
 
 type Status = 'connecting' | 'open' | 'closed' | 'error';
 
+function FeedRow({ msg }: { msg: FeedEvent }) {
+    const color = msg.color || '#a78bfa';
+
+    // Non-chat events get a synthesized line instead of a raw htmlMessage
+    // (follow, redemption, raid don't carry htmlMessage at all — they
+    // have structured fields instead).
+    if (msg.type === 'follow') {
+        return (
+            <FeedItem accent="#10b981">
+                <span style={{ fontWeight: 700, color }}>{msg.userName}</span>
+                <span style={{ color: '#a1a1aa' }}> подписался на канал</span>
+            </FeedItem>
+        );
+    }
+    if (msg.type === 'redemption') {
+        const r = (msg as RedemptionEvent).reward;
+        return (
+            <FeedItem accent="#f59e0b">
+                <span style={{ fontWeight: 700, color }}>{msg.userName}</span>
+                <span style={{ color: '#a1a1aa' }}> выкупил(а) </span>
+                <span style={{ fontWeight: 600, color: '#fbbf24' }}>{r?.title ?? 'награду'}</span>
+                {typeof r?.cost === 'number' && (
+                    <span style={{ color: '#a1a1aa' }}> за {r.cost}</span>
+                )}
+            </FeedItem>
+        );
+    }
+    if (msg.type === 'raid') {
+        const viewers = (msg as RaidEvent).viewers;
+        return (
+            <FeedItem accent="#ec4899">
+                <span style={{ fontWeight: 700, color }}>{msg.userName}</span>
+                <span style={{ color: '#a1a1aa' }}> заехал с рейдом</span>
+                {typeof viewers === 'number' && (
+                    <span style={{ color: '#a1a1aa' }}> ({viewers})</span>
+                )}
+            </FeedItem>
+        );
+    }
+
+    // Regular chat. htmlBadges is a separate field from htmlMessage —
+    // both are pre-rendered HTML with absolute CDN urls from
+    // messageParser.parseIrcMessage, so we just dump them inline.
+    const chat = msg as ChatEvent;
+    return (
+        <FeedItem>
+            {chat.htmlBadges && (
+                <span
+                    style={{ marginRight: 4 }}
+                    dangerouslySetInnerHTML={{ __html: chat.htmlBadges }}
+                />
+            )}
+            <span style={{ fontWeight: 700, color, marginRight: 6 }}>{chat.userName}:</span>
+            {chat.htmlMessage ? (
+                <span dangerouslySetInnerHTML={{ __html: chat.htmlMessage }}/>
+            ) : (
+                <span style={{ color: '#666' }}>(пустое сообщение)</span>
+            )}
+        </FeedItem>
+    );
+}
+
+function FeedItem({ accent, children }: { accent?: string; children: React.ReactNode }) {
+    return (
+        <div style={{
+            padding: '8px 0 8px 10px',
+            borderBottom: '1px solid #1d1d20',
+            borderLeft: accent ? `3px solid ${accent}` : '3px solid transparent',
+            fontSize: 15,
+            lineHeight: 1.4,
+        }}>
+            {children}
+        </div>
+    );
+}
+
 export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => void }) {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<FeedEvent[]>([]);
     const [status, setStatus] = useState<Status>('connecting');
     const [lastError, setLastError] = useState<string | null>(null);
     const wsRef = useRef<WebSocket | null>(null);
@@ -147,25 +239,7 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
                         Ждём сообщений…
                     </div>
                 ) : (
-                    messages.map((msg, i) => (
-                        <div key={msg.id ?? i} style={{
-                            padding: '8px 0',
-                            borderBottom: '1px solid #1d1d20',
-                            fontSize: 15,
-                            lineHeight: 1.4,
-                        }}>
-                            <span style={{
-                                fontWeight: 700,
-                                color: msg.color || '#a78bfa',
-                                marginRight: 6,
-                            }}>{msg.userName}:</span>
-                            {msg.htmlMessage ? (
-                                <span dangerouslySetInnerHTML={{ __html: msg.htmlMessage }}/>
-                            ) : (
-                                <span style={{ color: '#666' }}>(пустое сообщение)</span>
-                            )}
-                        </div>
-                    ))
+                    messages.map((msg, i) => <FeedRow key={msg.id ?? i} msg={msg}/>)
                 )}
                 <div ref={listEndRef}/>
             </div>
