@@ -5,6 +5,9 @@
   "main": "dist-backend/main.js",
   "scripts": {
     "lint": "eslint .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:backend": "vitest run",
     "preview": "vite preview",
     "dev": "concurrently \"npm:start-react\" \"npm:start-electron\"",
     "start-react": "vite",
@@ -112,6 +115,7 @@
     "react-icons": "^5.5.0",
     "typescript": "^5.3.3",
     "vite": "^6.3.5",
+    "vitest": "^4.1.4",
     "wait-on": "^8.0.3"
   }
 }
