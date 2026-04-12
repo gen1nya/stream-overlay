@@ -558,26 +558,40 @@ export default function Settings() {
                                 {key: "bot_timers", icon: <FiClock/>, label: t('settings.pages.botTimers.label'), enabled: botConfig?.timers?.enabled},
                             ]
                         },
-                        {key: "media_events", icon: <FiFilm/>, label: t('settings.pages.mediaEvents.label', 'Media Events')},
                         {
-                            key: "obs_actions",
-                            icon: <FiSliders/>,
-                            label: t('settings.pages.obsActions.label', 'OBS Actions'),
-                            ...(obsIndicator && {
-                                indicatorColor: obsIndicator.color,
-                                indicatorBorderColor: obsIndicator.borderColor,
-                            }),
+                            key: "media_group",
+                            icon: <FiFilm/>,
+                            label: t('settings.pages.mediaGroup.label', 'Медиа'),
+                            children: [
+                                {key: "media_events", icon: <FiFilm/>, label: t('settings.pages.mediaEvents.label', 'Медиа события')},
+                                {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Медиа оверлей')},
+                            ]
+                        },
+                        {
+                            key: "integrations_group",
+                            icon: <FiExternalLink/>,
+                            label: t('settings.pages.integrationsGroup.label', 'Интеграции'),
+                            children: [
+                                {
+                                    key: "obs_actions",
+                                    icon: <FiSliders/>,
+                                    label: t('settings.pages.obsActions.label', 'OBS'),
+                                    ...(obsIndicator && {
+                                        indicatorColor: obsIndicator.color,
+                                        indicatorBorderColor: obsIndicator.borderColor,
+                                    }),
+                                },
+                                {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
+                                {key: "donation_goal", icon: <FiGift/>, label: t('settings.pages.donationGoal.label', 'Цель сбора (DA)')},
+                            ]
                         },
                         {
                             key: "remote_gateway",
                             icon: <FiSmartphone/>,
                             label: t('settings.pages.remoteGateway.label', 'Мобильный чат'),
                         },
-                        {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
-                        {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                         {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},
-                        {key: "donation_goal", icon: <FiGift/>, label: "Цель сбора (DA)"},
                         {key : "about", icon: <FiAlertCircle/>, label: t('settings.pages.about.label')},
                     ]}
                 />
