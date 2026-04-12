@@ -13,6 +13,9 @@ export const ActionTypes = {
 
   // Media events
   SHOW_MEDIA: 'SHOW_MEDIA',
+
+  // OBS actions
+  OBS_ACTION: 'OBS_ACTION',
 } as const;
 
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes];

@@ -34,6 +34,7 @@ import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
+import {ObsService} from "./services/ObsService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
@@ -95,6 +96,13 @@ const store = new Store<StoreSchema>({
       }
     },
     mediaLibrary: [],
+    obsActions: [],
+    obsConnection: {
+      enabled: false,
+      host: 'localhost',
+      port: 4455,
+      autoConnect: false,
+    },
   },
 });
 
@@ -108,6 +116,7 @@ const mediaEventsService = new MediaEventsService(store);
 const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 const mediaLibraryService = new MediaLibraryService(store);
+const obsService = new ObsService(store);
 
 const backendLogService = new BackendLogService({
   enabled: true,
@@ -242,6 +251,10 @@ const applyAction = async (action: { type: string; payload: any }) => {
       await mediaEventsController.showMedia(action.payload);
       break;
 
+    case ActionTypes.OBS_ACTION:
+      await obsService.executeAction(action.payload.obsActionId);
+      break;
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -290,7 +303,8 @@ const actionScheduler = new ActionScheduler({
         return DbRepository.getInstance(currentUserId).triggers;
     },
     logService,
-    sendMessage: (message: string) => twitchClient.sendMessage(message)
+    sendMessage: (message: string) => twitchClient.sendMessage(message),
+    obsService,
 })
 
 const chatStatsService = new ChatStatsService(broadcast, () => {
@@ -342,6 +356,7 @@ mediaEventsService.setBroadcastCallback(broadcast);
 mediaDisplayGroupService.setBroadcastCallback(broadcast);
 mediaEventsController.setBroadcastCallback(broadcast);
 mediaLibraryService.setBroadcastCallback(broadcast);
+obsService.setBroadcastCallback(broadcast);
 
 // ─── DonationAlerts Goal Service ─────────────────────────────────
 const daService = new DonationAlertsService(broadcast);
@@ -454,6 +469,17 @@ app.whenReady().then(() => {
   mediaEventsService.registerIpcHandlers();
   mediaDisplayGroupService.registerIpcHandlers();
   mediaLibraryService.registerIpcHandlers();
+  obsService.registerIpcHandlers();
+
+  // Auto-connect to OBS if enabled in config
+  {
+    const obsConfig = obsService.getConnectionConfig();
+    if (obsConfig.enabled && obsConfig.autoConnect) {
+      obsService.connect().catch((err) => {
+        console.warn('[main] OBS auto-connect failed:', err);
+      });
+    }
+  }
 
   // Docs service for help window
   const docsService = new DocsService();
@@ -615,6 +641,7 @@ app.on('before-quit', async (event) => {
   scraper.dispose();
   twitchClient.stop()
   audiosessionManager.close();
+  await obsService.shutdown();
   wss.clients.forEach((client) => {
     client.close();
   });

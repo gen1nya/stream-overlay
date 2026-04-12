@@ -47,6 +47,8 @@ export interface StoreSchema {
     mediaDisplayGroups: MediaDisplayGroup[];  // Media display groups configuration
     mediaOverlaySettings: MediaOverlaySettings;  // Media overlay debug/preview settings
     mediaLibrary: MediaFile[];  // Media library files storage
+    obsActions: ObsActionConfig[];  // Standalone OBS actions registry
+    obsConnection: ObsConnectionConfig;  // OBS WebSocket connection config
 }
 
 export interface MediaOverlaySettings {
@@ -358,13 +360,14 @@ export interface TriggerActionParams {
     duration?: number;     // For timeout (seconds)
     reason?: string;       // For timeout
     mediaEventId?: string; // For show_media - reference to MediaEventConfig.id
+    obsActionId?: string;  // For obs_action - reference to ObsActionConfig.id
 }
 
 // Trigger action ("THEN" part)
 export interface TriggerAction {
     id: string;            // UUID for UI identification
     type: 'send_message' | 'add_vip' | 'remove_vip' |
-          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout' | 'show_media';
+          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout' | 'show_media' | 'obs_action';
 
     // Action target
     target: 'sender' | 'arg_user';  // sender = message author, arg_user = from argument
@@ -544,6 +547,91 @@ export interface MediaEventConfig {
 export interface MediaEventsBotConfig {
     events: MediaEventConfig[];
 }
+
+// ============================================
+// OBS Actions Types
+// ============================================
+
+export interface ObsConnectionConfig {
+    enabled: boolean;
+    host: string;
+    port: number;
+    autoConnect: boolean;
+}
+
+export type ObsToggleMode = 'on' | 'off' | 'toggle';
+export type ObsRecordMode = 'start' | 'stop' | 'toggle';
+export type ObsMediaAction = 'play' | 'pause' | 'restart' | 'stop' | 'next' | 'previous';
+
+export type ObsActionOperation =
+    | 'switch_scene'
+    | 'toggle_scene_item'
+    | 'toggle_filter'
+    | 'trigger_hotkey'
+    | 'record_control'
+    | 'stream_control'
+    | 'virtualcam_control'
+    | 'media_control';
+
+interface ObsActionBase {
+    id: string;
+    name: string;
+}
+
+export interface ObsActionSwitchScene extends ObsActionBase {
+    operation: 'switch_scene';
+    sceneName: string;
+}
+
+export interface ObsActionToggleSceneItem extends ObsActionBase {
+    operation: 'toggle_scene_item';
+    sceneName: string;
+    sourceName: string;
+    mode: ObsToggleMode;
+}
+
+export interface ObsActionToggleFilter extends ObsActionBase {
+    operation: 'toggle_filter';
+    sourceName: string;
+    filterName: string;
+    mode: ObsToggleMode;
+}
+
+export interface ObsActionTriggerHotkey extends ObsActionBase {
+    operation: 'trigger_hotkey';
+    hotkeyName: string;
+}
+
+export interface ObsActionRecordControl extends ObsActionBase {
+    operation: 'record_control';
+    mode: ObsRecordMode;
+}
+
+export interface ObsActionStreamControl extends ObsActionBase {
+    operation: 'stream_control';
+    mode: ObsRecordMode;
+}
+
+export interface ObsActionVirtualCamControl extends ObsActionBase {
+    operation: 'virtualcam_control';
+    mode: ObsRecordMode;
+}
+
+export interface ObsActionMediaControl extends ObsActionBase {
+    operation: 'media_control';
+    sourceName: string;
+    mediaAction: ObsMediaAction;
+}
+
+export type ObsActionConfig =
+    | ObsActionSwitchScene
+    | ObsActionToggleSceneItem
+    | ObsActionToggleFilter
+    | ObsActionTriggerHotkey
+    | ObsActionRecordControl
+    | ObsActionStreamControl
+    | ObsActionVirtualCamControl
+    | ObsActionMediaControl;
 
 // Main bot configuration interface
 export interface BotConfig {

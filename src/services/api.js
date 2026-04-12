@@ -539,6 +539,82 @@ export const testMediaGroup = (groupId) => {
 };
 
 // ============================================
+// OBS Actions
+// ============================================
+
+export const getAllObsActions = () => {
+    return ipcRenderer?.invoke('obs:get-all');
+};
+
+export const getObsAction = (id) => {
+    return ipcRenderer?.invoke('obs:get', id);
+};
+
+export const saveObsAction = (action) => {
+    return ipcRenderer?.invoke('obs:save', action);
+};
+
+export const deleteObsAction = (id) => {
+    return ipcRenderer?.invoke('obs:delete', id);
+};
+
+export const getObsConnectionConfig = () => {
+    return ipcRenderer?.invoke('obs:connection:get');
+};
+
+export const saveObsConnectionConfig = (config) => {
+    return ipcRenderer?.invoke('obs:connection:save', config);
+};
+
+export const setObsPassword = (password) => {
+    return ipcRenderer?.invoke('obs:connection:set-password', password);
+};
+
+export const hasObsPassword = () => {
+    return ipcRenderer?.invoke('obs:connection:has-password');
+};
+
+export const connectObs = () => {
+    return ipcRenderer?.invoke('obs:connect');
+};
+
+export const disconnectObs = () => {
+    return ipcRenderer?.invoke('obs:disconnect');
+};
+
+export const getObsStatus = () => {
+    return ipcRenderer?.invoke('obs:status');
+};
+
+export const listObsScenes = (force = false) => {
+    return ipcRenderer?.invoke('obs:list-scenes', force);
+};
+
+export const listObsInputs = (force = false) => {
+    return ipcRenderer?.invoke('obs:list-inputs', force);
+};
+
+export const listObsHotkeys = (force = false) => {
+    return ipcRenderer?.invoke('obs:list-hotkeys', force);
+};
+
+export const listObsSceneItems = (sceneName, force = false) => {
+    return ipcRenderer?.invoke('obs:list-scene-items', sceneName, force);
+};
+
+export const listObsSourceFilters = (sourceName, force = false) => {
+    return ipcRenderer?.invoke('obs:list-filters', sourceName, force);
+};
+
+export const refreshObsCache = () => {
+    return ipcRenderer?.invoke('obs:refresh-cache');
+};
+
+export const testObsAction = (action) => {
+    return ipcRenderer?.invoke('obs:test', action);
+};
+
+// ============================================
 // Media Library
 // ============================================
 
@@ -570,8 +646,8 @@ export const getMediaFileUrl = (id) => {
 // Help / Documentation API
 // ============================================
 
-export const openHelp = () => {
-    return ipcRenderer?.invoke('help:open');
+export const openHelp = (initialPath) => {
+    return ipcRenderer?.invoke('help:open', initialPath);
 };
 
 export const getDocsTree = (locale) => {

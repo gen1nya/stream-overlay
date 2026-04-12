@@ -234,18 +234,19 @@ const ChildrenInner = styled.div`
     padding-right: 4px;
 `;
 
-// Green dot indicator for enabled items
+// Status dot indicator. Default color is the "enabled" green used by
+// bot items; OBS passes its own color to reflect real connection state.
 const EnabledDot = styled.div`
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #44ff44;
-    box-shadow: 0 0 4px #44ff44;
-    border: 1px solid #33cc33;
+    background: ${(props) => props.$color || '#44ff44'};
+    box-shadow: 0 0 4px ${(props) => props.$color || '#44ff44'};
+    border: 1px solid ${(props) => props.$borderColor || '#33cc33'};
     flex-shrink: 0;
     margin-left: auto;
     opacity: ${(props) => (props.$show ? 1 : 0)};
-    transition: opacity 0.2s ease;
+    transition: opacity 0.2s ease, background 0.2s ease;
 `;
 
 export const Sidebar = ({ open, active, onSelect, items }) => {
@@ -315,9 +316,15 @@ export const Sidebar = ({ open, active, onSelect, items }) => {
                                     <Label open={open} active={active === child.key}>
                                         {child.label}
                                     </Label>
-                                    {child.enabled !== undefined && (
+                                    {child.indicatorColor !== undefined ? (
+                                        <EnabledDot
+                                            $show={open}
+                                            $color={child.indicatorColor}
+                                            $borderColor={child.indicatorBorderColor}
+                                        />
+                                    ) : child.enabled !== undefined ? (
                                         <EnabledDot $show={open && child.enabled} />
-                                    )}
+                                    ) : null}
                                 </ChildItem>
                             ))}
                         </ChildrenInner>
@@ -338,6 +345,15 @@ export const Sidebar = ({ open, active, onSelect, items }) => {
                 <Label open={open} active={active === item.key}>
                     {item.label}
                 </Label>
+                {item.indicatorColor !== undefined ? (
+                    <EnabledDot
+                        $show={open}
+                        $color={item.indicatorColor}
+                        $borderColor={item.indicatorBorderColor}
+                    />
+                ) : item.enabled !== undefined ? (
+                    <EnabledDot $show={open && item.enabled} />
+                ) : null}
                 <Tooltip showTooltip={!open}>
                     {item.label}
                 </Tooltip>

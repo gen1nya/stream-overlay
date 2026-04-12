@@ -280,6 +280,19 @@ const LoadingIndicator = styled.div`
     color: #666;
 `;
 
+// Walk the tree recursively looking for a node with the given path.
+// Used to resolve a deep-link path to its title for the breadcrumb.
+function findNodeByPath(nodes, targetPath) {
+    for (const node of nodes) {
+        if (node.path === targetPath) return node;
+        if (node.children) {
+            const found = findNodeByPath(node.children, targetPath);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
 export default function HelpWindow() {
     const { t, i18n } = useTranslation();
     const [tree, setTree] = useState([]);
@@ -290,6 +303,14 @@ export default function HelpWindow() {
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [loading, setLoading] = useState(true);
+
+    // Deep-link: initial path from ?path=... query param. We hold it
+    // in state until the tree finishes loading, then resolve to a title.
+    const [pendingPath, setPendingPath] = useState(() => {
+        try {
+            return new URLSearchParams(window.location.search).get('path');
+        } catch { return null; }
+    });
 
     // Get current locale (ru or en)
     const locale = i18n.language?.startsWith('ru') ? 'ru' : 'en';
@@ -375,6 +396,30 @@ export default function HelpWindow() {
         setSelectedTitle(title);
         setSearchQuery('');
         setSearchResults([]);
+    }, []);
+
+    // Resolve pending deep-link path once the tree has loaded.
+    useEffect(() => {
+        if (!pendingPath || tree.length === 0) return;
+        const node = findNodeByPath(tree, pendingPath);
+        handleSelect(pendingPath, node?.title || node?.name || pendingPath);
+        setPendingPath(null);
+    }, [pendingPath, tree, handleSelect]);
+
+    // Listen for navigation events fired from the main process when the
+    // help window is already open and a new deep-link request arrives.
+    useEffect(() => {
+        let ipcRenderer;
+        try {
+            ipcRenderer = window.require('electron').ipcRenderer;
+        } catch { return; }
+
+        const listener = (_event, path) => {
+            if (!path) return;
+            setPendingPath(path);
+        };
+        ipcRenderer.on('help:navigate', listener);
+        return () => ipcRenderer.removeListener('help:navigate', listener);
     }, []);
 
     const handleSearchResultClick = useCallback((result) => {

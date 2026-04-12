@@ -5,14 +5,15 @@ import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
     FiClock, FiPlus, FiTrash2, FiChevronDown, FiStar, FiShield, FiSettings,
-    FiArrowRight, FiUsers, FiExternalLink, FiImage, FiEdit2
+    FiArrowRight, FiUsers, FiExternalLink, FiImage, FiEdit2, FiSliders
 } from 'react-icons/fi';
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
-import { getTwitchRewards, getAllMediaEvents } from "../../../../../services/api";
+import { getTwitchRewards, getAllMediaEvents, getAllObsActions } from "../../../../../services/api";
 import { v4 as uuidv4 } from 'uuid';
 import MediaEventEditorPopup from "./MediaEventEditorPopup";
+import ObsActionEditorPopup from "./ObsActionEditorPopup";
 import {Spacer} from "../../../../utils/Separator";
 
 const PopupOverlay = styled.div`
@@ -476,6 +477,7 @@ const ACTION_TYPES = [
     { value: 'timeout', icon: FiClock, color: 'rgba(251, 191, 36, 0.2)', iconColor: '#fbbf24' },
     { value: 'delete_message', icon: FiTrash2, color: 'rgba(107, 114, 128, 0.2)', iconColor: '#6b7280' },
     { value: 'show_media', icon: FiImage, color: 'rgba(236, 72, 153, 0.2)', iconColor: '#ec4899' },
+    { value: 'obs_action', icon: FiSliders, color: 'rgba(59, 130, 246, 0.2)', iconColor: '#3b82f6' },
 ];
 
 const DELAY_UNITS = ['seconds', 'minutes', 'hours', 'days'];
@@ -491,6 +493,12 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     const [mediaEventEditorOpen, setMediaEventEditorOpen] = useState(false);
     const [currentActionIdForMediaEvent, setCurrentActionIdForMediaEvent] = useState(null);
 
+    const [obsActions, setObsActions] = useState([]);
+    const [loadingObsActions, setLoadingObsActions] = useState(false);
+    const [editingObsAction, setEditingObsAction] = useState(null);
+    const [obsActionEditorOpen, setObsActionEditorOpen] = useState(false);
+    const [currentActionIdForObsAction, setCurrentActionIdForObsAction] = useState(null);
+
     useEffect(() => {
         if (editedRule.condition.eventType === 'redemption') {
             loadRewards();
@@ -499,6 +507,7 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
 
     useEffect(() => {
         loadMediaEvents();
+        loadObsActions();
     }, []);
 
     const loadRewards = async () => {
@@ -523,6 +532,55 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
         } finally {
             setLoadingMediaEvents(false);
         }
+    };
+
+    const loadObsActions = async () => {
+        setLoadingObsActions(true);
+        try {
+            const list = await getAllObsActions();
+            setObsActions(list || []);
+        } catch (error) {
+            console.error('Failed to load OBS actions:', error);
+        } finally {
+            setLoadingObsActions(false);
+        }
+    };
+
+    const handleOpenObsActionEditor = (actionId, obsActionId = null) => {
+        setCurrentActionIdForObsAction(actionId);
+        if (obsActionId) {
+            const existing = obsActions.find(a => a.id === obsActionId);
+            setEditingObsAction(existing || null);
+        } else {
+            setEditingObsAction(null);
+        }
+        setObsActionEditorOpen(true);
+    };
+
+    const handleSaveObsAction = (savedObsAction) => {
+        setObsActions(prev => {
+            const existingIndex = prev.findIndex(a => a.id === savedObsAction.id);
+            if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = savedObsAction;
+                return updated;
+            }
+            return [...prev, savedObsAction];
+        });
+
+        if (currentActionIdForObsAction) {
+            updateActionParams(currentActionIdForObsAction, { obsActionId: savedObsAction.id });
+        }
+
+        setObsActionEditorOpen(false);
+        setEditingObsAction(null);
+        setCurrentActionIdForObsAction(null);
+    };
+
+    const handleCloseObsActionEditor = () => {
+        setObsActionEditorOpen(false);
+        setEditingObsAction(null);
+        setCurrentActionIdForObsAction(null);
     };
 
     const handleOpenMediaEventEditor = (actionId, mediaEventId = null) => {
@@ -982,6 +1040,53 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                                     </FormRow>
                                                 )}
 
+                                                {/* OBS action settings */}
+                                                {action.type === 'obs_action' && (
+                                                    <FormRow $align="center">
+                                                        <FormGroup $flex={2}>
+                                                            <Label>{t('settings.obsActions.addAction')}</Label>
+                                                            {loadingObsActions ? (
+                                                                <span style={{ color: '#888', fontSize: '0.9rem' }}>{t('common.loading')}</span>
+                                                            ) : (
+                                                                <Select
+                                                                    value={action.params.obsActionId || ''}
+                                                                    onChange={(e) => updateActionParams(action.id, { obsActionId: e.target.value })}
+                                                                >
+                                                                    <option value="">—</option>
+                                                                    {obsActions.map(oa => (
+                                                                        <option key={oa.id} value={oa.id}>
+                                                                            {oa.name} ({t(`settings.obsActions.operations.${oa.operation}`)})
+                                                                        </option>
+                                                                    ))}
+                                                                </Select>
+                                                            )}
+                                                        </FormGroup>
+                                                        <FormGroup $flex={0} $minWidth="auto" style={{ alignSelf: 'flex-end', marginBottom: '1px' }}>
+                                                            {action.params.obsActionId ? (
+                                                                <AddActionButton
+                                                                    $hoverColor="#3b82f6"
+                                                                    $hoverBg="rgba(59, 130, 246, 0.1)"
+                                                                    onClick={() => handleOpenObsActionEditor(action.id, action.params.obsActionId)}
+                                                                    style={{ height: '40px', borderStyle: 'solid' }}
+                                                                >
+                                                                    <FiEdit2 />
+                                                                    {t('settings.obsActions.actions.edit')}
+                                                                </AddActionButton>
+                                                            ) : (
+                                                                <AddActionButton
+                                                                    $hoverColor="#3b82f6"
+                                                                    $hoverBg="rgba(59, 130, 246, 0.1)"
+                                                                    onClick={() => handleOpenObsActionEditor(action.id)}
+                                                                    style={{ height: '40px' }}
+                                                                >
+                                                                    <FiPlus />
+                                                                    {t('settings.obsActions.addAction')}
+                                                                </AddActionButton>
+                                                            )}
+                                                        </FormGroup>
+                                                    </FormRow>
+                                                )}
+
                                                 {/* Delay toggle */}
                                                 <FormRow $align="center">
                                                     <Switch
@@ -1105,6 +1210,14 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                     mediaEvent={editingMediaEvent}
                     onSave={handleSaveMediaEvent}
                     onClose={handleCloseMediaEventEditor}
+                />
+            )}
+
+            {obsActionEditorOpen && (
+                <ObsActionEditorPopup
+                    action={editingObsAction}
+                    onSave={handleSaveObsAction}
+                    onClose={handleCloseObsActionEditor}
                 />
             )}
         </>

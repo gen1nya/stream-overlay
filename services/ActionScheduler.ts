@@ -1,5 +1,6 @@
 import { TriggerRepository, ScheduledAction } from './db/TriggerRepository';
 import { LogService } from './logService';
+import { ObsService } from './ObsService';
 import * as helixApi from './twitch/authorizedHelixApi';
 
 interface SendMessageFunc {
@@ -10,6 +11,7 @@ interface ActionSchedulerDependencies {
     getRepository: () => TriggerRepository | null;
     logService: LogService;
     sendMessage: SendMessageFunc;
+    obsService: ObsService;
 }
 
 export class ActionScheduler {
@@ -156,6 +158,18 @@ export class ActionScheduler {
                             await helixApi.deleteMessage(params.messageId);
                             this.deps.logService.logMessage(
                                 `[ActionScheduler] Deleted message ${params.messageId}`
+                            );
+                        }
+                    }
+                    break;
+
+                case 'obs_action':
+                    if (action.actionParams) {
+                        const params = JSON.parse(action.actionParams);
+                        if (params.obsActionId) {
+                            const ok = await this.deps.obsService.executeAction(params.obsActionId);
+                            this.deps.logService.logMessage(
+                                `[ActionScheduler] OBS action ${params.obsActionId} ${ok ? 'executed' : 'failed'}`
                             );
                         }
                     }
