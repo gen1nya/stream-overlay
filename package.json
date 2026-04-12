@@ -92,6 +92,8 @@
     "react-window": "^1.8.11",
     "rehype-highlight": "^7.0.2",
     "remark-gfm": "^4.0.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "socks-proxy-agent": "^8.0.5",
     "styled-components": "^6.1.18",
     "uuid": "^11.1.0",

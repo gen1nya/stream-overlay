@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import { Connection, wsUrl, clearConnection } from './config';
+import { io, Socket } from 'socket.io-client';
+import { Connection, clearConnection } from './config';
 import { deleteMessage } from './api';
 import { UserSheet } from './UserSheet';
 
@@ -29,10 +30,6 @@ interface RaidEvent extends BaseEvent {
     viewers?: number;
 }
 type FeedEvent = ChatEvent | FollowEvent | RedemptionEvent | RaidEvent | BaseEvent;
-
-type WsFrame =
-    | { type: 'chat:snapshot'; messages: FeedEvent[]; showSourceChannel?: boolean }
-    | { type: 'chat:update'; messages: FeedEvent[]; showSourceChannel?: boolean };
 
 type Status = 'connecting' | 'open' | 'closed' | 'error';
 
@@ -158,89 +155,70 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
     const [lastError, setLastError] = useState<string | null>(null);
     const [showDebug, setShowDebug] = useState(false);
     const [log, setLog] = useState<LogEntry[]>([]);
-    const wsRef = useRef<WebSocket | null>(null);
+    const socketRef = useRef<Socket | null>(null);
     const listEndRef = useRef<HTMLDivElement | null>(null);
 
     const addLog = (text: string) =>
         setLog((prev) => [...prev.slice(-50), { ts: now(), text }]);
 
     useEffect(() => {
-        let cancelled = false;
-        let retryTimer: number | null = null;
-        let attempt = 0;
-
-        function connect() {
-            if (cancelled) return;
-            attempt++;
-            setStatus('connecting');
-            setLastError(null);
-            const url = wsUrl(conn.baseUrl, '/ws/chat', conn.token);
-            addLog(`#${attempt} ws → ${url}`);
-            let ws: WebSocket;
-            try {
-                ws = new WebSocket(url);
-            } catch (e: any) {
-                addLog(`#${attempt} new WebSocket threw: ${e?.message ?? e}`);
-                setStatus('error');
-                setLastError(String(e?.message ?? e));
-                retryTimer = window.setTimeout(connect, 3000);
-                return;
-            }
-            wsRef.current = ws;
-
-            ws.onopen = () => {
-                if (cancelled) return;
-                setStatus('open');
-                addLog(`#${attempt} open`);
-            };
-            ws.onmessage = (ev) => {
-                try {
-                    const frame = JSON.parse(ev.data) as WsFrame;
-                    if (frame.type === 'chat:snapshot') {
-                        addLog(`#${attempt} snapshot: ${frame.messages?.length ?? 0} msgs`);
-                    }
-                    if (frame.type === 'chat:snapshot' || frame.type === 'chat:update') {
-                        setMessages(frame.messages ?? []);
-                    }
-                } catch (err) {
-                    addLog(`#${attempt} parse error: ${err}`);
-                }
-            };
-            ws.onerror = (ev: any) => {
-                if (cancelled) return;
-                setStatus('error');
-                const info = ev?.message || ev?.type || 'unknown';
-                setLastError(String(info));
-                addLog(`#${attempt} onerror: ${info}`);
-            };
-            ws.onclose = (ev) => {
-                if (cancelled) return;
-                setStatus('closed');
-                addLog(`#${attempt} close code=${ev.code} reason=${ev.reason || '—'} clean=${ev.wasClean}`);
-                retryTimer = window.setTimeout(connect, 2000);
-            };
-        }
-
         addLog(`baseUrl=${conn.baseUrl}`);
         addLog(`token=${conn.token}`);
-        addLog(`ua=${navigator.userAgent.slice(0, 80)}`);
 
-        // HTTP sanity check before ws — if this fails, it's network, not ws-specific.
-        fetch(`${conn.baseUrl}/health`)
-            .then(async (r) => {
-                const body = await r.text().catch(() => '(no body)');
-                addLog(`GET /health → ${r.status} ${body.slice(0, 60)}`);
-            })
-            .catch((e) => {
-                addLog(`GET /health FAILED: ${e?.message ?? e}`);
-            });
+        const socket = io(conn.baseUrl, {
+            path: '/ws',
+            auth: { token: conn.token },
+            transports: ['polling', 'websocket'],
+            reconnection: true,
+            reconnectionAttempts: Infinity,
+            reconnectionDelay: 2000,
+            reconnectionDelayMax: 10000,
+            timeout: 8000,
+        });
+        socketRef.current = socket;
 
-        connect();
+        socket.on('connect', () => {
+            setStatus('open');
+            setLastError(null);
+            addLog(`connected, transport=${socket.io.engine?.transport?.name ?? '?'}, id=${socket.id}`);
+        });
+
+        socket.io.engine?.on('upgrade', (transport: any) => {
+            addLog(`transport upgraded to ${transport.name}`);
+        });
+
+        socket.on('chat:snapshot', (data: { messages: FeedEvent[]; showSourceChannel?: boolean }) => {
+            addLog(`snapshot: ${data.messages?.length ?? 0} msgs`);
+            setMessages(data.messages ?? []);
+        });
+
+        socket.on('chat:update', (data: { messages: FeedEvent[]; showSourceChannel?: boolean }) => {
+            setMessages(data.messages ?? []);
+        });
+
+        socket.on('disconnect', (reason) => {
+            setStatus('closed');
+            addLog(`disconnect: ${reason}`);
+        });
+
+        socket.on('connect_error', (err) => {
+            setStatus('error');
+            setLastError(err?.message ?? 'Ошибка подключения');
+            addLog(`connect_error: ${err?.message ?? err}`);
+        });
+
+        socket.io.on('reconnect_attempt', (attempt) => {
+            setStatus('connecting');
+            addLog(`reconnect #${attempt}`);
+        });
+
+        socket.io.on('reconnect', (attempt) => {
+            addLog(`reconnected after ${attempt} attempts`);
+        });
+
         return () => {
-            cancelled = true;
-            if (retryTimer !== null) window.clearTimeout(retryTimer);
-            try { wsRef.current?.close(); } catch { /* ignore */ }
-            wsRef.current = null;
+            socket.disconnect();
+            socketRef.current = null;
         };
     }, [conn.baseUrl, conn.token]);
 

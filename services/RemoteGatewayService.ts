@@ -2,7 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import http, { Server as HttpServer } from 'http';
 import os from 'os';
 import path from 'path';
-import { WebSocketServer, WebSocket } from 'ws';
+import { Server as SocketIOServer, Socket } from 'socket.io';
 import type { AppEvent } from './twitch/messageParser';
 
 export interface GatewayStatus {
@@ -114,17 +114,12 @@ export interface RemoteGatewayDeps {
     moderation: ModerationDeps;
 }
 
-type OutgoingMessage =
-    | { type: 'chat:snapshot'; messages: AppEvent[]; showSourceChannel: boolean }
-    | { type: 'chat:update'; messages: AppEvent[]; showSourceChannel: boolean };
-
 export class RemoteGatewayService {
     private readonly config: RemoteGatewayConfig;
     private readonly deps: RemoteGatewayDeps;
 
     private httpServer: HttpServer | null = null;
-    private wss: WebSocketServer | null = null;
-    private readonly chatClients: Set<WebSocket> = new Set();
+    private io: SocketIOServer | null = null;
     private unsubscribeWindow: (() => void) | null = null;
 
     constructor(config: RemoteGatewayConfig, deps: RemoteGatewayDeps) {
@@ -137,12 +132,8 @@ export class RemoteGatewayService {
             throw new Error('RemoteGatewayService is already started');
         }
         const app = this.buildHttpApp();
-        // Use http.createServer directly so the upgrade handler is
-        // installed *before* the server starts listening. Mounting via
-        // app.listen(...) would install upgrade handling inside the
-        // listen callback, which is both racy and hides the raw server.
         const server = http.createServer(app);
-        this.setupWebSocket(server);
+        this.setupSocketIO(server);
 
         return new Promise<{ port: number }>((resolve, reject) => {
             const onError = (err: Error) => {
@@ -169,13 +160,10 @@ export class RemoteGatewayService {
             this.unsubscribeWindow();
             this.unsubscribeWindow = null;
         }
-        for (const client of this.chatClients) {
-            try { client.close(); } catch { /* ignore */ }
-        }
-        this.chatClients.clear();
-        if (this.wss) {
-            await new Promise<void>((resolve) => this.wss!.close(() => resolve()));
-            this.wss = null;
+        if (this.io) {
+            this.io.disconnectSockets(true);
+            await new Promise<void>((resolve) => this.io!.close(() => resolve()));
+            this.io = null;
         }
         if (this.httpServer) {
             await new Promise<void>((resolve) => this.httpServer!.close(() => resolve()));
@@ -371,103 +359,64 @@ export class RemoteGatewayService {
         res.status(401).json({ error: 'unauthorized' });
     }
 
-    private setupWebSocket(server: HttpServer): void {
-        const wss = new WebSocketServer({ noServer: true });
-        this.wss = wss;
+    private setupSocketIO(server: HttpServer): void {
+        const io = new SocketIOServer(server, {
+            // Allow both polling and websocket — polling is the iOS
+            // Safari fallback that makes the whole feature work.
+            transports: ['polling', 'websocket'],
+            cors: { origin: '*', methods: ['GET', 'POST'] },
+            path: '/ws',
+            // Ping/pong keeps the connection alive and detects dead
+            // clients faster than TCP keepalive alone.
+            pingInterval: 10000,
+            pingTimeout: 5000,
+        });
+        this.io = io;
 
-        server.on('upgrade', (req, socket, head) => {
-            const remoteAddr = req.socket?.remoteAddress ?? '?';
-            console.log(`[gw] upgrade from ${remoteAddr}, url=${req.url}, clients=${this.chatClients.size}`);
+        // Auth middleware — runs once per connection attempt. Checks
+        // ?token= in the handshake query (set by the PWA client).
+        io.use((socket, next) => {
+            const expected = this.config.authToken;
+            if (!expected) return next(new Error('no auth token configured'));
+            const provided = socket.handshake.auth?.token
+                || socket.handshake.query?.token;
+            if (provided === expected) return next();
+            console.log(`[gw] → 401 from ${socket.handshake.address}`);
+            return next(new Error('unauthorized'));
+        });
 
-            let url: URL;
-            try {
-                url = new URL(req.url ?? '/', 'http://localhost');
-            } catch {
-                console.log(`[gw] → 400 bad url`);
-                socket.write('HTTP/1.1 400 Bad Request\r\n\r\n');
-                socket.destroy();
-                return;
-            }
+        io.on('connection', (socket: Socket) => {
+            console.log(`[gw] client connected: ${socket.handshake.address}, transport=${socket.conn.transport.name}, total=${io.engine.clientsCount}`);
 
-            if (url.pathname !== '/ws/chat') {
-                console.log(`[gw] → 404 path=${url.pathname}`);
-                socket.write('HTTP/1.1 404 Not Found\r\n\r\n');
-                socket.destroy();
-                return;
-            }
-
-            if (!this.isAuthorized(url, req.headers)) {
-                console.log(`[gw] → 401 unauthorized`);
-                socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
-                socket.destroy();
-                return;
-            }
-
-            wss.handleUpgrade(req, socket, head, (ws) => {
-                console.log(`[gw] → accepted, total clients=${this.chatClients.size + 1}`);
-                this.handleChatConnection(ws);
+            // Log transport upgrades (polling → websocket).
+            socket.conn.on('upgrade', (transport: any) => {
+                console.log(`[gw] client ${socket.id} upgraded to ${transport.name}`);
             });
-        });
-    }
 
-    // Auth lookup order: ?token=... query param (easy from a PWA or
-    // wscat-style client) → Authorization: Bearer ... header (for more
-    // formal clients). Fail closed if neither is present or matches.
-    private isAuthorized(url: URL, headers: NodeJS.Dict<string | string[]>): boolean {
-        const expected = this.config.authToken;
-        if (!expected) return false;
+            // Send initial snapshot.
+            try {
+                const snapshot = this.deps.getWindowCache();
+                socket.emit('chat:snapshot', {
+                    messages: snapshot.messages,
+                    showSourceChannel: snapshot.showSourceChannel,
+                });
+            } catch (err) {
+                console.error('❌ Remote gateway initial snapshot failed:', err);
+            }
 
-        const fromQuery = url.searchParams.get('token');
-        if (fromQuery && fromQuery === expected) return true;
-
-        const rawAuth = headers['authorization'];
-        const auth = Array.isArray(rawAuth) ? rawAuth[0] : rawAuth;
-        if (auth && auth.startsWith('Bearer ')) {
-            const fromHeader = auth.slice('Bearer '.length).trim();
-            if (fromHeader === expected) return true;
-        }
-
-        return false;
-    }
-
-    private handleChatConnection(ws: WebSocket): void {
-        this.chatClients.add(ws);
-
-        try {
-            const snapshot = this.deps.getWindowCache();
-            const msg: OutgoingMessage = {
-                type: 'chat:snapshot',
-                messages: snapshot.messages,
-                showSourceChannel: snapshot.showSourceChannel,
-            };
-            ws.send(JSON.stringify(msg));
-        } catch (err) {
-            console.error('❌ Remote gateway initial snapshot failed:', err);
-        }
-
-        ws.on('close', (code, reason) => {
-            this.chatClients.delete(ws);
-            console.log(`[gw] client disconnected, code=${code}, remaining=${this.chatClients.size}`);
-        });
-        ws.on('error', (err) => {
-            console.error(`[gw] client error:`, err?.message ?? err);
+            socket.on('disconnect', (reason) => {
+                console.log(`[gw] client disconnected: ${reason}, remaining=${io.engine.clientsCount}`);
+            });
         });
     }
 
     private subscribeToCache(): void {
         this.unsubscribeWindow = this.deps.subscribeWindow((data) => {
-            if (this.chatClients.size === 0) return;
-            const msg: OutgoingMessage = {
-                type: 'chat:update',
+            if (!this.io) return;
+            this.io.emit('chat:update', {
                 messages: data.messages,
                 showSourceChannel: data.showSourceChannel,
-            };
-            const payload = JSON.stringify(msg);
-            for (const client of this.chatClients) {
-                if (client.readyState === client.OPEN) {
-                    try { client.send(payload); } catch { /* ignore per-client errors */ }
-                }
-            }
+            });
         });
     }
 }
