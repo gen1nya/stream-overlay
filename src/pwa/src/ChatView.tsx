@@ -199,6 +199,13 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
         socket.on('disconnect', (reason) => {
             setStatus('closed');
             addLog(`disconnect: ${reason}`);
+            // Socket.IO does not auto-reconnect after 'io server disconnect'
+            // (server called socket.disconnect()). We always want to retry
+            // because the server may restart.
+            if (reason === 'io server disconnect') {
+                addLog('server-initiated disconnect, will reconnect');
+                socket.connect();
+            }
         });
 
         socket.on('connect_error', (err) => {
