@@ -179,6 +179,9 @@ const remoteGatewayModeration: ModerationDeps = {
   deleteMessage: async (messageId) => {
     await deleteMessage(messageId);
   },
+  sendShoutout: async (userId) => {
+    await sendShoutout(userId);
+  },
 };
 
 // Resolve the built PWA bundle directory. Dev and packaged builds

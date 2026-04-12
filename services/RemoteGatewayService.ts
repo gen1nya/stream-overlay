@@ -74,6 +74,7 @@ export interface ModerationDeps {
     // updateRoles({ current, update }) shape.
     setUserRoles: (userId: string, target: { isMod?: boolean; isVip?: boolean }) => Promise<void>;
     deleteMessage: (messageId: string) => Promise<void>;
+    sendShoutout: (userId: string) => Promise<void>;
 }
 
 // Plain DTOs — the service intentionally does not import from
@@ -268,6 +269,11 @@ export class RemoteGatewayService {
 
         apiRouter.delete('/messages/:messageId', this.wrap(async (req, res) => {
             await this.deps.moderation.deleteMessage(req.params.messageId);
+            res.status(204).end();
+        }));
+
+        apiRouter.post('/users/:id/shoutout', this.wrap(async (req, res) => {
+            await this.deps.moderation.sendShoutout(req.params.id);
             res.status(204).end();
         }));
 

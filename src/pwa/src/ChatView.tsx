@@ -1,10 +1,14 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { Connection, wsUrl, clearConnection } from './config';
+import { deleteMessage } from './api';
+import { UserSheet } from './UserSheet';
 
 interface BaseEvent {
     id?: string;
     type?: string;
     userName?: string;
+    userNameRaw?: string;
+    userId?: string;
     color?: string;
     timestamp?: number;
 }
@@ -32,16 +36,52 @@ type WsFrame =
 
 type Status = 'connecting' | 'open' | 'closed' | 'error';
 
-function FeedRow({ msg }: { msg: FeedEvent }) {
-    const color = msg.color || '#a78bfa';
+interface FeedRowProps {
+    msg: FeedEvent;
+    onUserClick: (msg: FeedEvent) => void;
+    onDeleteMsg?: (messageId: string) => void;
+}
 
-    // Non-chat events get a synthesized line instead of a raw htmlMessage
-    // (follow, redemption, raid don't carry htmlMessage at all — they
-    // have structured fields instead).
+function FeedRow({ msg, onUserClick, onDeleteMsg }: FeedRowProps) {
+    const color = msg.color || '#a78bfa';
+    const [confirmDelete, setConfirmDelete] = useState(false);
+
+    useEffect(() => {
+        if (!confirmDelete) return;
+        const timer = setTimeout(() => setConfirmDelete(false), 3000);
+        return () => clearTimeout(timer);
+    }, [confirmDelete]);
+
+    const nameSpan = (
+        <span
+            onClick={(e) => { e.stopPropagation(); onUserClick(msg); }}
+            style={{ fontWeight: 700, color, cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+        >{msg.userName}</span>
+    );
+
+    const deleteBtn = msg.type === 'chat' && msg.id && onDeleteMsg ? (
+        <button
+            onClick={(e) => {
+                e.stopPropagation();
+                if (confirmDelete) { onDeleteMsg(msg.id!); setConfirmDelete(false); }
+                else setConfirmDelete(true);
+            }}
+            style={{
+                flexShrink: 0, marginLeft: 'auto',
+                padding: '2px 8px', borderRadius: 4,
+                border: confirmDelete ? '1px solid rgba(239,68,68,0.5)' : '1px solid transparent',
+                background: confirmDelete ? 'rgba(239,68,68,0.15)' : 'transparent',
+                color: confirmDelete ? '#fca5a5' : '#444',
+                fontSize: 11, cursor: 'pointer',
+                transition: 'all 0.15s ease',
+            }}
+        >{confirmDelete ? 'Удалить?' : '×'}</button>
+    ) : null;
+
     if (msg.type === 'follow') {
         return (
             <FeedItem accent="#10b981">
-                <span style={{ fontWeight: 700, color }}>{msg.userName}</span>
+                {nameSpan}
                 <span style={{ color: '#a1a1aa' }}> подписался на канал</span>
             </FeedItem>
         );
@@ -50,7 +90,7 @@ function FeedRow({ msg }: { msg: FeedEvent }) {
         const r = (msg as RedemptionEvent).reward;
         return (
             <FeedItem accent="#f59e0b">
-                <span style={{ fontWeight: 700, color }}>{msg.userName}</span>
+                {nameSpan}
                 <span style={{ color: '#a1a1aa' }}> выкупил(а) </span>
                 <span style={{ fontWeight: 600, color: '#fbbf24' }}>{r?.title ?? 'награду'}</span>
                 {typeof r?.cost === 'number' && (
@@ -63,7 +103,7 @@ function FeedRow({ msg }: { msg: FeedEvent }) {
         const viewers = (msg as RaidEvent).viewers;
         return (
             <FeedItem accent="#ec4899">
-                <span style={{ fontWeight: 700, color }}>{msg.userName}</span>
+                {nameSpan}
                 <span style={{ color: '#a1a1aa' }}> заехал с рейдом</span>
                 {typeof viewers === 'number' && (
                     <span style={{ color: '#a1a1aa' }}> ({viewers})</span>
@@ -72,24 +112,25 @@ function FeedRow({ msg }: { msg: FeedEvent }) {
         );
     }
 
-    // Regular chat. htmlBadges is a separate field from htmlMessage —
-    // both are pre-rendered HTML with absolute CDN urls from
-    // messageParser.parseIrcMessage, so we just dump them inline.
     const chat = msg as ChatEvent;
     return (
         <FeedItem>
-            {chat.htmlBadges && (
-                <span
-                    style={{ marginRight: 4 }}
-                    dangerouslySetInnerHTML={{ __html: chat.htmlBadges }}
-                />
-            )}
-            <span style={{ fontWeight: 700, color, marginRight: 6 }}>{chat.userName}:</span>
-            {chat.htmlMessage ? (
-                <span dangerouslySetInnerHTML={{ __html: chat.htmlMessage }}/>
-            ) : (
-                <span style={{ color: '#666' }}>(пустое сообщение)</span>
-            )}
+            <div style={{ display: 'flex', alignItems: 'flex-start' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                    {chat.htmlBadges && (
+                        <span style={{ marginRight: 4 }}
+                              dangerouslySetInnerHTML={{ __html: chat.htmlBadges }}/>
+                    )}
+                    {nameSpan}
+                    <span style={{ marginRight: 6 }}>:</span>
+                    {chat.htmlMessage ? (
+                        <span dangerouslySetInnerHTML={{ __html: chat.htmlMessage }}/>
+                    ) : (
+                        <span style={{ color: '#666' }}>(пустое сообщение)</span>
+                    )}
+                </div>
+                {deleteBtn}
+            </div>
         </FeedItem>
     );
 }
@@ -208,6 +249,25 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
         listEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
     }, [messages]);
 
+    // User sheet state
+    const [sheetTarget, setSheetTarget] = useState<{ userId?: string; userLogin?: string; messageId?: string } | null>(null);
+
+    const handleUserClick = useCallback((msg: FeedEvent) => {
+        setSheetTarget({
+            userId: msg.userId ?? undefined,
+            userLogin: msg.userNameRaw ?? msg.userName ?? undefined,
+            messageId: msg.id,
+        });
+    }, []);
+
+    const handleDeleteMsg = useCallback(async (messageId: string) => {
+        try {
+            await deleteMessage(conn, messageId);
+        } catch (e: any) {
+            console.error('Delete failed:', e);
+        }
+    }, [conn]);
+
     function handleSignOut() {
         clearConnection();
         onReset();
@@ -307,10 +367,28 @@ export function ChatView({ conn, onReset }: { conn: Connection; onReset: () => v
                         Ждём сообщений…
                     </div>
                 ) : (
-                    messages.map((msg, i) => <FeedRow key={msg.id ?? i} msg={msg}/>)
+                    messages.map((msg, i) => (
+                        <FeedRow
+                            key={msg.id ?? i}
+                            msg={msg}
+                            onUserClick={handleUserClick}
+                            onDeleteMsg={handleDeleteMsg}
+                        />
+                    ))
                 )}
                 <div ref={listEndRef}/>
             </div>
+
+            {sheetTarget && (
+                <UserSheet
+                    conn={conn}
+                    userId={sheetTarget.userId}
+                    userLogin={sheetTarget.userLogin}
+                    messageId={sheetTarget.messageId}
+                    onClose={() => setSheetTarget(null)}
+                    onDeleteMessage={handleDeleteMsg}
+                />
+            )}
         </div>
     );
 }

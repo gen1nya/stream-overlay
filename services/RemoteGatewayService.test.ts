@@ -40,6 +40,7 @@ function createFakeModeration(): ModerationDeps & { calls: Record<string, any[]>
         unbanUser: [],
         setUserRoles: [],
         deleteMessage: [],
+        sendShoutout: [],
     };
     return {
         calls,
@@ -49,6 +50,7 @@ function createFakeModeration(): ModerationDeps & { calls: Record<string, any[]>
         async unbanUser(userId) { calls.unbanUser.push({ userId }); },
         async setUserRoles(userId, target) { calls.setUserRoles.push({ userId, target }); },
         async deleteMessage(messageId) { calls.deleteMessage.push({ messageId }); },
+        async sendShoutout(userId) { calls.sendShoutout.push({ userId }); },
     };
 }
 
