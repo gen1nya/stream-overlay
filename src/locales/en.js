@@ -1761,12 +1761,11 @@ const en = {
                     password: 'Password',
                     passwordPlaceholder: 'OBS WebSocket server password',
                     passwordSaved: 'Password saved',
-                    enabled: 'Enable connection',
                     autoConnect: 'Connect on startup',
                     connect: 'Connect',
                     disconnect: 'Disconnect',
                     reconnect: 'Reconnect',
-                    refreshCache: 'Refresh OBS cache',
+                    refreshCache: 'Refresh OBS data',
                     save: 'Save settings',
                     status: {
                         disconnected: 'Disconnected',
@@ -1774,7 +1773,7 @@ const en = {
                         connected: 'Connected',
                         error: 'Error',
                     },
-                    hint: 'Enable WebSocket server in OBS: Tools → WebSocket Server Settings',
+                    openGuide: 'Read setup guide',
                     errors: {
                         notReachable: 'OBS not reachable',
                         authFailed: 'Auth failed',
@@ -1784,7 +1783,7 @@ const en = {
                 },
                 operations: {
                     switch_scene: 'Switch scene',
-                    toggle_scene_item: 'Source visibility',
+                    toggle_scene_item: 'Show/hide source',
                     toggle_filter: 'Toggle filter',
                     trigger_hotkey: 'Trigger hotkey',
                     record_control: 'Recording control',
@@ -1832,7 +1831,7 @@ const en = {
                 confirmDelete: {
                     title: 'Delete OBS action?',
                     message: 'Are you sure you want to delete "{{name}}"?',
-                    warning: 'This action cannot be undone. It may be used in triggers.',
+                    warning: 'Deletion cannot be undone. The action may be used in triggers.',
                 },
             },
             mediaEvents: {

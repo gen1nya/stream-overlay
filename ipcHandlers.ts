@@ -110,7 +110,7 @@ export function registerIpcHandlers(
   ipcMain.handle('media:is-overlay-open', () => isMediaOverlayWindowOpen());
 
   // Help window handler
-  ipcMain.handle('help:open', () => createHelpWindow());
+  ipcMain.handle('help:open', (_e, initialPath?: string) => createHelpWindow(initialPath));
   ipcMain.handle('utils:open_url', async (_e, url) => { await shell.openExternal(url); });
   ipcMain.handle('system:get-stats', () => ({ startTime: appStartTime, lastEventSub: twitchClient.getLastEventSubTimestamp(), lastIRC: twitchClient.getLastChatTimestamp() }));
   ipcMain.handle('system:reconnect', async () => {

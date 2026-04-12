@@ -646,8 +646,8 @@ export const getMediaFileUrl = (id) => {
 // Help / Documentation API
 // ============================================
 
-export const openHelp = () => {
-    return ipcRenderer?.invoke('help:open');
+export const openHelp = (initialPath) => {
+    return ipcRenderer?.invoke('help:open', initialPath);
 };
 
 export const getDocsTree = (locale) => {

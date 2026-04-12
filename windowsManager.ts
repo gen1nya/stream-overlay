@@ -336,13 +336,24 @@ export function isMediaOverlayWindowOpen(): boolean {
 }
 
 /**
- * Create or focus the Help window
+ * Create or focus the Help window. Optionally navigates to a specific
+ * doc path (e.g. 'obs-websocket-setup.md'). When the window is already
+ * open, sends an IPC event to the renderer to switch pages in place
+ * instead of tearing the window down.
  */
-export function createHelpWindow(): void {
+export function createHelpWindow(initialPath?: string): void {
   if (helpWindow && !helpWindow.isDestroyed()) {
     helpWindow.focus();
+    if (initialPath) {
+      helpWindow.webContents.send('help:navigate', initialPath);
+    }
     return;
   }
+
+  const baseUrl = 'http://localhost:5173/help';
+  const url = initialPath
+    ? `${baseUrl}?path=${encodeURIComponent(initialPath)}`
+    : baseUrl;
 
   helpWindow = new BrowserWindow({
     width: 1100,
@@ -358,7 +369,7 @@ export function createHelpWindow(): void {
   });
 
   helpWindow.setMenuBarVisibility(false);
-  helpWindow.loadURL('http://localhost:5173/help');
+  helpWindow.loadURL(url);
 
   helpWindow.on('closed', () => {
     helpWindow = null;

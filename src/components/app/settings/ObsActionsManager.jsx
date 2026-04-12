@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import {
     FiPlus, FiEdit2, FiTrash2, FiSearch, FiPlay, FiSliders,
-    FiZap, FiWifi, FiWifiOff, FiRefreshCw, FiSave,
+    FiZap, FiWifi, FiWifiOff, FiRefreshCw, FiSave, FiBookOpen,
 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import {
@@ -16,6 +16,7 @@ import {
     connectObs,
     disconnectObs,
     refreshObsCache,
+    openHelp,
 } from '../../../services/api';
 import { useObsStatus } from '../../../hooks/useObsStatus';
 import ObsActionEditorPopup from './bot/triggers/ObsActionEditorPopup';
@@ -172,10 +173,30 @@ const RetryInline = styled.span`
     line-height: 1.3;
 `;
 
-const Hint = styled.div`
-    font-size: 0.72rem;
-    color: #666;
-    font-style: italic;
+const GuideLink = styled.button`
+    align-self: flex-start;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    margin: 0;
+    border: 1px solid transparent;
+    border-radius: 6px;
+    background: transparent;
+    color: #3b82f6;
+    font-size: 0.78rem;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    svg {
+        width: 14px;
+        height: 14px;
+    }
+
+    &:hover {
+        border-color: #3b82f6;
+        background: rgba(59, 130, 246, 0.08);
+    }
 `;
 
 const Header = styled.div`
@@ -738,7 +759,10 @@ export default function ObsActionsManager() {
                     </ConnectionButton>
                 </ConnectionButtons>
 
-                <Hint>{t('settings.obsActions.connection.hint')}</Hint>
+                <GuideLink type="button" onClick={() => openHelp('obs-websocket-setup.md')}>
+                    <FiBookOpen />
+                    {t('settings.obsActions.connection.openGuide')}
+                </GuideLink>
             </ConnectionCard>
 
             <Header>
