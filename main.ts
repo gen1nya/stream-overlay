@@ -12,8 +12,12 @@ import {
     addModerator,
     removeModerator,
     deleteMessage,
-    sendShoutout
+    sendShoutout,
+    removeTimeoutOrBan,
+    getExtendedUser,
+    type ExtendedTwitchUser,
 } from './services/twitch/authorizedHelixApi';
+import {updateRoles as updateUserRoles} from './services/twitch/roleUpdater';
 import {ActionScheduler} from './services/ActionScheduler';
 import {createMainWindow, mainWindow, initWindowsManager} from "./windowsManager";
 import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer';
@@ -35,10 +39,12 @@ import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
 import {ObsService} from "./services/ObsService";
+import {RemoteGatewayService, type GatewayUserProfile, type ModerationDeps} from "./services/RemoteGatewayService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
 import {DocsService} from "./services/DocsService";
 import {DonationAlertsService} from "./services/DonationAlertsService";
+import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 
@@ -103,6 +109,11 @@ const store = new Store<StoreSchema>({
       port: 4455,
       autoConnect: false,
     },
+    remoteGateway: {
+      enabled: false,
+      port: 42010,
+      authToken: '',
+    },
   },
 });
 
@@ -117,6 +128,110 @@ const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 const mediaLibraryService = new MediaLibraryService(store);
 const obsService = new ObsService(store);
+
+// Remote companion gateway (mobile PWA bridge). Authenticated WS on a
+// separate port, gated by store flag. Token is generated once and
+// persisted — no env var or manual input needed.
+// Short, human-typable auth token for the companion PWA. 8 chars from
+// an unambiguous alphabet (no 0/O/1/l/I) — 30^8 ≈ 656 billion
+// combinations, more than enough for LAN-only auth.
+const TOKEN_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
+function generateGatewayToken(length = 8): string {
+  const bytes = crypto.randomBytes(length);
+  return Array.from(bytes, (b) => TOKEN_ALPHABET[b % TOKEN_ALPHABET.length]).join('');
+}
+
+let remoteGatewayConfig = store.get('remoteGateway');
+if (!remoteGatewayConfig.authToken) {
+  store.set('remoteGateway.authToken', generateGatewayToken());
+  remoteGatewayConfig = store.get('remoteGateway');
+  console.log('🔑 Generated new remote gateway auth token');
+}
+
+function toGatewayProfile(extended: ExtendedTwitchUser): GatewayUserProfile {
+  return {
+    id: extended.user.id,
+    login: extended.user.login,
+    displayName: extended.user.display_name,
+    profileImageUrl: extended.user.profile_image_url ?? null,
+    createdAt: (extended.user as any).created_at ?? '',
+    isModerator: extended.isModerator,
+    isVip: extended.isVIP,
+    isFollower: extended.followedAt !== null,
+    followedAt: extended.followedAt,
+    isBanned: extended.isBanned,
+    banExpiresAt: extended.banExpiresAt ?? null,
+  };
+}
+
+const remoteGatewayModeration: ModerationDeps = {
+  getUserById: async (id) => toGatewayProfile(await getExtendedUser({ id })),
+  getUserByLogin: async (login) => toGatewayProfile(await getExtendedUser({ login })),
+  timeoutUser: async (userId, duration, reason) => {
+    await timeoutUser(userId, duration, reason);
+  },
+  unbanUser: async (userId) => {
+    await removeTimeoutOrBan(userId);
+  },
+  setUserRoles: async (userId, target) => {
+    // The repo's updateRoles needs to know the *current* role state to
+    // diff against — fetch it first, then forward the target as
+    // the `update` slice. One extra Helix roundtrip is acceptable for
+    // the ergonomics of a flat PATCH-style gateway API.
+    const current = await getExtendedUser({ id: userId });
+    await updateUserRoles(userId, {
+      current: { isMod: current.isModerator, isVip: current.isVIP },
+      update: target,
+    });
+  },
+  deleteMessage: async (messageId) => {
+    await deleteMessage(messageId);
+  },
+  sendShoutout: async (userId) => {
+    await sendShoutout(userId);
+  },
+};
+
+// Resolve the built PWA bundle directory. Dev and packaged builds
+// land in different spots, mirror webServer.resolveDistPath logic.
+function resolvePwaStaticDir(): string | null {
+  const candidates = app.isPackaged
+    ? [
+        path.join(process.resourcesPath, 'app', 'dist-pwa'),
+        path.join(process.resourcesPath, 'app.asar.unpacked', 'dist-pwa'),
+        path.join(process.resourcesPath, 'app.asar', 'dist-pwa'),
+        path.join(app.getAppPath(), 'dist-pwa'),
+      ]
+    : [
+        path.join(app.getAppPath(), 'dist-pwa'),
+        path.join(process.cwd(), 'dist-pwa'),
+      ];
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(candidate, 'index.html'))) return candidate;
+  }
+  return null;
+}
+
+const remoteGatewayStaticDir = resolvePwaStaticDir();
+if (!remoteGatewayStaticDir) {
+  console.warn('⚠️  Remote gateway: dist-pwa/ not found — run `npm run pwa:build` to enable the PWA from http://<lan>:42010/');
+}
+
+const remoteGatewayService = new RemoteGatewayService(
+  {
+    port: remoteGatewayConfig.port,
+    authToken: remoteGatewayConfig.authToken,
+    staticDir: remoteGatewayStaticDir,
+  },
+  {
+    getWindowCache: () => messageCache.getCurrentWindowCache(),
+    subscribeWindow: (listener) => {
+      messageCache.registerWindowMessageHandler(listener);
+      return () => messageCache.unregisterWindowMessageHandler(listener);
+    },
+    moderation: remoteGatewayModeration,
+  },
+);
 
 const backendLogService = new BackendLogService({
   enabled: true,
@@ -431,6 +546,61 @@ app.whenReady().then(() => {
   } else {
     startHttpServer(PORT);
   }
+
+  // Remote companion gateway — started when the store flag is on.
+  if (remoteGatewayConfig.enabled) {
+    remoteGatewayService.start().catch((err) => {
+      console.error('❌ Failed to start remote gateway:', err);
+    });
+  }
+
+  // Build enriched status for the settings page. Adds `enabled` from
+  // the store to the service's runtime-only snapshot.
+  function getEnrichedGatewayStatus() {
+    const cfg = store.get('remoteGateway');
+    return { ...remoteGatewayService.getStatus(), enabled: cfg.enabled };
+  }
+
+  ipcMain.handle('remote-gateway:get-status', async () => {
+    return getEnrichedGatewayStatus();
+  });
+
+  // Master toggle — writes the store flag AND starts/stops the service
+  // in one call so the UI stays reactive.
+  ipcMain.handle('remote-gateway:toggle-enabled', async (_e, enabled: boolean) => {
+    store.set('remoteGateway.enabled', enabled);
+    if (enabled && !remoteGatewayService.isRunning()) {
+      try { await remoteGatewayService.start(); } catch (err) {
+        console.error('❌ Failed to start remote gateway:', err);
+      }
+    } else if (!enabled && remoteGatewayService.isRunning()) {
+      await remoteGatewayService.stop();
+    }
+    return getEnrichedGatewayStatus();
+  });
+
+  // Regenerate auth token — invalidates every device that has the old
+  // one. Restart the service so the new token takes effect immediately.
+  ipcMain.handle('remote-gateway:regenerate-token', async () => {
+    const newToken = generateGatewayToken();
+    store.set('remoteGateway.authToken', newToken);
+    // Recreate the service with the new token. Easiest path is
+    // stop → patch config → start; the service itself is stateless
+    // beyond the HTTP/WS server handle.
+    const wasRunning = remoteGatewayService.isRunning();
+    if (wasRunning) await remoteGatewayService.stop();
+    // The service reads config at construction, so we need a new
+    // instance. But since it's module-scoped, we reassign the outer
+    // variable — acceptable because nothing else holds a ref.
+    Object.assign(remoteGatewayService['config'], { authToken: newToken });
+    if (wasRunning) {
+      try { await remoteGatewayService.start(); } catch (err) {
+        console.error('❌ Failed to restart remote gateway:', err);
+      }
+    }
+    return getEnrichedGatewayStatus();
+  });
+
   initWindowsManager(store);
   createMainWindow('http://localhost:5173/loading');
   registerIpcHandlers(
@@ -642,6 +812,9 @@ app.on('before-quit', async (event) => {
   twitchClient.stop()
   audiosessionManager.close();
   await obsService.shutdown();
+  if (remoteGatewayService.isRunning()) {
+    await remoteGatewayService.stop();
+  }
   wss.clients.forEach((client) => {
     client.close();
   });

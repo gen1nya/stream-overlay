@@ -247,7 +247,7 @@ export default function AboutCard() {
                         </SectionHeader>
 
                         <SocialLinks>
-                            <SocialLink onClick={openHelp} style={{cursor: 'pointer'}}>
+                            <SocialLink onClick={() => openHelp()} style={{cursor: 'pointer'}}>
                                 <FiHelpCircle />
                                 {t('settings.about.social.help', 'Help')}
                             </SocialLink>

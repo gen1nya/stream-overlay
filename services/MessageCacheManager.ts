@@ -10,8 +10,9 @@ let MAX_CACHE_SIZE = 6;
 let showSourceChannel = false;
 
 // Window mode cache (no TTL, fixed 40 messages)
+type WindowListener = (data: { messages: AppEvent[]; showSourceChannel: boolean }) => void;
 const windowCache: Map<string, AppEvent> = new Map();
-let windowMessageHandler: ((data: { messages: AppEvent[]; showSourceChannel: boolean }) => void) | null = null;
+const windowMessageListeners: Set<WindowListener> = new Set();
 const WINDOW_MAX_CACHE_SIZE = 40;
 let windowShowSourceChannel = false;
 
@@ -21,10 +22,12 @@ export function registerMessageHandler(
   messageHandler = handler;
 }
 
-export function registerWindowMessageHandler(
-  handler: (data: { messages: AppEvent[]; showSourceChannel: boolean }) => void
-): void {
-  windowMessageHandler = handler;
+export function registerWindowMessageHandler(handler: WindowListener): void {
+  windowMessageListeners.add(handler);
+}
+
+export function unregisterWindowMessageHandler(handler: WindowListener): void {
+  windowMessageListeners.delete(handler);
 }
 
 export function processMessage(message: AppEvent): void {
@@ -105,8 +108,14 @@ function sendCached(): void {
 }
 
 function sendWindowCached(): void {
-  if (windowMessageHandler) {
-    windowMessageHandler({ messages: Array.from(windowCache.values()), showSourceChannel: windowShowSourceChannel });
+  if (windowMessageListeners.size === 0) return;
+  const payload = { messages: Array.from(windowCache.values()), showSourceChannel: windowShowSourceChannel };
+  for (const listener of windowMessageListeners) {
+    try {
+      listener(payload);
+    } catch (err) {
+      console.error('❌ Window message listener threw:', err);
+    }
   }
 }
 

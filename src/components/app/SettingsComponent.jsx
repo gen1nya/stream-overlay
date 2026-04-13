@@ -13,6 +13,8 @@ import {
     openMediaOverlayEditor,
     getObsConnectionConfig,
     saveObsConnectionConfig,
+    getRemoteGatewayStatus,
+    toggleRemoteGateway,
 } from '../../services/api';
 import { useObsStatus } from '../../hooks/useObsStatus';
 import { useWebSocket } from '../../context/WebSocketContext';
@@ -43,7 +45,8 @@ import {
     FiClock,
     FiExternalLink,
     FiFilm,
-    FiSliders
+    FiSliders,
+    FiSmartphone
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -77,6 +80,7 @@ import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
 import MediaEventsManager from "./settings/MediaEventsManager";
 import ObsActionsManager from "./settings/ObsActionsManager";
+import RemoteGatewayManager from "./settings/RemoteGatewayManager";
 import Switch from "../utils/Switch";
 import { EnabledToggle, StatusBadge, HelpButton, HelpInfoPopup } from "./settings/bot/SharedBotStyles";
 import { Spacer } from "../utils/Separator";
@@ -301,6 +305,7 @@ export default function Settings() {
         bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
         media_events: {title: t('settings.pages.mediaEvents.title', 'Media Events'), icon: <FiFilm/>},
         obs_actions: {title: t('settings.pages.obsActions.title', 'OBS Actions'), icon: <FiSliders/>},
+        remote_gateway: {title: t('settings.pages.remoteGateway.title', 'Мобильный чат'), icon: <FiSmartphone/>},
         media_overlay: {title: t('settings.pages.mediaOverlay.title', 'Media Overlay'), icon: <FiLayers/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
         youtube: {title: t('settings.pages.youtube.title'), icon: <FiYoutube/>},
@@ -356,9 +361,19 @@ export default function Settings() {
     // Helper to check if current page is a bot page
     const isBotPage = activePage.startsWith('bot_');
     const isObsPage = activePage === 'obs_actions';
+    const isGatewayPage = activePage === 'remote_gateway';
 
     // OBS master switch: flips config.enabled, persists, lets broadcast
     // round-trip the new state back into obsConnectionConfig.
+    // Gateway master switch
+    const [gatewayStatus, setGatewayStatus] = useState(null);
+    useEffect(() => { getRemoteGatewayStatus().then(setGatewayStatus); }, []);
+    const gatewayEnabled = Boolean(gatewayStatus?.enabled);
+    const toggleGatewayEnabled = async (newState) => {
+        const data = await toggleRemoteGateway(newState);
+        setGatewayStatus(data);
+    };
+
     const obsEnabled = Boolean(obsConnectionConfig?.enabled);
     const toggleObsEnabled = async (newState) => {
         const base = obsConnectionConfig || {
@@ -555,21 +570,40 @@ export default function Settings() {
                                 {key: "bot_timers", icon: <FiClock/>, label: t('settings.pages.botTimers.label'), enabled: botConfig?.timers?.enabled},
                             ]
                         },
-                        {key: "media_events", icon: <FiFilm/>, label: t('settings.pages.mediaEvents.label', 'Media Events')},
                         {
-                            key: "obs_actions",
-                            icon: <FiSliders/>,
-                            label: t('settings.pages.obsActions.label', 'OBS Actions'),
-                            ...(obsIndicator && {
-                                indicatorColor: obsIndicator.color,
-                                indicatorBorderColor: obsIndicator.borderColor,
-                            }),
+                            key: "media_group",
+                            icon: <FiFilm/>,
+                            label: t('settings.pages.mediaGroup.label', 'Медиа'),
+                            children: [
+                                {key: "media_events", icon: <FiFilm/>, label: t('settings.pages.mediaEvents.label', 'Медиа события')},
+                                {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Медиа оверлей')},
+                            ]
                         },
-                        {key: "media_overlay", icon: <FiLayers/>, label: t('settings.pages.mediaOverlay.label', 'Media Overlay')},
+                        {
+                            key: "integrations_group",
+                            icon: <FiExternalLink/>,
+                            label: t('settings.pages.integrationsGroup.label', 'Интеграции'),
+                            children: [
+                                {
+                                    key: "obs_actions",
+                                    icon: <FiSliders/>,
+                                    label: t('settings.pages.obsActions.label', 'OBS'),
+                                    ...(obsIndicator && {
+                                        indicatorColor: obsIndicator.color,
+                                        indicatorBorderColor: obsIndicator.borderColor,
+                                    }),
+                                },
+                                {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
+                                {key: "donation_goal", icon: <FiGift/>, label: t('settings.pages.donationGoal.label', 'Цель сбора (DA)')},
+                            ]
+                        },
+                        {
+                            key: "remote_gateway",
+                            icon: <FiSmartphone/>,
+                            label: t('settings.pages.remoteGateway.label', 'Мобильный чат'),
+                        },
                         {key: "players", icon: <FiMusic/>, label: t('settings.pages.players.label')},
-                        {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                         {key: "followers_goal", icon: <FiTarget/>, label: t('settings.pages.followersGoal.label')},
-                        {key: "donation_goal", icon: <FiGift/>, label: "Цель сбора (DA)"},
                         {key : "about", icon: <FiAlertCircle/>, label: t('settings.pages.about.label')},
                     ]}
                 />
@@ -638,6 +672,25 @@ export default function Settings() {
                                     {currentPageInfo.title}
                                 </PageTitle>
                             </Row>
+                        ) : isGatewayPage ? (
+                            <Row gap="12px" style={{ flex: 1 }}>
+                                <EnabledToggle enabled={gatewayEnabled}>
+                                    <Switch
+                                        checked={gatewayEnabled}
+                                        onChange={(e) => toggleGatewayEnabled(e.target.checked)}
+                                    />
+                                    <StatusBadge enabled={gatewayEnabled}>
+                                        {gatewayEnabled
+                                            ? t('settings.bot.shared.status.enabled')
+                                            : t('settings.bot.shared.status.disabled')}
+                                    </StatusBadge>
+                                </EnabledToggle>
+
+                                <PageTitle style={{ margin: 0 }}>
+                                    {currentPageInfo.icon}
+                                    {currentPageInfo.title}
+                                </PageTitle>
+                            </Row>
                         ) : (
                             <PageTitle>
                                 {currentPageInfo.icon}
@@ -656,6 +709,7 @@ export default function Settings() {
                         applyBotConfig={applyBotConfig}
                         showBotHelp={showBotHelp}
                         setShowBotHelp={setShowBotHelp}
+                        gatewayStatus={gatewayStatus}
                     />
                 </MainContainer>
             </ContentWrapper>
@@ -663,7 +717,7 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp}) => {
+const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp, gatewayStatus}) => {
     const { t } = useTranslation();
     switch (page) {
         case "general":
@@ -945,6 +999,13 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
             return (
                 <Content>
                     <ObsActionsManager />
+                </Content>
+            );
+
+        case "remote_gateway":
+            return (
+                <Content>
+                    <RemoteGatewayManager externalStatus={gatewayStatus} />
                 </Content>
             );
 

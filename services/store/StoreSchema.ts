@@ -49,6 +49,19 @@ export interface StoreSchema {
     mediaLibrary: MediaFile[];  // Media library files storage
     obsActions: ObsActionConfig[];  // Standalone OBS actions registry
     obsConnection: ObsConnectionConfig;  // OBS WebSocket connection config
+    remoteGateway: RemoteGatewayStoreConfig;  // Remote companion (mobile PWA) gateway
+}
+
+// Persisted config for the remote companion gateway. Slice 1 keeps it
+// minimal — pairing / device tokens come later and live in a separate
+// store slice so this interface does not have to change shape again.
+export interface RemoteGatewayStoreConfig {
+    enabled: boolean;
+    port: number;
+    // Random persistent auth token. Generated on first app start,
+    // persisted across restarts. Regenerating it invalidates all
+    // currently paired devices.
+    authToken: string;
 }
 
 export interface MediaOverlaySettings {
