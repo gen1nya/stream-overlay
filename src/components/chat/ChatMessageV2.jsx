@@ -78,7 +78,7 @@ const ColorBgLayer = styled(BgLayerBase)`
             background-color: ${hexToRgba(c.color, c.opacity)};
             border-radius: ${c.borderRadius}px;
             border: ${c.borderWidth ?? 1}px solid ${hexToRgba(c.borderColor, c.borderOpacity)};
-            box-shadow: 0 0 ${c.shadowRadius}px ${hexToRgba(c.shadowColor, c.shadowOpacity)};
+            box-shadow: ${c.shadowOffsetX ?? 0}px ${c.shadowOffsetY ?? 0}px ${c.shadowRadius}px ${hexToRgba(c.shadowColor, c.shadowOpacity)};
         `;
     }}
 `;
@@ -94,7 +94,7 @@ const GradientBgLayer = styled(BgLayerBase)`
             background: ${grad};
             border-radius: ${g.borderRadius ?? $cfg.background.color.borderRadius}px;
             border: ${g.borderWidth ?? 0}px solid ${hexToRgba(g.borderColor ?? '#ffffff', g.borderOpacity ?? 1)};
-            box-shadow: 0 0 ${g.shadowRadius ?? 0}px ${hexToRgba(g.shadowColor ?? '#000000', g.shadowOpacity ?? 1)};
+            box-shadow: ${g.shadowOffsetX ?? 0}px ${g.shadowOffsetY ?? 0}px ${g.shadowRadius ?? 0}px ${hexToRgba(g.shadowColor ?? '#000000', g.shadowOpacity ?? 1)};
         `;
     }}
 `;
@@ -112,7 +112,7 @@ const ImageBgLayer = styled(BgLayerBase)`
             background-repeat: no-repeat;
             border: ${img.borderWidth}px solid ${img.borderColor};
             border-radius: ${img.borderRadius}px;
-            box-shadow: 0 0 ${img.shadowRadius}px ${img.shadowColor};
+            box-shadow: ${img.shadowOffsetX ?? 0}px ${img.shadowOffsetY ?? 0}px ${img.shadowRadius}px ${img.shadowColor};
         `;
     }}
 `;
@@ -168,6 +168,10 @@ const HeaderOuter = styled.div`
         if (align === 'right') return 'flex-end';
         return 'flex-start';
     }};
+    position: ${({ $cfg }) =>
+        $cfg.content.header.position === 'outside' ? 'relative' : 'static'};
+    z-index: ${({ $cfg }) =>
+        $cfg.content.header.position === 'outside' ? ($cfg.content.header.zIndex ?? 0) : 'auto'};
     transform: ${({ $cfg }) => {
         const t = $cfg.content.header.translate;
         return (t.x === 0 && t.y === 0) ? 'none' : `translate(${t.x}px, ${t.y}px)`;
@@ -192,7 +196,7 @@ const HeaderBox = styled.div`
             background: ${hexToRgba(bg.color, bg.opacity)};
             border: ${bg.borderWidth}px solid ${hexToRgba(bg.borderColor, bg.borderOpacity)};
             border-radius: ${bg.borderRadius}px;
-            box-shadow: 0 0 ${bg.shadowRadius}px ${hexToRgba(bg.shadowColor, bg.shadowOpacity)};
+            box-shadow: ${bg.shadowOffsetX ?? 0}px ${bg.shadowOffsetY ?? 0}px ${bg.shadowRadius}px ${hexToRgba(bg.shadowColor, bg.shadowOpacity)};
             padding: ${bg.paddingV ?? 2}px ${bg.paddingH ?? 6}px;
         `;
     }}
@@ -240,7 +244,7 @@ const EmotesOutside = styled.div`
     }};
     box-shadow: ${({ $cfg }) => {
         const bg = $cfg.content.header.background;
-        return bg.enabled ? `0 0 ${bg.shadowRadius}px ${hexToRgba(bg.shadowColor, bg.shadowOpacity)}` : 'none';
+        return bg.enabled ? `${bg.shadowOffsetX ?? 0}px ${bg.shadowOffsetY ?? 0}px ${bg.shadowRadius}px ${hexToRgba(bg.shadowColor, bg.shadowOpacity)}` : 'none';
     }};
     padding: ${({ $cfg }) => {
         const bg = $cfg.content.header.background;

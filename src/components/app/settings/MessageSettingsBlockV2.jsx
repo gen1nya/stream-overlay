@@ -431,6 +431,22 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                             />
                         </ControlGroup>
                     </Row>
+                    <Row gap="16px">
+                        <ControlGroup>
+                            <XYPad
+                                title="Смещение тени"
+                                valueX={bgColor.shadowOffsetX ?? 0}
+                                valueY={bgColor.shadowOffsetY ?? 0}
+                                min={-30}
+                                max={30}
+                                size={100}
+                                onChange={({x, y}) => {
+                                    updateBgNested('color', 'shadowOffsetX', x);
+                                    updateBgNested('color', 'shadowOffsetY', y);
+                                }}
+                            />
+                        </ControlGroup>
+                    </Row>
                 </TabContent>
             </TabSection>
         );
@@ -506,6 +522,22 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                                 min={0} max={30} step={1}
                                 value={bgGrad.shadowRadius}
                                 onChange={(v) => updateBgNested('gradient', 'shadowRadius', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
+                    <Row gap="16px">
+                        <ControlGroup>
+                            <XYPad
+                                title="Смещение тени"
+                                valueX={bgGrad.shadowOffsetX ?? 0}
+                                valueY={bgGrad.shadowOffsetY ?? 0}
+                                min={-30}
+                                max={30}
+                                size={100}
+                                onChange={({x, y}) => {
+                                    updateBgNested('gradient', 'shadowOffsetX', x);
+                                    updateBgNested('gradient', 'shadowOffsetY', y);
+                                }}
                             />
                         </ControlGroup>
                     </Row>
@@ -588,6 +620,22 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                                 min={0} max={30} step={1}
                                 value={bgImage.shadowRadius}
                                 onChange={(v) => updateBgNested('image', 'shadowRadius', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
+                    <Row gap="16px">
+                        <ControlGroup>
+                            <XYPad
+                                title="Смещение тени"
+                                valueX={bgImage.shadowOffsetX ?? 0}
+                                valueY={bgImage.shadowOffsetY ?? 0}
+                                min={-30}
+                                max={30}
+                                size={100}
+                                onChange={({x, y}) => {
+                                    updateBgNested('image', 'shadowOffsetX', x);
+                                    updateBgNested('image', 'shadowOffsetY', y);
+                                }}
                             />
                         </ControlGroup>
                     </Row>
@@ -829,6 +877,19 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
+                {header.position === 'outside' && (
+                    <Row gap="16px">
+                        <ControlGroup flex="1">
+                            <SeekbarComponent
+                                title="Z-index заголовка (поверх фона)"
+                                min={-5} max={10} step={1}
+                                value={header.zIndex ?? 0}
+                                onChange={(v) => updateHeader('zIndex', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
+                )}
+
                 <Row gap="16px">
                     <ControlGroup>
                         <SwitchRow>
@@ -954,6 +1015,22 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                                         min={0} max={20} step={1}
                                         value={header.background.paddingH ?? 6}
                                         onChange={(v) => updateHeaderNested('background', 'paddingH', v)}
+                                    />
+                                </ControlGroup>
+                            </Row>
+                            <Row gap="16px">
+                                <ControlGroup>
+                                    <XYPad
+                                        title="Смещение тени"
+                                        valueX={header.background.shadowOffsetX ?? 0}
+                                        valueY={header.background.shadowOffsetY ?? 0}
+                                        min={-30}
+                                        max={30}
+                                        size={100}
+                                        onChange={({x, y}) => {
+                                            updateHeaderNested('background', 'shadowOffsetX', x);
+                                            updateHeaderNested('background', 'shadowOffsetY', y);
+                                        }}
                                     />
                                 </ControlGroup>
                             </Row>

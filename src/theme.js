@@ -775,7 +775,9 @@ export const defaultV2Message = {
             borderRadius: 12,
             shadowColor: '#ffffff',
             shadowOpacity: 1,
-            shadowRadius: 5
+            shadowRadius: 5,
+            shadowOffsetX: 0,
+            shadowOffsetY: 0
         },
 
         gradient: {
@@ -786,7 +788,9 @@ export const defaultV2Message = {
             borderRadius: 12,
             shadowColor: '#000000',
             shadowOpacity: 1,
-            shadowRadius: 0
+            shadowRadius: 0,
+            shadowOffsetX: 0,
+            shadowOffsetY: 0
         },
 
         image: {
@@ -796,7 +800,9 @@ export const defaultV2Message = {
             borderWidth: 0,
             borderRadius: 0,
             shadowColor: '#000000',
-            shadowRadius: 0
+            shadowRadius: 0,
+            shadowOffsetX: 0,
+            shadowOffsetY: 0
         },
 
         margin: { horizontal: 10, vertical: 3 },
@@ -815,6 +821,7 @@ export const defaultV2Message = {
             position: 'inside',  // 'inside' | 'outside'
             align: 'left',       // 'left' | 'center' | 'right'
             translate: { x: 0, y: 0 },
+            zIndex: 0,           // applied only when position === 'outside' (0 = under bg layers, ≥3 = above)
 
             font: {
                 family: 'Roboto',
@@ -838,6 +845,8 @@ export const defaultV2Message = {
                 shadowColor: '#000000',
                 shadowOpacity: 0,
                 shadowRadius: 0,
+                shadowOffsetX: 0,
+                shadowOffsetY: 0,
                 paddingV: 2,
                 paddingH: 6
             },
