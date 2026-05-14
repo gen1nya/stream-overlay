@@ -22,6 +22,7 @@ import {updateRoles} from "./services/twitch/roleUpdater";
 import {AppLocaleRepository} from "./services/locale/AppLocaleRepository";
 import {DbRepository} from "./services/db/DbRepository";
 import {ChattersService} from "./services/twitch/ChattersService";
+import {sanitizeThemeNameForPath} from "./services/badgePaths";
 
 export function registerIpcHandlers(
     store: Store,
@@ -198,14 +199,6 @@ export function registerIpcHandlers(
     'subscriber',
   ]);
   const ALLOWED_BADGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']);
-
-  function sanitizeThemeNameForPath(name: string): string {
-    return String(name ?? '')
-        .replace(/[\/\\:*?"<>|\x00-\x1f]/g, '_')
-        .replace(/\.\./g, '_')
-        .replace(/^\.+|\.+$/g, '_')
-        .trim() || '_unnamed';
-  }
 
   async function removeExistingBadgeIcon(dir: string, role: string): Promise<void> {
     try {

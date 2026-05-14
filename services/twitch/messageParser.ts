@@ -378,7 +378,7 @@ interface BadgeRenderEntry {
   isOverridden: boolean;
 }
 
-function parseBadges(badgesTag: string, login: string | null): string {
+export function parseBadges(badgesTag: string, login: string | null): string {
   const config = activeBadgeConfig;
 
   const entries: BadgeRenderEntry[] = [];
@@ -542,7 +542,7 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
  * either moderator or lead_moderator, never both). isModerator stays true for
  * lead mods so moderation logic doesn't have to check both flags.
  */
-function extractRolesFromBadges(badgesTag: string): ChatRoles {
+export function extractRolesFromBadges(badgesTag: string): ChatRoles {
   const badgeIds = badgesTag
       ? badgesTag.split(',').map((b) => b.split('/')[0])
       : [];
