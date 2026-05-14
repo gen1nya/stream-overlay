@@ -1456,10 +1456,11 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                                 onChange={(v) => updateHeaderNested('emotes', 'placement', v)}
                             />
                         </ControlGroup>
-                        <ControlGroup flex="1">
+                        <ControlGroup>
                             <SeekbarComponent
                                 title="Отступ (gap)"
                                 min={0} max={20} step={1}
+                                width="200px"
                                 value={header.emotes.gap}
                                 onChange={(v) => updateHeaderNested('emotes', 'gap', v)}
                             />
