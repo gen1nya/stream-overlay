@@ -595,10 +595,14 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                 <TabButton $active={activeTab === 'content'} onClick={() => setActiveTab('content')}>
                     <FiType/> Контент
                 </TabButton>
+                <TabButton $active={activeTab === 'badges'} onClick={() => setActiveTab('badges')}>
+                    <FiAward/> Бейджи
+                </TabButton>
             </TabBar>
 
             {activeTab === 'background' && renderBackgroundTab()}
             {activeTab === 'content' && renderContentTab()}
+            {activeTab === 'badges' && renderBadgesTab()}
         </Wrapper>
     );
 
@@ -1128,26 +1132,6 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                     {renderHeaderSettings()}
                 </Section>
 
-                {/* ── Emotes ── */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle><FiImage/> Эмоуты в заголовке</SectionTitle>
-                    </SectionHeader>
-
-                    {renderEmoteSettings()}
-                </Section>
-
-                {/* ── Badge override ── */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle>
-                            <FiAward/> {t('settings.chatMessages.badgeOverride.sectionTitle')}
-                        </SectionTitle>
-                    </SectionHeader>
-
-                    {renderBadgeOverrideSettings()}
-                </Section>
-
                 {/* ── Text ── */}
                 <Section>
                     <SectionHeader>
@@ -1155,6 +1139,44 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                     </SectionHeader>
 
                     {renderTextSettings()}
+                </Section>
+            </>
+        );
+    }
+
+    // ═════════════════════════════════════════════════════════════
+    // TAB 3: BADGES
+    // Merges the former "Эмоуты в заголовке" (a misnomer — it controlled
+    // badge container layout, not chat emotes) with the role badge override
+    // section. Both groups affect the same DOM element next to the username.
+    // ═════════════════════════════════════════════════════════════
+    function renderBadgesTab() {
+        return (
+            <>
+                {/* ── Layout in the header ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle><FiLayout/> Расположение в шапке</SectionTitle>
+                    </SectionHeader>
+                    {renderBadgeLayout()}
+                </Section>
+
+                {/* ── Source + multipleMode + priority ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle><FiAward/> Правила отображения</SectionTitle>
+                    </SectionHeader>
+                    {renderBadgeRules()}
+                </Section>
+
+                {/* ── Per-role icon cards ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiImage/> {t('settings.chatMessages.badgeOverride.customIconsTitle')}
+                        </SectionTitle>
+                    </SectionHeader>
+                    {renderBadgeIcons()}
                 </Section>
             </>
         );
@@ -1391,14 +1413,14 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
         );
     }
 
-    // ── Emote settings ───────────────────────────────────────────
-    function renderEmoteSettings() {
+    // ── Badge container layout (was renderEmoteSettings) ─────────
+    function renderBadgeLayout() {
         return (
             <>
                 <Row gap="16px">
                     <ControlGroup>
                         <RadioGroup
-                            title="Позиция эмоутов"
+                            title="Позиция бейджей"
                             defaultSelected={header.emotes.position}
                             items={positionOptions}
                             direction="horizontal"
@@ -1434,8 +1456,8 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
         );
     }
 
-    // ── Badge override settings ──────────────────────────────────
-    function renderBadgeOverrideSettings() {
+    // ── Badge rules: source + multiple mode + priority order ─────
+    function renderBadgeRules() {
         const emotes = header.emotes;
         const order = Array.isArray(emotes.priorityOrder) ? emotes.priorityOrder : [];
         const customBadges = emotes.customBadges ?? {};
@@ -1510,8 +1532,18 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                         );
                     })}
                 </PriorityList>
+            </>
+        );
+    }
 
-                <SubTitle>{t('settings.chatMessages.badgeOverride.customIconsTitle')}</SubTitle>
+    // ── Badge custom icon cards (one per role) ───────────────────
+    function renderBadgeIcons() {
+        const emotes = header.emotes;
+        const order = Array.isArray(emotes.priorityOrder) ? emotes.priorityOrder : [];
+        const customBadges = emotes.customBadges ?? {};
+
+        return (
+            <>
                 {!themeName && (
                     <Hint>{t('settings.chatMessages.badgeOverride.pickThemeHint')}</Hint>
                 )}
