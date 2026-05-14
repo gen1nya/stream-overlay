@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import styled, {ThemeProvider} from 'styled-components';
 import merge from 'lodash/merge';
 import SeekbarComponent from '../../utils/SeekbarComponent';
@@ -10,9 +10,11 @@ import XYPad from '../../utils/XYPad';
 import Switch from '../../utils/Switch';
 import {ImageUploadField, darkTheme as imageUploadTheme} from '../../utils/BackgroundImageEditorComponent';
 import {defaultV2Message} from '../../../theme';
+import {uploadBadgeIcon as uploadBadgeIconApi, removeBadgeIcon as removeBadgeIconApi} from '../../../services/api';
 import {
     FiImage, FiType, FiLayout,
-    FiAlignCenter, FiSquare, FiGrid
+    FiAlignCenter, FiSquare, FiGrid, FiAward,
+    FiArrowUp, FiArrowDown, FiUpload, FiX
 } from 'react-icons/fi';
 import {
     ControlGroup,
@@ -105,8 +107,260 @@ const SubTitle = styled.div`
     color: #bbb;
 `;
 
+// ─── Badge override section styled bits ─────────────────────────
+const PriorityList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(30, 30, 30, 0.4);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px;
+`;
+
+const PriorityRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 10px;
+    background: rgba(50, 50, 50, 0.4);
+    border-radius: 6px;
+`;
+
+const RoleLabel = styled.div`
+    font-size: 0.9rem;
+    color: #ddd;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+`;
+
+const RolePreview = styled.div`
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+`;
+
+const IconButton = styled.button`
+    background: rgba(60, 60, 60, 0.6);
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #ccc;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.15s;
+
+    &:hover:not(:disabled) {
+        background: rgba(100, 108, 255, 0.2);
+        border-color: #646cff;
+        color: #fff;
+    }
+
+    &:disabled {
+        opacity: 0.35;
+        cursor: not-allowed;
+    }
+
+    svg {
+        width: 14px;
+        height: 14px;
+    }
+`;
+
+const BadgeCardsGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+`;
+
+const BadgeCard = styled.div`
+    background: rgba(40, 40, 40, 0.4);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+`;
+
+const BadgeCardHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ddd;
+`;
+
+const BadgeIconBox = styled.div`
+    width: 32px;
+    height: 32px;
+    border: 1px dashed #444;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 20, 20, 0.5);
+
+    img {
+        max-width: 28px;
+        max-height: 28px;
+    }
+`;
+
+const UploadButton = styled.button`
+    flex: 1;
+    background: rgba(100, 108, 255, 0.15);
+    border: 1px solid #646cff;
+    border-radius: 6px;
+    color: #ccd;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+
+    &:hover { background: rgba(100, 108, 255, 0.3); }
+    &:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    svg { width: 14px; height: 14px; }
+`;
+
+const RemoveButton = styled.button`
+    background: rgba(220, 60, 60, 0.1);
+    border: 1px solid #a33;
+    border-radius: 6px;
+    color: #f99;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover { background: rgba(220, 60, 60, 0.25); }
+
+    svg { width: 14px; height: 14px; }
+`;
+
+const BadgeButtonRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const UserListInput = styled.textarea`
+    background: rgba(20, 20, 20, 0.7);
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #ddd;
+    font-family: monospace;
+    font-size: 0.85rem;
+    padding: 8px;
+    resize: vertical;
+    min-height: 64px;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus {
+        outline: none;
+        border-color: #646cff;
+    }
+`;
+
+const Hint = styled.div`
+    font-size: 0.75rem;
+    color: #888;
+    line-height: 1.3;
+`;
+
+const ALLOWED_BADGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+
+function BadgeRoleCard({role, themeName, config, onUpload, onRemove, onUserListChange, t}) {
+    const fileRef = useRef(null);
+    const supportsUserList = role === 'artist' || role === 'editor';
+    const userListText = (config.userList || []).join('\n');
+
+    const handlePick = () => fileRef.current?.click();
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        if (file) onUpload(role, file);
+        e.target.value = '';
+    };
+
+    return (
+        <BadgeCard>
+            <BadgeCardHeader>
+                <BadgeIconBox>
+                    {config.image && <img src={config.image} alt={role}/>}
+                </BadgeIconBox>
+                {t(`settings.chatMessages.badgeOverride.roles.${role}`, role)}
+            </BadgeCardHeader>
+            <BadgeButtonRow>
+                <UploadButton disabled={!themeName} onClick={handlePick}>
+                    <FiUpload/> {config.image
+                        ? t('settings.chatMessages.badgeOverride.replace')
+                        : t('settings.chatMessages.badgeOverride.upload')}
+                </UploadButton>
+                {config.image && (
+                    <RemoveButton
+                        onClick={() => onRemove(role)}
+                        title={t('settings.chatMessages.badgeOverride.removeIcon')}
+                    >
+                        <FiX/>
+                    </RemoveButton>
+                )}
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.svg,image/*"
+                    style={{display: 'none'}}
+                    onChange={handleFile}
+                />
+            </BadgeButtonRow>
+            {supportsUserList && (
+                <>
+                    <UserListInput
+                        placeholder={t('settings.chatMessages.badgeOverride.userListPlaceholder')}
+                        value={userListText}
+                        onChange={(e) => {
+                            const list = e.target.value
+                                .split(/[,\n]/)
+                                .map((s) => s.trim())
+                                .filter(Boolean);
+                            onUserListChange(role, list);
+                        }}
+                    />
+                    <Hint>
+                        {role === 'editor'
+                            ? t('settings.chatMessages.badgeOverride.editorHint')
+                            : t('settings.chatMessages.badgeOverride.artistHint')}
+                    </Hint>
+                </>
+            )}
+        </BadgeCard>
+    );
+}
+
 // ─── Component ──────────────────────────────────────────────────
-export default function MessageSettingsBlockV2({current, onChange, openColorPopup}) {
+export default function MessageSettingsBlockV2({current, themeName, onChange, openColorPopup}) {
     const {t} = useTranslation();
     const [activeTab, setActiveTab] = useState('background');
 
@@ -207,6 +461,87 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
         })),
         [updateV2]
     );
+
+    const updateEmotes = useCallback(
+        (key, val) => updateHeaderNested('emotes', key, val),
+        [updateHeaderNested]
+    );
+
+    const updateCustomBadge = useCallback(
+        (role, field, value) => updateV2(prev => {
+            const emotes = prev.content.header.emotes ?? {};
+            const customBadges = emotes.customBadges ?? {};
+            return {
+                ...prev,
+                content: {
+                    ...prev.content,
+                    header: {
+                        ...prev.content.header,
+                        emotes: {
+                            ...emotes,
+                            customBadges: {
+                                ...customBadges,
+                                [role]: {...(customBadges[role] || {}), [field]: value},
+                            }
+                        }
+                    }
+                }
+            };
+        }),
+        [updateV2]
+    );
+
+    const movePriorityRole = useCallback((role, delta) => {
+        updateV2(prev => {
+            const emotes = prev.content.header.emotes ?? {};
+            const order = Array.isArray(emotes.priorityOrder) ? [...emotes.priorityOrder] : [];
+            const idx = order.indexOf(role);
+            if (idx < 0) return prev;
+            const next = idx + delta;
+            if (next < 0 || next >= order.length) return prev;
+            [order[idx], order[next]] = [order[next], order[idx]];
+            return {
+                ...prev,
+                content: {
+                    ...prev.content,
+                    header: {
+                        ...prev.content.header,
+                        emotes: {...emotes, priorityOrder: order},
+                    }
+                }
+            };
+        });
+    }, [updateV2]);
+
+    const handleBadgeUpload = useCallback(async (role, file) => {
+        if (!themeName || !file) return;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (!ALLOWED_BADGE_EXTS.includes(ext)) {
+            console.warn(`Unsupported badge file extension: ${ext}`);
+            return;
+        }
+        try {
+            const buffer = await file.arrayBuffer();
+            const url = await uploadBadgeIconApi(themeName, role, buffer, ext);
+            if (url) updateCustomBadge(role, 'image', url);
+        } catch (err) {
+            console.error('Badge icon upload failed:', err);
+        }
+    }, [themeName, updateCustomBadge]);
+
+    const handleBadgeRemove = useCallback(async (role) => {
+        if (!themeName) return;
+        try {
+            await removeBadgeIconApi(themeName, role);
+        } catch (err) {
+            console.error('Badge icon remove failed:', err);
+        }
+        updateCustomBadge(role, 'image', null);
+    }, [themeName, updateCustomBadge]);
+
+    const handleBadgeUserList = useCallback((role, list) => {
+        updateCustomBadge(role, 'userList', list);
+    }, [updateCustomBadge]);
 
     // ─── Options ─────────────────────────────────────────────────
     const bgTypeOptions = useMemo(() => [
@@ -798,6 +1133,17 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     {renderEmoteSettings()}
                 </Section>
 
+                {/* ── Badge override ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiAward/> {t('settings.chatMessages.badgeOverride.sectionTitle')}
+                        </SectionTitle>
+                    </SectionHeader>
+
+                    {renderBadgeOverrideSettings()}
+                </Section>
+
                 {/* ── Text ── */}
                 <Section>
                     <SectionHeader>
@@ -1080,6 +1426,105 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                         </ControlGroup>
                     </Row>
                 )}
+            </>
+        );
+    }
+
+    // ── Badge override settings ──────────────────────────────────
+    function renderBadgeOverrideSettings() {
+        const emotes = header.emotes;
+        const order = Array.isArray(emotes.priorityOrder) ? emotes.priorityOrder : [];
+        const customBadges = emotes.customBadges ?? {};
+
+        const sourceOptions = [
+            {key: 'twitch', text: t('settings.chatMessages.badgeOverride.sourceOptions.twitch')},
+            {key: 'custom', text: t('settings.chatMessages.badgeOverride.sourceOptions.custom')},
+        ];
+        const multipleOptions = [
+            {key: 'all',            text: t('settings.chatMessages.badgeOverride.multipleOptions.all')},
+            {key: 'first',          text: t('settings.chatMessages.badgeOverride.multipleOptions.first')},
+            {key: 'overriddenOnly', text: t('settings.chatMessages.badgeOverride.multipleOptions.overriddenOnly')},
+        ];
+
+        return (
+            <>
+                <Row gap="16px">
+                    <ControlGroup>
+                        <RadioGroup
+                            title={t('settings.chatMessages.badgeOverride.sourceTitle')}
+                            defaultSelected={emotes.source}
+                            items={sourceOptions}
+                            direction="horizontal"
+                            itemWidth="240px"
+                            onChange={(v) => updateEmotes('source', v)}
+                        />
+                    </ControlGroup>
+                </Row>
+
+                <Row gap="16px">
+                    <ControlGroup>
+                        <RadioGroup
+                            title={t('settings.chatMessages.badgeOverride.multipleTitle')}
+                            defaultSelected={emotes.multipleMode}
+                            items={multipleOptions}
+                            direction="horizontal"
+                            itemWidth="240px"
+                            onChange={(v) => updateEmotes('multipleMode', v)}
+                        />
+                    </ControlGroup>
+                </Row>
+
+                <SubTitle>{t('settings.chatMessages.badgeOverride.priorityTitle')}</SubTitle>
+                <PriorityList>
+                    {order.map((role, idx) => {
+                        const customImg = customBadges[role]?.image;
+                        return (
+                            <PriorityRow key={role}>
+                                <RoleLabel>
+                                    <RolePreview>
+                                        {customImg && <img src={customImg} alt={role}/>}
+                                    </RolePreview>
+                                    {t(`settings.chatMessages.badgeOverride.roles.${role}`, role)}
+                                </RoleLabel>
+                                <BadgeButtonRow>
+                                    <IconButton
+                                        disabled={idx === 0}
+                                        onClick={() => movePriorityRole(role, -1)}
+                                        title={t('settings.chatMessages.badgeOverride.moveUp')}
+                                    >
+                                        <FiArrowUp/>
+                                    </IconButton>
+                                    <IconButton
+                                        disabled={idx === order.length - 1}
+                                        onClick={() => movePriorityRole(role, +1)}
+                                        title={t('settings.chatMessages.badgeOverride.moveDown')}
+                                    >
+                                        <FiArrowDown/>
+                                    </IconButton>
+                                </BadgeButtonRow>
+                            </PriorityRow>
+                        );
+                    })}
+                </PriorityList>
+
+                <SubTitle>{t('settings.chatMessages.badgeOverride.customIconsTitle')}</SubTitle>
+                {!themeName && (
+                    <Hint>{t('settings.chatMessages.badgeOverride.pickThemeHint')}</Hint>
+                )}
+                <BadgeCardsGrid>
+                    {order.map((role) => (
+                        <BadgeRoleCard
+                            key={role}
+                            role={role}
+                            themeName={themeName}
+                            config={customBadges[role] || {}}
+                            onUpload={handleBadgeUpload}
+                            onRemove={handleBadgeRemove}
+                            onUserListChange={handleBadgeUserList}
+                            t={t}
+                        />
+                    ))}
+                </BadgeCardsGrid>
             </>
         );
     }

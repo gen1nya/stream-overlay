@@ -135,6 +135,14 @@ export const getImageUrl = (fileName) => {
     return ipcRenderer?.invoke('utils:get_image_url', fileName);
 };
 
+export const uploadBadgeIcon = (themeName, role, buffer, extension) => {
+    return ipcRenderer?.invoke('badge:upload-icon', { themeName, role, buffer, extension });
+};
+
+export const removeBadgeIcon = (themeName, role) => {
+    return ipcRenderer?.invoke('badge:remove-icon', { themeName, role });
+};
+
 export async function getUserById(userId) {
     return ipcRenderer?.invoke('user:getById', {userId});
 }

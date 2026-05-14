@@ -703,6 +703,7 @@ export default function Settings() {
                         page={activePage}
                         apply={updaterOrTheme => apply(updaterOrTheme)}
                         selectedTheme={selectedTheme}
+                        selectedThemeName={selectedThemeName}
                         botConfig={botConfig}
                         botName={botName}
                         openColorPopup={openColorPopup}
@@ -717,7 +718,7 @@ export default function Settings() {
     );
 }
 
-const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp, gatewayStatus}) => {
+const MainContent = ({page, selectedTheme, selectedThemeName, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp, gatewayStatus}) => {
     const { t } = useTranslation();
     switch (page) {
         case "general":
@@ -751,6 +752,7 @@ const MainContent = ({page, selectedTheme, apply, openColorPopup, botConfig, bot
                 <Content>
                     <MessageSettingsBlockV2
                         current={selectedTheme}
+                        themeName={selectedThemeName}
                         onChange={updaterOrTheme => apply(updaterOrTheme)}
                         openColorPopup={openColorPopup}
                     />
