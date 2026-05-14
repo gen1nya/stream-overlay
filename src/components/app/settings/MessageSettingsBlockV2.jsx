@@ -151,7 +151,7 @@ const RolePreview = styled.div`
     }
 `;
 
-const IconButton = styled.button`
+const IconButton = styled.div`
     background: rgba(60, 60, 60, 0.6);
     border: 1px solid #444;
     border-radius: 4px;
@@ -161,18 +161,15 @@ const IconButton = styled.button`
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    cursor: pointer;
+    cursor: ${p => (p.$disabled ? 'not-allowed' : 'pointer')};
+    opacity: ${p => (p.$disabled ? 0.35 : 1)};
     transition: all 0.15s;
+    user-select: none;
 
-    &:hover:not(:disabled) {
-        background: rgba(100, 108, 255, 0.2);
-        border-color: #646cff;
-        color: #fff;
-    }
-
-    &:disabled {
-        opacity: 0.35;
-        cursor: not-allowed;
+    &:hover {
+        background: ${p => (p.$disabled ? 'rgba(60, 60, 60, 0.6)' : 'rgba(100, 108, 255, 0.2)')};
+        border-color: ${p => (p.$disabled ? '#444' : '#646cff')};
+        color: ${p => (p.$disabled ? '#ccc' : '#fff')};
     }
 
     svg {
@@ -223,7 +220,7 @@ const BadgeIconBox = styled.div`
     }
 `;
 
-const UploadButton = styled.button`
+const UploadButton = styled.div`
     flex: 1;
     background: rgba(100, 108, 255, 0.15);
     border: 1px solid #646cff;
@@ -231,19 +228,22 @@ const UploadButton = styled.button`
     color: #ccd;
     padding: 6px 10px;
     font-size: 0.85rem;
-    cursor: pointer;
+    cursor: ${p => (p.$disabled ? 'not-allowed' : 'pointer')};
+    opacity: ${p => (p.$disabled ? 0.5 : 1)};
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 6px;
+    user-select: none;
 
-    &:hover { background: rgba(100, 108, 255, 0.3); }
-    &:disabled { opacity: 0.5; cursor: not-allowed; }
+    &:hover {
+        background: ${p => (p.$disabled ? 'rgba(100, 108, 255, 0.15)' : 'rgba(100, 108, 255, 0.3)')};
+    }
 
     svg { width: 14px; height: 14px; }
 `;
 
-const RemoveButton = styled.button`
+const RemoveButton = styled.div`
     background: rgba(220, 60, 60, 0.1);
     border: 1px solid #a33;
     border-radius: 6px;
@@ -254,6 +254,7 @@ const RemoveButton = styled.button`
     display: inline-flex;
     align-items: center;
     justify-content: center;
+    user-select: none;
 
     &:hover { background: rgba(220, 60, 60, 0.25); }
 
@@ -314,7 +315,10 @@ function BadgeRoleCard({role, themeName, config, onUpload, onRemove, onUserListC
                 {t(`settings.chatMessages.badgeOverride.roles.${role}`, role)}
             </BadgeCardHeader>
             <BadgeButtonRow>
-                <UploadButton disabled={!themeName} onClick={handlePick}>
+                <UploadButton
+                    $disabled={!themeName}
+                    onClick={() => themeName && handlePick()}
+                >
                     <FiUpload/> {config.image
                         ? t('settings.chatMessages.badgeOverride.replace')
                         : t('settings.chatMessages.badgeOverride.upload')}
@@ -1488,15 +1492,15 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                                 </RoleLabel>
                                 <BadgeButtonRow>
                                     <IconButton
-                                        disabled={idx === 0}
-                                        onClick={() => movePriorityRole(role, -1)}
+                                        $disabled={idx === 0}
+                                        onClick={() => idx > 0 && movePriorityRole(role, -1)}
                                         title={t('settings.chatMessages.badgeOverride.moveUp')}
                                     >
                                         <FiArrowUp/>
                                     </IconButton>
                                     <IconButton
-                                        disabled={idx === order.length - 1}
-                                        onClick={() => movePriorityRole(role, +1)}
+                                        $disabled={idx === order.length - 1}
+                                        onClick={() => idx < order.length - 1 && movePriorityRole(role, +1)}
                                         title={t('settings.chatMessages.badgeOverride.moveDown')}
                                     >
                                         <FiArrowDown/>
