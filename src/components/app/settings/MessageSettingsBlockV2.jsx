@@ -1,4 +1,4 @@
-import React, {useCallback, useMemo, useState} from 'react';
+import React, {useCallback, useMemo, useRef, useState} from 'react';
 import styled, {ThemeProvider} from 'styled-components';
 import merge from 'lodash/merge';
 import SeekbarComponent from '../../utils/SeekbarComponent';
@@ -10,9 +10,11 @@ import XYPad from '../../utils/XYPad';
 import Switch from '../../utils/Switch';
 import {ImageUploadField, darkTheme as imageUploadTheme} from '../../utils/BackgroundImageEditorComponent';
 import {defaultV2Message} from '../../../theme';
+import {uploadBadgeIcon as uploadBadgeIconApi, removeBadgeIcon as removeBadgeIconApi} from '../../../services/api';
 import {
     FiImage, FiType, FiLayout,
-    FiAlignCenter, FiSquare, FiGrid
+    FiAlignCenter, FiSquare, FiGrid, FiAward,
+    FiArrowUp, FiArrowDown, FiUpload, FiX
 } from 'react-icons/fi';
 import {
     ControlGroup,
@@ -105,8 +107,264 @@ const SubTitle = styled.div`
     color: #bbb;
 `;
 
+// ─── Badge override section styled bits ─────────────────────────
+const PriorityList = styled.div`
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    background: rgba(30, 30, 30, 0.4);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 8px;
+`;
+
+const PriorityRow = styled.div`
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 6px 10px;
+    background: rgba(50, 50, 50, 0.4);
+    border-radius: 6px;
+`;
+
+const RoleLabel = styled.div`
+    font-size: 0.9rem;
+    color: #ddd;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+`;
+
+const RolePreview = styled.div`
+    width: 20px;
+    height: 20px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+
+    img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+`;
+
+const IconButton = styled.div`
+    background: rgba(60, 60, 60, 0.6);
+    border: 1px solid #444;
+    border-radius: 4px;
+    color: #ccc;
+    width: 28px;
+    height: 28px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: ${p => (p.$disabled ? 'not-allowed' : 'pointer')};
+    opacity: ${p => (p.$disabled ? 0.35 : 1)};
+    transition: all 0.15s;
+    user-select: none;
+
+    &:hover {
+        background: ${p => (p.$disabled ? 'rgba(60, 60, 60, 0.6)' : 'rgba(100, 108, 255, 0.2)')};
+        border-color: ${p => (p.$disabled ? '#444' : '#646cff')};
+        color: ${p => (p.$disabled ? '#ccc' : '#fff')};
+    }
+
+    svg {
+        width: 14px;
+        height: 14px;
+    }
+`;
+
+const BadgeCardsGrid = styled.div`
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 12px;
+    margin-top: 12px;
+`;
+
+const BadgeCard = styled.div`
+    background: rgba(40, 40, 40, 0.4);
+    border: 1px solid #333;
+    border-radius: 8px;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+`;
+
+const BadgeCardHeader = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    color: #ddd;
+`;
+
+const BadgeIconBox = styled.div`
+    width: 32px;
+    height: 32px;
+    border: 1px dashed #444;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 20, 20, 0.5);
+
+    img {
+        max-width: 28px;
+        max-height: 28px;
+    }
+`;
+
+const UploadButton = styled.div`
+    flex: 1;
+    background: rgba(100, 108, 255, 0.15);
+    border: 1px solid #646cff;
+    border-radius: 6px;
+    color: #ccd;
+    padding: 6px 10px;
+    font-size: 0.85rem;
+    cursor: ${p => (p.$disabled ? 'not-allowed' : 'pointer')};
+    opacity: ${p => (p.$disabled ? 0.5 : 1)};
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    user-select: none;
+
+    &:hover {
+        background: ${p => (p.$disabled ? 'rgba(100, 108, 255, 0.15)' : 'rgba(100, 108, 255, 0.3)')};
+    }
+
+    svg { width: 14px; height: 14px; }
+`;
+
+const RemoveButton = styled.div`
+    background: rgba(220, 60, 60, 0.1);
+    border: 1px solid #a33;
+    border-radius: 6px;
+    color: #f99;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+
+    &:hover { background: rgba(220, 60, 60, 0.25); }
+
+    svg { width: 14px; height: 14px; }
+`;
+
+const BadgeButtonRow = styled.div`
+    display: flex;
+    align-items: center;
+    gap: 8px;
+`;
+
+const UserListInput = styled.textarea`
+    background: rgba(20, 20, 20, 0.7);
+    border: 1px solid #444;
+    border-radius: 6px;
+    color: #ddd;
+    font-family: monospace;
+    font-size: 0.85rem;
+    padding: 8px;
+    resize: vertical;
+    min-height: 64px;
+    width: 100%;
+    box-sizing: border-box;
+
+    &:focus {
+        outline: none;
+        border-color: #646cff;
+    }
+`;
+
+const Hint = styled.div`
+    font-size: 0.75rem;
+    color: #888;
+    line-height: 1.3;
+`;
+
+const ALLOWED_BADGE_EXTS = ['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg'];
+
+function BadgeRoleCard({role, themeName, config, onUpload, onRemove, onUserListChange, t}) {
+    const fileRef = useRef(null);
+    const supportsUserList = role === 'artist' || role === 'editor';
+    const userListText = (config.userList || []).join('\n');
+
+    const handlePick = () => fileRef.current?.click();
+    const handleFile = (e) => {
+        const file = e.target.files?.[0];
+        if (file) onUpload(role, file);
+        e.target.value = '';
+    };
+
+    return (
+        <BadgeCard>
+            <BadgeCardHeader>
+                <BadgeIconBox>
+                    {config.image && <img src={config.image} alt={role}/>}
+                </BadgeIconBox>
+                {t(`settings.chatMessages.badgeOverride.roles.${role}`, role)}
+            </BadgeCardHeader>
+            <BadgeButtonRow>
+                <UploadButton
+                    $disabled={!themeName}
+                    onClick={() => themeName && handlePick()}
+                >
+                    <FiUpload/> {config.image
+                        ? t('settings.chatMessages.badgeOverride.replace')
+                        : t('settings.chatMessages.badgeOverride.upload')}
+                </UploadButton>
+                {config.image && (
+                    <RemoveButton
+                        onClick={() => onRemove(role)}
+                        title={t('settings.chatMessages.badgeOverride.removeIcon')}
+                    >
+                        <FiX/>
+                    </RemoveButton>
+                )}
+                <input
+                    ref={fileRef}
+                    type="file"
+                    accept=".png,.jpg,.jpeg,.gif,.webp,.svg,image/*"
+                    style={{display: 'none'}}
+                    onChange={handleFile}
+                />
+            </BadgeButtonRow>
+            {supportsUserList && (
+                <>
+                    <UserListInput
+                        placeholder={t('settings.chatMessages.badgeOverride.userListPlaceholder')}
+                        value={userListText}
+                        onChange={(e) => {
+                            const list = e.target.value
+                                .split(/[,\n]/)
+                                .map((s) => s.trim())
+                                .filter(Boolean);
+                            onUserListChange(role, list);
+                        }}
+                    />
+                    <Hint>
+                        {role === 'editor'
+                            ? t('settings.chatMessages.badgeOverride.editorHint')
+                            : t('settings.chatMessages.badgeOverride.artistHint')}
+                    </Hint>
+                </>
+            )}
+        </BadgeCard>
+    );
+}
+
 // ─── Component ──────────────────────────────────────────────────
-export default function MessageSettingsBlockV2({current, onChange, openColorPopup}) {
+export default function MessageSettingsBlockV2({current, themeName, onChange, openColorPopup}) {
     const {t} = useTranslation();
     const [activeTab, setActiveTab] = useState('background');
 
@@ -208,6 +466,87 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
         [updateV2]
     );
 
+    const updateEmotes = useCallback(
+        (key, val) => updateHeaderNested('emotes', key, val),
+        [updateHeaderNested]
+    );
+
+    const updateCustomBadge = useCallback(
+        (role, field, value) => updateV2(prev => {
+            const emotes = prev.content.header.emotes ?? {};
+            const customBadges = emotes.customBadges ?? {};
+            return {
+                ...prev,
+                content: {
+                    ...prev.content,
+                    header: {
+                        ...prev.content.header,
+                        emotes: {
+                            ...emotes,
+                            customBadges: {
+                                ...customBadges,
+                                [role]: {...(customBadges[role] || {}), [field]: value},
+                            }
+                        }
+                    }
+                }
+            };
+        }),
+        [updateV2]
+    );
+
+    const movePriorityRole = useCallback((role, delta) => {
+        updateV2(prev => {
+            const emotes = prev.content.header.emotes ?? {};
+            const order = Array.isArray(emotes.priorityOrder) ? [...emotes.priorityOrder] : [];
+            const idx = order.indexOf(role);
+            if (idx < 0) return prev;
+            const next = idx + delta;
+            if (next < 0 || next >= order.length) return prev;
+            [order[idx], order[next]] = [order[next], order[idx]];
+            return {
+                ...prev,
+                content: {
+                    ...prev.content,
+                    header: {
+                        ...prev.content.header,
+                        emotes: {...emotes, priorityOrder: order},
+                    }
+                }
+            };
+        });
+    }, [updateV2]);
+
+    const handleBadgeUpload = useCallback(async (role, file) => {
+        if (!themeName || !file) return;
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        if (!ALLOWED_BADGE_EXTS.includes(ext)) {
+            console.warn(`Unsupported badge file extension: ${ext}`);
+            return;
+        }
+        try {
+            const buffer = await file.arrayBuffer();
+            const url = await uploadBadgeIconApi(themeName, role, buffer, ext);
+            if (url) updateCustomBadge(role, 'image', url);
+        } catch (err) {
+            console.error('Badge icon upload failed:', err);
+        }
+    }, [themeName, updateCustomBadge]);
+
+    const handleBadgeRemove = useCallback(async (role) => {
+        if (!themeName) return;
+        try {
+            await removeBadgeIconApi(themeName, role);
+        } catch (err) {
+            console.error('Badge icon remove failed:', err);
+        }
+        updateCustomBadge(role, 'image', null);
+    }, [themeName, updateCustomBadge]);
+
+    const handleBadgeUserList = useCallback((role, list) => {
+        updateCustomBadge(role, 'userList', list);
+    }, [updateCustomBadge]);
+
     // ─── Options ─────────────────────────────────────────────────
     const bgTypeOptions = useMemo(() => [
         {key: 'color', text: t('settings.chatMessages.background.options.color', 'Цвет')},
@@ -251,15 +590,19 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
         <Wrapper>
             <TabBar>
                 <TabButton $active={activeTab === 'background'} onClick={() => setActiveTab('background')}>
-                    <FiImage/> Фон
+                    <FiImage/> {t('settings.chatMessages.tabs.background', 'Фон')}
                 </TabButton>
                 <TabButton $active={activeTab === 'content'} onClick={() => setActiveTab('content')}>
-                    <FiType/> Контент
+                    <FiType/> {t('settings.chatMessages.tabs.content', 'Контент')}
+                </TabButton>
+                <TabButton $active={activeTab === 'badges'} onClick={() => setActiveTab('badges')}>
+                    <FiAward/> {t('settings.chatMessages.tabs.badges', 'Бейджи')}
                 </TabButton>
             </TabBar>
 
             {activeTab === 'background' && renderBackgroundTab()}
             {activeTab === 'content' && renderContentTab()}
+            {activeTab === 'badges' && renderBadgesTab()}
         </Wrapper>
     );
 
@@ -269,6 +612,28 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
     function renderBackgroundTab() {
         return (
             <>
+                {/* ── Background type ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle><FiSquare/> Тип фона</SectionTitle>
+                    </SectionHeader>
+
+                    <ControlGroup>
+                        <RadioGroup
+                            title="Тип фона"
+                            defaultSelected={bg.type}
+                            items={bgTypeOptions}
+                            direction="horizontal"
+                            itemWidth="120px"
+                            onChange={(v) => updateBg('type', v)}
+                        />
+                    </ControlGroup>
+
+                    {bg.type === 'color' && renderBgColor()}
+                    {bg.type === 'gradient' && renderBgGradient()}
+                    {bg.type === 'image' && renderBgImage()}
+                </Section>
+
                 {/* ── Decor (header/footer images) ── */}
                 <Section>
                     <SectionHeader>
@@ -316,28 +681,6 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                             />
                         </OffsetCard>
                     </OffsetGrid>
-                </Section>
-
-                {/* ── Background type ── */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle><FiSquare/> Тип фона</SectionTitle>
-                    </SectionHeader>
-
-                    <ControlGroup>
-                        <RadioGroup
-                            title="Тип фона"
-                            defaultSelected={bg.type}
-                            items={bgTypeOptions}
-                            direction="horizontal"
-                            itemWidth="120px"
-                            onChange={(v) => updateBg('type', v)}
-                        />
-                    </ControlGroup>
-
-                    {bg.type === 'color' && renderBgColor()}
-                    {bg.type === 'gradient' && renderBgGradient()}
-                    {bg.type === 'image' && renderBgImage()}
                 </Section>
 
                 {/* ── Margins & Padding ── */}
@@ -789,15 +1132,6 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     {renderHeaderSettings()}
                 </Section>
 
-                {/* ── Emotes ── */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle><FiImage/> Эмоуты в заголовке</SectionTitle>
-                    </SectionHeader>
-
-                    {renderEmoteSettings()}
-                </Section>
-
                 {/* ── Text ── */}
                 <Section>
                     <SectionHeader>
@@ -810,10 +1144,59 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
         );
     }
 
-    // ── Header settings ──────────────────────────────────────────
-    function renderHeaderSettings() {
+    // ═════════════════════════════════════════════════════════════
+    // TAB 3: BADGES
+    // Merges the former "Эмоуты в заголовке" (a misnomer — it controlled
+    // badge container layout, not chat emotes) with the role badge override
+    // section. Both groups affect the same DOM element next to the username.
+    // ═════════════════════════════════════════════════════════════
+    function renderBadgesTab() {
         return (
             <>
+                {/* ── Layout in the header ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiLayout/> {t('settings.chatMessages.badgeOverride.layoutSectionTitle', 'Расположение в шапке')}
+                        </SectionTitle>
+                    </SectionHeader>
+                    {renderBadgeLayout()}
+                </Section>
+
+                {/* ── Source + multipleMode + priority ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiAward/> {t('settings.chatMessages.badgeOverride.rulesSectionTitle', 'Правила отображения')}
+                        </SectionTitle>
+                    </SectionHeader>
+                    {renderBadgeRules()}
+                </Section>
+
+                {/* ── Per-role icon cards ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle>
+                            <FiImage/> {t('settings.chatMessages.badgeOverride.customIconsTitle')}
+                        </SectionTitle>
+                    </SectionHeader>
+                    {renderBadgeIcons()}
+                </Section>
+            </>
+        );
+    }
+
+    // ── Header settings ──────────────────────────────────────────
+    function renderHeaderSettings() {
+        const nameColorOptions = [
+            {key: 'twitch', text: t('settings.chatMessages.header.nameColorOptions.twitch', 'Цвет ника Twitch')},
+            {key: 'custom', text: t('settings.chatMessages.header.nameColorOptions.custom', 'Свой цвет')},
+        ];
+
+        return (
+            <>
+                {/* ── Группа: положение и выравнивание ── */}
+                <SubTitle>{t('settings.chatMessages.header.groupPosition', 'Положение и выравнивание')}</SubTitle>
                 <Row>
                     <ControlGroup>
                         <RadioGroup
@@ -849,6 +1232,20 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
+                {header.position === 'outside' && (
+                    <Row gap="16px">
+                        <ControlGroup>
+                            <SeekbarComponent
+                                title="Z-index заголовка (поверх фона)"
+                                min={-5} max={10} step={1}
+                                width="280px"
+                                value={header.zIndex ?? 0}
+                                onChange={(v) => updateHeader('zIndex', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
+                )}
+
                 <Row>
                     <ControlGroup>
                         <XYPad
@@ -861,7 +1258,11 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                             onChange={({x, y}) => updateHeader('translate', {x, y})}
                         />
                     </ControlGroup>
-                    <Spacer/>
+                </Row>
+
+                {/* ── Группа: шрифт и цвет ника ── */}
+                <SubTitle>{t('settings.chatMessages.header.groupTypography', 'Шрифт и цвет ника')}</SubTitle>
+                <Row gap="16px">
                     <ControlGroup>
                         <FontAndSizeEditor
                             title="Шрифт заголовка"
@@ -877,37 +1278,23 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                     </ControlGroup>
                 </Row>
 
-                {header.position === 'outside' && (
-                    <Row gap="16px">
-                        <ControlGroup flex="1">
-                            <SeekbarComponent
-                                title="Z-index заголовка (поверх фона)"
-                                min={-5} max={10} step={1}
-                                value={header.zIndex ?? 0}
-                                onChange={(v) => updateHeader('zIndex', v)}
-                            />
-                        </ControlGroup>
-                    </Row>
-                )}
-
                 <Row gap="16px">
                     <ControlGroup>
-                        <SwitchRow>
-                            <Switch
-                                checked={header.customColor.enabled}
-                                onChange={(e) =>
-                                    updateHeaderNested('customColor', 'enabled', e.target.checked)
-                                }
-                            />
-                            <SmallLabel>
-                                {header.customColor.enabled ? 'Свой цвет' : 'Цвет Twitch'}
-                            </SmallLabel>
-                        </SwitchRow>
+                        <RadioGroup
+                            title={t('settings.chatMessages.header.nameColorTitle', 'Цвет ника')}
+                            defaultSelected={header.customColor.enabled ? 'custom' : 'twitch'}
+                            items={nameColorOptions}
+                            direction="horizontal"
+                            itemWidth="140px"
+                            onChange={(v) =>
+                                updateHeaderNested('customColor', 'enabled', v === 'custom')
+                            }
+                        />
                     </ControlGroup>
                     {header.customColor.enabled && (
                         <ControlGroup>
                             <ColorSelectorButton
-                                title="Цвет заголовка"
+                                title="Цвет"
                                 hex={header.customColor.color}
                                 alpha={1}
                                 openColorPopup={openColorPopup}
@@ -1041,14 +1428,14 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
         );
     }
 
-    // ── Emote settings ───────────────────────────────────────────
-    function renderEmoteSettings() {
+    // ── Badge container layout (was renderEmoteSettings) ─────────
+    function renderBadgeLayout() {
         return (
             <>
                 <Row gap="16px">
                     <ControlGroup>
                         <RadioGroup
-                            title="Позиция эмоутов"
+                            title="Позиция бейджей"
                             defaultSelected={header.emotes.position}
                             items={positionOptions}
                             direction="horizontal"
@@ -1070,16 +1457,126 @@ export default function MessageSettingsBlockV2({current, onChange, openColorPopu
                                 onChange={(v) => updateHeaderNested('emotes', 'placement', v)}
                             />
                         </ControlGroup>
-                        <ControlGroup flex="1">
+                        <ControlGroup>
                             <SeekbarComponent
                                 title="Отступ (gap)"
                                 min={0} max={20} step={1}
+                                width="200px"
                                 value={header.emotes.gap}
                                 onChange={(v) => updateHeaderNested('emotes', 'gap', v)}
                             />
                         </ControlGroup>
                     </Row>
                 )}
+            </>
+        );
+    }
+
+    // ── Badge rules: source + multiple mode + priority order ─────
+    function renderBadgeRules() {
+        const emotes = header.emotes;
+        const order = Array.isArray(emotes.priorityOrder) ? emotes.priorityOrder : [];
+        const customBadges = emotes.customBadges ?? {};
+
+        const sourceOptions = [
+            {key: 'twitch', text: t('settings.chatMessages.badgeOverride.sourceOptions.twitch')},
+            {key: 'custom', text: t('settings.chatMessages.badgeOverride.sourceOptions.custom')},
+        ];
+        const multipleOptions = [
+            {key: 'all',            text: t('settings.chatMessages.badgeOverride.multipleOptions.all')},
+            {key: 'first',          text: t('settings.chatMessages.badgeOverride.multipleOptions.first')},
+            {key: 'overriddenOnly', text: t('settings.chatMessages.badgeOverride.multipleOptions.overriddenOnly')},
+        ];
+
+        return (
+            <>
+                <Row gap="16px">
+                    <ControlGroup>
+                        <RadioGroup
+                            title={t('settings.chatMessages.badgeOverride.sourceTitle')}
+                            defaultSelected={emotes.source}
+                            items={sourceOptions}
+                            direction="horizontal"
+                            itemWidth="240px"
+                            onChange={(v) => updateEmotes('source', v)}
+                        />
+                    </ControlGroup>
+                </Row>
+
+                <Row gap="16px">
+                    <ControlGroup>
+                        <RadioGroup
+                            title={t('settings.chatMessages.badgeOverride.multipleTitle')}
+                            defaultSelected={emotes.multipleMode}
+                            items={multipleOptions}
+                            direction="horizontal"
+                            itemWidth="240px"
+                            onChange={(v) => updateEmotes('multipleMode', v)}
+                        />
+                    </ControlGroup>
+                </Row>
+
+                <SubTitle>{t('settings.chatMessages.badgeOverride.priorityTitle')}</SubTitle>
+                <PriorityList>
+                    {order.map((role, idx) => {
+                        const customImg = customBadges[role]?.image;
+                        return (
+                            <PriorityRow key={role}>
+                                <RoleLabel>
+                                    <RolePreview>
+                                        {customImg && <img src={customImg} alt={role}/>}
+                                    </RolePreview>
+                                    {t(`settings.chatMessages.badgeOverride.roles.${role}`, role)}
+                                </RoleLabel>
+                                <BadgeButtonRow>
+                                    <IconButton
+                                        $disabled={idx === 0}
+                                        onClick={() => idx > 0 && movePriorityRole(role, -1)}
+                                        title={t('settings.chatMessages.badgeOverride.moveUp')}
+                                    >
+                                        <FiArrowUp/>
+                                    </IconButton>
+                                    <IconButton
+                                        $disabled={idx === order.length - 1}
+                                        onClick={() => idx < order.length - 1 && movePriorityRole(role, +1)}
+                                        title={t('settings.chatMessages.badgeOverride.moveDown')}
+                                    >
+                                        <FiArrowDown/>
+                                    </IconButton>
+                                </BadgeButtonRow>
+                            </PriorityRow>
+                        );
+                    })}
+                </PriorityList>
+            </>
+        );
+    }
+
+    // ── Badge custom icon cards (one per role) ───────────────────
+    function renderBadgeIcons() {
+        const emotes = header.emotes;
+        const order = Array.isArray(emotes.priorityOrder) ? emotes.priorityOrder : [];
+        const customBadges = emotes.customBadges ?? {};
+
+        return (
+            <>
+                {!themeName && (
+                    <Hint>{t('settings.chatMessages.badgeOverride.pickThemeHint')}</Hint>
+                )}
+                <BadgeCardsGrid>
+                    {order.map((role) => (
+                        <BadgeRoleCard
+                            key={role}
+                            role={role}
+                            themeName={themeName}
+                            config={customBadges[role] || {}}
+                            onUpload={handleBadgeUpload}
+                            onRemove={handleBadgeRemove}
+                            onUserListChange={handleBadgeUserList}
+                            t={t}
+                        />
+                    ))}
+                </BadgeCardsGrid>
             </>
         );
     }

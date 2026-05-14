@@ -24,7 +24,7 @@ import {startDevStaticServer, startHttpServer, stopAllServers} from './webServer
 import {registerIpcHandlers} from './ipcHandlers';
 import {EVENT_CHANEL, EVENT_FOLLOW, EVENT_REDEMPTION, EVENT_RAID, EVENT_BROADCASTING} from "./services/twitch/esService";
 import {ChatStatsService} from "./services/ChatStatsService";
-import {ChatEvent, createBotMessage, emptyRoles} from "./services/twitch/messageParser";
+import {ChatEvent, createBotMessage, emptyRoles, setBadgeOverrideConfig, BadgeOverrideConfig} from "./services/twitch/messageParser";
 import {LogService} from "./services/logService";
 import {UserData} from "./services/twitch/types/UserData";
 import {TwitchClient} from "./services/twitch/TwitchClient";
@@ -268,6 +268,18 @@ messageCache.updateSettings({
   lifetime: currentTheme.allMessages?.lifetime ?? 60,
   maxCount: currentTheme.allMessages?.maxCount ?? 6,
 });
+
+function extractBadgeOverrideConfig(theme: any): BadgeOverrideConfig | null {
+  const e = theme?.v2?.message?.content?.header?.emotes;
+  if (!e) return null;
+  return {
+    source: e.source === 'custom' ? 'custom' : 'twitch',
+    multipleMode: e.multipleMode === 'first' || e.multipleMode === 'overriddenOnly' ? e.multipleMode : 'all',
+    priorityOrder: Array.isArray(e.priorityOrder) ? e.priorityOrder : [],
+    customBadges: e.customBadges && typeof e.customBadges === 'object' ? e.customBadges : {},
+  };
+}
+setBadgeOverrideConfig(extractBadgeOverrideConfig(currentTheme));
 
 const applyAction = async (action: { type: string; payload: any }) => {
   console.log(`🔧 Applying action: ${action.type}`, action);
@@ -612,6 +624,7 @@ app.whenReady().then(() => {
       (name: string, theme: any) => {
           currentThemeName = name;
           currentTheme = theme;
+          setBadgeOverrideConfig(extractBadgeOverrideConfig(theme));
       },
       messageCache,
       logService,

@@ -10,6 +10,7 @@ interface ChannelInfo {
 
 export interface ChatRoles {
   isModerator: boolean | false;
+  isLeadModerator: boolean | false;
   isVip: boolean | false;
   isBroadcaster: boolean | false;
   isStaff: boolean | false;
@@ -82,6 +83,7 @@ export type AppEvent = ChatEvent | SystemEvent | FollowEvent | RedeemEvent | Rai
 
 export const emptyRoles: ChatRoles = {
     isModerator: false,
+    isLeadModerator: false,
     isVip: false,
     isBroadcaster: false,
     isStaff: false,
@@ -331,17 +333,116 @@ function parseEmotes(
   return finalResult;
 }
 
-function parseBadges(badgesTag: string): string {
-  if (!badgesTag) return '';
-  return badgesTag
-    .split(',')
-    .map((badge) => {
-      const [type, version] = badge.split('/');
-      const badgeUrl = getBadgeImage(type, version);
-      if (!badgeUrl) return '';
-      return `<img src="${badgeUrl}" alt="${type}" title="${type}" style="vertical-align: middle; height: 1em; margin-right: 2px;" />`;
-    })
-    .join('');
+export interface CustomBadgeEntry {
+  image: string | null;
+  userList?: string[];
+}
+
+export interface BadgeOverrideConfig {
+  source: 'twitch' | 'custom';
+  multipleMode: 'all' | 'first' | 'overriddenOnly';
+  priorityOrder: string[];
+  customBadges: Record<string, CustomBadgeEntry>;
+}
+
+// IRC badge key → internal role name used in customBadges / priorityOrder.
+// Unmapped keys (founder, sub-gifter, bits, premium, turbo, …) pass through
+// unmodified and use their raw key as the role name.
+const BADGE_KEY_TO_ROLE: Record<string, string> = {
+  'broadcaster':    'broadcaster',
+  'moderator':      'moderator',
+  'lead_moderator': 'lead_moderator',
+  'vip':            'vip',
+  'artist-badge':   'artist',
+  'subscriber':     'subscriber',
+};
+
+// Roles eligible for synthetic tagging via theme userList. Editor has no
+// corresponding Twitch chat badge so it is purely manual.
+const SYNTHETIC_ROLES: readonly string[] = ['artist', 'editor'];
+
+let activeBadgeConfig: BadgeOverrideConfig | null = null;
+
+/**
+ * Update the active badge override config. Called from main.ts whenever the
+ * current theme changes so that subsequent chat messages render with the new
+ * badge rules.
+ */
+export function setBadgeOverrideConfig(config: BadgeOverrideConfig | null): void {
+  activeBadgeConfig = config;
+}
+
+interface BadgeRenderEntry {
+  role: string;
+  imageUrl: string | null;
+  isOverridden: boolean;
+}
+
+export function parseBadges(badgesTag: string, login: string | null): string {
+  const config = activeBadgeConfig;
+
+  const entries: BadgeRenderEntry[] = [];
+  if (badgesTag) {
+    for (const part of badgesTag.split(',')) {
+      const [key, version] = part.split('/');
+      if (!key) continue;
+      const role = BADGE_KEY_TO_ROLE[key] ?? key;
+      entries.push({
+        role,
+        imageUrl: getBadgeImage(key, version || '1'),
+        isOverridden: false,
+      });
+    }
+  }
+
+  if (config && login) {
+    const loginLc = login.toLowerCase();
+    for (const role of SYNTHETIC_ROLES) {
+      const entry = config.customBadges?.[role];
+      if (!entry?.userList?.length) continue;
+      const inList = entry.userList.some(
+          (n) => typeof n === 'string' && n.toLowerCase() === loginLc
+      );
+      if (!inList) continue;
+      if (entries.some((e) => e.role === role)) continue;
+      entries.push({ role, imageUrl: null, isOverridden: false });
+    }
+  }
+
+  if (config?.source === 'custom') {
+    for (const e of entries) {
+      const overrideImg = config.customBadges?.[e.role]?.image;
+      if (overrideImg) {
+        e.imageUrl = overrideImg;
+        e.isOverridden = true;
+      }
+    }
+  }
+
+  let filtered = entries.filter((e) => !!e.imageUrl);
+
+  const order = config?.priorityOrder ?? [];
+  const rankOf = (role: string) => {
+    const idx = order.indexOf(role);
+    return idx === -1 ? order.length + 1 : idx;
+  };
+
+  if (config?.multipleMode === 'first' && filtered.length > 1) {
+    filtered = [filtered.reduce(
+        (best, cur) => (rankOf(cur.role) < rankOf(best.role) ? cur : best)
+    )];
+  } else if (config?.multipleMode === 'overriddenOnly') {
+    filtered = filtered.filter((e) => e.isOverridden);
+  }
+
+  filtered.sort((a, b) => rankOf(a.role) - rankOf(b.role));
+
+  return filtered
+      .map((e) => {
+        const safeRole = escapeHtml(e.role);
+        return `<img src="${e.imageUrl}" alt="${safeRole}" title="${safeRole}" style="vertical-align: middle; height: 1em; margin-right: 2px;" />`;
+      })
+      .join('');
 }
 
 function cleanMessage(message: string): string {
@@ -417,7 +518,7 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
     userName,
     color,
     rawMessage: messageContent,
-    htmlBadges: parseBadges(badgesTag),
+    htmlBadges: parseBadges(badgesTag, userFromPrefix),
     htmlMessage: parseEmotes(messageContent, emotes, _7tvGlobalEmotes, bttvGlobalEmotes, cheerEmotes),
     id,
     roomId,
@@ -436,14 +537,20 @@ export async function parseIrcMessage(rawLine: string): Promise<AppEvent> {
 
 /**
  * badges=moderator/1,vip/1,subscriber/6  →  { isModerator: true, isVip: true, … }
+ *
+ * Twitch's lead_moderator badge replaces moderator in the IRC tag (a user has
+ * either moderator or lead_moderator, never both). isModerator stays true for
+ * lead mods so moderation logic doesn't have to check both flags.
  */
-function extractRolesFromBadges(badgesTag: string): ChatRoles {
+export function extractRolesFromBadges(badgesTag: string): ChatRoles {
   const badgeIds = badgesTag
       ? badgesTag.split(',').map((b) => b.split('/')[0])
       : [];
 
+  const isLeadModerator = badgeIds.includes('lead_moderator');
   return {
-    isModerator:  badgeIds.includes('moderator'),
+    isModerator:  badgeIds.includes('moderator') || isLeadModerator,
+    isLeadModerator,
     isVip:        badgeIds.includes('vip'),
     isBroadcaster: badgeIds.includes('broadcaster'),
     isStaff:      badgeIds.includes('staff'),
