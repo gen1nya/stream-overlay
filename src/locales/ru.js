@@ -1629,6 +1629,13 @@ const ru = {
                         disabled: 'Выключен',
                     },
                     font: 'Шрифт заголовка:',
+                    groupPosition: 'Положение и выравнивание',
+                    groupTypography: 'Шрифт и цвет ника',
+                    nameColorTitle: 'Цвет ника',
+                    nameColorOptions: {
+                        twitch: 'Цвет ника Twitch',
+                        custom: 'Свой цвет',
+                    },
                 },
                 body: {
                     title: 'Настройки текста сообщений',
@@ -1655,8 +1662,15 @@ const ru = {
                     header: 'Смещение заголовка',
                     text: 'Смещение текста',
                 },
+                tabs: {
+                    background: 'Фон',
+                    content: 'Контент',
+                    badges: 'Бейджи',
+                },
                 badgeOverride: {
                     sectionTitle: 'Бейджи ролей',
+                    layoutSectionTitle: 'Расположение в шапке',
+                    rulesSectionTitle: 'Правила отображения',
                     sourceTitle: 'Источник иконок',
                     sourceOptions: {
                         twitch: 'Только Twitch',

@@ -590,13 +590,13 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
         <Wrapper>
             <TabBar>
                 <TabButton $active={activeTab === 'background'} onClick={() => setActiveTab('background')}>
-                    <FiImage/> Фон
+                    <FiImage/> {t('settings.chatMessages.tabs.background', 'Фон')}
                 </TabButton>
                 <TabButton $active={activeTab === 'content'} onClick={() => setActiveTab('content')}>
-                    <FiType/> Контент
+                    <FiType/> {t('settings.chatMessages.tabs.content', 'Контент')}
                 </TabButton>
                 <TabButton $active={activeTab === 'badges'} onClick={() => setActiveTab('badges')}>
-                    <FiAward/> Бейджи
+                    <FiAward/> {t('settings.chatMessages.tabs.badges', 'Бейджи')}
                 </TabButton>
             </TabBar>
 
@@ -1156,7 +1156,9 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                 {/* ── Layout in the header ── */}
                 <Section>
                     <SectionHeader>
-                        <SectionTitle><FiLayout/> Расположение в шапке</SectionTitle>
+                        <SectionTitle>
+                            <FiLayout/> {t('settings.chatMessages.badgeOverride.layoutSectionTitle', 'Расположение в шапке')}
+                        </SectionTitle>
                     </SectionHeader>
                     {renderBadgeLayout()}
                 </Section>
@@ -1164,7 +1166,9 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                 {/* ── Source + multipleMode + priority ── */}
                 <Section>
                     <SectionHeader>
-                        <SectionTitle><FiAward/> Правила отображения</SectionTitle>
+                        <SectionTitle>
+                            <FiAward/> {t('settings.chatMessages.badgeOverride.rulesSectionTitle', 'Правила отображения')}
+                        </SectionTitle>
                     </SectionHeader>
                     {renderBadgeRules()}
                 </Section>
@@ -1185,14 +1189,14 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
     // ── Header settings ──────────────────────────────────────────
     function renderHeaderSettings() {
         const nameColorOptions = [
-            {key: 'twitch', text: 'Цвет ника Twitch'},
-            {key: 'custom', text: 'Свой цвет'},
+            {key: 'twitch', text: t('settings.chatMessages.header.nameColorOptions.twitch', 'Цвет ника Twitch')},
+            {key: 'custom', text: t('settings.chatMessages.header.nameColorOptions.custom', 'Свой цвет')},
         ];
 
         return (
             <>
                 {/* ── Группа: положение и выравнивание ── */}
-                <SubTitle>Положение и выравнивание</SubTitle>
+                <SubTitle>{t('settings.chatMessages.header.groupPosition', 'Положение и выравнивание')}</SubTitle>
                 <Row>
                     <ControlGroup>
                         <RadioGroup
@@ -1256,7 +1260,7 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                 </Row>
 
                 {/* ── Группа: шрифт и цвет ника ── */}
-                <SubTitle>Шрифт и цвет ника</SubTitle>
+                <SubTitle>{t('settings.chatMessages.header.groupTypography', 'Шрифт и цвет ника')}</SubTitle>
                 <Row gap="16px">
                     <ControlGroup>
                         <FontAndSizeEditor
@@ -1276,7 +1280,7 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                 <Row gap="16px">
                     <ControlGroup>
                         <RadioGroup
-                            title="Цвет ника"
+                            title={t('settings.chatMessages.header.nameColorTitle', 'Цвет ника')}
                             defaultSelected={header.customColor.enabled ? 'custom' : 'twitch'}
                             items={nameColorOptions}
                             direction="horizontal"

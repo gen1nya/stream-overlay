@@ -1635,6 +1635,13 @@ const en = {
                         disabled: 'Disabled',
                     },
                     font: 'Header font:',
+                    groupPosition: 'Position & alignment',
+                    groupTypography: 'Font & name color',
+                    nameColorTitle: 'Name color',
+                    nameColorOptions: {
+                        twitch: 'Twitch name color',
+                        custom: 'Custom color',
+                    },
                 },
                 body: {
                     title: 'Message text settings',
@@ -1661,8 +1668,15 @@ const en = {
                     header: 'Header offset',
                     text: 'Text offset',
                 },
+                tabs: {
+                    background: 'Background',
+                    content: 'Content',
+                    badges: 'Badges',
+                },
                 badgeOverride: {
                     sectionTitle: 'Role badges',
+                    layoutSectionTitle: 'Layout in header',
+                    rulesSectionTitle: 'Display rules',
                     sourceTitle: 'Icon source',
                     sourceOptions: {
                         twitch: 'Twitch only',
