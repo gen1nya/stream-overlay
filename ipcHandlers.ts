@@ -155,6 +155,10 @@ export function registerIpcHandlers(
       delete themes[name];
       store.set('themes', themes);
       broadcast('themes:get', { themes, currentThemeName: store.get('currentTheme') });
+
+      const safeTheme = sanitizeThemeNameForPath(name);
+      const badgeDir = path.join(app.getPath('userData'), 'images', 'badges', safeTheme);
+      await fs.promises.rm(badgeDir, { recursive: true, force: true }).catch(() => {});
     }
   });
   ipcMain.on('theme:update', (_e, theme, name) => {
@@ -176,6 +180,69 @@ export function registerIpcHandlers(
     return `file://${fullPath}`;
   });
   ipcMain.handle('utils:get_image_url', (_e, fileName) => `/images/${encodeURIComponent(fileName)}`);
+
+  // ─── Badge override icons ────────────────────────────────────────
+  // Custom role icons live under userData/images/badges/<themeName>/<role>.<ext>
+  // and are referenced from the overlay via <img src="/images/badges/.../foo.svg">.
+  // SVG content is intentionally not sanitised: the rendering path is always
+  // <img src> which sandboxes scripts/event handlers per browser spec. If a
+  // future feature inlines this content into the DOM, sanitisation must be
+  // added at THAT boundary.
+  const ALLOWED_BADGE_ROLES = new Set([
+    'broadcaster',
+    'lead_moderator',
+    'moderator',
+    'vip',
+    'artist',
+    'editor',
+    'subscriber',
+  ]);
+  const ALLOWED_BADGE_EXTS = new Set(['png', 'jpg', 'jpeg', 'gif', 'webp', 'svg']);
+
+  function sanitizeThemeNameForPath(name: string): string {
+    return String(name ?? '')
+        .replace(/[\/\\:*?"<>|\x00-\x1f]/g, '_')
+        .replace(/\.\./g, '_')
+        .replace(/^\.+|\.+$/g, '_')
+        .trim() || '_unnamed';
+  }
+
+  async function removeExistingBadgeIcon(dir: string, role: string): Promise<void> {
+    try {
+      const files = await fs.promises.readdir(dir);
+      const prefix = `${role}.`;
+      await Promise.all(
+          files
+              .filter((f) => f.toLowerCase().startsWith(prefix))
+              .map((f) => fs.promises.unlink(path.join(dir, f)).catch(() => {}))
+      );
+    } catch {
+      // dir may not exist yet; ignore
+    }
+  }
+
+  ipcMain.handle('badge:upload-icon', async (_e, args: { themeName: string; role: string; buffer: ArrayBuffer; extension: string }) => {
+    const { themeName, role, buffer, extension } = args ?? {} as any;
+    const ext = String(extension ?? '').toLowerCase().replace(/^\./, '');
+    if (!ALLOWED_BADGE_ROLES.has(role)) throw new Error(`Invalid badge role: ${role}`);
+    if (!ALLOWED_BADGE_EXTS.has(ext)) throw new Error(`Unsupported badge extension: ${ext}`);
+    const safeTheme = sanitizeThemeNameForPath(themeName);
+    const dir = path.join(app.getPath('userData'), 'images', 'badges', safeTheme);
+    await fs.promises.mkdir(dir, { recursive: true });
+    await removeExistingBadgeIcon(dir, role);
+    const filename = `${role}.${ext}`;
+    await fs.promises.writeFile(path.join(dir, filename), Buffer.from(buffer));
+    return `/images/badges/${encodeURIComponent(safeTheme)}/${encodeURIComponent(filename)}`;
+  });
+
+  ipcMain.handle('badge:remove-icon', async (_e, args: { themeName: string; role: string }) => {
+    const { themeName, role } = args ?? {} as any;
+    if (!ALLOWED_BADGE_ROLES.has(role)) throw new Error(`Invalid badge role: ${role}`);
+    const safeTheme = sanitizeThemeNameForPath(themeName);
+    const dir = path.join(app.getPath('userData'), 'images', 'badges', safeTheme);
+    await removeExistingBadgeIcon(dir, role);
+    return true;
+  });
 
   // Media overlay editor handler
   ipcMain.handle('media-overlay:open-editor', () => createMediaOverlayEditorWindow());
