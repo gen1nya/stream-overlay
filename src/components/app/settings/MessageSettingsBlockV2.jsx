@@ -612,6 +612,28 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
     function renderBackgroundTab() {
         return (
             <>
+                {/* ── Background type ── */}
+                <Section>
+                    <SectionHeader>
+                        <SectionTitle><FiSquare/> Тип фона</SectionTitle>
+                    </SectionHeader>
+
+                    <ControlGroup>
+                        <RadioGroup
+                            title="Тип фона"
+                            defaultSelected={bg.type}
+                            items={bgTypeOptions}
+                            direction="horizontal"
+                            itemWidth="120px"
+                            onChange={(v) => updateBg('type', v)}
+                        />
+                    </ControlGroup>
+
+                    {bg.type === 'color' && renderBgColor()}
+                    {bg.type === 'gradient' && renderBgGradient()}
+                    {bg.type === 'image' && renderBgImage()}
+                </Section>
+
                 {/* ── Decor (header/footer images) ── */}
                 <Section>
                     <SectionHeader>
@@ -659,28 +681,6 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                             />
                         </OffsetCard>
                     </OffsetGrid>
-                </Section>
-
-                {/* ── Background type ── */}
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle><FiSquare/> Тип фона</SectionTitle>
-                    </SectionHeader>
-
-                    <ControlGroup>
-                        <RadioGroup
-                            title="Тип фона"
-                            defaultSelected={bg.type}
-                            items={bgTypeOptions}
-                            direction="horizontal"
-                            itemWidth="120px"
-                            onChange={(v) => updateBg('type', v)}
-                        />
-                    </ControlGroup>
-
-                    {bg.type === 'color' && renderBgColor()}
-                    {bg.type === 'gradient' && renderBgGradient()}
-                    {bg.type === 'image' && renderBgImage()}
                 </Section>
 
                 {/* ── Margins & Padding ── */}
@@ -1234,10 +1234,11 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
 
                 {header.position === 'outside' && (
                     <Row gap="16px">
-                        <ControlGroup flex="1">
+                        <ControlGroup>
                             <SeekbarComponent
                                 title="Z-index заголовка (поверх фона)"
                                 min={-5} max={10} step={1}
+                                width="280px"
                                 value={header.zIndex ?? 0}
                                 onChange={(v) => updateHeader('zIndex', v)}
                             />
