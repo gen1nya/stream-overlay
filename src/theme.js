@@ -853,9 +853,41 @@ export const defaultV2Message = {
 
             emotes: {
                 position: 'inside',  // 'inside' | 'outside'
-                source: 'twitch',    // 'twitch' | 'custom'
+                source: 'twitch',    // 'twitch' | 'custom' (custom = override known roles, fallback to twitch)
                 placement: 'right',  // 'left' | 'right' (only for outside)
-                gap: 4
+                gap: 4,
+
+                // How many badges to render when a user has more than one:
+                //   'all'             — render every badge (default Twitch behaviour)
+                //   'first'           — render only the highest-priority one (by priorityOrder below)
+                //   'overriddenOnly'  — render only badges that have a custom image set
+                multipleMode: 'all',
+
+                // Order in which roles win priority when multipleMode === 'first',
+                // and also the rendering order in 'all' mode. Unknown roles arriving
+                // from Twitch (e.g. founder, bits, premium) are appended after this list.
+                priorityOrder: [
+                    'broadcaster',
+                    'lead_moderator',
+                    'moderator',
+                    'vip',
+                    'artist',
+                    'editor',
+                    'subscriber'
+                ],
+
+                // Custom icon overrides. image: relative URL under /images/ or null.
+                // userList: case-insensitive list of logins that should be tagged with
+                // this role even without a matching Twitch badge.
+                customBadges: {
+                    broadcaster:    { image: null },
+                    lead_moderator: { image: null },
+                    moderator:      { image: null },
+                    vip:            { image: null },
+                    artist:         { image: null, userList: [] },
+                    editor:         { image: null, userList: [] },
+                    subscriber:     { image: null }
+                }
             }
         },
 
