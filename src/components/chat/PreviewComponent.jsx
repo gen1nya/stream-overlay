@@ -146,6 +146,12 @@ export default function PreviewComponent() {
 
     const sampleEmote = '<img src="https://static-cdn.jtvnw.net/emoticons/v2/425618/default/dark/1.0" alt="LUL" style="width:28px;height:28px;vertical-align:middle">';
 
+    const v2Config = theme.v2?.message;
+    const mergedV2 = useMemo(
+        () => v2Config ? merge({}, defaultV2Message, v2Config) : null,
+        [v2Config]
+    );
+
     // Static Twitch badge URLs for the preview only. Real overlays receive
     // these via Helix /chat/badges; mirroring the fetched data here would be
     // overkill for a demo. Keep in sync with the role list in parseBadges.
@@ -199,12 +205,6 @@ export default function PreviewComponent() {
             cost: 100
         }
     }
-
-    const v2Config = theme.v2?.message;
-    const mergedV2 = useMemo(
-        () => v2Config ? merge({}, defaultV2Message, v2Config) : null,
-        [v2Config]
-    );
 
     const ChatMsg = mergedV2
         ? (props) => <ChatMessageV2 {...props} v2Config={mergedV2} />
