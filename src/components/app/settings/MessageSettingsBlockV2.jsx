@@ -1184,8 +1184,15 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
 
     // ── Header settings ──────────────────────────────────────────
     function renderHeaderSettings() {
+        const nameColorOptions = [
+            {key: 'twitch', text: 'Цвет ника Twitch'},
+            {key: 'custom', text: 'Свой цвет'},
+        ];
+
         return (
             <>
+                {/* ── Группа: положение и выравнивание ── */}
+                <SubTitle>Положение и выравнивание</SubTitle>
                 <Row>
                     <ControlGroup>
                         <RadioGroup
@@ -1221,6 +1228,19 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                     </ControlGroup>
                 </Row>
 
+                {header.position === 'outside' && (
+                    <Row gap="16px">
+                        <ControlGroup flex="1">
+                            <SeekbarComponent
+                                title="Z-index заголовка (поверх фона)"
+                                min={-5} max={10} step={1}
+                                value={header.zIndex ?? 0}
+                                onChange={(v) => updateHeader('zIndex', v)}
+                            />
+                        </ControlGroup>
+                    </Row>
+                )}
+
                 <Row>
                     <ControlGroup>
                         <XYPad
@@ -1233,7 +1253,11 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                             onChange={({x, y}) => updateHeader('translate', {x, y})}
                         />
                     </ControlGroup>
-                    <Spacer/>
+                </Row>
+
+                {/* ── Группа: шрифт и цвет ника ── */}
+                <SubTitle>Шрифт и цвет ника</SubTitle>
+                <Row gap="16px">
                     <ControlGroup>
                         <FontAndSizeEditor
                             title="Шрифт заголовка"
@@ -1249,37 +1273,23 @@ export default function MessageSettingsBlockV2({current, themeName, onChange, op
                     </ControlGroup>
                 </Row>
 
-                {header.position === 'outside' && (
-                    <Row gap="16px">
-                        <ControlGroup flex="1">
-                            <SeekbarComponent
-                                title="Z-index заголовка (поверх фона)"
-                                min={-5} max={10} step={1}
-                                value={header.zIndex ?? 0}
-                                onChange={(v) => updateHeader('zIndex', v)}
-                            />
-                        </ControlGroup>
-                    </Row>
-                )}
-
                 <Row gap="16px">
                     <ControlGroup>
-                        <SwitchRow>
-                            <Switch
-                                checked={header.customColor.enabled}
-                                onChange={(e) =>
-                                    updateHeaderNested('customColor', 'enabled', e.target.checked)
-                                }
-                            />
-                            <SmallLabel>
-                                {header.customColor.enabled ? 'Свой цвет' : 'Цвет Twitch'}
-                            </SmallLabel>
-                        </SwitchRow>
+                        <RadioGroup
+                            title="Цвет ника"
+                            defaultSelected={header.customColor.enabled ? 'custom' : 'twitch'}
+                            items={nameColorOptions}
+                            direction="horizontal"
+                            itemWidth="140px"
+                            onChange={(v) =>
+                                updateHeaderNested('customColor', 'enabled', v === 'custom')
+                            }
+                        />
                     </ControlGroup>
                     {header.customColor.enabled && (
                         <ControlGroup>
                             <ColorSelectorButton
-                                title="Цвет заголовка"
+                                title="Цвет"
                                 hex={header.customColor.color}
                                 alpha={1}
                                 openColorPopup={openColorPopup}
