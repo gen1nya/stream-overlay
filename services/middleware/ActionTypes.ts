@@ -16,6 +16,9 @@ export const ActionTypes = {
 
   // OBS actions
   OBS_ACTION: 'OBS_ACTION',
+
+  // HTTP request actions
+  HTTP_REQUEST: 'HTTP_REQUEST',
 } as const;
 
 export type ActionType = (typeof ActionTypes)[keyof typeof ActionTypes];

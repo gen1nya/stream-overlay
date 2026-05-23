@@ -623,6 +623,38 @@ export const testObsAction = (action) => {
 };
 
 // ============================================
+// HTTP Actions
+// ============================================
+
+export const getAllHttpActions = () => {
+    return ipcRenderer?.invoke('http:get-all');
+};
+
+export const getHttpAction = (id) => {
+    return ipcRenderer?.invoke('http:get', id);
+};
+
+export const saveHttpAction = (action) => {
+    return ipcRenderer?.invoke('http:save', action);
+};
+
+export const deleteHttpAction = (id) => {
+    return ipcRenderer?.invoke('http:delete', id);
+};
+
+export const setHttpSecret = (keytarKey, value) => {
+    return ipcRenderer?.invoke('http:secret-set', keytarKey, value);
+};
+
+export const hasHttpSecret = (keytarKey) => {
+    return ipcRenderer?.invoke('http:secret-has', keytarKey);
+};
+
+export const testHttpAction = (action) => {
+    return ipcRenderer?.invoke('http:test', action);
+};
+
+// ============================================
 // Media Library
 // ============================================
 

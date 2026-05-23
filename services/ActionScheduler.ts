@@ -1,6 +1,7 @@
 import { TriggerRepository, ScheduledAction } from './db/TriggerRepository';
 import { LogService } from './logService';
 import { ObsService } from './ObsService';
+import { HttpActionService } from './HttpActionService';
 import * as helixApi from './twitch/authorizedHelixApi';
 
 interface SendMessageFunc {
@@ -12,6 +13,7 @@ interface ActionSchedulerDependencies {
     logService: LogService;
     sendMessage: SendMessageFunc;
     obsService: ObsService;
+    httpActionService: HttpActionService;
 }
 
 export class ActionScheduler {
@@ -170,6 +172,21 @@ export class ActionScheduler {
                             const ok = await this.deps.obsService.executeAction(params.obsActionId);
                             this.deps.logService.logMessage(
                                 `[ActionScheduler] OBS action ${params.obsActionId} ${ok ? 'executed' : 'failed'}`
+                            );
+                        }
+                    }
+                    break;
+
+                case 'http_request':
+                    if (action.actionParams) {
+                        const params = JSON.parse(action.actionParams);
+                        if (params.httpActionId) {
+                            const result = await this.deps.httpActionService.execute(
+                                params.httpActionId,
+                                params.ctx
+                            );
+                            this.deps.logService.logMessage(
+                                `[ActionScheduler] HTTP action ${params.httpActionId} ${result.ok ? `→ ${result.status}` : `failed: ${result.error}`}`
                             );
                         }
                     }

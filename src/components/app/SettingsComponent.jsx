@@ -46,7 +46,8 @@ import {
     FiExternalLink,
     FiFilm,
     FiSliders,
-    FiSmartphone
+    FiSmartphone,
+    FiGlobe
 } from "react-icons/fi";
 import {MediumSecondaryButton, SettingsBlockFull, SettingsBlockHalf, SettingsBlockTitle} from "./settings/SettingBloks";
 import ThemePopup from "./settings/ThemePopup";
@@ -80,6 +81,7 @@ import { useTranslation } from 'react-i18next';
 import AppearanceSettingsCard from "./settings/AppearanceSettingsCard";
 import MediaEventsManager from "./settings/MediaEventsManager";
 import ObsActionsManager from "./settings/ObsActionsManager";
+import HttpActionsManager from "./settings/HttpActionsManager";
 import RemoteGatewayManager from "./settings/RemoteGatewayManager";
 import Switch from "../utils/Switch";
 import { EnabledToggle, StatusBadge, HelpButton, HelpInfoPopup } from "./settings/bot/SharedBotStyles";
@@ -305,6 +307,7 @@ export default function Settings() {
         bot_timers: {title: t('settings.pages.botTimers.title'), icon: <FiClock/>},
         media_events: {title: t('settings.pages.mediaEvents.title', 'Media Events'), icon: <FiFilm/>},
         obs_actions: {title: t('settings.pages.obsActions.title', 'OBS Actions'), icon: <FiSliders/>},
+        http_actions: {title: t('settings.pages.httpActions.title', 'HTTP Requests'), icon: <FiGlobe/>},
         remote_gateway: {title: t('settings.pages.remoteGateway.title', 'Мобильный чат'), icon: <FiSmartphone/>},
         media_overlay: {title: t('settings.pages.mediaOverlay.title', 'Media Overlay'), icon: <FiLayers/>},
         players: {title: t('settings.pages.players.title'), icon: <FiMusic/>},
@@ -593,6 +596,7 @@ export default function Settings() {
                                         indicatorBorderColor: obsIndicator.borderColor,
                                     }),
                                 },
+                                {key: "http_actions", icon: <FiGlobe/>, label: t('settings.pages.httpActions.label', 'HTTP')},
                                 {key: "youtube", icon: <FiYoutube/>, label: t('settings.pages.youtube.label')},
                                 {key: "donation_goal", icon: <FiGift/>, label: t('settings.pages.donationGoal.label', 'Цель сбора (DA)')},
                             ]
@@ -1001,6 +1005,13 @@ const MainContent = ({page, selectedTheme, selectedThemeName, apply, openColorPo
             return (
                 <Content>
                     <ObsActionsManager />
+                </Content>
+            );
+
+        case "http_actions":
+            return (
+                <Content>
+                    <HttpActionsManager />
                 </Content>
             );
 

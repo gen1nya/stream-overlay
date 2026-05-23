@@ -49,6 +49,7 @@ export interface StoreSchema {
     mediaLibrary: MediaFile[];  // Media library files storage
     obsActions: ObsActionConfig[];  // Standalone OBS actions registry
     obsConnection: ObsConnectionConfig;  // OBS WebSocket connection config
+    httpActions: HttpActionConfig[];  // Standalone HTTP-request actions registry
     remoteGateway: RemoteGatewayStoreConfig;  // Remote companion (mobile PWA) gateway
 }
 
@@ -374,13 +375,15 @@ export interface TriggerActionParams {
     reason?: string;       // For timeout
     mediaEventId?: string; // For show_media - reference to MediaEventConfig.id
     obsActionId?: string;  // For obs_action - reference to ObsActionConfig.id
+    httpActionId?: string; // For http_request - reference to HttpActionConfig.id
 }
 
 // Trigger action ("THEN" part)
 export interface TriggerAction {
     id: string;            // UUID for UI identification
     type: 'send_message' | 'add_vip' | 'remove_vip' |
-          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout' | 'show_media' | 'obs_action';
+          'add_mod' | 'remove_mod' | 'timeout' | 'delete_message' | 'shoutout' |
+          'show_media' | 'obs_action' | 'http_request';
 
     // Action target
     target: 'sender' | 'arg_user';  // sender = message author, arg_user = from argument
@@ -645,6 +648,39 @@ export type ObsActionConfig =
     | ObsActionStreamControl
     | ObsActionVirtualCamControl
     | ObsActionMediaControl;
+
+// ============================================
+// HTTP Actions Types
+// ============================================
+
+export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
+export type HttpBodyType = 'none' | 'json' | 'raw' | 'form';
+
+// Header value can be either inline plain text or a reference to a
+// secret stored in the OS keychain (keytar). Secret values never live in
+// electron-store — only the keytarKey reference does.
+export type HttpHeaderValue =
+    | { type: 'plain'; value: string }
+    | { type: 'secret'; keytarKey: string };
+
+export interface HttpHeader {
+    id: string;       // UUID for stable React keys in the editor
+    name: string;
+    value: HttpHeaderValue;
+}
+
+export interface HttpActionConfig {
+    id: string;
+    name: string;
+    method: HttpMethod;
+    url: string;                // supports ${user}/${args[N]}/${reward}/${raider}/${viewers}
+    headers: HttpHeader[];
+    body?: {
+        type: HttpBodyType;
+        content?: string;       // supports interpolation
+    };
+    timeoutMs?: number;         // default 8000
+}
 
 // Main bot configuration interface
 export interface BotConfig {

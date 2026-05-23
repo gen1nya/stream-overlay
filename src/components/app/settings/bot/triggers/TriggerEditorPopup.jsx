@@ -5,15 +5,16 @@ import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
     FiClock, FiPlus, FiTrash2, FiChevronDown, FiStar, FiShield, FiSettings,
-    FiArrowRight, FiUsers, FiExternalLink, FiImage, FiEdit2, FiSliders
+    FiArrowRight, FiUsers, FiExternalLink, FiImage, FiEdit2, FiSliders, FiGlobe
 } from 'react-icons/fi';
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
-import { getTwitchRewards, getAllMediaEvents, getAllObsActions } from "../../../../../services/api";
+import { getTwitchRewards, getAllMediaEvents, getAllObsActions, getAllHttpActions } from "../../../../../services/api";
 import { v4 as uuidv4 } from 'uuid';
 import MediaEventEditorPopup from "./MediaEventEditorPopup";
 import ObsActionEditorPopup from "./ObsActionEditorPopup";
+import HttpActionEditorPopup from "./HttpActionEditorPopup";
 import {Spacer} from "../../../../utils/Separator";
 
 const PopupOverlay = styled.div`
@@ -478,6 +479,7 @@ const ACTION_TYPES = [
     { value: 'delete_message', icon: FiTrash2, color: 'rgba(107, 114, 128, 0.2)', iconColor: '#6b7280' },
     { value: 'show_media', icon: FiImage, color: 'rgba(236, 72, 153, 0.2)', iconColor: '#ec4899' },
     { value: 'obs_action', icon: FiSliders, color: 'rgba(59, 130, 246, 0.2)', iconColor: '#3b82f6' },
+    { value: 'http_request', icon: FiGlobe, color: 'rgba(34, 197, 94, 0.2)', iconColor: '#22c55e' },
 ];
 
 const DELAY_UNITS = ['seconds', 'minutes', 'hours', 'days'];
@@ -499,6 +501,12 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     const [obsActionEditorOpen, setObsActionEditorOpen] = useState(false);
     const [currentActionIdForObsAction, setCurrentActionIdForObsAction] = useState(null);
 
+    const [httpActions, setHttpActions] = useState([]);
+    const [loadingHttpActions, setLoadingHttpActions] = useState(false);
+    const [editingHttpAction, setEditingHttpAction] = useState(null);
+    const [httpActionEditorOpen, setHttpActionEditorOpen] = useState(false);
+    const [currentActionIdForHttpAction, setCurrentActionIdForHttpAction] = useState(null);
+
     useEffect(() => {
         if (editedRule.condition.eventType === 'redemption') {
             loadRewards();
@@ -508,6 +516,7 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     useEffect(() => {
         loadMediaEvents();
         loadObsActions();
+        loadHttpActions();
     }, []);
 
     const loadRewards = async () => {
@@ -544,6 +553,55 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
         } finally {
             setLoadingObsActions(false);
         }
+    };
+
+    const loadHttpActions = async () => {
+        setLoadingHttpActions(true);
+        try {
+            const list = await getAllHttpActions();
+            setHttpActions(list || []);
+        } catch (error) {
+            console.error('Failed to load HTTP actions:', error);
+        } finally {
+            setLoadingHttpActions(false);
+        }
+    };
+
+    const handleOpenHttpActionEditor = (actionId, httpActionId = null) => {
+        setCurrentActionIdForHttpAction(actionId);
+        if (httpActionId) {
+            const existing = httpActions.find(a => a.id === httpActionId);
+            setEditingHttpAction(existing || null);
+        } else {
+            setEditingHttpAction(null);
+        }
+        setHttpActionEditorOpen(true);
+    };
+
+    const handleSaveHttpAction = (savedHttpAction) => {
+        setHttpActions(prev => {
+            const existingIndex = prev.findIndex(a => a.id === savedHttpAction.id);
+            if (existingIndex >= 0) {
+                const updated = [...prev];
+                updated[existingIndex] = savedHttpAction;
+                return updated;
+            }
+            return [...prev, savedHttpAction];
+        });
+
+        if (currentActionIdForHttpAction) {
+            updateActionParams(currentActionIdForHttpAction, { httpActionId: savedHttpAction.id });
+        }
+
+        setHttpActionEditorOpen(false);
+        setEditingHttpAction(null);
+        setCurrentActionIdForHttpAction(null);
+    };
+
+    const handleCloseHttpActionEditor = () => {
+        setHttpActionEditorOpen(false);
+        setEditingHttpAction(null);
+        setCurrentActionIdForHttpAction(null);
     };
 
     const handleOpenObsActionEditor = (actionId, obsActionId = null) => {
@@ -1087,6 +1145,53 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                                                     </FormRow>
                                                 )}
 
+                                                {/* HTTP request action settings */}
+                                                {action.type === 'http_request' && (
+                                                    <FormRow $align="center">
+                                                        <FormGroup $flex={2}>
+                                                            <Label>{t('settings.httpActions.addAction')}</Label>
+                                                            {loadingHttpActions ? (
+                                                                <span style={{ color: '#888', fontSize: '0.9rem' }}>{t('common.loading')}</span>
+                                                            ) : (
+                                                                <Select
+                                                                    value={action.params.httpActionId || ''}
+                                                                    onChange={(e) => updateActionParams(action.id, { httpActionId: e.target.value })}
+                                                                >
+                                                                    <option value="">—</option>
+                                                                    {httpActions.map(ha => (
+                                                                        <option key={ha.id} value={ha.id}>
+                                                                            {ha.name} ({ha.method})
+                                                                        </option>
+                                                                    ))}
+                                                                </Select>
+                                                            )}
+                                                        </FormGroup>
+                                                        <FormGroup $flex={0} $minWidth="auto" style={{ alignSelf: 'flex-end', marginBottom: '1px' }}>
+                                                            {action.params.httpActionId ? (
+                                                                <AddActionButton
+                                                                    $hoverColor="#22c55e"
+                                                                    $hoverBg="rgba(34, 197, 94, 0.1)"
+                                                                    onClick={() => handleOpenHttpActionEditor(action.id, action.params.httpActionId)}
+                                                                    style={{ height: '40px', borderStyle: 'solid' }}
+                                                                >
+                                                                    <FiEdit2 />
+                                                                    {t('settings.httpActions.actions.edit')}
+                                                                </AddActionButton>
+                                                            ) : (
+                                                                <AddActionButton
+                                                                    $hoverColor="#22c55e"
+                                                                    $hoverBg="rgba(34, 197, 94, 0.1)"
+                                                                    onClick={() => handleOpenHttpActionEditor(action.id)}
+                                                                    style={{ height: '40px' }}
+                                                                >
+                                                                    <FiPlus />
+                                                                    {t('settings.httpActions.addAction')}
+                                                                </AddActionButton>
+                                                            )}
+                                                        </FormGroup>
+                                                    </FormRow>
+                                                )}
+
                                                 {/* Delay toggle */}
                                                 <FormRow $align="center">
                                                     <Switch
@@ -1218,6 +1323,14 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                     action={editingObsAction}
                     onSave={handleSaveObsAction}
                     onClose={handleCloseObsActionEditor}
+                />
+            )}
+
+            {httpActionEditorOpen && (
+                <HttpActionEditorPopup
+                    action={editingHttpAction}
+                    onSave={handleSaveHttpAction}
+                    onClose={handleCloseHttpActionEditor}
                 />
             )}
         </>

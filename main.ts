@@ -39,6 +39,7 @@ import {BackendLogService} from "./services/BackendLogService";
 import {MediaEventsController} from "./services/MediaEventsController";
 import {MediaEventsService} from "./services/MediaEventsService";
 import {ObsService} from "./services/ObsService";
+import {HttpActionService} from "./services/HttpActionService";
 import {RemoteGatewayService, type GatewayUserProfile, type ModerationDeps} from "./services/RemoteGatewayService";
 import {MediaDisplayGroupService} from "./services/MediaDisplayGroupService";
 import {MediaLibraryService} from "./services/MediaLibraryService";
@@ -109,6 +110,7 @@ const store = new Store<StoreSchema>({
       port: 4455,
       autoConnect: false,
     },
+    httpActions: [],
     remoteGateway: {
       enabled: false,
       port: 42010,
@@ -128,6 +130,8 @@ const mediaDisplayGroupService = new MediaDisplayGroupService(store);
 const mediaEventsController = new MediaEventsController(logService, mediaEventsService);
 const mediaLibraryService = new MediaLibraryService(store);
 const obsService = new ObsService(store);
+const httpActionService = new HttpActionService(store);
+httpActionService.setLogService(logService);
 
 // Remote companion gateway (mobile PWA bridge). Authenticated WS on a
 // separate port, gated by store flag. Token is generated once and
@@ -382,6 +386,17 @@ const applyAction = async (action: { type: string; payload: any }) => {
       await obsService.executeAction(action.payload.obsActionId);
       break;
 
+    case ActionTypes.HTTP_REQUEST: {
+      const httpResult = await httpActionService.execute(
+        action.payload.httpActionId,
+        action.payload.ctx
+      );
+      if (!httpResult.ok) {
+        console.warn(`[HTTP action] ${action.payload.httpActionId} failed:`, httpResult.error);
+      }
+      break;
+    }
+
     default:
       console.warn(`⚠️ Unknown action type: ${action.type}`);
       break;
@@ -432,6 +447,7 @@ const actionScheduler = new ActionScheduler({
     logService,
     sendMessage: (message: string) => twitchClient.sendMessage(message),
     obsService,
+    httpActionService,
 })
 
 const chatStatsService = new ChatStatsService(broadcast, () => {
@@ -484,6 +500,7 @@ mediaDisplayGroupService.setBroadcastCallback(broadcast);
 mediaEventsController.setBroadcastCallback(broadcast);
 mediaLibraryService.setBroadcastCallback(broadcast);
 obsService.setBroadcastCallback(broadcast);
+httpActionService.setBroadcastCallback(broadcast);
 
 // ─── DonationAlerts Goal Service ─────────────────────────────────
 const daService = new DonationAlertsService(broadcast);
@@ -653,6 +670,7 @@ app.whenReady().then(() => {
   mediaDisplayGroupService.registerIpcHandlers();
   mediaLibraryService.registerIpcHandlers();
   obsService.registerIpcHandlers();
+  httpActionService.registerIpcHandlers();
 
   // Auto-connect to OBS if enabled in config
   {

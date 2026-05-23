@@ -12,6 +12,7 @@ import {
 import { DbRepository } from '../db/DbRepository';
 import { TriggerRepository, CreateExecutionData } from '../db/TriggerRepository';
 import { fetchUser } from '../twitch/authorizedHelixApi';
+import { InterpolationContext } from './interpolate';
 
 // ============================================
 // Trigger Context Types
@@ -416,15 +417,24 @@ export default class TriggerMiddleware extends Middleware {
                         }
                     }
 
+                    const baseParams = {
+                        ...action.params,
+                        message: action.params.message
+                            ? this.interpolate(action.params.message, context, targetUser)
+                            : undefined
+                    };
+                    // http_request can't pre-render URL/headers/body
+                    // because that would force secrets into the DB.
+                    // Snapshot the interpolation context instead and
+                    // let the scheduler hand it to HttpActionService.
+                    const extraParams = action.type === 'http_request'
+                        ? { ctx: this.buildInterpolationContext(context, targetUser) }
+                        : {};
+
                     repository.scheduleAction({
                         executionId,
                         actionType: action.type,
-                        actionParams: JSON.stringify({
-                            ...action.params,
-                            message: action.params.message
-                                ? this.interpolate(action.params.message, context, targetUser)
-                                : undefined
-                        }),
+                        actionParams: JSON.stringify({ ...baseParams, ...extraParams }),
                         targetUserId: targetUser?.id || context.sender.id,
                         targetUserName: targetUser?.name || context.sender.name,
                         executeAt
@@ -556,9 +566,40 @@ export default class TriggerMiddleware extends Middleware {
                     }
                 };
 
+            case 'http_request':
+                return {
+                    type: ActionTypes.HTTP_REQUEST,
+                    payload: {
+                        httpActionId: action.params.httpActionId,
+                        ctx: this.buildInterpolationContext(context, targetUser)
+                    }
+                };
+
             default:
                 return null;
         }
+    }
+
+    private buildInterpolationContext(
+        context: TriggerContext,
+        targetUser: ResolvedUser | null
+    ): InterpolationContext {
+        const ctx: InterpolationContext = {
+            user: context.sender.displayName || context.sender.name,
+            args: context.args,
+        };
+        if (targetUser) {
+            ctx.target = targetUser.displayName || targetUser.name;
+        }
+        if (context.reward) {
+            ctx.reward = context.reward.title;
+            ctx.rewardCost = context.reward.cost;
+        }
+        if (context.raid) {
+            ctx.raider = context.raid.fromName;
+            ctx.viewers = context.raid.viewers;
+        }
+        return ctx;
     }
 
     // ============================================
