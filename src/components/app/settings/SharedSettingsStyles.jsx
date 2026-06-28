@@ -187,6 +187,7 @@ export const CollapsibleCard = forwardRef(function CollapsibleCard(
         icon,
         subtitle,
         headerControl,
+        headerControlInteractive = true,
         feature,
         defaultOpen = false,
         open,
@@ -230,7 +231,12 @@ export const CollapsibleCard = forwardRef(function CollapsibleCard(
                 <HeaderRight>
                     {subtitle ? <HeaderSubtitle>{subtitle}</HeaderSubtitle> : null}
                     {headerControl ? (
-                        <HeaderControl onClick={(e) => e.stopPropagation()}>
+                        // Interactive controls (switches, buttons) swallow the click so they
+                        // don't toggle the card. Decorative controls (status, previews) opt out
+                        // via headerControlInteractive={false} and let the click reach toggle.
+                        <HeaderControl
+                            onClick={headerControlInteractive ? (e) => e.stopPropagation() : undefined}
+                        >
                             {headerControl}
                         </HeaderControl>
                     ) : null}

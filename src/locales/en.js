@@ -1719,6 +1719,7 @@ const en = {
                 status: {
                     error: 'Error',
                     active: 'Active',
+                    auto: 'Active (auto)',
                     noDevice: 'No device',
                     disabled: 'Disabled',
                 },

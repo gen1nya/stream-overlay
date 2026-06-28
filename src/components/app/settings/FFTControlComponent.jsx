@@ -292,21 +292,23 @@ export default function FFTControlComponent() {
         }
     }
 
-    // Определение статуса
+    // Определение статуса.
+    // Нет выбранного устройства (selectedDevice === null) — это не ошибка, а режим
+    // "Авто": анализатор следует за системным устройством по умолчанию.
     const getStatus = () => {
         if (error) return 'error';
-        if (fftConfig.enabled && selectedDevice) return 'active';
+        if (fftConfig.enabled) return 'active';
         return 'inactive';
     };
 
     const getStatusText = () => {
         if (error) return t('settings.fft.status.error');
         if (fftConfig.enabled && selectedDevice) return t('settings.fft.status.active');
-        if (fftConfig.enabled && !selectedDevice) return t('settings.fft.status.noDevice');
+        if (fftConfig.enabled && !selectedDevice) return t('settings.fft.status.auto');
         return t('settings.fft.status.disabled');
     };
 
-    const deviceName = selectedDevice ? selectedDevice.name : t('settings.fft.device.notSelected');
+    const deviceName = selectedDevice ? selectedDevice.name : t('settings.fft.device.auto');
 
     if (isLoading) {
         return (
@@ -326,6 +328,7 @@ export default function FFTControlComponent() {
         <CollapsibleCard
             icon={<FiActivity />}
             title={t('settings.fft.title')}
+            headerControlInteractive={false}
             headerControl={
                 <>
                     <StatusIndicator status={getStatus()}>
@@ -336,8 +339,8 @@ export default function FFTControlComponent() {
                         <FFTBars
                             bars={60}
                             peakThickness={1}
-                            peakColor={'rgba(100,108,255,0.8)'}
-                            barColor={'rgba(128,100,255,0.4)'}
+                            peakColor={tokens.color.feature.players.base}
+                            barColor={tokens.color.feature.players.softBorder}
                             backgroundColor="transparent"
                         />
                     </FFTWrapper>

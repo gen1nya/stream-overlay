@@ -1713,6 +1713,7 @@ const ru = {
                 status: {
                     error: 'Ошибка',
                     active: 'Активен',
+                    auto: 'Активен (авто)',
                     noDevice: 'Нет устройства',
                     disabled: 'Отключен',
                 },
