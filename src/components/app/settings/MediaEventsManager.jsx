@@ -5,7 +5,8 @@ import { FiPlus, FiEdit2, FiTrash2, FiImage, FiVideo, FiMusic, FiSearch, FiPlay,
 import { useTranslation } from 'react-i18next';
 import { getAllMediaEvents, deleteMediaEvent, testMediaEvent, getAllMediaDisplayGroups } from '../../../services/api';
 import MediaEventEditorPopup from './bot/triggers/MediaEventEditorPopup';
-import Popup from '../../utils/PopupComponent';
+import { ConfirmDialog } from '../../../designSystem';
+import { Portal } from '../../../context/PortalContext';
 
 const Container = styled.div`
     width: 100%;
@@ -290,56 +291,6 @@ const EmptyState = styled.div`
     }
 `;
 
-// Popup styles
-const PopupContent = styled.div`
-    display: flex;
-    padding: 20px;
-    flex-direction: column;
-    gap: 20px;
-    min-width: 400px;
-`;
-
-const PopupTitle = styled.h2`
-    font-size: 1.3rem;
-    font-weight: bold;
-    color: #d6d6d6;
-    margin: 0;
-`;
-
-const PopupButtons = styled.div`
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-`;
-
-const PopupButton = styled.button`
-    padding: 10px 20px;
-    border: 1px solid ${props => props.$primary ? tokens.color.feature.media.base : '#555'};
-    border-radius: ${tokens.radius.lg};
-    background: ${props => props.$primary ? tokens.color.feature.media.base : 'rgba(30, 30, 30, 0.8)'};
-    color: ${props => props.$danger ? '#dc2626' : '#d6d6d6'};
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: ${props => {
-            if (props.$primary) return tokens.color.feature.media.base;
-            if (props.$danger) return 'rgba(220, 38, 38, 0.1)';
-            return 'rgba(40, 40, 40, 0.9)';
-        }};
-        border-color: ${props => props.$danger ? '#dc2626' : (props.$primary ? tokens.color.feature.media.base : '#777')};
-    }
-`;
-
-const ConfirmText = styled.p`
-    color: ${tokens.color.text.tertiary};
-    font-size: 1rem;
-    margin: 0;
-    line-height: 1.5;
-`;
-
 // Generic variables for standalone media editing
 const GENERIC_VARIABLES = [
     { name: 'user', description: 'Username' },
@@ -348,30 +299,6 @@ const GENERIC_VARIABLES = [
     { name: 'reward', description: 'Reward name' },
     { name: 'reward_cost', description: 'Reward cost' },
 ];
-
-function ConfirmDeletePopup({ mediaName, onClose, onConfirm }) {
-    const { t } = useTranslation();
-    return (
-        <Popup onClose={onClose}>
-            <PopupContent>
-                <PopupTitle>{t('settings.mediaEvents.confirmDelete.title')}</PopupTitle>
-                <ConfirmText>
-                    {t('settings.mediaEvents.confirmDelete.message', { name: mediaName })}
-                    <br />
-                    {t('settings.mediaEvents.confirmDelete.warning')}
-                </ConfirmText>
-                <PopupButtons>
-                    <PopupButton onClick={onClose}>
-                        {t('common.cancel')}
-                    </PopupButton>
-                    <PopupButton $danger onClick={onConfirm}>
-                        {t('common.delete')}
-                    </PopupButton>
-                </PopupButtons>
-            </PopupContent>
-        </Popup>
-    );
-}
 
 export default function MediaEventsManager() {
     const { t } = useTranslation();
@@ -646,14 +573,30 @@ export default function MediaEventsManager() {
 
             {/* Delete Confirmation */}
             {activePopup === 'delete' && selectedMedia && (
-                <ConfirmDeletePopup
-                    mediaName={selectedMedia.name}
+                <Portal
+                    id="media-event-delete"
                     onClose={() => {
                         setActivePopup(null);
                         setSelectedMedia(null);
                     }}
-                    onConfirm={handleDelete}
-                />
+                >
+                    <ConfirmDialog
+                        variant="danger"
+                        title={t('settings.mediaEvents.confirmDelete.title')}
+                        text={<>
+                            {t('settings.mediaEvents.confirmDelete.message', { name: selectedMedia.name })}
+                            <br />
+                            {t('settings.mediaEvents.confirmDelete.warning')}
+                        </>}
+                        confirmLabel={t('common.delete')}
+                        cancelLabel={t('common.cancel')}
+                        onCancel={() => {
+                            setActivePopup(null);
+                            setSelectedMedia(null);
+                        }}
+                        onConfirm={handleDelete}
+                    />
+                </Portal>
             )}
         </Container>
     );

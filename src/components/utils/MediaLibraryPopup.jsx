@@ -2,9 +2,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo, useId } from 
 import styled from 'styled-components';
 import { tokens } from "../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
-import { FiX, FiUpload, FiImage, FiVideo, FiMusic, FiTrash2, FiCheck, FiFolder } from 'react-icons/fi';
+import { FiUpload, FiImage, FiVideo, FiMusic, FiTrash2, FiCheck, FiFolder } from 'react-icons/fi';
 import { getAllMediaFiles, saveMediaFile, deleteMediaFile } from '../../services/api';
 import { Portal } from '../../context/PortalContext';
+import { Button, Modal, ModalHeader, ModalTitle, ModalClose, ModalFooter } from '../../designSystem';
 
 const ALLOWED_TYPES = {
     image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
@@ -13,55 +14,6 @@ const ALLOWED_TYPES = {
 };
 
 const ALL_ALLOWED_MIMES = [...ALLOWED_TYPES.image, ...ALLOWED_TYPES.video, ...ALLOWED_TYPES.audio];
-
-const PopupContainer = styled.div`
-    background: ${tokens.color.bg.base};
-    border-radius: ${tokens.radius.xl};
-    width: 90%;
-    max-width: 900px;
-    max-height: 85vh;
-    display: flex;
-    flex-direction: column;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
-    overflow: hidden;
-`;
-
-const Header = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    border-bottom: 1px solid ${tokens.color.border.subtle};
-    background: #222;
-`;
-
-const Title = styled.h2`
-    margin: 0;
-    font-size: 18px;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    display: flex;
-    align-items: center;
-    gap: 8px;
-`;
-
-const CloseButton = styled.button`
-    background: none;
-    border: none;
-    color: ${tokens.color.text.faint};
-    cursor: pointer;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: ${tokens.radius.sm};
-    transition: all 0.2s;
-
-    &:hover {
-        color: ${tokens.color.text.primary};
-        background: ${tokens.color.bg.raisedAlt};
-    }
-`;
 
 const ControlsRow = styled.div`
     display: flex;
@@ -304,15 +256,6 @@ const EmptyState = styled.div`
     }
 `;
 
-const Footer = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 12px 20px;
-    border-top: 1px solid ${tokens.color.border.subtle};
-    background: #222;
-`;
-
 const SelectedCount = styled.div`
     font-size: 13px;
     color: ${tokens.color.text.faint};
@@ -321,39 +264,6 @@ const SelectedCount = styled.div`
 const FooterActions = styled.div`
     display: flex;
     gap: 8px;
-`;
-
-const FooterButton = styled.button`
-    padding: 8px 20px;
-    border: none;
-    border-radius: ${tokens.radius.md};
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s;
-
-    &.primary {
-        background: ${tokens.color.accent.primary};
-        color: ${tokens.color.text.primary};
-
-        &:hover {
-            background: ${tokens.color.accent.purple};
-        }
-
-        &:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-    }
-
-    &.secondary {
-        background: ${tokens.color.bg.raisedAlt};
-        color: ${tokens.color.text.primary};
-
-        &:hover {
-            background: #444;
-        }
-    }
 `;
 
 const HiddenInput = styled.input`
@@ -405,7 +315,7 @@ export default function MediaLibraryPopup({
     const fileInputRef = useRef(null);
     const [files, setFiles] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [uploading, setUploading] = useState(false);
+    const [, setUploading] = useState(false);
     const [filter, setFilter] = useState('all');
     const [sortBy, setSortBy] = useState('dateAdded');
     const [isDragging, setIsDragging] = useState(false);
@@ -584,16 +494,14 @@ export default function MediaLibraryPopup({
             onClose={onClose}
             overlayBackground="rgba(0, 0, 0, 0.6)"
         >
-            <PopupContainer>
-                <Header>
-                    <Title>
+            <Modal $width="90%" $maxWidth="900px" $maxHeight="85vh">
+                <ModalHeader $feature="media">
+                    <ModalTitle $feature="media">
                         <FiFolder size={20} />
                         {t('mediaLibrary.title')}
-                    </Title>
-                    <CloseButton onClick={onClose}>
-                        <FiX size={20} />
-                    </CloseButton>
-                </Header>
+                    </ModalTitle>
+                    <ModalClose onClick={onClose} />
+                </ModalHeader>
 
                 <ControlsRow>
                     <FilterTabs>
@@ -712,25 +620,26 @@ export default function MediaLibraryPopup({
                 </Content>
 
                 {isPicker && (
-                    <Footer>
+                    <ModalFooter $align="space-between">
                         <SelectedCount>
                             {t('mediaLibrary.selected', { count: selectedIds.size })}
                         </SelectedCount>
                         <FooterActions>
-                            <FooterButton className="secondary" onClick={onClose}>
+                            <Button $variant="ghost" $size="sm" onClick={onClose}>
                                 {t('mediaLibrary.cancel')}
-                            </FooterButton>
-                            <FooterButton
-                                className="primary"
+                            </Button>
+                            <Button
+                                $variant="primary"
+                                $size="sm"
                                 onClick={handleConfirmSelection}
                                 disabled={selectedIds.size === 0}
                             >
                                 {t('mediaLibrary.confirm')}
-                            </FooterButton>
+                            </Button>
                         </FooterActions>
-                    </Footer>
+                    </ModalFooter>
                 )}
-            </PopupContainer>
+            </Modal>
         </Portal>
     );
 }

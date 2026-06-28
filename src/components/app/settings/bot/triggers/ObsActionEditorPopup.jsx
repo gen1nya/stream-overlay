@@ -19,64 +19,13 @@ import {
     testObsAction,
 } from "../../../../../services/api";
 import { useObsStatus } from "../../../../../hooks/useObsStatus";
-import { Modal } from "../../../../../designSystem";
+import { Button, Modal, ModalHeader, ModalTitle } from "../../../../../designSystem";
 
 // ─── Styles (trimmed clone of MediaEventEditorPopup) ────────────
-
-const PopupHeader = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 20px;
-    padding: 16px 24px;
-    border-bottom: 1px solid ${tokens.color.border.subtle};
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.12) 0%, rgba(59, 130, 246, 0.05) 100%);
-    flex-shrink: 0;
-    flex-wrap: wrap;
-
-    h3 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: ${tokens.color.text.primary};
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        svg {
-            color: #3b82f6;
-        }
-    }
-`;
 
 const HeaderActions = styled.div`
     display: flex;
     gap: 8px;
-`;
-
-const HeaderButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border: 1px solid ${p => p.$primary ? '#3b82f6' : p.$test ? '#10b981' : '#444'};
-    border-radius: ${tokens.radius.lg};
-    background: ${p => p.$primary ? '#3b82f6' : p.$test ? 'rgba(16, 185, 129, 0.12)' : 'rgba(107, 114, 128, 0.1)'};
-    color: ${p => p.$primary ? '#fff' : p.$test ? '#10b981' : '#888'};
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: ${tokens.transition.base};
-
-    &:hover:not(:disabled) {
-        background: ${p => p.$primary ? '#2563eb' : p.$test ? 'rgba(16, 185, 129, 0.22)' : 'rgba(107, 114, 128, 0.2)'};
-        border-color: ${p => p.$primary ? '#2563eb' : p.$test ? '#10b981' : '#555'};
-        color: ${p => p.$primary ? '#fff' : p.$test ? '#34d399' : '#ccc'};
-    }
-
-    &:disabled {
-        opacity: 0.45;
-        cursor: not-allowed;
-    }
 `;
 
 const PopupContent = styled.div`
@@ -107,7 +56,7 @@ const SectionTitle = styled.div`
     gap: 6px;
 
     svg {
-        color: #3b82f6;
+        color: ${tokens.color.feature.integrations.base};
     }
 `;
 
@@ -132,7 +81,7 @@ const Input = styled.input`
     outline: none;
     transition: border-color 0.15s;
 
-    &:focus { border-color: #3b82f6; }
+    &:focus { border-color: ${tokens.color.feature.integrations.base}; }
 `;
 
 const Select = styled.select`
@@ -146,7 +95,7 @@ const Select = styled.select`
     transition: border-color 0.15s;
     min-width: 0;
 
-    &:focus { border-color: #3b82f6; }
+    &:focus { border-color: ${tokens.color.feature.integrations.base}; }
 `;
 
 const RadioRow = styled.div`
@@ -159,7 +108,7 @@ const RadioButton = styled.button`
     flex: 1;
     min-width: 110px;
     padding: 9px 12px;
-    border: 1px solid ${p => p.$active ? '#3b82f6' : '#333'};
+    border: 1px solid ${p => p.$active ? tokens.color.feature.integrations.base : '#333'};
     background: ${p => p.$active ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.02)'};
     color: ${p => p.$active ? '#fff' : '#aaa'};
     border-radius: ${tokens.radius.lg};
@@ -173,7 +122,7 @@ const RadioButton = styled.button`
 
     svg { flex-shrink: 0; }
 
-    &:hover { border-color: #3b82f6; color: ${tokens.color.text.primary}; }
+    &:hover { border-color: ${tokens.color.feature.integrations.base}; color: ${tokens.color.text.primary}; }
 `;
 
 const Hint = styled.div`
@@ -407,33 +356,34 @@ export default function ObsActionEditorPopup({ action: initialAction, onSave, on
             padding="20px"
         >
             <Modal $maxWidth="640px" $maxHeight="90vh">
-                <PopupHeader>
-                    <h3>
+                <ModalHeader $feature="integrations">
+                    <ModalTitle $feature="integrations">
                         <FiSliders />
                         {initialAction
                             ? t('settings.obsActions.editor.save') + ' — ' + (initialAction.name || '')
                             : t('settings.obsActions.addAction')}
-                    </h3>
+                    </ModalTitle>
                     <HeaderActions>
-                        <HeaderButton
-                            $test
+                        <Button
+                            $variant="neutral"
+                            $size="sm"
                             onClick={handleTest}
                             disabled={!isValid || !isConnected || testing}
                             title={!isConnected ? t('settings.obsActions.connection.status.disconnected') : ''}
                         >
                             <FiPlay />
                             {t('settings.obsActions.actions.test')}
-                        </HeaderButton>
-                        <HeaderButton onClick={onClose}>
+                        </Button>
+                        <Button $variant="ghost" $size="sm" onClick={onClose}>
                             <FiX />
                             {t('settings.obsActions.editor.cancel')}
-                        </HeaderButton>
-                        <HeaderButton $primary onClick={handleSave} disabled={!isValid || saving}>
+                        </Button>
+                        <Button $variant="primary" $size="sm" onClick={handleSave} disabled={!isValid || saving}>
                             <FiSave />
                             {t('settings.obsActions.editor.save')}
-                        </HeaderButton>
+                        </Button>
                     </HeaderActions>
-                </PopupHeader>
+                </ModalHeader>
 
                 {errors.length > 0 && (
                     <ValidationNote>

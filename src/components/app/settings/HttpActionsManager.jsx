@@ -2,11 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../designSystem/tokens";
 import Button from '../../../designSystem/components/Button';
+import { ConfirmDialog } from '../../../designSystem';
+import { Portal } from '../../../context/PortalContext';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiPlay, FiGlobe } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { getAllHttpActions, deleteHttpAction, testHttpAction } from '../../../services/api';
 import HttpActionEditorPopup from './bot/triggers/HttpActionEditorPopup';
-import Popup from '../../utils/PopupComponent';
 import {
     SettingsCard,
     CardHeader,
@@ -211,45 +212,6 @@ const EmptyState = styled.div`
     h3 { margin: 0 0 6px; color: ${tokens.color.text.faint}; font-weight: 500; }
     p { margin: 0; font-size: 0.85rem; }
 `;
-
-const ConfirmPopupContent = styled.div`
-    display: flex;
-    padding: 20px;
-    flex-direction: column;
-    gap: 16px;
-    min-width: 360px;
-`;
-
-const ConfirmPopupTitle = styled.h2`
-    font-size: 1.2rem;
-    font-weight: 600;
-    color: ${tokens.color.text.secondary};
-    margin: 0;
-`;
-
-const ConfirmPopupText = styled.p`
-    color: ${tokens.color.text.tertiary};
-    font-size: 0.9rem;
-    margin: 0;
-    line-height: 1.5;
-    .warning {
-        display: block;
-        color: ${tokens.color.text.faint};
-        font-size: 0.8rem;
-        margin-top: 8px;
-    }
-`;
-
-const ConfirmPopupButtons = styled.div`
-    display: flex;
-    gap: 10px;
-    justify-content: flex-end;
-`;
-
-const ConfirmPopupButton = styled(Button).attrs(p => ({
-    $variant: p.$danger ? 'danger' : 'neutral',
-    $size: 'md',
-}))``;
 
 function methodColor(method) {
     switch (method) {
@@ -458,27 +420,21 @@ export default function HttpActionsManager() {
             )}
 
             {deleteTarget && (
-                <Popup onClose={() => setDeleteTarget(null)}>
-                    <ConfirmPopupContent>
-                        <ConfirmPopupTitle>
-                            {t('settings.httpActions.confirmDelete.title')}
-                        </ConfirmPopupTitle>
-                        <ConfirmPopupText>
+                <Portal id="http-action-delete" onClose={() => setDeleteTarget(null)}>
+                    <ConfirmDialog
+                        variant="danger"
+                        title={t('settings.httpActions.confirmDelete.title')}
+                        text={<>
                             {t('settings.httpActions.confirmDelete.message', { name: deleteTarget.name })}
-                            <span className="warning">
-                                {t('settings.httpActions.confirmDelete.warning')}
-                            </span>
-                        </ConfirmPopupText>
-                        <ConfirmPopupButtons>
-                            <ConfirmPopupButton onClick={() => setDeleteTarget(null)}>
-                                {t('common.cancel')}
-                            </ConfirmPopupButton>
-                            <ConfirmPopupButton $danger onClick={handleConfirmDelete}>
-                                {t('settings.httpActions.actions.delete')}
-                            </ConfirmPopupButton>
-                        </ConfirmPopupButtons>
-                    </ConfirmPopupContent>
-                </Popup>
+                            <br />
+                            {t('settings.httpActions.confirmDelete.warning')}
+                        </>}
+                        confirmLabel={t('settings.httpActions.actions.delete')}
+                        cancelLabel={t('common.cancel')}
+                        onCancel={() => setDeleteTarget(null)}
+                        onConfirm={handleConfirmDelete}
+                    />
+                </Portal>
             )}
         </Container>
     );

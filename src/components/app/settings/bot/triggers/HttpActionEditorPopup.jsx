@@ -5,56 +5,12 @@ import { useTranslation } from "react-i18next";
 import { FiX, FiSave, FiPlay, FiPlus, FiTrash2, FiGlobe, FiLock, FiUnlock } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 import { Portal } from "../../../../../context/PortalContext";
-import { Modal } from "../../../../../designSystem";
+import { Button, Modal, ModalHeader, ModalTitle } from "../../../../../designSystem";
 import { saveHttpAction, testHttpAction, setHttpSecret, hasHttpSecret } from "../../../../../services/api";
-
-const PopupHeader = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 16px 24px;
-    border-bottom: 1px solid ${tokens.color.border.subtle};
-    background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.05) 100%);
-    flex-shrink: 0;
-    flex-wrap: wrap;
-
-    h3 {
-        margin: 0;
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: ${tokens.color.text.primary};
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        svg { color: ${tokens.color.success.base}; }
-    }
-`;
 
 const HeaderActions = styled.div`
     display: flex;
     gap: 8px;
-`;
-
-const HeaderButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border: 1px solid ${p => p.$primary ? '#22c55e' : p.$test ? '#3b82f6' : '#444'};
-    border-radius: ${tokens.radius.lg};
-    background: ${p => p.$primary ? '#22c55e' : p.$test ? 'rgba(59, 130, 246, 0.12)' : 'rgba(107, 114, 128, 0.1)'};
-    color: ${p => p.$primary ? '#fff' : p.$test ? '#3b82f6' : '#888'};
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: ${tokens.transition.base};
-
-    &:hover:not(:disabled) {
-        background: ${p => p.$primary ? '#16a34a' : p.$test ? 'rgba(59, 130, 246, 0.22)' : 'rgba(107, 114, 128, 0.2)'};
-        border-color: ${p => p.$primary ? '#16a34a' : p.$test ? '#3b82f6' : '#555'};
-        color: ${p => p.$primary ? '#fff' : p.$test ? '#60a5fa' : '#ccc'};
-    }
-    &:disabled { opacity: 0.45; cursor: not-allowed; }
 `;
 
 const PopupContent = styled.div`
@@ -83,7 +39,7 @@ const SectionTitle = styled.div`
     display: flex;
     align-items: center;
     gap: 6px;
-    svg { color: ${tokens.color.success.base}; }
+    svg { color: ${tokens.color.feature.integrations.base}; }
 `;
 
 const FormGroup = styled.div`
@@ -108,7 +64,7 @@ const Input = styled.input`
     transition: border-color 0.15s;
     width: 100%;
     box-sizing: border-box;
-    &:focus { border-color: ${tokens.color.success.base}; }
+    &:focus { border-color: ${tokens.color.feature.integrations.base}; }
 `;
 
 const Select = styled.select`
@@ -121,7 +77,7 @@ const Select = styled.select`
     outline: none;
     transition: border-color 0.15s;
     min-width: 0;
-    &:focus { border-color: ${tokens.color.success.base}; }
+    &:focus { border-color: ${tokens.color.feature.integrations.base}; }
 `;
 
 const Textarea = styled.textarea`
@@ -138,7 +94,7 @@ const Textarea = styled.textarea`
     transition: border-color 0.15s;
     width: 100%;
     box-sizing: border-box;
-    &:focus { border-color: ${tokens.color.success.base}; }
+    &:focus { border-color: ${tokens.color.feature.integrations.base}; }
 `;
 
 const Row = styled.div`
@@ -186,22 +142,6 @@ const IconBtn = styled.button`
     &:hover { border-color: ${tokens.color.danger.base}; color: ${tokens.color.danger.base}; background: rgba(220, 38, 38, 0.08); }
 `;
 
-const AddBtn = styled.button`
-    align-self: flex-start;
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border: 1px dashed #444;
-    border-radius: ${tokens.radius.lg};
-    background: transparent;
-    color: #aaa;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.15s;
-    &:hover { border-color: ${tokens.color.success.base}; color: ${tokens.color.success.base}; background: rgba(34, 197, 94, 0.06); }
-`;
-
 const Hint = styled.div`
     font-size: 0.75rem;
     color: ${tokens.color.text.disabled};
@@ -236,14 +176,14 @@ const RadioRow = styled.div`
 
 const RadioBtn = styled.button`
     padding: 8px 12px;
-    border: 1px solid ${p => p.$active ? '#22c55e' : '#333'};
-    background: ${p => p.$active ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.02)'};
+    border: 1px solid ${p => p.$active ? tokens.color.feature.integrations.base : '#333'};
+    background: ${p => p.$active ? 'rgba(59, 130, 246, 0.15)' : 'rgba(255, 255, 255, 0.02)'};
     color: ${p => p.$active ? '#fff' : '#aaa'};
     border-radius: ${tokens.radius.lg};
     cursor: pointer;
     font-size: 0.82rem;
     transition: all 0.15s;
-    &:hover { border-color: ${tokens.color.success.base}; color: ${tokens.color.text.primary}; }
+    &:hover { border-color: ${tokens.color.feature.integrations.base}; color: ${tokens.color.text.primary}; }
 `;
 
 const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];
@@ -435,28 +375,28 @@ export default function HttpActionEditorPopup({ action: initialAction, onSave, o
             padding="20px"
         >
             <Modal $maxWidth="720px" $maxHeight="90vh">
-                <PopupHeader>
-                    <h3>
+                <ModalHeader $feature="integrations">
+                    <ModalTitle $feature="integrations">
                         <FiGlobe />
                         {initialAction
                             ? `${t('settings.httpActions.editor.save')} — ${initialAction.name || ''}`
                             : t('settings.httpActions.addAction')}
-                    </h3>
+                    </ModalTitle>
                     <HeaderActions>
-                        <HeaderButton $test onClick={handleTest} disabled={!isValid || testing}>
+                        <Button $variant="neutral" $size="sm" onClick={handleTest} disabled={!isValid || testing}>
                             <FiPlay />
                             {testing ? t('settings.httpActions.editor.testRunning') : t('settings.httpActions.editor.test')}
-                        </HeaderButton>
-                        <HeaderButton onClick={onClose}>
+                        </Button>
+                        <Button $variant="ghost" $size="sm" onClick={onClose}>
                             <FiX />
                             {t('settings.httpActions.editor.cancel')}
-                        </HeaderButton>
-                        <HeaderButton $primary onClick={handleSave} disabled={!isValid || saving}>
+                        </Button>
+                        <Button $variant="primary" $size="sm" onClick={handleSave} disabled={!isValid || saving}>
                             <FiSave />
                             {t('settings.httpActions.editor.save')}
-                        </HeaderButton>
+                        </Button>
                     </HeaderActions>
-                </PopupHeader>
+                </ModalHeader>
 
                 {errors.length > 0 && (
                     <ValidationNote>
@@ -555,10 +495,10 @@ export default function HttpActionEditorPopup({ action: initialAction, onSave, o
                                 </HeaderRow>
                             );
                         })}
-                        <AddBtn onClick={addHeader}>
+                        <Button $variant="ghost" $size="sm" onClick={addHeader} style={{ alignSelf: 'flex-start' }}>
                             <FiPlus />
                             {t('settings.httpActions.editor.addHeader')}
-                        </AddBtn>
+                        </Button>
                         <Hint>{t('settings.httpActions.editor.secretHint')}</Hint>
                     </Section>
 

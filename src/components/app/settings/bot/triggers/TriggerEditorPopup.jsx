@@ -2,7 +2,7 @@ import React, { useState, useEffect, useId } from "react";
 import styled from "styled-components";
 import { tokens } from "../../../../../designSystem/tokens";
 import { Portal } from "../../../../../context/PortalContext";
-import { Modal } from "../../../../../designSystem";
+import { Button, Modal, ModalHeader, ModalTitle } from "../../../../../designSystem";
 import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
@@ -19,62 +19,9 @@ import ObsActionEditorPopup from "./ObsActionEditorPopup";
 import HttpActionEditorPopup from "./HttpActionEditorPopup";
 import {Spacer} from "../../../../utils/Separator";
 
-const PopupHeader = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 20px 24px;
-    border-bottom: 1px solid ${tokens.color.border.subtle};
-    background: ${tokens.gradient.raised};
-
-    h3 {
-        margin: 0;
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: ${tokens.color.text.primary};
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        svg {
-            color: ${tokens.color.accent.primary};
-        }
-    }
-`;
-
 const HeaderActions = styled.div`
     display: flex;
     gap: 8px;
-`;
-
-const HeaderButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    border: 1px solid ${props => props.$primary ? '#646cff' : '#444'};
-    border-radius: ${tokens.radius.lg};
-    background: ${props => props.$primary ? '#646cff' : 'rgba(107, 114, 128, 0.1)'};
-    color: ${props => props.$primary ? '#fff' : '#888'};
-    cursor: pointer;
-    font-size: 0.9rem;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: ${props => props.$primary ? '#5a5acf' : 'rgba(107, 114, 128, 0.2)'};
-        border-color: ${props => props.$primary ? '#5a5acf' : '#555'};
-        color: ${props => props.$primary ? '#fff' : '#ccc'};
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
 `;
 
 const PopupContent = styled.div`
@@ -199,7 +146,7 @@ const Input = styled.input`
 
     &:focus {
         outline: none;
-        border-color: ${tokens.color.accent.primary};
+        border-color: ${tokens.color.feature.bot.base};
         background: #252525;
     }
 `;
@@ -218,7 +165,7 @@ const Select = styled.select`
 
     &:focus {
         outline: none;
-        border-color: ${tokens.color.accent.primary};
+        border-color: ${tokens.color.feature.bot.base};
     }
 
     option {
@@ -784,22 +731,22 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                 padding="20px"
             >
                 <Modal $maxWidth="900px" $maxHeight="85vh">
-                        <PopupHeader>
-                    <h3>
-                        <FiZap />
-                        {editedRule.id ? t('settings.bot.triggers.editRule') : t('settings.bot.triggers.newRule')}
-                    </h3>
-                    <HeaderActions>
-                        <HeaderButton onClick={onClose}>
-                            <FiX />
-                            {t('common.cancel')}
-                        </HeaderButton>
-                        <HeaderButton $primary onClick={handleSave} disabled={!isValid()}>
-                            <FiSave />
-                            {t('common.save')}
-                        </HeaderButton>
-                    </HeaderActions>
-                </PopupHeader>
+                    <ModalHeader $feature="bot">
+                        <ModalTitle $feature="bot">
+                            <FiZap />
+                            {editedRule.id ? t('settings.bot.triggers.editRule') : t('settings.bot.triggers.newRule')}
+                        </ModalTitle>
+                        <HeaderActions>
+                            <Button $variant="ghost" $size="sm" onClick={onClose}>
+                                <FiX />
+                                {t('common.cancel')}
+                            </Button>
+                            <Button $variant="primary" $size="sm" onClick={handleSave} disabled={!isValid()}>
+                                <FiSave />
+                                {t('common.save')}
+                            </Button>
+                        </HeaderActions>
+                    </ModalHeader>
 
                 <PopupContent>
                     {/* Rule Name */}

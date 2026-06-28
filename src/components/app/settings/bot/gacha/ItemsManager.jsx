@@ -6,6 +6,8 @@ import { AddButton, ErrorText, FormRow, NameInput } from '../SharedBotStyles';
 import RadioGroup from '../../../../utils/TextRadioGroup';
 import Popup from '../../../../utils/PopupComponent';
 import MediaEventPicker from '../../../../utils/MediaEventPicker';
+import { Button, ConfirmDialog } from '../../../../../designSystem';
+import { Portal } from '../../../../../context/PortalContext';
 import { useTranslation } from 'react-i18next';
 
 // Gacha-specific variables for media captions
@@ -175,34 +177,6 @@ const PopupButtons = styled.div`
     justify-content: flex-end;
 `;
 
-const PopupButton = styled.button`
-    padding: 10px 20px;
-    border: 1px solid ${props => props.$primary ? '#646cff' : '#555'};
-    border-radius: ${tokens.radius.lg};
-    background: ${props => props.$primary ? '#646cff' : 'rgba(30, 30, 30, 0.8)'};
-    color: ${props => props.$danger ? '#dc2626' : '#d6d6d6'};
-    cursor: pointer;
-    font-size: 0.95rem;
-    font-weight: 500;
-    transition: ${tokens.transition.base};
-    
-    &:hover {
-        background: ${props => {
-    if (props.$primary) return '#7c8aff';
-    if (props.$danger) return 'rgba(220, 38, 38, 0.1)';
-    return 'rgba(40, 40, 40, 0.9)';
-}};
-        border-color: ${props => props.$danger ? '#dc2626' : (props.$primary ? '#7c8aff' : '#777')};
-    }
-`;
-
-const ConfirmText = styled.p`
-    color: ${tokens.color.text.tertiary};
-    font-size: 1rem;
-    margin: 0;
-    line-height: 1.5;
-`;
-
 const SectionTitle = styled.div`
     display: flex;
     align-items: center;
@@ -338,37 +312,12 @@ function ItemFormPopup({ item, allItems, onClose, onSave }) {
                 </div>
 
                 <PopupButtons>
-                    <PopupButton onClick={onClose}>
+                    <Button $variant="ghost" onClick={onClose}>
                         {t('settings.bot.gacha.items.actions.cancel')}
-                    </PopupButton>
-                    <PopupButton $primary onClick={handleSave}>
+                    </Button>
+                    <Button $variant="primary" onClick={handleSave}>
                         {isEdit ? t('settings.bot.gacha.items.actions.save') : t('settings.bot.gacha.items.actions.add')}
-                    </PopupButton>
-                </PopupButtons>
-            </PopupContent>
-        </Popup>
-    );
-}
-
-// Confirm Delete Popup
-function ConfirmDeletePopup({ itemName, onClose, onConfirm }) {
-    const { t } = useTranslation();
-    return (
-        <Popup onClose={onClose}>
-            <PopupContent style={{ minWidth: '400px' }}>
-                <PopupTitle>{t('settings.bot.gacha.items.confirmDelete.title')}</PopupTitle>
-                <ConfirmText>
-                    {t('settings.bot.gacha.items.confirmDelete.message', { name: itemName })}
-                    <br />
-                    {t('settings.bot.gacha.items.confirmDelete.warning')}
-                </ConfirmText>
-                <PopupButtons>
-                    <PopupButton onClick={onClose}>
-                        {t('settings.bot.gacha.items.actions.cancel')}
-                    </PopupButton>
-                    <PopupButton $danger onClick={onConfirm}>
-                        {t('settings.bot.gacha.items.actions.delete')}
-                    </PopupButton>
+                    </Button>
                 </PopupButtons>
             </PopupContent>
         </Popup>
@@ -559,14 +508,30 @@ export default function ItemsManager({ items, bannerId, updateConfig }) {
             )}
 
             {activePopup === 'delete' && selectedItem && (
-                <ConfirmDeletePopup
-                    itemName={selectedItem.name}
+                <Portal
+                    id="gacha-item-delete"
                     onClose={() => {
                         setActivePopup(null);
                         setSelectedItem(null);
                     }}
-                    onConfirm={handleDeleteItem}
-                />
+                >
+                    <ConfirmDialog
+                        variant="danger"
+                        title={t('settings.bot.gacha.items.confirmDelete.title')}
+                        text={<>
+                            {t('settings.bot.gacha.items.confirmDelete.message', { name: selectedItem.name })}
+                            <br />
+                            {t('settings.bot.gacha.items.confirmDelete.warning')}
+                        </>}
+                        confirmLabel={t('settings.bot.gacha.items.actions.delete')}
+                        cancelLabel={t('settings.bot.gacha.items.actions.cancel')}
+                        onCancel={() => {
+                            setActivePopup(null);
+                            setSelectedItem(null);
+                        }}
+                        onConfirm={handleDeleteItem}
+                    />
+                </Portal>
             )}
         </div>
     );

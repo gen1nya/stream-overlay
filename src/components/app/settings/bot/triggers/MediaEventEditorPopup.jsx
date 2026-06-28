@@ -13,65 +13,11 @@ import MediaLibraryPopup from "../../../../utils/MediaLibraryPopup";
 import { v4 as uuidv4 } from 'uuid';
 import { saveMediaEvent, getAllMediaDisplayGroups } from "../../../../../services/api";
 import { Portal } from "../../../../../context/PortalContext";
-import { Modal } from "../../../../../designSystem";
-
-const PopupHeader = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 16px 24px;
-    border-bottom: 1px solid ${tokens.color.border.subtle};
-    background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%);
-    flex-shrink: 0;
-
-    h3 {
-        margin: 0;
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: ${tokens.color.text.primary};
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        svg {
-            color: #ec4899;
-        }
-    }
-`;
+import { Button, Modal, ModalHeader, ModalTitle } from "../../../../../designSystem";
 
 const HeaderActions = styled.div`
     display: flex;
     gap: 8px;
-`;
-
-const HeaderButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border: 1px solid ${props => props.$primary ? '#ec4899' : '#444'};
-    border-radius: ${tokens.radius.lg};
-    background: ${props => props.$primary ? '#ec4899' : 'rgba(107, 114, 128, 0.1)'};
-    color: ${props => props.$primary ? '#fff' : '#888'};
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: ${props => props.$primary ? '#db2777' : 'rgba(107, 114, 128, 0.2)'};
-        border-color: ${props => props.$primary ? '#db2777' : '#555'};
-        color: ${props => props.$primary ? '#fff' : '#ccc'};
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    svg {
-        width: 14px;
-        height: 14px;
-    }
 `;
 
 const PopupContent = styled.div`
@@ -173,7 +119,7 @@ const Input = styled.input`
 
     &:focus {
         outline: none;
-        border-color: #ec4899;
+        border-color: ${tokens.color.feature.media.base};
         background: #252525;
     }
 `;
@@ -192,7 +138,7 @@ const Select = styled.select`
 
     &:focus {
         outline: none;
-        border-color: #ec4899;
+        border-color: ${tokens.color.feature.media.base};
         background: #252525;
     }
 
@@ -211,7 +157,7 @@ const MediaTypeButton = styled.button`
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border: 1px solid ${props => props.$selected ? '#ec4899' : '#333'};
+    border: 1px solid ${props => props.$selected ? tokens.color.feature.media.base : '#333'};
     border-radius: ${tokens.radius.lg};
     background: ${props => props.$selected ? 'rgba(236, 72, 153, 0.15)' : 'rgba(30, 30, 30, 0.5)'};
     color: ${props => props.$selected ? '#fff' : '#888'};
@@ -220,7 +166,7 @@ const MediaTypeButton = styled.button`
     transition: ${tokens.transition.base};
 
     &:hover {
-        border-color: #ec4899;
+        border-color: ${tokens.color.feature.media.base};
         background: rgba(236, 72, 153, 0.1);
         color: ${tokens.color.text.tertiary};
     }
@@ -228,7 +174,7 @@ const MediaTypeButton = styled.button`
     svg {
         width: 16px;
         height: 16px;
-        color: ${props => props.$selected ? '#ec4899' : '#666'};
+        color: ${props => props.$selected ? tokens.color.feature.media.base : '#666'};
     }
 `;
 
@@ -256,9 +202,9 @@ const LibraryButton = styled.button`
     flex-shrink: 0;
 
     &:hover {
-        border-color: #ec4899;
+        border-color: ${tokens.color.feature.media.base};
         background: rgba(236, 72, 153, 0.1);
-        color: #ec4899;
+        color: ${tokens.color.feature.media.base};
     }
 
     svg {
@@ -304,7 +250,7 @@ const VariableItem = styled.button`
     margin-right: 8px;
     margin-bottom: 4px;
     padding: 4px 8px;
-    color: #ec4899;
+    color: ${tokens.color.feature.media.base};
     font-weight: 500;
     font-family: monospace;
     font-size: 0.8rem;
@@ -488,22 +434,22 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
             padding="20px"
         >
             <Modal $maxWidth="700px" $maxHeight="90vh">
-                <PopupHeader>
-                    <h3>
+                <ModalHeader $feature="media">
+                    <ModalTitle $feature="media">
                         <FiImage />
                         {mediaEvent ? t('settings.bot.triggers.mediaEvent.editTitle') : t('settings.bot.triggers.mediaEvent.createTitle')}
-                    </h3>
+                    </ModalTitle>
                     <HeaderActions>
-                        <HeaderButton onClick={onClose}>
+                        <Button $variant="ghost" $size="sm" onClick={onClose}>
                             <FiX />
                             {t('common.cancel')}
-                        </HeaderButton>
-                        <HeaderButton $primary onClick={handleSave} disabled={!isValid()}>
+                        </Button>
+                        <Button $variant="primary" $size="sm" onClick={handleSave} disabled={!isValid()}>
                             <FiSave />
                             {saving ? t('common.saving') : t('common.save')}
-                        </HeaderButton>
+                        </Button>
                     </HeaderActions>
-                </PopupHeader>
+                </ModalHeader>
 
                 <PopupContent>
                     {/* Basic Info */}
