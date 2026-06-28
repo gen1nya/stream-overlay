@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import styled from "styled-components";
+import { tokens } from "../../../../../designSystem/tokens";
 import Switch from "../../../../utils/Switch";
 import NumericEditorComponent from "../../../../utils/NumericEditorComponent";
 import DebouncedTextarea from "../../../../utils/DebouncedTextarea";
@@ -34,11 +35,11 @@ const FlowConnector = styled.div`
         content: '';
         width: 2px;
         height: 20px;
-        background: linear-gradient(180deg, #646cff 0%, #00ffdd 100%);
+        background: linear-gradient(180deg, ${tokens.color.accent.primary} 0%, #00ffdd 100%);
     }
 
     svg {
-        color: #00ffdd;
+        color: ${tokens.color.feature.bot.base};
         width: 20px;
         height: 20px;
     }
@@ -47,7 +48,7 @@ const FlowConnector = styled.div`
         content: '';
         width: 2px;
         height: 20px;
-        background: linear-gradient(180deg, #00ffdd 0%, #646cff 100%);
+        background: linear-gradient(180deg, #00ffdd 0%, ${tokens.color.accent.primary} 100%);
     }
 `;
 
@@ -55,12 +56,12 @@ const FlowConnector = styled.div`
 const FlowStep = styled.div`
     background: rgba(40, 40, 40, 0.5);
     border: 1px solid ${props => props.$active ? '#646cff' : '#333'};
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        border-color: #444;
+        border-color: ${tokens.color.border.default};
     }
 `;
 
@@ -70,7 +71,7 @@ const FlowStepHeader = styled.div`
     gap: 12px;
     padding: 16px 20px;
     background: ${props => props.$color || 'rgba(100, 108, 255, 0.1)'};
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
 
     svg {
         width: 20px;
@@ -82,7 +83,7 @@ const FlowStepHeader = styled.div`
         margin: 0;
         font-size: 1rem;
         font-weight: 600;
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
     }
 `;
 
@@ -99,29 +100,29 @@ const CommandInput = styled.input`
     width: 180px;
     height: 42px;
     padding: 0 16px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
     &::placeholder {
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 `;
 
 const WarmupTriggerCard = styled.div`
     background: rgba(30, 30, 30, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -136,7 +137,7 @@ const WarmupHeader = styled.div`
 
     .type-badge {
         padding: 4px 10px;
-        border-radius: 6px;
+        border-radius: ${tokens.radius.md};
         font-size: 0.8rem;
         font-weight: 600;
         background: ${props => props.$type === 'time'
@@ -151,20 +152,20 @@ const WarmupHeader = styled.div`
 
 const DeleteButton = styled.button`
     padding: 8px;
-    border: 1px solid #555;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
     background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
+    color: ${tokens.color.danger.base};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     margin-left: auto;
 
     &:hover {
         background: rgba(220, 38, 38, 0.2);
-        border-color: #dc2626;
+        border-color: ${tokens.color.danger.base};
     }
 
     svg {
@@ -176,22 +177,22 @@ const DeleteButton = styled.button`
 const Select = styled.select`
     height: 42px;
     padding: 0 12px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
     cursor: pointer;
     box-sizing: border-box;
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 
     option {
-        background: #1e1e1e;
-        color: #fff;
+        background: ${tokens.color.bg.surface};
+        color: ${tokens.color.text.primary};
     }
 `;
 
@@ -210,20 +211,20 @@ const RewardChip = styled.div`
         ? 'rgba(100, 108, 255, 0.2)'
         : 'rgba(40, 40, 40, 0.5)'};
     border: 1px solid ${props => props.$selected ? '#646cff' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     font-size: 0.9rem;
     color: ${props => props.$selected ? '#fff' : '#ccc'};
 
     &:hover {
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: rgba(100, 108, 255, 0.1);
     }
 
     .cost {
         font-size: 0.8rem;
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 `;
 

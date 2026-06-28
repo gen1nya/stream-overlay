@@ -1,6 +1,7 @@
 // components/popups/ColorPickerPopup.js
 import React, { useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import Popup from '../../utils/PopupComponent';
 import { ColorPicker } from 'react-pick-color';
 import throttle from 'lodash.throttle';
@@ -26,12 +27,12 @@ const CloseButton = styled.button`
     padding: 4px 8px;
     background: #3a3a3a;
     color: #d6d6d6;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     border: 1px solid transparent;
     cursor: pointer;
     &:hover {
         background: #4a4a4a;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 `;
 

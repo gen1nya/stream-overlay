@@ -3,6 +3,7 @@ import React, {useMemo} from "react";
 import {SmallSubTitle} from "../app/settings/SettingBloks";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import RadioGroup from "./TextRadioGroup";
 import {FiDroplet, FiImage} from "react-icons/fi";
 import {IoColorFilterOutline} from "react-icons/io5";
@@ -19,8 +20,8 @@ const LayersGrid = styled.div`
 // Card for each background layer
 const LayerCard = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 
@@ -29,7 +30,7 @@ const LayerTitle = styled.h5`
     margin: 0 0 12px 0;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     display: flex;
     align-items: center;
     gap: 8px;

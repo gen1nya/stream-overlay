@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { FiRefreshCw } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 
@@ -9,7 +10,7 @@ const Wrapper = styled.div`
     gap: 5px;
     padding: 0 12px;
     background: #151515;
-    border-left: 1px solid #333;
+    border-left: 1px solid ${tokens.color.border.subtle};
     height: 100%;
 `;
 
@@ -19,13 +20,13 @@ const StatusItem = styled.div`
     gap: 6px;
     font-size: 11px;
     font-family: 'Consolas', 'Monaco', monospace;
-    color: #888;
+    color: ${tokens.color.text.faint};
     letter-spacing: 0.5px;
 `;
 
 const StatusLabel = styled.span`
     font-weight: 600;
-    color: #666;
+    color: ${tokens.color.text.disabled};
 `;
 
 const StatusLED = styled.div`
@@ -49,7 +50,7 @@ const StatusLED = styled.div`
         if (props.$status === 'warning') return '#cc8800';
         return '#33cc33';
     }};
-    transition: all 0.3s ease;
+    transition: ${tokens.transition.slow};
 
     ${props => props.$blinking && `
         animation: ledBlink 0.3s ease-in-out 3;
@@ -77,17 +78,17 @@ const StatusDivider = styled.div`
 const ReconnectButton = styled.button`
     background: transparent;
     border: none;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        background: #333;
+        background: ${tokens.color.bg.raisedAlt};
         color: #aaa;
     }
 

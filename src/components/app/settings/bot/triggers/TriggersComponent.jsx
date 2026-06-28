@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import styled from "styled-components";
+import { tokens } from "../../../../../designSystem/tokens";
 import Switch from "../../../../utils/Switch";
 import { useTranslation } from 'react-i18next';
 import {
@@ -19,10 +20,10 @@ const RulesList = styled.div`
 
 const RuleCard = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     opacity: ${props => props.$enabled ? 1 : 0.7};
 
     &:hover {
@@ -41,7 +42,7 @@ const RuleHeader = styled.div`
     .rule-icon {
         width: 36px;
         height: 36px;
-        border-radius: 8px;
+        border-radius: ${tokens.radius.lg};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -62,7 +63,7 @@ const RuleHeader = styled.div`
             margin: 0 0 4px 0;
             font-size: 1rem;
             font-weight: 600;
-            color: #e0e0e0;
+            color: ${tokens.color.text.secondary};
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -73,7 +74,7 @@ const RuleHeader = styled.div`
             align-items: center;
             gap: 8px;
             font-size: 0.85rem;
-            color: #888;
+            color: ${tokens.color.text.faint};
         }
     }
 `;
@@ -87,26 +88,26 @@ const RuleActions = styled.div`
 
 const IconButton = styled.button`
     padding: 8px;
-    border: 1px solid #444;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
     background: rgba(40, 40, 40, 0.5);
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.1);
-        border-color: #646cff;
-        color: #646cff;
+        border-color: ${tokens.color.accent.primary};
+        color: ${tokens.color.accent.primary};
     }
 
     &.delete:hover {
         background: rgba(220, 38, 38, 0.1);
-        border-color: #dc2626;
-        color: #dc2626;
+        border-color: ${tokens.color.danger.base};
+        color: ${tokens.color.danger.base};
     }
 
     svg {
@@ -127,7 +128,7 @@ const ActionBadge = styled.span`
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.75rem;
     background: ${props => props.$color || 'rgba(100, 108, 255, 0.1)'};
     color: ${props => props.$textColor || '#646cff'};
@@ -142,10 +143,10 @@ const ActionBadge = styled.span`
 const EmptyState = styled.div`
     text-align: center;
     padding: 40px 20px;
-    color: #888;
+    color: ${tokens.color.text.faint};
     background: rgba(30, 30, 30, 0.5);
     border: 1px dashed #444;
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
 
     svg {
         width: 48px;
@@ -157,7 +158,7 @@ const EmptyState = styled.div`
     h4 {
         margin: 0 0 8px 0;
         font-size: 1.1rem;
-        color: #ccc;
+        color: ${tokens.color.text.tertiary};
     }
 
     p {

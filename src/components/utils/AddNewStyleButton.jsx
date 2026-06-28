@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 
 const ButtonBackground = styled.div`
     display: flex;
@@ -10,7 +11,7 @@ const ButtonBackground = styled.div`
     align-items: center;
     background: rgba(136, 83, 242, 0.11);
     border: #8853F2 2px dashed;
-    border-radius: 16px;
+    border-radius: ${tokens.radius.xxl};
     padding: 0 12px;
     flex-direction: column;
     gap: 12px;

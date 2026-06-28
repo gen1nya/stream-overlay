@@ -1799,6 +1799,7 @@ const ru = {
             obsActions: {
                 searchPlaceholder: 'Поиск по названию...',
                 addAction: 'Добавить действие',
+                listTitle: 'Действия',
                 connection: {
                     title: 'Подключение к OBS',
                     host: 'Хост',
@@ -1882,6 +1883,7 @@ const ru = {
             httpActions: {
                 searchPlaceholder: 'Поиск по названию…',
                 addAction: 'Добавить запрос',
+                listTitle: 'Запросы',
                 methods: {
                     GET: 'GET',
                     POST: 'POST',

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { FixedSizeList as List, areEqual } from 'react-window';
 import { createPortal } from 'react-dom';
 import { TbSearch, TbX, TbTypography } from 'react-icons/tb';
@@ -29,29 +30,29 @@ const SelectorWrapper = styled.div`
 `;
 
 const SelectedFontButton = styled.button`
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #fff;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
+    color: ${tokens.color.text.primary};
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        background: #333;
-        border-color: #555;
+        background: ${tokens.color.bg.raisedAlt};
+        border-color: ${tokens.color.border.strong};
         transform: translateY(-1px);
     }
 
     svg {
         width: 16px;
         height: 16px;
-        color: #646cff;
+        color: ${tokens.color.accent.primary};
     }
 `;
 
@@ -75,9 +76,9 @@ const Header = styled.div`
 const Title = styled.h2`
     font-size: 1.8rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin: 0;
-    background: linear-gradient(135deg, #646cff, #7c3aed);
+    background: ${tokens.gradient.accent};
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -86,26 +87,26 @@ const Title = styled.h2`
     gap: 10px;
 
     svg {
-        color: #646cff;
-        -webkit-text-fill-color: #646cff;
+        color: ${tokens.color.accent.primary};
+        -webkit-text-fill-color: ${tokens.color.accent.primary};
     }
 `;
 
 const CloseButton = styled.button`
     background: none;
     border: none;
-    color: #999;
+    color: ${tokens.color.text.muted};
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #444;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     svg {
@@ -119,9 +120,9 @@ const SearchSection = styled.div`
     gap: 12px;
     align-items: center;
     padding: 0;
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
     box-sizing: border-box;
     min-width: 0;
 `;
@@ -135,20 +136,20 @@ const SearchInput = styled.input`
     box-sizing: border-box;
     width: 100%;
     padding: 12px 44px 12px 44px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &::placeholder {
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 `;
@@ -158,7 +159,7 @@ const SearchIcon = styled.div`
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #888;
+    color: ${tokens.color.text.faint};
     pointer-events: none;
 
     svg {
@@ -174,20 +175,20 @@ const ClearButton = styled.button`
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: ${({ $visible }) => ($visible ? 1 : 0)};
     pointer-events: ${({ $visible }) => ($visible ? 'auto' : 'none')};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #444;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     svg {
@@ -198,9 +199,9 @@ const ClearButton = styled.button`
 
 const ListContainer = styled.div`
     flex: 1;
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -217,12 +218,12 @@ const StyledList = styled(List)`
     }
 
     &::-webkit-scrollbar-track {
-        background: #2a2a2a;
+        background: ${tokens.color.bg.raised};
     }
 
     &::-webkit-scrollbar-thumb {
         background: #555;
-        border-radius: 4px;
+        border-radius: ${tokens.radius.sm};
     }
 
     &::-webkit-scrollbar-thumb:hover {
@@ -235,8 +236,8 @@ const FontOption = styled.div`
     color: #d6d6d6;
     font-size: 0.95rem;
     cursor: pointer;
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
+    transition: ${tokens.transition.base};
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -244,7 +245,7 @@ const FontOption = styled.div`
     min-width: 0;
 
     &:hover {
-        background: #333;
+        background: ${tokens.color.bg.raisedAlt};
     }
 
     &:last-child {
@@ -254,12 +255,12 @@ const FontOption = styled.div`
 
 const FontName = styled.div`
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     font-size: 1rem;
 `;
 
 const FontPreview = styled.div`
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 0.85rem;
     line-height: 1.3;
 `;
@@ -270,7 +271,7 @@ const EmptyContainer = styled.div`
     justify-content: center;
     align-items: center;
     padding: 60px 20px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     text-align: center;
     box-sizing: border-box;
 
@@ -295,10 +296,10 @@ const EmptyContainer = styled.div`
 
 const ResultsCount = styled.div`
     padding: 12px 20px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 0.9rem;
-    border-bottom: 1px solid #444;
-    background: #333;
+    border-bottom: 1px solid ${tokens.color.border.default};
+    background: ${tokens.color.bg.raisedAlt};
     box-sizing: border-box;
 `;
 

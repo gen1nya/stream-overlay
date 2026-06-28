@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { FiAlertCircle } from 'react-icons/fi';
 import Switch from '../../../../utils/Switch';
 import { ParameterCard, ParameterTitle } from '../SharedBotStyles';
@@ -13,16 +14,16 @@ const SettingsGrid = styled.div`
 const NumberInput = styled.input`
     width: 120px;
     padding: 8px 12px;
-    border: 1px solid #555;
-    border-radius: 6px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.md};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
     
@@ -49,14 +50,14 @@ const ParameterInfo = styled.div`
 const ParameterDescription = styled.p`
     margin: 0;
     font-size: 0.85rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     line-height: 1.4;
 `;
 
 const WarningBox = styled.div`
     background: rgba(251, 191, 36, 0.1);
     border: 1px solid rgba(251, 191, 36, 0.3);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     padding: 12px 16px;
     display: flex;
     align-items: flex-start;
@@ -81,7 +82,7 @@ const WarningText = styled.p`
 
 const RateLabel = styled.span`
     font-size: 0.85rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     min-width: 100px;
     text-align: right;
 `;

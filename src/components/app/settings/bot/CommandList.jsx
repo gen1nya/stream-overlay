@@ -4,6 +4,7 @@ import {
     RemoveButton,
 } from '../SettingBloks'
 import styled from 'styled-components'
+import { tokens } from "../../../../designSystem/tokens";
 import {Accordion} from "../../../utils/AccordionComponent";
 import {FiTrash2} from "react-icons/fi";
 import {Row} from "../../SettingsComponent";
@@ -19,10 +20,10 @@ const CommandListWrapper = styled.div`
 const StyledInput = styled.input`
   margin-left: 0.5rem;
   background: #111;
-  border: 1px solid #333;
-  color: #fff;
+  border: 1px solid ${tokens.color.border.subtle};
+  color: ${tokens.color.text.primary};
   padding: 4px 8px;
-  border-radius: 6px;
+  border-radius: ${tokens.radius.md};
 `;
 
 export function CommandList() {

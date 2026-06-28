@@ -1,5 +1,6 @@
 import React, {useCallback, useMemo} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import ColorSelectorButton from './ColorSelectorButton';
 import FontAndSizeEditor from '../../utils/FontAndSizeEditor';
@@ -33,8 +34,8 @@ const OffsetGrid = styled.div`
 
 const OffsetCard = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 

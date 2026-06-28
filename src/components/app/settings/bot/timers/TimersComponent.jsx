@@ -1,5 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { FiClock, FiPlus, FiTrash2, FiMessageSquare, FiHash, FiInfo } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import Switch from "../../../../utils/Switch";
@@ -24,9 +25,9 @@ import {
 const TimerCard = styled.div`
     background: rgba(40, 40, 40, 0.5);
     border: 1px solid ${props => props.$enabled ? '#646cff' : '#333'};
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     margin-bottom: 12px;
 
     &:hover {
@@ -42,7 +43,7 @@ const TimerHeader = styled.div`
     background: ${props => props.$enabled
         ? 'rgba(100, 108, 255, 0.1)'
         : 'rgba(40, 40, 40, 0.3)'};
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
 
     .timer-name {
         flex: 1;
@@ -77,30 +78,30 @@ const ParameterLabel = styled.label`
     align-items: center;
     gap: 8px;
     font-size: 0.9rem;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
 
     svg {
         width: 16px;
         height: 16px;
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 `;
 
 const DeleteButton = styled.button`
     padding: 8px;
-    border: 1px solid #555;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
     background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
+    color: ${tokens.color.danger.base};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(220, 38, 38, 0.2);
-        border-color: #dc2626;
+        border-color: ${tokens.color.danger.base};
     }
 
     svg {
@@ -112,7 +113,7 @@ const DeleteButton = styled.button`
 const EmptyState = styled.div`
     text-align: center;
     padding: 40px 20px;
-    color: #888;
+    color: ${tokens.color.text.faint};
 
     svg {
         width: 48px;
@@ -130,13 +131,13 @@ const EmptyState = styled.div`
 const InfoCard = styled.div`
     background: rgba(100, 108, 255, 0.1);
     border: 1px solid rgba(100, 108, 255, 0.3);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
     margin-bottom: 16px;
 
     p {
         margin: 0;
-        color: #ccc;
+        color: ${tokens.color.text.tertiary};
         font-size: 0.9rem;
         line-height: 1.6;
     }

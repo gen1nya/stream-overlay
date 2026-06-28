@@ -2,6 +2,7 @@ import {useEffect, useMemo, useState} from "react";
 import {getUserById, getUserByLogin, muteUser, unbanUser, updateRoles} from "../../services/api";
 import Popup from "../utils/PopupComponent";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import {TbDiamond, TbDiamondOff, TbShield, TbShieldPlus, TbShieldX, TbClock, TbCalendar, TbUserCheck} from "react-icons/tb";
 import { useTranslation } from 'react-i18next';
 
@@ -11,8 +12,8 @@ const PopupContent = styled.div`
     padding: 24px;
     min-width: 420px;
     gap: 16px;
-    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-    border-radius: 12px;
+    background: ${tokens.gradient.surface};
+    border-radius: ${tokens.radius.xl};
     box-shadow:
             0 8px 32px rgba(0, 0, 0, 0.4),
             0 0 0 1px rgba(255, 255, 255, 0.05);
@@ -23,15 +24,15 @@ const Header = styled.div`
     align-items: center;
     gap: 12px;
     padding-bottom: 16px;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid ${tokens.color.border.default};
 `;
 
 const Title = styled.h2`
     font-size: 1.6rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin: 0;
-    background: linear-gradient(135deg, #646cff, #7c3aed);
+    background: ${tokens.gradient.accent};
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -42,8 +43,8 @@ const UserSection = styled.div`
     flex-direction: column;
     gap: 16px;
     background: rgba(30, 30, 30, 0.5);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     padding: 20px;
 `;
 
@@ -56,8 +57,8 @@ const UserHeader = styled.div`
 const Avatar = styled.img`
     width: 72px;
     height: 72px;
-    border-radius: 12px;
-    border: 2px solid #444;
+    border-radius: ${tokens.radius.xl};
+    border: 2px solid ${tokens.color.border.default};
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 `;
 
@@ -71,7 +72,7 @@ const UserInfo = styled.div`
 const UserName = styled.div`
     font-weight: 600;
     font-size: 1.3rem;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     display: flex;
     align-items: center;
     gap: 8px;
@@ -93,7 +94,7 @@ const StatusBadge = styled.div`
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.8rem;
     font-weight: 600;
     background: ${({ $type }) => {
@@ -126,7 +127,7 @@ const MetaInfo = styled.div`
     flex-direction: column;
     gap: 8px;
     padding-top: 12px;
-    border-top: 1px solid #333;
+    border-top: 1px solid ${tokens.color.border.subtle};
 `;
 
 const MetaItem = styled.div`
@@ -134,12 +135,12 @@ const MetaItem = styled.div`
     align-items: center;
     gap: 8px;
     font-size: 0.9rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
 
     svg {
         width: 14px;
         height: 14px;
-        color: #646cff;
+        color: ${tokens.color.accent.primary};
     }
 
     strong {
@@ -155,11 +156,11 @@ const ActionButtons = styled.div`
 `;
 
 const ActionButton = styled.button`
-    background: #2a2a2a;
-    border: 1px solid #444;
-    color: #fff;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
+    color: ${tokens.color.text.primary};
     padding: 10px 16px;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -167,23 +168,23 @@ const ActionButton = styled.button`
     gap: 8px;
     font-size: 14px;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     flex: 1;
     min-width: 120px;
 
     &:hover {
-        background: #333;
-        border-color: #555;
+        background: ${tokens.color.bg.raisedAlt};
+        border-color: ${tokens.color.border.strong};
         transform: translateY(-1px);
     }
 
     &.primary {
-        background: #646cff;
-        border-color: #646cff;
+        background: ${tokens.color.accent.primary};
+        border-color: ${tokens.color.accent.primary};
 
         &:hover {
-            background: #5a5acf;
-            border-color: #5a5acf;
+            background: ${tokens.color.accent.primaryHover};
+            border-color: ${tokens.color.accent.primaryHover};
         }
     }
 
@@ -198,12 +199,12 @@ const ActionButton = styled.button`
     }
 
     &.danger {
-        background: #dc2626;
-        border-color: #dc2626;
+        background: ${tokens.color.danger.base};
+        border-color: ${tokens.color.danger.base};
 
         &:hover {
-            background: #b91c1c;
-            border-color: #b91c1c;
+            background: ${tokens.color.danger.hover};
+            border-color: ${tokens.color.danger.hover};
         }
     }
 
@@ -218,7 +219,7 @@ const LoadingContainer = styled.div`
     justify-content: center;
     align-items: center;
     padding: 40px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 1rem;
 `;
 
@@ -227,7 +228,7 @@ const ErrorContainer = styled.div`
     flex-direction: column;
     align-items: center;
     padding: 40px;
-    color: #dc3545;
+    color: ${tokens.color.danger.text};
     text-align: center;
     
     p {

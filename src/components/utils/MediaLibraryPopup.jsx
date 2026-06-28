@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, useId } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import { FiX, FiUpload, FiImage, FiVideo, FiMusic, FiTrash2, FiCheck, FiFolder } from 'react-icons/fi';
 import { getAllMediaFiles, saveMediaFile, deleteMediaFile } from '../../services/api';
@@ -14,8 +15,8 @@ const ALLOWED_TYPES = {
 const ALL_ALLOWED_MIMES = [...ALLOWED_TYPES.image, ...ALLOWED_TYPES.video, ...ALLOWED_TYPES.audio];
 
 const PopupContainer = styled.div`
-    background: #1a1a1a;
-    border-radius: 12px;
+    background: ${tokens.color.bg.base};
+    border-radius: ${tokens.radius.xl};
     width: 90%;
     max-width: 900px;
     max-height: 85vh;
@@ -30,7 +31,7 @@ const Header = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 16px 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     background: #222;
 `;
 
@@ -38,7 +39,7 @@ const Title = styled.h2`
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     display: flex;
     align-items: center;
     gap: 8px;
@@ -47,18 +48,18 @@ const Title = styled.h2`
 const CloseButton = styled.button`
     background: none;
     border: none;
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     transition: all 0.2s;
 
     &:hover {
-        color: #fff;
-        background: #333;
+        color: ${tokens.color.text.primary};
+        background: ${tokens.color.bg.raisedAlt};
     }
 `;
 
@@ -67,16 +68,16 @@ const ControlsRow = styled.div`
     align-items: center;
     gap: 12px;
     padding: 12px 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     flex-wrap: wrap;
 `;
 
 const FilterTabs = styled.div`
     display: flex;
     gap: 4px;
-    background: #2a2a2a;
+    background: ${tokens.color.bg.raised};
     padding: 4px;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
 `;
 
 const FilterTab = styled.button`
@@ -85,7 +86,7 @@ const FilterTab = styled.button`
     gap: 6px;
     padding: 6px 12px;
     border: none;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: ${props => props.$active ? '#646cff' : 'transparent'};
     color: ${props => props.$active ? '#fff' : '#888'};
     cursor: pointer;
@@ -93,23 +94,23 @@ const FilterTab = styled.button`
     transition: all 0.2s;
 
     &:hover {
-        color: #fff;
+        color: ${tokens.color.text.primary};
         background: ${props => props.$active ? '#646cff' : '#333'};
     }
 `;
 
 const SortSelect = styled.select`
     padding: 8px 12px;
-    border: 1px solid #444;
-    border-radius: 6px;
-    background: #2a2a2a;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
+    background: ${tokens.color.bg.raised};
+    color: ${tokens.color.text.primary};
     font-size: 13px;
     cursor: pointer;
     outline: none;
 
     &:focus {
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 `;
 
@@ -128,8 +129,8 @@ const MediaGrid = styled.div`
 
 const MediaItem = styled.div`
     position: relative;
-    background: #2a2a2a;
-    border-radius: 8px;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.lg};
     overflow: hidden;
     cursor: pointer;
     transition: all 0.2s;
@@ -151,7 +152,7 @@ const MediaPreview = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
     overflow: hidden;
 
     img, video {
@@ -168,7 +169,7 @@ const AudioPlaceholder = styled.div`
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #2a2a2a 0%, #1a1a1a 100%);
-    color: #646cff;
+    color: ${tokens.color.accent.primary};
 
     svg {
         width: 48px;
@@ -181,9 +182,9 @@ const TypeBadge = styled.div`
     top: 8px;
     left: 8px;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     background: rgba(0, 0, 0, 0.7);
-    color: #fff;
+    color: ${tokens.color.text.primary};
     font-size: 10px;
     text-transform: uppercase;
     display: flex;
@@ -197,7 +198,7 @@ const MediaInfo = styled.div`
 
 const FileName = styled.div`
     font-size: 12px;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -206,7 +207,7 @@ const FileName = styled.div`
 
 const FileMeta = styled.div`
     font-size: 11px;
-    color: #888;
+    color: ${tokens.color.text.faint};
 `;
 
 const ItemActions = styled.div`
@@ -223,9 +224,9 @@ const ActionButton = styled.div`
     width: 28px;
     height: 28px;
     border: none;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: ${props => props.$danger ? 'rgba(239, 68, 68, 0.9)' : 'rgba(100, 108, 255, 0.9)'};
-    color: #fff;
+    color: ${tokens.color.text.primary};
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -235,7 +236,7 @@ const ActionButton = styled.div`
     svg {
         width: 14px;
         height: 14px;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     &:hover {
@@ -254,8 +255,8 @@ const SelectOverlay = styled.div`
     svg {
         width: 32px;
         height: 32px;
-        color: #fff;
-        background: #646cff;
+        color: ${tokens.color.text.primary};
+        background: ${tokens.color.accent.primary};
         border-radius: 50%;
         padding: 6px;
     }
@@ -263,7 +264,7 @@ const SelectOverlay = styled.div`
 
 const DropZone = styled.div`
     border: 2px dashed ${props => props.$isDragging ? '#646cff' : '#444'};
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     padding: 40px;
     text-align: center;
     color: ${props => props.$isDragging ? '#646cff' : '#888'};
@@ -273,8 +274,8 @@ const DropZone = styled.div`
     cursor: pointer;
 
     &:hover {
-        border-color: #646cff;
-        color: #646cff;
+        border-color: ${tokens.color.accent.primary};
+        color: ${tokens.color.accent.primary};
     }
 `;
 
@@ -292,7 +293,7 @@ const EmptyState = styled.div`
     align-items: center;
     justify-content: center;
     padding: 60px 20px;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     text-align: center;
 
     svg {
@@ -308,13 +309,13 @@ const Footer = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 12px 20px;
-    border-top: 1px solid #333;
+    border-top: 1px solid ${tokens.color.border.subtle};
     background: #222;
 `;
 
 const SelectedCount = styled.div`
     font-size: 13px;
-    color: #888;
+    color: ${tokens.color.text.faint};
 `;
 
 const FooterActions = styled.div`
@@ -325,18 +326,18 @@ const FooterActions = styled.div`
 const FooterButton = styled.button`
     padding: 8px 20px;
     border: none;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 13px;
     font-weight: 500;
     cursor: pointer;
     transition: all 0.2s;
 
     &.primary {
-        background: #646cff;
-        color: #fff;
+        background: ${tokens.color.accent.primary};
+        color: ${tokens.color.text.primary};
 
         &:hover {
-            background: #7c3aed;
+            background: ${tokens.color.accent.purple};
         }
 
         &:disabled {
@@ -346,8 +347,8 @@ const FooterButton = styled.button`
     }
 
     &.secondary {
-        background: #333;
-        color: #fff;
+        background: ${tokens.color.bg.raisedAlt};
+        color: ${tokens.color.text.primary};
 
         &:hover {
             background: #444;

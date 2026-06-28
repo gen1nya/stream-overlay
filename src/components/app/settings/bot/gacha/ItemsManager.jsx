@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { FiPlus, FiEdit2, FiTrash2, FiFilm } from 'react-icons/fi';
 import { AddButton, ErrorText, FormRow, NameInput } from '../SharedBotStyles';
 import RadioGroup from '../../../../utils/TextRadioGroup';
@@ -34,12 +35,12 @@ const ItemCard = styled.div`
     if (props.$rarity === 4) return 'rgba(139, 92, 246, 0.3)';
     return '#333';
 }};
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     padding: 16px;
     display: flex;
     flex-direction: column;
     gap: 12px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         transform: translateY(-2px);
@@ -55,7 +56,7 @@ const ItemHeader = styled.div`
 
 const ItemName = styled.h4`
     margin: 0;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     font-size: 1rem;
     font-weight: 600;
 `;
@@ -80,7 +81,7 @@ const ItemBadges = styled.div`
 const Badge = styled.span`
     display: inline-block;
     padding: 4px 8px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.75rem;
     font-weight: 600;
     background: ${props => props.$bg || 'rgba(107, 114, 128, 0.2)'};
@@ -95,8 +96,8 @@ const ItemActions = styled.div`
 
 const IconButton = styled.button`
     padding: 6px 10px;
-    border: 1px solid #555;
-    border-radius: 6px;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.md};
     background: rgba(30, 30, 30, 0.8);
     color: ${props => props.$color || '#ccc'};
     cursor: pointer;
@@ -104,7 +105,7 @@ const IconButton = styled.button`
     align-items: center;
     gap: 6px;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         background: rgba(40, 40, 40, 0.9);
@@ -128,12 +129,12 @@ const FilterBar = styled.div`
 const FilterButton = styled.button`
     padding: 8px 16px;
     border: 1px solid ${props => props.$active ? '#646cff' : '#555'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${props => props.$active ? 'rgba(100, 108, 255, 0.2)' : 'rgba(30, 30, 30, 0.5)'};
     color: ${props => props.$active ? '#e0e0e0' : '#aaa'};
     cursor: pointer;
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         background: ${props => props.$active ? 'rgba(100, 108, 255, 0.3)' : 'rgba(40, 40, 40, 0.8)'};
@@ -144,7 +145,7 @@ const CheckboxLabel = styled.label`
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     cursor: pointer;
     
     input {
@@ -177,13 +178,13 @@ const PopupButtons = styled.div`
 const PopupButton = styled.button`
     padding: 10px 20px;
     border: 1px solid ${props => props.$primary ? '#646cff' : '#555'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${props => props.$primary ? '#646cff' : 'rgba(30, 30, 30, 0.8)'};
     color: ${props => props.$danger ? '#dc2626' : '#d6d6d6'};
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         background: ${props => {
@@ -196,7 +197,7 @@ const PopupButton = styled.button`
 `;
 
 const ConfirmText = styled.p`
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-size: 1rem;
     margin: 0;
     line-height: 1.5;
@@ -211,12 +212,12 @@ const SectionTitle = styled.div`
     color: #aaa;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
 
     svg {
         width: 16px;
         height: 16px;
-        color: #646cff;
+        color: ${tokens.color.accent.primary};
     }
 `;
 

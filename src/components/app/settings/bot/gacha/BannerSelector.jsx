@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import { FiPlus, FiX } from 'react-icons/fi';
 
@@ -25,11 +26,11 @@ const BannerTab = styled.button`
     border: 1px solid ${props => props.$active
         ? 'var(--primary-color, #6366f1)'
         : 'var(--border-color, #3a3a4e)'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     font-size: 14px;
     font-weight: ${props => props.$active ? '600' : '400'};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => props.$active
@@ -48,7 +49,7 @@ const DeleteButton = styled.span`
     border-radius: 50%;
     background: rgba(255, 255, 255, 0.2);
     margin-left: 4px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(239, 68, 68, 0.8);
@@ -68,10 +69,10 @@ const AddButton = styled.button`
     background: transparent;
     color: var(--text-secondary, #a0a0b0);
     border: 1px dashed var(--border-color, #3a3a4e);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         color: var(--primary-color, #6366f1);

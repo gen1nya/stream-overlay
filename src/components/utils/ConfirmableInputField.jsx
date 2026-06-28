@@ -1,5 +1,6 @@
 import React, {useState, useRef, useEffect} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import {Row} from "../app/SettingsComponent";
 
 import {AiFillFolderOpen, AiOutlineCloseCircle, AiOutlinePaperClip} from "react-icons/ai";
@@ -20,7 +21,7 @@ const InputField = styled.input`
     width: 100%;
     padding: 8px 66px 8px 8px;
     border: 1px solid ${({ isValid }) => (isValid ? '#ccc' : 'red')};
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     box-sizing: border-box;
     font-size: 1rem;
     color: #333;
@@ -38,7 +39,7 @@ const ConfirmButton = styled.button`
     background-color: ${({ confirmed }) => (confirmed ? '#4caf50' : '#f44336')};
     color: white;
     border: none;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     cursor: pointer;
     font-size: 1rem;
 

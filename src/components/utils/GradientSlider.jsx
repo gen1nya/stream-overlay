@@ -1,5 +1,6 @@
 import React, {useRef} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import {hexToRgba} from "../../utils";
 import {FiXCircle} from "react-icons/fi";
 
@@ -7,8 +8,8 @@ const SliderWrapper = styled.div`
     position: relative;
     height: 32px;
     width: auto;
-    background: #333;
-    border-radius: 4px;
+    background: ${tokens.color.bg.raisedAlt};
+    border-radius: ${tokens.radius.sm};
     margin-bottom: 24px;
     margin-top: 10px;
     cursor: pointer;
@@ -20,7 +21,7 @@ const GradientBar = styled.div`
     left: 0;
     right: 0;
     bottom: 0;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
 `;
 
 const StopContainer = styled.div`
@@ -82,7 +83,7 @@ const RemoveButton = styled.button`
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         color: #ff6666;

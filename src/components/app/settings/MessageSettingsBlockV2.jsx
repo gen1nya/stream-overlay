@@ -1,5 +1,6 @@
 import React, {useCallback, useMemo, useRef, useState} from 'react';
 import styled, {ThemeProvider} from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import merge from 'lodash/merge';
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import ColorSelectorButton from './ColorSelectorButton';
@@ -45,7 +46,7 @@ const TabButton = styled.button`
     padding: 8px 20px;
     background: ${({$active}) => $active ? 'rgba(100, 108, 255, 0.2)' : 'rgba(40, 40, 40, 0.5)'};
     border: 1px solid ${({$active}) => $active ? '#646cff' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     color: ${({$active}) => $active ? '#fff' : '#888'};
     font-size: 0.9rem;
     font-weight: 600;
@@ -56,9 +57,9 @@ const TabButton = styled.button`
     gap: 8px;
 
     &:hover {
-        color: #ccc;
+        color: ${tokens.color.text.tertiary};
         background: rgba(100, 108, 255, 0.12);
-        border-color: #555;
+        border-color: ${tokens.color.border.strong};
     }
 
     svg {
@@ -85,8 +86,8 @@ const OffsetCard = styled.div`
     flex-direction: column;
     gap: 12px;
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 
@@ -98,7 +99,7 @@ const SwitchRow = styled.div`
 
 const SmallLabel = styled.span`
     font-size: 0.85rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
 `;
 
 const SubTitle = styled.div`
@@ -113,8 +114,8 @@ const PriorityList = styled.div`
     flex-direction: column;
     gap: 4px;
     background: rgba(30, 30, 30, 0.4);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 8px;
 `;
 
@@ -125,7 +126,7 @@ const PriorityRow = styled.div`
     gap: 12px;
     padding: 6px 10px;
     background: rgba(50, 50, 50, 0.4);
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
 `;
 
 const RoleLabel = styled.div`
@@ -153,9 +154,9 @@ const RolePreview = styled.div`
 
 const IconButton = styled.div`
     background: rgba(60, 60, 60, 0.6);
-    border: 1px solid #444;
-    border-radius: 4px;
-    color: #ccc;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.sm};
+    color: ${tokens.color.text.tertiary};
     width: 28px;
     height: 28px;
     display: inline-flex;
@@ -187,8 +188,8 @@ const BadgeCardsGrid = styled.div`
 
 const BadgeCard = styled.div`
     background: rgba(40, 40, 40, 0.4);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 12px;
     display: flex;
     flex-direction: column;
@@ -208,7 +209,7 @@ const BadgeIconBox = styled.div`
     width: 32px;
     height: 32px;
     border: 1px dashed #444;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -223,8 +224,8 @@ const BadgeIconBox = styled.div`
 const UploadButton = styled.div`
     flex: 1;
     background: rgba(100, 108, 255, 0.15);
-    border: 1px solid #646cff;
-    border-radius: 6px;
+    border: 1px solid ${tokens.color.accent.primary};
+    border-radius: ${tokens.radius.md};
     color: #ccd;
     padding: 6px 10px;
     font-size: 0.85rem;
@@ -246,7 +247,7 @@ const UploadButton = styled.div`
 const RemoveButton = styled.div`
     background: rgba(220, 60, 60, 0.1);
     border: 1px solid #a33;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     color: #f99;
     width: 32px;
     height: 32px;
@@ -269,8 +270,8 @@ const BadgeButtonRow = styled.div`
 
 const UserListInput = styled.textarea`
     background: rgba(20, 20, 20, 0.7);
-    border: 1px solid #444;
-    border-radius: 6px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
     color: #ddd;
     font-family: monospace;
     font-size: 0.85rem;
@@ -282,13 +283,13 @@ const UserListInput = styled.textarea`
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 `;
 
 const Hint = styled.div`
     font-size: 0.75rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     line-height: 1.3;
 `;
 

@@ -1,17 +1,18 @@
 import React, { useState } from "react";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 
 const AccordionWrapper = styled.div`
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     width: 100%;
     background: linear-gradient(135deg, #1a1a1a 0%, #222 100%);
     overflow: hidden;
     transition: border-color 0.2s ease;
 
     &:hover {
-        border-color: #444;
+        border-color: ${tokens.color.border.default};
     }
 `;
 
@@ -29,11 +30,11 @@ const AccordionHeader = styled.button`
     font-size: 0.95rem;
     font-weight: 500;
     color: ${props => props.$isOpen ? '#fff' : '#ccc'};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(255, 255, 255, 0.03);
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     &:focus {

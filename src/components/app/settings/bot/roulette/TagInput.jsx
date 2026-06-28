@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { IoClose } from 'react-icons/io5';
 import { useTranslation } from 'react-i18next';
 
@@ -7,8 +8,8 @@ const Container = styled.div`
     min-height: 40px;
     padding: 8px;
     border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background-color: #333333;
+    border-radius: ${tokens.radius.md};
+    background-color: ${tokens.color.bg.raisedAlt};
     cursor: text;
     display: flex;
     flex-wrap: wrap;
@@ -30,7 +31,7 @@ const Tag = styled.span`
     background-color: #505761;
     color: #c9d5ff;
     font-size: 14px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     white-space: nowrap;
 `;
 
@@ -47,7 +48,7 @@ const RemoveButton = styled.button`
     flex-shrink: 0;
 
     &:hover {
-        color: #ffffff;
+        color: ${tokens.color.text.primary};
     }
 `;
 

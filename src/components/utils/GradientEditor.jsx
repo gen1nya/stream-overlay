@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import GradientSliderFixed from "./GradientSlider";
 import ColorPicker from "react-pick-color";
 import {hexToRgba} from "../../utils";
@@ -12,11 +13,11 @@ const EditorContainer = styled.div`
     display: flex;
     box-sizing: border-box;
     flex-direction: column;
-    background: #1e1e1e;
+    background: ${tokens.color.bg.surface};
     padding: 16px;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     width: 100%;
-    color: #fff;
+    color: ${tokens.color.text.primary};
 `;
 
 const Row = styled.div`
@@ -29,26 +30,26 @@ const Row = styled.div`
 
 const Input = styled.input`
     background: #262626;
-    color: #fff;
-    border: 1px solid #444;
+    color: ${tokens.color.text.primary};
+    border: 1px solid ${tokens.color.border.default};
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     width: 50px;
 `;
 
 const Select = styled.select`
     background: #262626;
-    color: #fff;
-    border: 1px solid #444;
+    color: ${tokens.color.text.primary};
+    border: 1px solid ${tokens.color.border.default};
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
 `;
 
 const SettingsElementWrapper = styled.div`
     height: 50px;
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
     margin-top: 8px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     padding: 2px 8px;
     display: flex;
     flex-direction: row;

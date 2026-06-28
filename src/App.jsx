@@ -24,6 +24,7 @@ import BackendLogs from "./components/app/BackendLogs";
 import MediaOverlayEditor from "./components/media/MediaOverlayEditor";
 import MediaOverlay from "./components/media/MediaOverlay";
 import HelpWindow from "./components/help/HelpWindow";
+import Showcase from "./designSystem/components/Showcase";
 
 const GlobalStyle = createGlobalStyle`
     html, body, #root {
@@ -67,6 +68,7 @@ export default function App() {
                             <Route path="/media-overlay-editor" element={<MediaOverlayEditor/>} />
                             <Route path="/media-overlay" element={<MediaOverlay/>} />
                             <Route path="/help" element={<HelpWindow/>} />
+                            <Route path="/design-system" element={<Showcase/>} />
                             <Route path="*" element={ <WrongPageComponent/> }/>
                         </Routes>
                     </BrowserRouter>

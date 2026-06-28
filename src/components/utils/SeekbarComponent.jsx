@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 
 const Container = styled.div`
     display: flex;
@@ -38,11 +39,11 @@ const SliderContainer = styled.div`
 const SliderTrack = styled.div`
     width: 100%;
     height: 4px;
-    background: #333;
+    background: ${tokens.color.bg.raisedAlt};
     border-radius: 2px;
     position: relative;
     overflow: visible;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     pointer-events: none;
 
     ${SliderContainer}:hover & {
@@ -69,7 +70,7 @@ const Tick = styled.div`
     height: ${props => props.major ? '12px' : '8px'};
     background: ${props => props.disabled ? '#444' : '#555'};
     opacity: ${props => props.major ? 0.8 : 0.5};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     pointer-events: none;
 
     ${SliderContainer}:hover & {
@@ -93,11 +94,11 @@ const SliderProgress = styled.div`
     height: 100%;
     background: ${props => {
         if (props.disabled) return '#555';
-        return 'linear-gradient(90deg, #646cff 0%, #7c3aed 100%)';
+        return `linear-gradient(90deg, ${tokens.color.accent.primary} 0%, ${tokens.color.accent.purple} 100%)`;
     }};
     border-radius: 2px;
     width: ${props => props.progress}%;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     position: absolute;
     left: 0;
     top: 0;
@@ -130,7 +131,7 @@ const SliderThumb = styled.div`
     border: 2px solid ${props => props.disabled ? '#444' : '#1e1e1e'};
     border-radius: 50%;
     cursor: ${props => props.disabled ? 'not-allowed' : 'pointer'};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-shadow: ${props => {
         if (props.disabled) return 'none';
         if (props.isDragging) return '0 0 0 4px rgba(100, 108, 255, 0.2)';
@@ -150,18 +151,18 @@ const TooltipContainer = styled.div`
     top: -32px;
     left: ${props => props.position}%;
     transform: translateX(-50%);
-    background: #333;
+    background: ${tokens.color.bg.raisedAlt};
     color: white;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     font-size: 0.75rem;
     white-space: nowrap;
     opacity: ${props => props.show ? 1 : 0};
     visibility: ${props => props.show ? 'visible' : 'hidden'};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     pointer-events: none;
     z-index: 10;
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
 
     &::after {
         content: '';
@@ -173,7 +174,7 @@ const TooltipContainer = styled.div`
         height: 0;
         border-left: 4px solid transparent;
         border-right: 4px solid transparent;
-        border-top: 4px solid #333;
+        border-top: 4px solid ${tokens.color.border.subtle};
     }
 `;
 

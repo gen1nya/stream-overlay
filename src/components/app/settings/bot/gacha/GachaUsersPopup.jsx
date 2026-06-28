@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import Popup from '../../../../utils/PopupComponent';
 import {
     FiX,
@@ -53,9 +54,9 @@ const EditModalOverlay = styled.div`
 `;
 
 const EditModalContent = styled.div`
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
     padding: 24px;
     min-width: 500px;
     max-width: 600px;
@@ -71,7 +72,7 @@ const EditModalHeader = styled.div`
 const EditModalTitle = styled.h3`
     font-size: 1.4rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin: 0;
 `;
 
@@ -91,16 +92,16 @@ const Input = styled.input`
     width: 100%;
     box-sizing: border-box;
     padding: 12px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 
@@ -115,14 +116,14 @@ const CheckboxWrapper = styled.div`
     align-items: center;
     gap: 10px;
     padding: 12px;
-    background: #1e1e1e;
-    border: 1px solid #555;
-    border-radius: 8px;
+    background: ${tokens.color.bg.surface};
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 `;
 
@@ -130,7 +131,7 @@ const Checkbox = styled.input`
     width: 20px;
     height: 20px;
     cursor: pointer;
-    accent-color: #646cff;
+    accent-color: ${tokens.color.accent.primary};
 `;
 
 const CheckboxLabel = styled.span`
@@ -149,14 +150,14 @@ const EditModalButtons = styled.div`
 const Button = styled.button`
     padding: 12px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     svg {
         width: 16px;
@@ -174,11 +175,11 @@ const CancelButton = styled(Button)`
 `;
 
 const SaveButton = styled(Button)`
-    background: linear-gradient(135deg, #646cff, #7c3aed);
-    color: #fff;
+    background: ${tokens.gradient.accent};
+    color: ${tokens.color.text.primary};
 
     &:hover {
-        background: linear-gradient(135deg, #5a5acf, #6b2fb5);
+        background: linear-gradient(135deg, ${tokens.color.accent.primaryHover}, #6b2fb5);
         transform: translateY(-1px);
     }
 
@@ -206,30 +207,30 @@ const BannerSelectLabel = styled.label`
     font-weight: 500;
 
     svg {
-        color: #646cff;
+        color: ${tokens.color.accent.primary};
     }
 `;
 
 const BannerSelect = styled.select`
     padding: 10px 14px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 0.95rem;
     cursor: pointer;
     min-width: 200px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 
     option {
-        background: #1e1e1e;
-        color: #fff;
+        background: ${tokens.color.bg.surface};
+        color: ${tokens.color.text.primary};
     }
 `;
 

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import { FiPlus, FiEdit2, FiTrash2, FiImage, FiVideo, FiMusic, FiSearch, FiPlay, FiFilm } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { getAllMediaEvents, deleteMediaEvent, testMediaEvent, getAllMediaDisplayGroups } from '../../../services/api';
@@ -29,21 +30,21 @@ const SearchWrapper = styled.div`
 const SearchInput = styled.input`
     width: 100%;
     padding: 10px 12px 10px 40px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
     &::placeholder {
-        color: #666;
+        color: ${tokens.color.text.disabled};
     }
 
     &:focus {
         outline: none;
-        border-color: #ec4899;
+        border-color: ${tokens.color.feature.media.base};
         background: #252525;
     }
 `;
@@ -53,7 +54,7 @@ const SearchIcon = styled(FiSearch)`
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #666;
+    color: ${tokens.color.text.disabled};
     width: 18px;
     height: 18px;
 `;
@@ -63,18 +64,18 @@ const AddButton = styled.button`
     align-items: center;
     gap: 8px;
     padding: 10px 18px;
-    border: 1px solid #ec4899;
-    border-radius: 8px;
-    background: rgba(236, 72, 153, 0.15);
-    color: #ec4899;
+    border: 1px solid ${tokens.color.feature.media.base};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.feature.media.soft};
+    color: ${tokens.color.feature.media.base};
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     white-space: nowrap;
 
     &:hover {
-        background: rgba(236, 72, 153, 0.25);
+        background: ${tokens.color.feature.media.softBorder};
     }
 
     svg {
@@ -95,17 +96,17 @@ const FilterButton = styled.button`
     align-items: center;
     gap: 6px;
     padding: 8px 14px;
-    border: 1px solid ${props => props.$active ? '#ec4899' : '#444'};
-    border-radius: 8px;
-    background: ${props => props.$active ? 'rgba(236, 72, 153, 0.15)' : 'rgba(30, 30, 30, 0.5)'};
+    border: 1px solid ${props => props.$active ? tokens.color.feature.media.base : '#444'};
+    border-radius: ${tokens.radius.lg};
+    background: ${props => props.$active ? tokens.color.feature.media.soft : 'rgba(30, 30, 30, 0.5)'};
     color: ${props => props.$active ? '#fff' : '#888'};
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        background: ${props => props.$active ? 'rgba(236, 72, 153, 0.2)' : 'rgba(40, 40, 40, 0.8)'};
-        border-color: ${props => props.$active ? '#ec4899' : '#555'};
+        background: ${props => props.$active ? tokens.color.feature.media.softBorder : 'rgba(40, 40, 40, 0.8)'};
+        border-color: ${props => props.$active ? tokens.color.feature.media.base : '#555'};
     }
 
     svg {
@@ -122,22 +123,22 @@ const MediaGrid = styled.div`
 
 const MediaCard = styled.div`
     background: linear-gradient(135deg, rgba(40, 40, 40, 0.6) 0%, rgba(30, 30, 30, 0.8) 100%);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-        border-color: #444;
+        border-color: ${tokens.color.border.default};
     }
 `;
 
 const MediaPreview = styled.div`
     width: 100%;
     height: 140px;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -159,7 +160,7 @@ const MediaTypeBadge = styled.div`
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: rgba(0, 0, 0, 0.7);
     color: ${props => {
         if (props.$type === 'image') return '#3b82f6';
@@ -202,7 +203,7 @@ const MediaContent = styled.div`
 
 const MediaName = styled.h4`
     margin: 0;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     font-size: 1rem;
     font-weight: 600;
     white-space: nowrap;
@@ -221,7 +222,7 @@ const InfoBadge = styled.span`
     align-items: center;
     gap: 4px;
     padding: 4px 8px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.7rem;
     font-weight: 500;
     background: ${props => props.$bg || 'rgba(107, 114, 128, 0.2)'};
@@ -232,7 +233,7 @@ const MediaActions = styled.div`
     display: flex;
     gap: 8px;
     padding-top: 10px;
-    border-top: 1px solid #333;
+    border-top: 1px solid ${tokens.color.border.subtle};
 `;
 
 const ActionButton = styled.button`
@@ -243,12 +244,12 @@ const ActionButton = styled.button`
     gap: 6px;
     padding: 8px 12px;
     border: 1px solid ${props => props.$color || '#444'};
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
     color: ${props => props.$color || '#888'};
     cursor: pointer;
     font-size: 0.8rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => props.$color ? `${props.$color}15` : 'rgba(255, 255, 255, 0.05)'};
@@ -268,7 +269,7 @@ const ActionButton = styled.button`
 const EmptyState = styled.div`
     text-align: center;
     padding: 60px 20px;
-    color: #666;
+    color: ${tokens.color.text.disabled};
 
     svg {
         width: 64px;
@@ -279,7 +280,7 @@ const EmptyState = styled.div`
 
     h3 {
         margin: 0 0 8px;
-        color: #888;
+        color: ${tokens.color.text.faint};
         font-size: 1.1rem;
     }
 
@@ -313,27 +314,27 @@ const PopupButtons = styled.div`
 
 const PopupButton = styled.button`
     padding: 10px 20px;
-    border: 1px solid ${props => props.$primary ? '#ec4899' : '#555'};
-    border-radius: 8px;
-    background: ${props => props.$primary ? '#ec4899' : 'rgba(30, 30, 30, 0.8)'};
+    border: 1px solid ${props => props.$primary ? tokens.color.feature.media.base : '#555'};
+    border-radius: ${tokens.radius.lg};
+    background: ${props => props.$primary ? tokens.color.feature.media.base : 'rgba(30, 30, 30, 0.8)'};
     color: ${props => props.$danger ? '#dc2626' : '#d6d6d6'};
     cursor: pointer;
     font-size: 0.95rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => {
-            if (props.$primary) return '#db2777';
+            if (props.$primary) return tokens.color.feature.media.base;
             if (props.$danger) return 'rgba(220, 38, 38, 0.1)';
             return 'rgba(40, 40, 40, 0.9)';
         }};
-        border-color: ${props => props.$danger ? '#dc2626' : (props.$primary ? '#db2777' : '#777')};
+        border-color: ${props => props.$danger ? '#dc2626' : (props.$primary ? tokens.color.feature.media.base : '#777')};
     }
 `;
 
 const ConfirmText = styled.p`
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-size: 1rem;
     margin: 0;
     line-height: 1.5;

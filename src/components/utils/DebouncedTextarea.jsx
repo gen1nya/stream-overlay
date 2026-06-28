@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, forwardRef, useImperativeHandle } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 
 const TextareaWrapper = styled.div`
     position: relative;
@@ -12,17 +13,17 @@ const StyledTextarea = styled.textarea`
     padding: 12px 16px;
     padding-bottom: ${props => props.$showCounter ? '28px' : '12px'};
     border: 1px solid ${props => props.$isOverLimit ? '#dc2626' : '#555'};
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
     font-family: inherit;
     resize: vertical;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
     &::placeholder {
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 
     &:focus {

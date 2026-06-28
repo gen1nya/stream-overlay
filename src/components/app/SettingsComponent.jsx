@@ -1,15 +1,12 @@
 // Settings.js
 import React, {useEffect, useMemo, useState} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
+import { FeatureContext } from "../../designSystem/FeatureContext";
 import {useNavigate} from 'react-router-dom';
 import {
     openPreview,
     setRemoteTheme,
-    createNewTheme,
-    setTheme,
-    importTheme,
-    deleteTheme,
-    openExternalLink,
     openMediaOverlayEditor,
     getObsConnectionConfig,
     saveObsConnectionConfig,
@@ -22,7 +19,6 @@ import MessageSettingsBlock from "./settings/MessageSettingsBlock";
 import MessageSettingsBlockV2 from "./settings/MessageSettingsBlockV2";
 import FollowSettingsBlock from "./settings/FollowSettingsBlock";
 import PlayerSettingsComponent from "./settings/PlayerSettingsComponent";
-import {defaultTheme} from '../../theme';
 import RedeemPointsBlock from "./settings/RedeemPointsBlock";
 import {Sidebar} from "../utils/Sidebar";
 import {
@@ -65,6 +61,7 @@ import ModernPlayerSettingsComponent from "./settings/ModernPlayerSettingsCompon
 import FollowersGoalSettingsComponent from "./settings/FollowersGoalSettingsComponent";
 import DonationGoalSettingsComponent from "./settings/DonationGoalSettingsComponent";
 import {ActionButton, HeaderActions, HeaderLeft, HeaderTitle, ThemeIndicator} from "./SharedStyles";
+import Button from "../../designSystem/components/Button";
 import HolidayHeader from "../seasonal/HolidayHeader";
 import {useThemeManager} from "../../hooks/useThemeManager";
 import {useBotConfig} from "../../hooks/useBotConfig";
@@ -95,22 +92,15 @@ const Panel = styled.div`
     height: 100vh;
     padding: 0;
     margin: 0;
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
+    background: linear-gradient(135deg, ${tokens.color.bg.app} 0%, ${tokens.color.bg.base} 100%);
     color: #f6f6f6;
     display: flex;
     flex-direction: column;
     gap: 0;
 `;
 
-const BackButton = styled(ActionButton)`
-    background: #444;
-    border-color: #555;
-
-    &:hover {
-        background: #555;
-        border-color: #666;
-    }
-`;
+// Нейтральная кнопка «назад» на DS-примитиве (через адоптнутый ActionButton).
+const BackButton = styled(ActionButton)``;
 
 const ContentWrapper = styled.div`
     display: flex;
@@ -130,9 +120,9 @@ const MainContainer = styled.div`
 `;
 
 const ContentHeader = styled.div`
-    padding: 10px 24px 10px 24px;
-    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-    border-bottom: 1px solid #333;
+    padding: 10px ${tokens.space.xxl} 10px ${tokens.space.xxl};
+    background: ${tokens.gradient.surface};
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -140,17 +130,17 @@ const ContentHeader = styled.div`
 
 const PageTitle = styled.h2`
     font-size: 1.3rem;
-    font-weight: 600;
+    font-weight: ${tokens.font.weight.semibold};
     margin: 10px 0 10px 0;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: ${tokens.space.md};
 
     svg {
-        width: 20px;
-        height: 20px;
-        color: #646cff;
+        width: ${tokens.space.xl};
+        height: ${tokens.space.xl};
+        color: ${tokens.color.accent.primary};
     }
 `;
 
@@ -163,59 +153,59 @@ const Content = styled.div`
     align-content: flex-start;
     overflow-y: auto;
     min-height: 0;
-    padding: 12px;
-    gap: 20px;
+    padding: ${tokens.space.md};
+    gap: ${tokens.space.xl};
 
     /* Custom scrollbar */
 
     &::-webkit-scrollbar {
-        width: 8px;
+        width: ${tokens.space.sm};
     }
 
     &::-webkit-scrollbar-track {
-        background: #1a1a1a;
-        border-radius: 4px;
+        background: ${tokens.color.bg.base};
+        border-radius: ${tokens.radius.sm};
     }
 
     &::-webkit-scrollbar-thumb {
-        background: #444;
-        border-radius: 4px;
+        background: ${tokens.color.border.default};
+        border-radius: ${tokens.radius.sm};
     }
 
     &::-webkit-scrollbar-thumb:hover {
-        background: #555;
+        background: ${tokens.color.border.strong};
     }
 `;
 
 const NoConfigCard = styled.div`
     width: 100%;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 12px;
-    padding: 32px;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.xl};
+    padding: ${tokens.space.xxxl};
     text-align: center;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: ${tokens.space.lg};
 
     svg {
         width: 48px;
         height: 48px;
-        color: #666;
+        color: ${tokens.color.text.disabled};
     }
 
     h3 {
         margin: 0;
-        color: #fff;
-        font-size: 1.2rem;
-        font-weight: 600;
+        color: ${tokens.color.text.primary};
+        font-size: ${tokens.font.size.xl};
+        font-weight: ${tokens.font.weight.semibold};
     }
 
     p {
         margin: 0;
         color: #aaa;
-        font-size: 14px;
+        font-size: ${tokens.font.size.base};
         line-height: 1.5;
     }
 `;
@@ -238,31 +228,46 @@ const BotPageContent = styled.div`
     box-sizing: border-box;
 `;
 
-// Toolbar icon button (for database, etc.)
-const ToolbarIconButton = styled.button`
-    display: flex;
-    align-items: center;
-    justify-content: center;
+// Иконочная кнопка тулбара (история/БД) на DS-примитиве: квадрат 32×32,
+// лёгкий ghost-вариант с акцентной иконкой.
+const ToolbarIconButton = styled(Button).attrs({ $variant: 'ghost' })`
     width: 32px;
     height: 32px;
     padding: 0;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: rgba(100, 108, 255, 0.1);
-    color: #646cff;
-    cursor: pointer;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: rgba(100, 108, 255, 0.2);
-        border-color: #646cff;
-    }
+    color: ${tokens.color.accent.primary};
 
     svg {
         width: 18px;
         height: 18px;
     }
 `;
+
+// Источник истины: раздел навигации → фиче-группа (для цветового кодирования).
+// Прокидывается через FeatureContext, SettingsCard красится сам.
+// Новый раздел = одна строчка тут. Исключения: youtube — бренд; *_goal — goals.
+const PAGE_FEATURE = {
+    general: 'general',
+    about: 'general',
+    chat_appearance: 'chat',
+    chat: 'chat',
+    follow: 'chat',
+    channel_points: 'chat',
+    bot_pingpong: 'bot',
+    bot_roulette: 'bot',
+    bot_gacha: 'bot',
+    bot_lottery: 'bot',
+    bot_triggers: 'bot',
+    bot_timers: 'bot',
+    media_events: 'media',
+    media_overlay: 'media',
+    obs_actions: 'integrations',
+    http_actions: 'integrations',
+    remote_gateway: 'integrations',
+    youtube: 'youtube',
+    donation_goal: 'goals',
+    followers_goal: 'goals',
+    players: 'players',
+};
 
 export default function Settings() {
     const navigate = useNavigate();
@@ -321,7 +326,6 @@ export default function Settings() {
         themes,
         selectedTheme,
         selectedThemeName,
-        setSelectedThemeName,
         setSelectedTheme,
         isThemeSelectorOpen,
         openThemeSelector,
@@ -343,7 +347,7 @@ export default function Settings() {
         applyBotConfig,
     } = useBotConfig();
 
-    const [drawerOpen, setDrawerOpen] = useState(true);
+    const [drawerOpen] = useState(true);
     const [activePage, setActivePage] = useState("general");
     const [showBotHelp, setShowBotHelp] = useState(false);
 
@@ -703,26 +707,27 @@ export default function Settings() {
                         )}
                     </ContentHeader>
 
-                    <MainContent
-                        page={activePage}
-                        apply={updaterOrTheme => apply(updaterOrTheme)}
-                        selectedTheme={selectedTheme}
-                        selectedThemeName={selectedThemeName}
-                        botConfig={botConfig}
-                        botName={botName}
-                        openColorPopup={openColorPopup}
-                        applyBotConfig={applyBotConfig}
-                        showBotHelp={showBotHelp}
-                        setShowBotHelp={setShowBotHelp}
-                        gatewayStatus={gatewayStatus}
-                    />
+                    <FeatureContext.Provider value={PAGE_FEATURE[activePage]}>
+                        <MainContent
+                            page={activePage}
+                            apply={updaterOrTheme => apply(updaterOrTheme)}
+                            selectedTheme={selectedTheme}
+                            selectedThemeName={selectedThemeName}
+                            botConfig={botConfig}
+                            openColorPopup={openColorPopup}
+                            applyBotConfig={applyBotConfig}
+                            showBotHelp={showBotHelp}
+                            setShowBotHelp={setShowBotHelp}
+                            gatewayStatus={gatewayStatus}
+                        />
+                    </FeatureContext.Provider>
                 </MainContainer>
             </ContentWrapper>
         </Panel>
     );
 }
 
-const MainContent = ({page, selectedTheme, selectedThemeName, apply, openColorPopup, botConfig, botName, applyBotConfig, showBotHelp, setShowBotHelp, gatewayStatus}) => {
+const MainContent = ({page, selectedTheme, selectedThemeName, apply, openColorPopup, botConfig, applyBotConfig, showBotHelp, setShowBotHelp, gatewayStatus}) => {
     const { t } = useTranslation();
     switch (page) {
         case "general":

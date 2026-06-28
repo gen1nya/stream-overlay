@@ -1,5 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled, { ThemeProvider } from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
+import Button from '../../../designSystem/components/Button';
 import merge from 'lodash/merge';
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import ColorSelectorButton from './ColorSelectorButton';
@@ -14,7 +16,8 @@ import {
     FiSettings, FiCopy
 } from 'react-icons/fi';
 import {
-    ControlGroup, Section, SectionHeader, SectionTitle,
+    SettingsCard, CardHeader, CardTitle, CardContent,
+    ControlGroup, InfoBadge, Section, SectionHeader, SectionTitle,
     TabSection, TabHeader, TabTitle, TabContent,
     ActionButton
 } from './SharedSettingsStyles';
@@ -30,56 +33,78 @@ const Wrapper = styled.div`
     width: 100%;
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    padding: 12px;
+    gap: 0;
     box-sizing: border-box;
+`;
+
+const HeaderRight = styled.div`
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: ${tokens.space.md};
+    flex-wrap: wrap;
+
+    @media (max-width: 720px) {
+        width: 100%;
+        margin-left: 0;
+    }
+`;
+
+const StatusBadge = styled(InfoBadge)`
+    background: ${p => p.$connected ? tokens.color.success.soft : tokens.color.scrim.panel};
+    border-color: ${p => p.$connected ? tokens.color.success.softBorder : tokens.color.border.default};
+    color: ${p => p.$connected ? tokens.color.success.text : tokens.color.text.faint};
 `;
 
 const TabBar = styled.div`
     display: flex;
-    gap: 4px;
+    gap: ${tokens.space.xs};
     align-self: flex-start;
+    flex-wrap: wrap;
 `;
 
 const TabButton = styled.button`
     padding: 8px 20px;
-    background: ${({ $active }) => $active ? 'rgba(100, 108, 255, 0.2)' : 'rgba(40, 40, 40, 0.5)'};
-    border: 1px solid ${({ $active }) => $active ? '#646cff' : '#333'};
-    border-radius: 8px;
-    color: ${({ $active }) => $active ? '#fff' : '#888'};
+    background: ${({ $active }) => $active ? tokens.color.accent.soft : tokens.color.scrim.soft};
+    border: 1px solid ${({ $active }) => $active ? tokens.color.accent.softBorder : tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
+    color: ${({ $active }) => $active ? tokens.color.text.primary : tokens.color.text.faint};
     font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: ${tokens.transition.base};
     display: flex;
     align-items: center;
     gap: 8px;
+
     &:hover {
-        color: #ccc;
-        background: rgba(100, 108, 255, 0.12);
-        border-color: #555;
+        color: ${tokens.color.text.tertiary};
+        background: ${tokens.color.accent.soft};
+        border-color: ${tokens.color.border.strong};
     }
+
     svg { width: 16px; height: 16px; }
 `;
 
 const InputField = styled.input`
     width: calc(100% - 24px);
     padding: 10px 12px;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    color: #fff;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
     font-family: inherit;
-    transition: all 0.2s ease;
-    &:focus { outline: none; border-color: #646cff; background: #333; }
-    &::placeholder { color: #666; }
+    transition: ${tokens.transition.base};
+    &:focus { outline: none; border-color: ${tokens.color.accent.primary}; background: ${tokens.color.bg.raisedAlt}; }
+    &::placeholder { color: ${tokens.color.text.disabled}; }
 `;
 
 const Label = styled.label`
     font-size: 0.9rem;
     font-weight: 500;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     margin-bottom: 8px;
     display: block;
 `;
@@ -92,10 +117,12 @@ const SwitchRow = styled.div`
 
 const SmallLabel = styled.span`
     font-size: 0.85rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
 `;
 
-
+const FormatErrorLabel = styled(SmallLabel)`
+    color: ${tokens.color.danger.text};
+`;
 
 const OffsetGrid = styled.div`
     display: grid;
@@ -125,12 +152,12 @@ const StatusLED = styled.div`
     box-shadow: 0 0 4px ${({ $on }) => $on ? '#44ff44' : '#ff4444'},
         inset 0 1px 2px rgba(255,255,255,0.3);
     border: 1px solid ${({ $on }) => $on ? '#33cc33' : '#cc3333'};
-    transition: all 0.3s ease;
+    transition: ${tokens.transition.slow};
 `;
 
 const StatusText = styled.span`
     font-size: 0.8rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
 `;
 
 // ─── Component ───────────────────────────────────────────────────
@@ -280,76 +307,99 @@ export default function DonationGoalSettingsComponent({ current, onChange, openC
     return (
         <ThemeProvider theme={imageUploadTheme}>
             <Wrapper>
-                <Section>
-                    <SectionHeader>
-                        <SectionTitle><FiTarget /> DonationAlerts</SectionTitle>
-                    </SectionHeader>
-                    <Row gap="8px">
-                        <InputField
-                            style={{
-                                flex: 1,
-                                borderColor: widgetUrl.trim() && !urlValid ? '#e53935' : undefined,
-                            }}
-                            value={widgetUrl}
-                            onChange={e => setWidgetUrl(e.target.value)}
-                            placeholder="https://www.donationalerts.com/widget/goal/...?token=..."
-                        />
-                        <ActionButton
-                            onClick={handleSaveUrl}
-                            disabled={!urlValid || urlStatus === 'saving'}
-                            style={{ whiteSpace: 'nowrap', opacity: !urlValid ? 0.5 : 1 }}
-                        >
-                            {urlStatus === 'saving' ? '...' : urlStatus === 'ok' ? 'OK' : urlStatus === 'error' ? 'Ошибка' : 'Подключить'}
-                        </ActionButton>
-                    </Row>
-                    {widgetUrl.trim() && !urlValid && (
-                        <SmallLabel style={{ color: '#e53935' }}>
-                            Формат: https://www.donationalerts.com/widget/goal/ID?token=TOKEN
-                        </SmallLabel>
-                    )}
-                    {daStatus.widgetUrl && (
-                        <StatusRow>
-                            <StatusLED $on={daStatus.connected} />
-                            <StatusText>
-                                {daStatus.connected
-                                    ? `Подключено${daStatus.goalTitle ? `: ${daStatus.goalTitle}` : ''}`
-                                    : 'Отключено'}
-                            </StatusText>
-                        </StatusRow>
-                    )}
-                </Section>
+                <SettingsCard>
+                    <CardHeader>
+                        <CardTitle>
+                            <FiTarget />
+                            DonationAlerts
+                        </CardTitle>
+                        <HeaderRight>
+                            <StatusBadge $connected={daStatus.connected}>
+                                {daStatus.connected ? 'Подключено' : 'Не подключено'}
+                            </StatusBadge>
+                        </HeaderRight>
+                    </CardHeader>
+                    <CardContent>
+                        <Row gap="8px">
+                            <InputField
+                                style={{
+                                    flex: 1,
+                                    borderColor: widgetUrl.trim() && !urlValid ? tokens.color.danger.text : undefined,
+                                }}
+                                value={widgetUrl}
+                                onChange={e => setWidgetUrl(e.target.value)}
+                                placeholder="https://www.donationalerts.com/widget/goal/...?token=..."
+                            />
+                            <ActionButton
+                                onClick={handleSaveUrl}
+                                disabled={!urlValid || urlStatus === 'saving'}
+                                style={{ whiteSpace: 'nowrap', opacity: !urlValid ? 0.5 : 1 }}
+                            >
+                                {urlStatus === 'saving' ? '...' : urlStatus === 'ok' ? 'OK' : urlStatus === 'error' ? 'Ошибка' : 'Подключить'}
+                            </ActionButton>
+                        </Row>
+                        {widgetUrl.trim() && !urlValid && (
+                            <FormatErrorLabel>
+                                Формат: https://www.donationalerts.com/widget/goal/ID?token=TOKEN
+                            </FormatErrorLabel>
+                        )}
+                        {daStatus.widgetUrl && (
+                            <StatusRow>
+                                <StatusLED $on={daStatus.connected} />
+                                <StatusText>
+                                    {daStatus.connected
+                                        ? `Подключено${daStatus.goalTitle ? `: ${daStatus.goalTitle}` : ''}`
+                                        : `Отключено${daStatus.goalTitle ? `: ${daStatus.goalTitle}` : ''}`}
+                                </StatusText>
+                            </StatusRow>
+                        )}
+                    </CardContent>
+                </SettingsCard>
 
-                <Row gap="20px">
-                    <ActionButton onClick={handleCopyLink}>
-                        <FiCopy /> Копировать ссылку
-                    </ActionButton>
-                    <ControlGroup>
-                        <NumericEditorComponent
-                            title="Ширина"
-                            value={cfg.container.width} min={200} max={1200} width="140px"
-                            onChange={val => updateNested('container.width', val)}
-                        />
-                    </ControlGroup>
-                    <ControlGroup>
-                        <NumericEditorComponent
-                            title="Высота"
-                            value={cfg.container.height} min={60} max={400} width="140px"
-                            onChange={val => updateNested('container.height', val)}
-                        />
-                    </ControlGroup>
-                </Row>
+                <SettingsCard>
+                    <CardHeader>
+                        <CardTitle>
+                            <FiSettings />
+                            Виджет цели
+                        </CardTitle>
+                        <HeaderRight>
+                            <Button $variant="neutral" $size="sm" type="button" onClick={handleCopyLink}>
+                                <FiCopy />
+                                Копировать ссылку
+                            </Button>
+                        </HeaderRight>
+                    </CardHeader>
+                    <CardContent>
+                        <Row gap="20px">
+                            <ControlGroup>
+                                <NumericEditorComponent
+                                    title="Ширина"
+                                    value={cfg.container.width} min={200} max={1200} width="140px"
+                                    onChange={val => updateNested('container.width', val)}
+                                />
+                            </ControlGroup>
+                            <ControlGroup>
+                                <NumericEditorComponent
+                                    title="Высота"
+                                    value={cfg.container.height} min={60} max={400} width="140px"
+                                    onChange={val => updateNested('container.height', val)}
+                                />
+                            </ControlGroup>
+                        </Row>
 
-                <TabBar>
-                    <TabButton $active={activeTab === 'background'} onClick={() => setActiveTab('background')}>
-                        <FiImage /> Фон
-                    </TabButton>
-                    <TabButton $active={activeTab === 'content'} onClick={() => setActiveTab('content')}>
-                        <FiType /> Контент
-                    </TabButton>
-                </TabBar>
+                        <TabBar>
+                            <TabButton $active={activeTab === 'background'} onClick={() => setActiveTab('background')}>
+                                <FiImage /> Фон
+                            </TabButton>
+                            <TabButton $active={activeTab === 'content'} onClick={() => setActiveTab('content')}>
+                                <FiType /> Контент
+                            </TabButton>
+                        </TabBar>
 
-                {activeTab === 'background' && renderBackgroundTab()}
-                {activeTab === 'content' && renderContentTab()}
+                        {activeTab === 'background' && renderBackgroundTab()}
+                        {activeTab === 'content' && renderContentTab()}
+                    </CardContent>
+                </SettingsCard>
             </Wrapper>
         </ThemeProvider>
     );

@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import {
     CardContent,
-    CardTitle,
+    CollapsibleCard,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
     ControlGroup, ActionButton
 } from "./SharedSettingsStyles";
 import {
@@ -14,9 +14,6 @@ import {
     FiType,
     FiSettings,
     FiBarChart2,
-    FiChevronUp,
-    FiChevronDown,
-    FiExternalLink,
     FiCopy
 } from 'react-icons/fi';
 import { BiExpand } from "react-icons/bi";
@@ -39,8 +36,8 @@ const ColorGrid = styled.div`
 
 const TextPropertyCard = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 
@@ -48,105 +45,54 @@ const TextPropertyTitle = styled.h5`
     margin: 0 0 12px 0;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     display: flex;
     align-items: center;
     gap: 8px;
-`;
-
-const CollapsibleHeader = styled.div`
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-`;
-
-const CollapsedPreview = styled.div`
-    padding: 16px 20px;
-    color: #999;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-    
-    .highlight {
-        color: #4a9eff;
-        font-weight: 500;
-    }
-`;
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #FFF;
-    font-size: 1rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
 `;
 
 const InputField = styled.input`
     width: calc(100% - 24px);
     padding: 10px 12px;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 6px;
-    color: #fff;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
     font-family: inherit;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:focus {
         outline: none;
-        border-color: #646cff;
-        background: #333;
+        border-color: ${tokens.color.accent.primary};
+        background: ${tokens.color.bg.raisedAlt};
     }
 
     &::placeholder {
-        color: #666;
+        color: ${tokens.color.text.disabled};
     }
 `;
 
 const Label = styled.label`
     font-size: 0.9rem;
     font-weight: 500;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     margin-bottom: 8px;
     display: block;
 `;
 
 const LinkButton = styled(ActionButton)`
-    background: rgba(30, 64, 175, 0.35);
-    border-color: #1e40af;
+    background: ${tokens.color.feature.goals.softBorder};
+    border-color: ${tokens.color.feature.goals.base};
 
     &:hover {
-        background: rgba(29, 78, 216, 0.62);
-        border-color: #1d4ed8;
+        background: ${tokens.color.feature.goals.base};
+        border-color: ${tokens.color.feature.goals.base};
     }
 `;
 
 export default function FollowersGoalSettingsComponent({ current, onChange, openColorPopup }) {
-    const [isOpen, setIsOpen] = useState(true);
     const { t } = useTranslation();
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
 
     const updateFollowersGoal = (path, value) => {
         onChange(prev => {
@@ -172,33 +118,19 @@ export default function FollowersGoalSettingsComponent({ current, onChange, open
     const followersGoal = current.followersGoal || {};
 
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <Row gap="12px">
-                    <CardTitle>
-                        <FiTarget />
-                        {t('settings.followersGoal.title')}
-                    </CardTitle>
-
-                    <Spacer />
-
-                    <CollapseToggle>
-                        {isOpen ? t('settings.shared.collapse.close') : t('settings.shared.collapse.open')}
-                        {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                    </CollapseToggle>
-                </Row>
-            </CollapsibleHeader>
-
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
+        <CollapsibleCard
+            icon={<FiTarget />}
+            title={t('settings.followersGoal.title')}
+            defaultOpen
+            preview={
+                <>
                     {t('settings.followersGoal.collapsedPreview.prefix')}{' '}
                     <span className="highlight">{followersGoal.target || 1000}</span>{' '}
                     {t('settings.followersGoal.collapsedPreview.suffix')}
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <CardContent>
+                </>
+            }
+        >
+            <CardContent>
                     {/* Основные настройки */}
                     <Section>
                         {/**/}
@@ -711,8 +643,7 @@ export default function FollowersGoalSettingsComponent({ current, onChange, open
                             </TextPropertyCard>
                         </ColorGrid>
                     </Section>
-                </CardContent>
-            )}
-        </SettingsCard>
+            </CardContent>
+        </CollapsibleCard>
     );
 }

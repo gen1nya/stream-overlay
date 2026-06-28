@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { Row } from '../../../SettingsComponent';
 import { AddCommandForm, FormRow, NameInput, ErrorText } from '../SharedBotStyles';
 import { useTranslation } from 'react-i18next';
@@ -11,8 +12,8 @@ const SettingsGrid = styled.div`
 
 const SettingRow = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -21,7 +22,7 @@ const SettingRow = styled.div`
 
 const Label = styled.label`
     font-size: 0.9rem;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -30,23 +31,23 @@ const Label = styled.label`
 
 const Select = styled.select`
     padding: 10px 12px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     cursor: pointer;
     
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
     
     option {
-        background: #1e1e1e;
-        color: #fff;
+        background: ${tokens.color.bg.surface};
+        color: ${tokens.color.text.primary};
     }
 `;
 
@@ -65,9 +66,9 @@ const CheckboxLabel = styled.label`
     padding: 8px 12px;
     background: rgba(30, 30, 30, 0.5);
     border: 1px solid ${props => props.$checked ? 'rgba(100, 108, 255, 0.5)' : '#333'};
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         background: rgba(30, 30, 30, 0.8);
@@ -87,7 +88,7 @@ const CheckboxLabel = styled.label`
 const RarityBadge = styled.span`
     display: inline-block;
     padding: 2px 8px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     font-size: 0.75rem;
     font-weight: 600;
     background: ${props => {
@@ -105,7 +106,7 @@ const RarityBadge = styled.span`
 const InfoText = styled.p`
     margin: 0;
     font-size: 0.85rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     font-style: italic;
 `;
 

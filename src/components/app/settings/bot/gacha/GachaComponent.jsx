@@ -1,5 +1,6 @@
 import React, {useState, useCallback, useEffect, useMemo} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import {
     FiGift, FiSettings, FiInfo, FiStar, FiPackage, FiZap, FiMessageSquare
 } from 'react-icons/fi';
@@ -21,8 +22,8 @@ import {useTranslation} from 'react-i18next';
 
 const InfoCard = styled.div`
     background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, rgba(136, 83, 242, 0.1) 100%);
-    border: 1px solid rgba(136, 83, 242, 0.3);
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.feature.bot.softBorder};
+    border-radius: ${tokens.radius.xl};
     padding: 16px;
     margin-bottom: 16px;
 `;
@@ -32,17 +33,17 @@ const InfoTitle = styled.div`
     align-items: center;
     gap: 8px;
     font-weight: 600;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     margin-bottom: 12px;
 
     svg {
-        color: #8853f2;
+        color: ${tokens.color.feature.bot.base};
     }
 `;
 
 const InfoText = styled.p`
     margin: 0;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     line-height: 1.6;
     font-size: 0.9rem;
 `;
@@ -56,8 +57,8 @@ const StatsGrid = styled.div`
 
 const StatCard = styled.div`
     background: rgba(30, 30, 30, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 12px 16px;
     display: flex;
     align-items: center;
@@ -66,7 +67,7 @@ const StatCard = styled.div`
     svg {
         width: 24px;
         height: 24px;
-        color: ${props => props.$color || '#8853f2'};
+        color: ${props => props.$color || tokens.color.feature.bot.base};
     }
 `;
 
@@ -78,7 +79,7 @@ const StatContent = styled.div`
 
 const StatLabel = styled.span`
     font-size: 0.75rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     text-transform: uppercase;
     letter-spacing: 0.5px;
 `;
@@ -86,7 +87,7 @@ const StatLabel = styled.span`
 const StatValue = styled.span`
     font-size: 1.25rem;
     font-weight: 600;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
 `;
 
 const BannerSelectorSection = styled.div`
@@ -312,7 +313,7 @@ export default function GachaComponent({gachaConfig, apply, showHelp, setShowHel
                             <StatValue>{stats.totalItems}</StatValue>
                         </StatContent>
                     </StatCard>
-                    <StatCard $color="#8853f2">
+                    <StatCard $color={tokens.color.feature.bot.base}>
                         <FiZap/>
                         <StatContent>
                             <StatLabel>{t('settings.bot.gacha.component.stats.fiveStar')}</StatLabel>

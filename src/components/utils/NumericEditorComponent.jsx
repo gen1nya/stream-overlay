@@ -1,5 +1,6 @@
 import React, {useEffect, useState, useRef} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import {FiMinus, FiPlus, FiRotateCcw} from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 
@@ -48,8 +49,8 @@ const InputGroup = styled.div`
     align-items: center;
     background: ${({ $colors }) => $colors.background};
     border: 1px solid ${({ $colors }) => $colors.border};
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border-radius: ${tokens.radius.lg};
+    transition: ${tokens.transition.base};
     overflow: hidden;
     user-select: none;
 
@@ -79,7 +80,7 @@ const StepButton = styled.div`
     background: transparent;
     color: ${({ $colors }) => $colors.buttonText};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     flex-shrink: 0;
     user-select: none;
 
@@ -147,7 +148,7 @@ const ResetButton = styled.div`
     background: transparent;
     color: ${({ $colors }) => $colors.buttonText};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     border-left: 1px solid ${({ $colors }) => $colors.resetBorder};
     flex-shrink: 0;
     user-select: none;

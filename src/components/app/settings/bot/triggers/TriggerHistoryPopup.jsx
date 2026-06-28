@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import Popup from '../../../../utils/PopupComponent';
 import {
     FiX,
@@ -57,17 +58,17 @@ const Tab = styled.button`
     gap: 8px;
     padding: 10px 20px;
     border: 1px solid ${({ $active }) => $active ? '#646cff' : '#444'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${({ $active }) => $active ? 'rgba(100, 108, 255, 0.15)' : 'transparent'};
     color: ${({ $active }) => $active ? '#fff' : '#888'};
     font-size: 0.95rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.1);
-        border-color: #646cff;
-        color: #ccc;
+        border-color: ${tokens.color.accent.primary};
+        color: ${tokens.color.text.tertiary};
     }
 
     svg {
@@ -79,7 +80,7 @@ const Tab = styled.button`
         padding: 2px 8px;
         border-radius: 10px;
         background: ${({ $active }) => $active ? '#646cff' : '#444'};
-        color: #fff;
+        color: ${tokens.color.text.primary};
         font-size: 0.8rem;
     }
 `;
@@ -90,12 +91,12 @@ const ToolbarButton = styled.button`
     gap: 8px;
     padding: 10px 16px;
     border: 1px solid ${({ $danger }) => $danger ? '#ff5555' : '#555'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${({ $danger }) => $danger ? '#ff555515' : '#1e1e1e'};
     color: ${({ $danger }) => $danger ? '#ff5555' : '#d6d6d6'};
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${({ $danger }) => $danger ? '#ff555530' : '#2a2a2a'};
@@ -118,7 +119,7 @@ const StatusBadge = styled.div`
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.8rem;
     font-weight: 600;
     background: ${({ $status }) => {
@@ -152,7 +153,7 @@ const ActionTypeBadge = styled.div`
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.8rem;
     background: ${({ $type }) => {
         switch ($type) {
@@ -196,9 +197,9 @@ const ConfirmModal = styled.div`
 `;
 
 const ConfirmContent = styled.div`
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
     padding: 24px;
     max-width: 400px;
     text-align: center;
@@ -224,12 +225,12 @@ const ConfirmIcon = styled.div`
 const ConfirmTitle = styled.h3`
     font-size: 1.3rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin: 0 0 12px;
 `;
 
 const ConfirmText = styled.p`
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 0.95rem;
     margin: 0 0 24px;
     line-height: 1.5;
@@ -244,11 +245,11 @@ const ConfirmButtons = styled.div`
 const ConfirmButton = styled.button`
     padding: 12px 24px;
     border: none;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &.cancel {
         background: #444;
@@ -261,7 +262,7 @@ const ConfirmButton = styled.button`
 
     &.danger {
         background: #ff5555;
-        color: #fff;
+        color: ${tokens.color.text.primary};
 
         &:hover {
             background: #ff3333;
@@ -271,18 +272,18 @@ const ConfirmButton = styled.button`
 
 const CancelButton = styled.button`
     padding: 4px 8px;
-    border: 1px solid #555;
-    border-radius: 4px;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.sm};
     background: transparent;
-    color: #888;
+    color: ${tokens.color.text.faint};
     font-size: 0.75rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(220, 38, 38, 0.1);
-        border-color: #dc2626;
-        color: #dc2626;
+        border-color: ${tokens.color.danger.base};
+        color: ${tokens.color.danger.base};
     }
 `;
 

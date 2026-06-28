@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
 import FontAndSizeEditor from "../../utils/FontAndSizeEditor";
 import {
     CardContent,
-    CardHeader,
-    CardTitle,
+    CollapsibleCard,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
     ControlGroup
 } from "./SharedSettingsStyles";
 import {TbShadow} from "react-icons/tb";
-import {FiMusic, FiType, FiImage, FiSettings, FiChevronDown, FiChevronUp} from "react-icons/fi";
+import {FiMusic, FiType, FiImage, FiSettings} from "react-icons/fi";
 import {BiExpand} from "react-icons/bi";
 import RadioGroup from "../../utils/TextRadioGroup";
 import ColorSelectorButton from "./ColorSelectorButton";
@@ -41,8 +40,8 @@ const DimensionsGrid = styled.div`
 
 const DimensionsSection = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
     opacity: ${props => props.disabled ? 0.5 : 1};
     pointer-events: ${props => props.disabled ? 'none' : 'auto'};
@@ -53,14 +52,14 @@ const DimensionsTitle = styled.h5`
     margin: 0 0 12px 0;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     text-align: center;
 `;
 
 const TextPropertyCard = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 
@@ -68,7 +67,7 @@ const TextPropertyTitle = styled.h5`
     margin: 0 0 12px 0;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     display: flex;
     align-items: center;
     gap: 8px;
@@ -80,53 +79,6 @@ const DisabledControlGroup = styled(ControlGroup)`
     transition: opacity 0.2s ease;
 `;
 
-const CollapsibleHeader = styled.div`
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-`;
-
-const CollapsedPreview = styled.div`
-    padding: 16px 20px;
-    color: #999;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-    
-    .highlight {
-        color: #4a9eff;
-        font-weight: 500;
-    }
-`;
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #FFF;
-    font-size: 1rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
 
 export default function ModernPlayerSettingsComponent({
                                                           current,
@@ -134,9 +86,6 @@ export default function ModernPlayerSettingsComponent({
                                                           openColorPopup
                                                       }) {
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
 
     const updatePlayer = (path, value) => {
         onChange(prev => {
@@ -154,13 +103,6 @@ export default function ModernPlayerSettingsComponent({
         });
     };
 
-    const updateColor = (path, color, alpha = null) => {
-        if (alpha !== null) {
-            updatePlayer(`${path}Opacity`, alpha);
-        }
-        updatePlayer(`${path}`, color);
-    };
-
     const modernPlayer = current.modernPlayer || {};
     const currentMode = modernPlayer.mode ?? 'compact';
     const currentVisualization = modernPlayer.visualization ?? 'waveform';
@@ -170,34 +112,12 @@ export default function ModernPlayerSettingsComponent({
     const shadowRadius = modernPlayer.shadowRadius ?? 20;
 
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <Row gap="12px">
-                    <CardTitle>
-                        <FiMusic/>
-                        {t('settings.players.modern.title')}
-                    </CardTitle>
-
-                    <Spacer />
-
-                    <CollapseToggle>
-                        {isOpen
-                            ? t('settings.players.modern.collapse.close')
-                            : t('settings.players.modern.collapse.open')}
-                        {isOpen ? <FiChevronUp /> : <FiSettings />}
-                    </CollapseToggle>
-                </Row>
-            </CollapsibleHeader>
-
-            {/* Свернутое описание */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    <ModernAudioPlayer/>
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <CardContent>
+        <CollapsibleCard
+            icon={<FiMusic/>}
+            title={t('settings.players.modern.title')}
+            preview={<ModernAudioPlayer/>}
+        >
+            <CardContent>
                     {/* Общие настройки */}
                     <Section>
                         <SectionHeader>
@@ -600,7 +520,6 @@ export default function ModernPlayerSettingsComponent({
                         </ColorGrid>
                     </Section>
                 </CardContent>
-            )}
-        </SettingsCard>
+        </CollapsibleCard>
     );
 }

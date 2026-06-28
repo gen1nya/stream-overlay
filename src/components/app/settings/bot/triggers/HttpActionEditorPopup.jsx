@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useId, useMemo, useState } from "react";
 import styled from "styled-components";
+import { tokens } from "../../../../../designSystem/tokens";
 import { useTranslation } from "react-i18next";
 import { FiX, FiSave, FiPlay, FiPlus, FiTrash2, FiGlobe, FiLock, FiUnlock } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
@@ -7,9 +8,9 @@ import { Portal } from "../../../../../context/PortalContext";
 import { saveHttpAction, testHttpAction, setHttpSecret, hasHttpSecret } from "../../../../../services/api";
 
 const PopupContainer = styled.div`
-    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-    border: 1px solid #444;
-    border-radius: 16px;
+    background: ${tokens.gradient.surface};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.xxl};
     max-width: 720px;
     width: 100%;
     max-height: 90vh;
@@ -25,7 +26,7 @@ const PopupHeader = styled.div`
     justify-content: space-between;
     gap: 16px;
     padding: 16px 24px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     background: linear-gradient(135deg, rgba(34, 197, 94, 0.12) 0%, rgba(34, 197, 94, 0.05) 100%);
     flex-shrink: 0;
     flex-wrap: wrap;
@@ -34,11 +35,11 @@ const PopupHeader = styled.div`
         margin: 0;
         font-size: 1.05rem;
         font-weight: 600;
-        color: #fff;
+        color: ${tokens.color.text.primary};
         display: flex;
         align-items: center;
         gap: 10px;
-        svg { color: #22c55e; }
+        svg { color: ${tokens.color.success.base}; }
     }
 `;
 
@@ -53,12 +54,12 @@ const HeaderButton = styled.button`
     gap: 6px;
     padding: 8px 14px;
     border: 1px solid ${p => p.$primary ? '#22c55e' : p.$test ? '#3b82f6' : '#444'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${p => p.$primary ? '#22c55e' : p.$test ? 'rgba(59, 130, 246, 0.12)' : 'rgba(107, 114, 128, 0.1)'};
     color: ${p => p.$primary ? '#fff' : p.$test ? '#3b82f6' : '#888'};
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover:not(:disabled) {
         background: ${p => p.$primary ? '#16a34a' : p.$test ? 'rgba(59, 130, 246, 0.22)' : 'rgba(107, 114, 128, 0.2)'};
@@ -78,7 +79,7 @@ const PopupContent = styled.div`
 
 const Section = styled.div`
     background: rgba(255, 255, 255, 0.02);
-    border: 1px solid #333;
+    border: 1px solid ${tokens.color.border.subtle};
     border-radius: 10px;
     padding: 14px 16px;
     display: flex;
@@ -90,11 +91,11 @@ const SectionTitle = styled.div`
     font-size: 0.75rem;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-    color: #888;
+    color: ${tokens.color.text.faint};
     display: flex;
     align-items: center;
     gap: 6px;
-    svg { color: #22c55e; }
+    svg { color: ${tokens.color.success.base}; }
 `;
 
 const FormGroup = styled.div`
@@ -109,9 +110,9 @@ const Label = styled.label`
 `;
 
 const Input = styled.input`
-    background: #0f0f0f;
-    border: 1px solid #333;
-    border-radius: 8px;
+    background: ${tokens.color.bg.app};
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 10px 12px;
     color: #eee;
     font-size: 0.9rem;
@@ -119,26 +120,26 @@ const Input = styled.input`
     transition: border-color 0.15s;
     width: 100%;
     box-sizing: border-box;
-    &:focus { border-color: #22c55e; }
+    &:focus { border-color: ${tokens.color.success.base}; }
 `;
 
 const Select = styled.select`
-    background: #0f0f0f;
-    border: 1px solid #333;
-    border-radius: 8px;
+    background: ${tokens.color.bg.app};
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 10px 12px;
     color: #eee;
     font-size: 0.9rem;
     outline: none;
     transition: border-color 0.15s;
     min-width: 0;
-    &:focus { border-color: #22c55e; }
+    &:focus { border-color: ${tokens.color.success.base}; }
 `;
 
 const Textarea = styled.textarea`
-    background: #0f0f0f;
-    border: 1px solid #333;
-    border-radius: 8px;
+    background: ${tokens.color.bg.app};
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 10px 12px;
     color: #eee;
     font-size: 0.85rem;
@@ -149,7 +150,7 @@ const Textarea = styled.textarea`
     transition: border-color 0.15s;
     width: 100%;
     box-sizing: border-box;
-    &:focus { border-color: #22c55e; }
+    &:focus { border-color: ${tokens.color.success.base}; }
 `;
 
 const Row = styled.div`
@@ -172,7 +173,7 @@ const SecretToggle = styled.button`
     gap: 6px;
     padding: 9px 10px;
     border: 1px solid ${p => p.$active ? '#eab308' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${p => p.$active ? 'rgba(234, 179, 8, 0.12)' : 'rgba(255, 255, 255, 0.02)'};
     color: ${p => p.$active ? '#eab308' : '#888'};
     cursor: pointer;
@@ -188,13 +189,13 @@ const IconBtn = styled.button`
     justify-content: center;
     width: 38px;
     height: 38px;
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     background: rgba(255, 255, 255, 0.02);
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     transition: all 0.15s;
-    &:hover { border-color: #dc2626; color: #dc2626; background: rgba(220, 38, 38, 0.08); }
+    &:hover { border-color: ${tokens.color.danger.base}; color: ${tokens.color.danger.base}; background: rgba(220, 38, 38, 0.08); }
 `;
 
 const AddBtn = styled.button`
@@ -204,18 +205,18 @@ const AddBtn = styled.button`
     gap: 6px;
     padding: 8px 14px;
     border: 1px dashed #444;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: transparent;
     color: #aaa;
     cursor: pointer;
     font-size: 0.85rem;
     transition: all 0.15s;
-    &:hover { border-color: #22c55e; color: #22c55e; background: rgba(34, 197, 94, 0.06); }
+    &:hover { border-color: ${tokens.color.success.base}; color: ${tokens.color.success.base}; background: rgba(34, 197, 94, 0.06); }
 `;
 
 const Hint = styled.div`
     font-size: 0.75rem;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     font-style: italic;
 `;
 
@@ -224,7 +225,7 @@ const ValidationNote = styled.div`
     padding: 9px 12px;
     background: rgba(234, 179, 8, 0.08);
     border: 1px solid rgba(234, 179, 8, 0.3);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.78rem;
     color: #eab308;
 `;
@@ -234,7 +235,7 @@ const TestResult = styled.div`
     padding: 9px 12px;
     background: ${p => p.$ok ? 'rgba(34, 197, 94, 0.08)' : 'rgba(239, 68, 68, 0.08)'};
     border: 1px solid ${p => p.$ok ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.3)'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.78rem;
     color: ${p => p.$ok ? '#22c55e' : '#ef4444'};
 `;
@@ -250,11 +251,11 @@ const RadioBtn = styled.button`
     border: 1px solid ${p => p.$active ? '#22c55e' : '#333'};
     background: ${p => p.$active ? 'rgba(34, 197, 94, 0.15)' : 'rgba(255, 255, 255, 0.02)'};
     color: ${p => p.$active ? '#fff' : '#aaa'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     font-size: 0.82rem;
     transition: all 0.15s;
-    &:hover { border-color: #22c55e; color: #fff; }
+    &:hover { border-color: ${tokens.color.success.base}; color: ${tokens.color.text.primary}; }
 `;
 
 const METHODS = ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'];

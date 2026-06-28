@@ -1,5 +1,6 @@
 import React, { useRef, useCallback, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 
 const Container = styled.div`
     display: flex;
@@ -10,7 +11,7 @@ const Container = styled.div`
 const Label = styled.label`
     font-size: 0.9rem;
     font-weight: 500;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
 `;
 
 const PadWrapper = styled.div`
@@ -24,8 +25,8 @@ const Pad = styled.div`
     width: ${({ $size }) => $size}px;
     height: ${({ $size }) => $size}px;
     background: rgba(30, 30, 30, 0.8);
-    border: 1px solid #444;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
     cursor: crosshair;
     overflow: hidden;
 
@@ -77,7 +78,7 @@ const ValuesDisplay = styled.div`
     flex-direction: column;
     gap: 4px;
     font-size: 0.8rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
     min-width: 70px;
 `;
 
@@ -91,7 +92,7 @@ const ValueRow = styled.div`
     }
 
     span:last-child {
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
         font-family: monospace;
     }
 `;
@@ -100,15 +101,15 @@ const ResetButton = styled.button`
     padding: 4px 8px;
     font-size: 0.75rem;
     background: rgba(60, 60, 60, 0.8);
-    border: 1px solid #555;
-    border-radius: 4px;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.sm};
     color: #aaa;
     cursor: pointer;
     transition: all 0.2s;
 
     &:hover {
         background: rgba(80, 80, 80, 0.8);
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 `;
 

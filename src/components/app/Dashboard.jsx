@@ -25,6 +25,10 @@ import {
     FiLayers,
     FiMonitor,
     FiUsers,
+    FiUser,
+    FiLayout,
+    FiMessageCircle,
+    FiGrid,
 } from 'react-icons/fi';
 import ConnectionStatus from './ConnectionStatus';
 import {Row} from "./SettingsComponent";
@@ -36,6 +40,9 @@ import { APP_VERSION } from "../../config/version";
 import HolidayHeader from "../seasonal/HolidayHeader";
 import {AiFillRobot} from "react-icons/ai";
 import {ActionButton, CardContent, CardHeader, CardTitle, SettingsCard} from "./settings/SharedSettingsStyles";
+import { tokens } from "../../designSystem/tokens";
+import Button from "../../designSystem/components/Button";
+import { FeatureContext } from "../../designSystem/FeatureContext";
 import Switch from "../utils/Switch";
 import BotConfigPopup from "./settings/BotConfigPopup";
 import ThemePopup from "./settings/ThemePopup";
@@ -51,7 +58,7 @@ const Wrapper = styled.div`
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
 `;
 
 const MainArea = styled.div`
@@ -62,7 +69,7 @@ const MainArea = styled.div`
 
 const Content = styled.div`
     flex: 1;
-    padding: 0 0 36px 0;
+    padding: 0 0 ${tokens.space.xxxl} 0;
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -72,133 +79,70 @@ const Content = styled.div`
 const ButtonsRow = styled.div`
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
     gap: 10px;
-
-    button {
-        background: #444;
-        border: none;
-        color: #fff;
-        padding: 8px 14px;
-        border-radius: 6px;
-        cursor: pointer;
-        transition: background 0.2s;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 14px;
-
-        svg {
-            width: 16px;
-            height: 16px;
-        }
-    }
-    button:hover {
-        background: #555;
-    }
-`;
-
-const LinkGroup = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: #383838;
-    border-radius: 8px;
-    border: 1px solid #555;
-
-    &::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 50%;
-        transform: translateY(-50%);
-        width: 3px;
-        height: 100%;
-        background: #666;
-        border-radius: 1.5px;
-    }
-
-    position: relative;
-    padding-left: 12px;
-`;
-
-const LinkButton = styled.button`
-    background: #4a4a4a !important;
-    margin: 0 !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-
-    &:hover {
-        background: #5a5a5a !important;
-    }
-
-    svg {
-        width: 16px !important;
-        height: 16px !important;
-    }
 `;
 
 const ThemeSelector = styled.select`
-    background: #2a2a2a;
-    color: #fff;
-    border: 1px solid #555;
-    border-radius: 4px;
-    padding: 6px 8px;
+    background: ${tokens.color.bg.raised};
+    color: ${tokens.color.text.primary};
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.sm};
+    padding: 6px ${tokens.space.sm};
     font-size: 12px;
     cursor: pointer;
     min-width: 120px;
 
     &:hover {
-        background: #333;
+        background: ${tokens.color.bg.raisedAlt};
         border-color: #666;
     }
 
     &:focus {
         outline: none;
         border-color: #777;
-        background: #333;
+        background: ${tokens.color.bg.raisedAlt};
     }
 
     option {
-        background: #2a2a2a;
-        color: #fff;
+        background: ${tokens.color.bg.raised};
+        color: ${tokens.color.text.primary};
     }
 `;
 
 const ThemeLabel = styled.span`
     font-size: 11px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     white-space: nowrap;
 `;
 
 const GameModeToggle = styled.div`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 6px 12px;
-    background: ${({ $isActive }) => $isActive ? 'rgba(76, 175, 80, 0.15)' : '#383838'};
-    border-radius: 8px;
-    border: 1px solid ${({ $isActive }) => $isActive ? 'rgba(76, 175, 80, 0.4)' : '#555'};
-    transition: all 0.2s;
+    gap: ${tokens.space.sm};
+    padding: 6px ${tokens.space.md};
+    background: ${({ $isActive }) => $isActive ? tokens.color.success.soft : tokens.color.bg.raised};
+    border-radius: ${tokens.radius.lg};
+    border: 1px solid ${({ $isActive }) => $isActive ? tokens.color.success.softBorder : tokens.color.border.strong};
+    transition: ${tokens.transition.base};
 
     svg {
         width: 16px;
         height: 16px;
-        color: ${({ $isActive }) => $isActive ? '#4caf50' : '#999'};
+        color: ${({ $isActive }) => $isActive ? tokens.color.success.base : tokens.color.text.muted};
     }
 `;
 
 const GameModeLabel = styled.span`
     font-size: 13px;
-    color: ${({ $isActive }) => $isActive ? '#4caf50' : '#ccc'};
+    color: ${({ $isActive }) => $isActive ? tokens.color.success.base : tokens.color.text.tertiary};
     white-space: nowrap;
 `;
 
 const AccountRow = styled.div`
     display: flex;
     align-items: center;
-    gap: 16px;
+    gap: ${tokens.space.lg};
 `;
 
 const AccountInfo = styled.div`
@@ -207,113 +151,76 @@ const AccountInfo = styled.div`
 
 const AccountActions = styled.div`
     display: flex;
-    gap: 8px;
+    gap: ${tokens.space.sm};
 `;
 
-const IconButton = styled.button`
-    background: #444 !important;
-    border: none !important;
-    color: #fff !important;
-    padding: 8px 14px !important;
-    border-radius: 6px !important;
-    cursor: pointer !important;
-    transition: background 0.2s !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 6px !important;
-    font-size: 14px !important;
-
-    &:hover {
-        background: #555 !important;
-    }
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
-`;
-
-const LogoutButton = styled(IconButton)`
-    background: #664444 !important;
-
-    &:hover {
-        background: #775555 !important;
-    }
-`;
+// Кнопка выхода — danger-вариант DS Button (muted raised glow).
+const LogoutButton = styled(Button).attrs({ $variant: 'danger' })``;
 
 const Avatar = styled.img`
     width: 56px;
     height: 56px;
-    border-radius: 50%;
+    border-radius: ${tokens.radius.circle};
 `;
 
 const DashboardCard = styled(SettingsCard)`
     width: calc(100% - 42px);
-    margin-right: 20px;
-    margin-left: 20px;
+    margin-right: ${tokens.space.xl};
+    margin-left: ${tokens.space.xl};
 `;
 
 const CardsRow = styled.div`
     display: flex;
     flex-wrap: wrap;
     margin: 0 21px;
-    gap: 16px;
+    gap: ${tokens.space.lg};
     width: calc(100% - 42px);
 `;
 
 const HalfCard = styled(SettingsCard)`
     flex: 1;
     min-width: 400px;
-    margin: 12px 0 0 0;
+    margin: ${tokens.space.md} 0 0 0;
 `;
 
 const DashboardCardHeader = styled(CardHeader)`
-    padding: 12px 20px;
+    padding: ${tokens.space.md} ${tokens.space.xl};
 `
 
 const LogPanel = styled.div`
     width: 280px;
-    background: #1a1a1a;
-    border-left: 1px solid #333;
+    background: ${tokens.color.bg.base};
+    border-left: 1px solid ${tokens.color.border.subtle};
     display: flex;
     flex-direction: column;
     font-size: 12px;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
 `;
 
 const LogHeader = styled.div`
     background: #222;
     padding: 6px 10px;
     font-weight: bold;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     display: flex;
     justify-content: space-between;
     align-items: center;
 `;
 
-const BackendLogsButton = styled.button`
-    background: #444;
-    border: none;
-    color: #fff;
-    padding: 4px 8px;
-    border-radius: 4px;
-    cursor: pointer;
+// Компактная утилитарная кнопка логов на DS-примитиве (ghost, мелкий шрифт).
+const BackendLogsButton = styled(Button).attrs({ $variant: 'ghost', $size: 'sm' })`
+    padding: ${tokens.space.xs} ${tokens.space.sm};
     font-size: 11px;
-    transition: background 0.2s;
-    font-weight: normal;
-
-    &:hover {
-        background: #555;
-    }
+    font-weight: ${tokens.font.weight.regular};
 `;
 
 const LogContent = styled.div`
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
+    padding: ${tokens.space.sm};
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: ${tokens.space.xs};
 `;
 
 const LogLine = styled.div`
@@ -329,7 +236,7 @@ const LogLine = styled.div`
 
 const Footer = styled.div`
     height: 28px;
-    background: #1e1e1e;
+    background: ${tokens.color.bg.surface};
     color: white;
     font-size: 12px;
     display: flex;
@@ -351,13 +258,13 @@ const Version = styled.span`
 const AccountName = styled.div`
     font-size: 18px;
     font-weight: bold;
-    color: #fff;
+    color: ${tokens.color.text.primary};
 `;
 
 const FollowersCounter = styled.div`
     color: #a580ff;
     cursor: pointer;
-    font-size: 14px;
+    font-size: ${tokens.font.size.base};
     transition: color 0.2s;
 
     &:hover {
@@ -369,32 +276,32 @@ const ChatStatsBadge = styled.div`
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    margin-top: 4px;
+    margin-top: ${tokens.space.xs};
     height: 20px;
-    padding: 4px 10px;
-    background: #2a2a2a;
-    border: 1px solid #444;
-    border-radius: 8px;
-    font-size: 0.75rem;
-    color: #ccc;
+    padding: ${tokens.space.xs} 10px;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    font-size: ${tokens.font.size.xs};
+    color: ${tokens.color.text.tertiary};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     white-space: nowrap;
 
     &:hover {
-        border-color: #646cff;
-        color: #fff;
-        background: #333;
+        border-color: ${tokens.color.accent.primary};
+        color: ${tokens.color.text.primary};
+        background: ${tokens.color.bg.raisedAlt};
     }
 
     svg {
         width: 12px;
         height: 12px;
-        color: #646cff;
+        color: ${tokens.color.accent.primary};
     }
 
     .separator {
-        color: #555;
+        color: ${tokens.color.border.strong};
     }
 `;
 
@@ -730,9 +637,13 @@ export default function Dashboard() {
 
                         </HeaderActions>
                     </HolidayHeader>
+                    {/* Единый «general»-тинт карточек дашборда (как страница general
+                        в настройках) — тем же путём через FeatureContext. */}
+                    <FeatureContext.Provider value="general">
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
+                                <FiUser />
                                 {t('dashboard.cards.account.title')}
                                 <OnlineIndicator
                                     $isOnline={isOnline}
@@ -777,15 +688,16 @@ export default function Dashboard() {
                         <HalfCard>
                             <DashboardCardHeader>
                                 <CardTitle>
+                                    <FiLayout />
                                     {t('dashboard.cards.overlay.title')}
                                 </CardTitle>
                             </DashboardCardHeader>
                             <CardContent>
                                 <ButtonsRow>
-                                    <LinkButton onClick={handleCopyChatLink}>
+                                    <Button $variant="neutral" onClick={handleCopyChatLink}>
                                         <FiCopy />
                                         {t('dashboard.cards.overlay.copyLink')}
-                                    </LinkButton>
+                                    </Button>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                                         <ThemeLabel>{t('dashboard.cards.overlay.themeLabel')}:</ThemeLabel>
                                         <ThemeSelector
@@ -807,15 +719,16 @@ export default function Dashboard() {
                         <HalfCard>
                             <DashboardCardHeader>
                                 <CardTitle>
+                                    <FiMessageCircle />
                                     {t('dashboard.cards.chatWindow.title')}
                                 </CardTitle>
                             </DashboardCardHeader>
                             <CardContent>
                                 <ButtonsRow>
-                                    <button onClick={handleOpenOverlay}>
+                                    <Button $variant="neutral" onClick={handleOpenOverlay}>
                                         <FiExternalLink />
                                         {t('dashboard.cards.chatWindow.open')}
-                                    </button>
+                                    </Button>
                                     <GameModeToggle $isActive={isGameMode}>
                                         <FiMonitor />
                                         <GameModeLabel $isActive={isGameMode}>
@@ -833,26 +746,28 @@ export default function Dashboard() {
                     <DashboardCard>
                         <DashboardCardHeader>
                             <CardTitle>
-                            {t('dashboard.cards.widgets.title')}
+                                <FiGrid />
+                                {t('dashboard.cards.widgets.title')}
                             </CardTitle>
                         </DashboardCardHeader>
                         <CardContent>
                             <ButtonsRow>
-                                <button onClick={openPlayer1}>
+                                <Button $variant="neutral" onClick={openPlayer1}>
                                     <FiExternalLink/>
                                     {t('dashboard.cards.widgets.playerCard')}
-                                </button>
-                                <button onClick={openPlayer2}>
+                                </Button>
+                                <Button $variant="neutral" onClick={openPlayer2}>
                                     <FiExternalLink/>
                                     {t('dashboard.cards.widgets.playerVinyl')}
-                                </button>
-                                <button onClick={openFollowersCounter}>
+                                </Button>
+                                <Button $variant="neutral" onClick={openFollowersCounter}>
                                     <FiExternalLink/>
                                     {t('dashboard.cards.widgets.followersGoal')}
-                                </button>
+                                </Button>
                             </ButtonsRow>
                         </CardContent>
                     </DashboardCard>
+                    </FeatureContext.Provider>
                 </Content>
 
                 <LogPanel>

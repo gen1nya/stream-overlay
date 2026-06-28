@@ -1,10 +1,21 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from '../../../designSystem/tokens';
+import Button from '../../../designSystem/components/Button';
 import {
     FiPlus, FiEdit2, FiTrash2, FiSearch, FiPlay, FiSliders,
-    FiZap, FiWifi, FiWifiOff, FiRefreshCw, FiSave, FiBookOpen,
+    FiZap, FiWifi, FiWifiOff, FiRefreshCw, FiSave, FiBookOpen, FiList,
 } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
+import {
+    SettingsCard,
+    CardHeader,
+    CardTitle,
+    CardContent,
+    ControlGroup,
+    InfoBadge,
+    HelperText,
+} from './SharedSettingsStyles';
 import {
     getAllObsActions,
     deleteObsAction,
@@ -29,63 +40,44 @@ const Container = styled.div`
     width: 100%;
 `;
 
-const ConnectionCard = styled.div`
-    background: linear-gradient(135deg, rgba(59, 130, 246, 0.08) 0%, rgba(59, 130, 246, 0.02) 100%);
-    border: 1px solid #333;
-    border-radius: 12px;
-    padding: 16px 20px;
-    margin-bottom: 24px;
-    display: flex;
-    flex-direction: column;
-    gap: 14px;
-`;
-
-const ConnectionHeader = styled.div`
+const HeaderRight = styled.div`
+    margin-left: auto;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: flex-end;
+    gap: ${tokens.space.md};
     flex-wrap: wrap;
 
-    h3 {
-        margin: 0;
-        font-size: 0.95rem;
-        font-weight: 600;
-        color: #fff;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        svg { color: #3b82f6; }
+    @media (max-width: 720px) {
+        width: 100%;
+        margin-left: 0;
     }
 `;
 
-const HeaderSeparator = styled.div`
-    width: 1px;
-    align-self: stretch;
-    background: #333;
-`;
-
-const StatusBadge = styled.span`
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    padding: 5px 12px;
-    border-radius: 999px;
-    font-size: 0.75rem;
-    font-weight: 500;
-    margin-left: auto;
+const StatusBadge = styled(InfoBadge)`
+    gap: ${tokens.space.sm};
     background: ${p => {
-        if (p.$status === 'connected') return 'rgba(16, 185, 129, 0.18)';
-        if (p.$status === 'connecting') return 'rgba(234, 179, 8, 0.18)';
-        if (p.$status === 'error') return 'rgba(239, 68, 68, 0.18)';
-        return 'rgba(107, 114, 128, 0.2)';
+        if (p.$status === 'connected') return tokens.color.success.soft;
+        if (p.$status === 'connecting') return tokens.color.warning.soft;
+        if (p.$status === 'error') return tokens.color.danger.soft;
+        return tokens.color.scrim.panel;
+    }};
+    border-color: ${p => {
+        if (p.$status === 'connected') return tokens.color.success.softBorder;
+        if (p.$status === 'connecting') return tokens.color.warning.softBorder;
+        if (p.$status === 'error') return tokens.color.danger.softBorder;
+        return tokens.color.border.default;
     }};
     color: ${p => {
-        if (p.$status === 'connected') return '#10b981';
-        if (p.$status === 'connecting') return '#eab308';
-        if (p.$status === 'error') return '#ef4444';
-        return '#888';
+        if (p.$status === 'connected') return tokens.color.success.text;
+        if (p.$status === 'connecting') return tokens.color.warning.text;
+        if (p.$status === 'error') return tokens.color.danger.text;
+        return tokens.color.text.faint;
     }};
+
+    svg {
+        color: currentColor;
+    }
 `;
 
 const ConnectionGrid = styled.div`
@@ -99,94 +91,78 @@ const ConnectionGrid = styled.div`
     }
 `;
 
-const Field = styled.div`
-    display: flex;
-    flex-direction: column;
+const Field = styled(ControlGroup)`
     gap: 5px;
 `;
 
 const FieldLabel = styled.label`
     font-size: 0.75rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
 `;
 
 const FieldInput = styled.input`
-    background: #0f0f0f;
-    border: 1px solid #333;
-    border-radius: 8px;
+    background: ${tokens.color.bg.app};
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 9px 12px;
-    color: #eee;
+    color: ${tokens.color.text.secondary};
     font-size: 0.88rem;
     outline: none;
-    transition: border-color 0.15s;
+    transition: ${tokens.transition.fast};
 
-    &:focus { border-color: #3b82f6; }
+    &:focus {
+        border-color: ${tokens.color.accent.primary};
+        background: ${tokens.color.bg.surface};
+    }
 `;
 
 const SwitchRow = styled.div`
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.85rem;
-    color: #ccc;
+    gap: ${tokens.space.md};
+    font-size: ${tokens.font.size.sm};
+    color: ${tokens.color.text.tertiary};
 `;
 
 const ConnectionButtons = styled.div`
     display: flex;
-    gap: 8px;
+    gap: ${tokens.space.sm};
     flex-wrap: wrap;
 `;
 
-const ConnectionButton = styled.button`
+const InlineMessages = styled.div`
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 8px 14px;
-    border: 1px solid ${p => p.$primary ? '#3b82f6' : '#444'};
-    border-radius: 8px;
-    background: ${p => p.$primary ? '#3b82f6' : 'rgba(107, 114, 128, 0.1)'};
-    color: ${p => p.$primary ? '#fff' : '#ccc'};
-    cursor: pointer;
-    font-size: 0.82rem;
-    transition: all 0.2s ease;
-
-    &:hover:not(:disabled) {
-        background: ${p => p.$primary ? '#2563eb' : 'rgba(107, 114, 128, 0.2)'};
-        border-color: ${p => p.$primary ? '#2563eb' : '#555'};
-    }
-
-    &:disabled {
-        opacity: 0.4;
-        cursor: not-allowed;
-    }
+    gap: ${tokens.space.md};
+    flex-wrap: wrap;
 `;
 
-const ErrorInline = styled.span`
-    font-size: 0.78rem;
-    color: #ef4444;
-    line-height: 1.3;
+const InlineMessage = styled(HelperText).attrs({ as: 'span' })`
+    font-size: ${tokens.font.size.xs};
 `;
 
-const RetryInline = styled.span`
-    font-size: 0.78rem;
-    color: #eab308;
-    line-height: 1.3;
+const ErrorInline = styled(InlineMessage)`
+    color: ${tokens.color.danger.text};
+`;
+
+const RetryInline = styled(InlineMessage)`
+    color: ${tokens.color.warning.text};
 `;
 
 const GuideLink = styled.button`
     align-self: flex-start;
     display: inline-flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: ${tokens.space.sm};
+    padding: 6px ${tokens.space.md};
     margin: 0;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
-    color: #3b82f6;
-    font-size: 0.78rem;
+    color: ${tokens.color.accent.primary};
+    font-size: ${tokens.font.size.xs};
     cursor: pointer;
-    transition: all 0.15s;
+    transition: ${tokens.transition.fast};
 
     svg {
         width: 14px;
@@ -194,18 +170,9 @@ const GuideLink = styled.button`
     }
 
     &:hover {
-        border-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.08);
+        border-color: ${tokens.color.accent.softBorder};
+        background: ${tokens.color.accent.soft};
     }
-`;
-
-const Header = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    gap: 16px;
-    flex-wrap: wrap;
 `;
 
 const SearchWrapper = styled.div`
@@ -218,20 +185,20 @@ const SearchWrapper = styled.div`
 const SearchInput = styled.input`
     width: 100%;
     padding: 10px 12px 10px 40px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
-    font-size: 14px;
-    transition: all 0.2s ease;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
+    font-size: ${tokens.font.size.base};
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
-    &::placeholder { color: #666; }
+    &::placeholder { color: ${tokens.color.text.disabled}; }
 
     &:focus {
         outline: none;
-        border-color: #3b82f6;
-        background: #252525;
+        border-color: ${tokens.color.accent.primary};
+        background: ${tokens.color.bg.raised};
     }
 `;
 
@@ -240,70 +207,77 @@ const SearchIcon = styled(FiSearch)`
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #666;
+    color: ${tokens.color.text.disabled};
     width: 18px;
     height: 18px;
 `;
 
-const AddButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border: 1px solid #3b82f6;
-    border-radius: 8px;
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-
-    &:hover {
-        background: rgba(59, 130, 246, 0.25);
-    }
-
-    svg { width: 18px; height: 18px; }
-`;
-
-const ActionsTable = styled.div`
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #2a2a2a;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #161616;
-`;
-
-const TableHeaderRow = styled.div`
-    display: grid;
-    grid-template-columns: minmax(160px, 1.2fr) minmax(140px, auto) minmax(200px, 2fr) auto;
-    gap: 14px;
+const TableHeadCell = styled.th`
     padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     font-size: 0.72rem;
+    font-weight: ${tokens.font.weight.semibold};
+    text-align: left;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #666;
-`;
-
-const TableRow = styled.div`
-    display: grid;
-    grid-template-columns: minmax(160px, 1.2fr) minmax(140px, auto) minmax(200px, 2fr) auto;
-    gap: 14px;
-    padding: 10px 14px;
-    align-items: center;
-    border-bottom: 1px solid #2a2a2a;
-    transition: background 0.15s;
+    color: ${tokens.color.text.disabled};
+    white-space: nowrap;
 
     &:last-child {
+        text-align: right;
+    }
+`;
+
+const TableCell = styled.td`
+    padding: 10px 14px;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
+    vertical-align: middle;
+    min-width: 0;
+
+    &:last-child {
+        text-align: right;
+    }
+`;
+
+const ActionsTable = styled.table`
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: 10px;
+    overflow: hidden;
+    background: ${tokens.color.bg.base};
+
+    ${TableHeadCell}:nth-child(1),
+    ${TableCell}:nth-child(1) {
+        width: 30%;
+    }
+
+    ${TableHeadCell}:nth-child(2),
+    ${TableCell}:nth-child(2) {
+        width: 22%;
+    }
+
+    ${TableHeadCell}:nth-child(4),
+    ${TableCell}:nth-child(4) {
+        width: 108px;
+    }
+`;
+
+const TableHeaderRow = styled.tr`
+    background: ${tokens.color.scrim.panel};
+`;
+
+const TableRow = styled.tr`
+    transition: ${tokens.transition.fast};
+
+    &:last-child ${TableCell} {
         border-bottom: none;
     }
 
     &:hover {
-        background: rgba(59, 130, 246, 0.05);
+        background: ${tokens.color.scrim.panel};
     }
 `;
 
@@ -313,27 +287,27 @@ const RowName = styled.div`
     gap: 8px;
     font-weight: 600;
     font-size: 0.9rem;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 
-    svg { color: #3b82f6; flex-shrink: 0; }
+    svg { color: ${tokens.color.accent.primary}; flex-shrink: 0; }
 `;
 
 const OperationBadge = styled.div`
-    justify-self: start;
     padding: 4px 10px;
-    border-radius: 999px;
+    border-radius: ${tokens.radius.pill};
     font-size: 0.7rem;
-    background: rgba(59, 130, 246, 0.15);
-    color: #3b82f6;
+    background: ${tokens.color.accent.soft};
+    color: ${tokens.color.accent.primary};
     white-space: nowrap;
+    display: inline-flex;
 `;
 
 const RowDescription = styled.div`
     font-size: 0.8rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -342,7 +316,7 @@ const RowDescription = styled.div`
 const RowActions = styled.div`
     display: flex;
     gap: 4px;
-    justify-self: end;
+    justify-content: flex-end;
 `;
 
 const ActionIconButton = styled.button`
@@ -353,11 +327,11 @@ const ActionIconButton = styled.button`
     height: 30px;
     padding: 0;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
-    color: ${p => p.$color || '#888'};
+    color: ${p => p.$color || tokens.color.text.faint};
     cursor: pointer;
-    transition: all 0.15s;
+    transition: ${tokens.transition.fast};
 
     svg {
         width: 14px;
@@ -365,8 +339,8 @@ const ActionIconButton = styled.button`
     }
 
     &:hover:not(:disabled) {
-        border-color: ${p => p.$color || '#555'};
-        background: ${p => p.$color ? `${p.$color}15` : 'rgba(255,255,255,0.04)'};
+        border-color: ${p => p.$borderColor || tokens.color.border.strong};
+        background: ${p => p.$hoverBackground || tokens.color.scrim.panel};
     }
 
     &:disabled {
@@ -378,16 +352,16 @@ const ActionIconButton = styled.button`
 const EmptyState = styled.div`
     text-align: center;
     padding: 60px 20px;
-    color: #666;
+    color: ${tokens.color.text.disabled};
 
     svg {
         width: 48px;
         height: 48px;
-        color: #333;
+        color: ${tokens.color.border.subtle};
         margin-bottom: 12px;
     }
 
-    h3 { margin: 0 0 6px; color: #888; font-weight: 500; }
+    h3 { margin: 0 0 6px; color: ${tokens.color.text.faint}; font-weight: 500; }
     p { margin: 0; font-size: 0.85rem; }
 `;
 
@@ -402,19 +376,19 @@ const ConfirmPopupContent = styled.div`
 const ConfirmPopupTitle = styled.h2`
     font-size: 1.2rem;
     font-weight: 600;
-    color: #d6d6d6;
+    color: ${tokens.color.text.secondary};
     margin: 0;
 `;
 
 const ConfirmPopupText = styled.p`
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-size: 0.9rem;
     margin: 0;
     line-height: 1.5;
 
     .warning {
         display: block;
-        color: #888;
+        color: ${tokens.color.text.faint};
         font-size: 0.8rem;
         margin-top: 8px;
     }
@@ -426,22 +400,10 @@ const ConfirmPopupButtons = styled.div`
     justify-content: flex-end;
 `;
 
-const ConfirmPopupButton = styled.button`
-    padding: 9px 18px;
-    border: 1px solid ${p => p.$danger ? '#dc2626' : '#555'};
-    border-radius: 8px;
-    background: ${p => p.$danger ? 'rgba(220, 38, 38, 0.12)' : 'rgba(30, 30, 30, 0.8)'};
-    color: ${p => p.$danger ? '#dc2626' : '#d6d6d6'};
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: ${p => p.$danger ? 'rgba(220, 38, 38, 0.22)' : 'rgba(40, 40, 40, 0.9)'};
-        border-color: ${p => p.$danger ? '#dc2626' : '#777'};
-    }
-`;
+const ConfirmPopupButton = styled(Button).attrs(p => ({
+    $variant: p.$danger ? 'danger' : 'neutral',
+    $size: 'md',
+}))``;
 
 // ─── Helpers ────────────────────────────────────────────────────
 
@@ -675,174 +637,204 @@ export default function ObsActionsManager() {
 
     return (
         <Container>
-            <ConnectionCard>
-                <ConnectionHeader>
-                    <h3>
+            <SettingsCard>
+                <CardHeader>
+                    <CardTitle>
                         <FiZap />
                         {t('settings.obsActions.connection.title')}
-                    </h3>
-                    {friendlyError && (
-                        <>
-                            <HeaderSeparator />
-                            <ErrorInline>{friendlyError}</ErrorInline>
-                        </>
+                    </CardTitle>
+                    <HeaderRight>
+                        <StatusBadge $status={obsStatus.status}>
+                            {isConnected ? <FiWifi size={12} /> : <FiWifiOff size={12} />}
+                            {statusLabel}
+                        </StatusBadge>
+                    </HeaderRight>
+                </CardHeader>
+                <CardContent>
+                    <ConnectionGrid>
+                        <Field>
+                            <FieldLabel>{t('settings.obsActions.connection.host')}</FieldLabel>
+                            <FieldInput
+                                type="text"
+                                value={connectionForm.host}
+                                onChange={(e) => handleConnectionFieldChange({ host: e.target.value })}
+                            />
+                        </Field>
+                        <Field>
+                            <FieldLabel>{t('settings.obsActions.connection.port')}</FieldLabel>
+                            <FieldInput
+                                type="number"
+                                value={connectionForm.port}
+                                onChange={(e) => handleConnectionFieldChange({ port: parseInt(e.target.value, 10) || 4455 })}
+                            />
+                        </Field>
+                        <Field>
+                            <FieldLabel>
+                                {t('settings.obsActions.connection.password')}
+                                {passwordStored && ` · ${t('settings.obsActions.connection.passwordSaved')}`}
+                            </FieldLabel>
+                            <FieldInput
+                                type="password"
+                                placeholder={t('settings.obsActions.connection.passwordPlaceholder')}
+                                value={password}
+                                onChange={(e) => setPassword(e.target.value)}
+                            />
+                        </Field>
+                    </ConnectionGrid>
+
+                    <SwitchRow>
+                        <Switch
+                            checked={connectionForm.autoConnect}
+                            onChange={(e) => handleConnectionFieldChange({ autoConnect: e.target.checked })}
+                        />
+                        <span>{t('settings.obsActions.connection.autoConnect')}</span>
+                    </SwitchRow>
+
+                    <ConnectionButtons>
+                        {isConnected ? (
+                            <Button $variant="danger" $size="sm" type="button" onClick={handleDisconnect}>
+                                <FiWifiOff size={14} />
+                                {t('settings.obsActions.connection.disconnect')}
+                            </Button>
+                        ) : (
+                            <Button $variant="primary" $size="sm" type="button" onClick={handleConnect}>
+                                <FiWifi size={14} />
+                                {t('settings.obsActions.connection.connect')}
+                            </Button>
+                        )}
+                        <Button $variant="neutral" $size="sm" type="button" onClick={handleSaveConnection}>
+                            <FiSave size={14} />
+                            {t('settings.obsActions.connection.save')}
+                        </Button>
+                        <Button $variant="ghost" $size="sm" type="button" onClick={handleRefreshCache} disabled={!isConnected}>
+                            <FiRefreshCw size={14} />
+                            {t('settings.obsActions.connection.refreshCache')}
+                        </Button>
+                    </ConnectionButtons>
+
+                    {(friendlyError || retryInSec !== null) && (
+                        <InlineMessages>
+                            {friendlyError && <ErrorInline>{friendlyError}</ErrorInline>}
+                            {retryInSec !== null && (
+                                <RetryInline>
+                                    {t('settings.obsActions.connection.errors.retryIn', { sec: retryInSec })}
+                                </RetryInline>
+                            )}
+                        </InlineMessages>
                     )}
-                    {retryInSec !== null && (
-                        <RetryInline>
-                            {t('settings.obsActions.connection.errors.retryIn', { sec: retryInSec })}
-                        </RetryInline>
-                    )}
-                    <StatusBadge $status={obsStatus.status}>
-                        {isConnected ? <FiWifi size={12} /> : <FiWifiOff size={12} />}
-                        {statusLabel}
-                    </StatusBadge>
-                </ConnectionHeader>
 
-                <ConnectionGrid>
-                    <Field>
-                        <FieldLabel>{t('settings.obsActions.connection.host')}</FieldLabel>
-                        <FieldInput
-                            type="text"
-                            value={connectionForm.host}
-                            onChange={(e) => handleConnectionFieldChange({ host: e.target.value })}
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel>{t('settings.obsActions.connection.port')}</FieldLabel>
-                        <FieldInput
-                            type="number"
-                            value={connectionForm.port}
-                            onChange={(e) => handleConnectionFieldChange({ port: parseInt(e.target.value, 10) || 4455 })}
-                        />
-                    </Field>
-                    <Field>
-                        <FieldLabel>
-                            {t('settings.obsActions.connection.password')}
-                            {passwordStored && ` · ${t('settings.obsActions.connection.passwordSaved')}`}
-                        </FieldLabel>
-                        <FieldInput
-                            type="password"
-                            placeholder={t('settings.obsActions.connection.passwordPlaceholder')}
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                        />
-                    </Field>
-                </ConnectionGrid>
+                    <GuideLink type="button" onClick={() => openHelp('obs-websocket-setup.md')}>
+                        <FiBookOpen />
+                        {t('settings.obsActions.connection.openGuide')}
+                    </GuideLink>
+                </CardContent>
+            </SettingsCard>
 
-                <SwitchRow>
-                    <Switch
-                        checked={connectionForm.autoConnect}
-                        onChange={(e) => handleConnectionFieldChange({ autoConnect: e.target.checked })}
-                    />
-                    <span>{t('settings.obsActions.connection.autoConnect')}</span>
-                </SwitchRow>
-
-                <ConnectionButtons>
-                    <ConnectionButton onClick={handleSaveConnection}>
-                        <FiSave size={14} />
-                        {t('settings.obsActions.connection.save')}
-                    </ConnectionButton>
-                    {isConnected ? (
-                        <ConnectionButton onClick={handleDisconnect}>
-                            <FiWifiOff size={14} />
-                            {t('settings.obsActions.connection.disconnect')}
-                        </ConnectionButton>
+            <SettingsCard>
+                <CardHeader>
+                    <CardTitle>
+                        <FiList />
+                        {t('settings.obsActions.listTitle')}
+                    </CardTitle>
+                    <HeaderRight>
+                        <SearchWrapper>
+                            <SearchIcon />
+                            <SearchInput
+                                type="text"
+                                placeholder={t('settings.obsActions.searchPlaceholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </SearchWrapper>
+                        <Button $variant="primary" $size="sm" type="button" onClick={handleAdd}>
+                            <FiPlus />
+                            {t('settings.obsActions.addAction')}
+                        </Button>
+                    </HeaderRight>
+                </CardHeader>
+                <CardContent>
+                    {filteredActions.length === 0 ? (
+                        <EmptyState>
+                            <FiSliders />
+                            <h3>
+                                {actions.length === 0
+                                    ? t('settings.obsActions.empty.title')
+                                    : t('settings.obsActions.empty.noResults')}
+                            </h3>
+                            <p>
+                                {actions.length === 0
+                                    ? t('settings.obsActions.empty.description')
+                                    : t('settings.obsActions.empty.tryDifferent')}
+                            </p>
+                        </EmptyState>
                     ) : (
-                        <ConnectionButton $primary onClick={handleConnect}>
-                            <FiWifi size={14} />
-                            {t('settings.obsActions.connection.connect')}
-                        </ConnectionButton>
+                        <ActionsTable>
+                            <thead>
+                                <TableHeaderRow>
+                                    <TableHeadCell>{t('settings.obsActions.editor.nameLabel')}</TableHeadCell>
+                                    <TableHeadCell>{t('settings.obsActions.editor.operationLabel')}</TableHeadCell>
+                                    <TableHeadCell>{t('settings.obsActions.editor.modeLabel')}</TableHeadCell>
+                                    <TableHeadCell />
+                                </TableHeaderRow>
+                            </thead>
+                            <tbody>
+                                {filteredActions.map(action => (
+                                    <TableRow key={action.id}>
+                                        <TableCell>
+                                            <RowName title={action.name}>
+                                                <FiSliders size={14} />
+                                                {action.name}
+                                            </RowName>
+                                        </TableCell>
+                                        <TableCell>
+                                            <OperationBadge>
+                                                {t(`settings.obsActions.operations.${action.operation}`)}
+                                            </OperationBadge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <RowDescription title={describeAction(action, t)}>
+                                                {describeAction(action, t)}
+                                            </RowDescription>
+                                        </TableCell>
+                                        <TableCell>
+                                            <RowActions>
+                                                <ActionIconButton
+                                                    $color={tokens.color.success.text}
+                                                    $borderColor={tokens.color.success.softBorder}
+                                                    $hoverBackground={tokens.color.success.soft}
+                                                    onClick={() => handleTest(action)}
+                                                    disabled={!isConnected}
+                                                    title={t('settings.obsActions.actions.test')}
+                                                >
+                                                    <FiPlay />
+                                                </ActionIconButton>
+                                                <ActionIconButton
+                                                    $color={tokens.color.accent.primary}
+                                                    $borderColor={tokens.color.accent.softBorder}
+                                                    $hoverBackground={tokens.color.accent.soft}
+                                                    onClick={() => handleEdit(action)}
+                                                    title={t('settings.obsActions.actions.edit')}
+                                                >
+                                                    <FiEdit2 />
+                                                </ActionIconButton>
+                                                <ActionIconButton
+                                                    $color={tokens.color.danger.text}
+                                                    $borderColor={tokens.color.danger.softBorder}
+                                                    $hoverBackground={tokens.color.danger.soft}
+                                                    onClick={() => setDeleteTarget(action)}
+                                                    title={t('settings.obsActions.actions.delete')}
+                                                >
+                                                    <FiTrash2 />
+                                                </ActionIconButton>
+                                            </RowActions>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </tbody>
+                        </ActionsTable>
                     )}
-                    <ConnectionButton onClick={handleRefreshCache} disabled={!isConnected}>
-                        <FiRefreshCw size={14} />
-                        {t('settings.obsActions.connection.refreshCache')}
-                    </ConnectionButton>
-                </ConnectionButtons>
-
-                <GuideLink type="button" onClick={() => openHelp('obs-websocket-setup.md')}>
-                    <FiBookOpen />
-                    {t('settings.obsActions.connection.openGuide')}
-                </GuideLink>
-            </ConnectionCard>
-
-            <Header>
-                <SearchWrapper>
-                    <SearchIcon />
-                    <SearchInput
-                        type="text"
-                        placeholder={t('settings.obsActions.searchPlaceholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </SearchWrapper>
-                <AddButton onClick={handleAdd}>
-                    <FiPlus />
-                    {t('settings.obsActions.addAction')}
-                </AddButton>
-            </Header>
-
-            {filteredActions.length === 0 ? (
-                <EmptyState>
-                    <FiSliders />
-                    <h3>
-                        {actions.length === 0
-                            ? t('settings.obsActions.empty.title')
-                            : t('settings.obsActions.empty.noResults')}
-                    </h3>
-                    <p>
-                        {actions.length === 0
-                            ? t('settings.obsActions.empty.description')
-                            : t('settings.obsActions.empty.tryDifferent')}
-                    </p>
-                </EmptyState>
-            ) : (
-                <ActionsTable>
-                    <TableHeaderRow>
-                        <div>{t('settings.obsActions.editor.nameLabel')}</div>
-                        <div>{t('settings.obsActions.editor.operationLabel')}</div>
-                        <div>{t('settings.obsActions.editor.modeLabel')}</div>
-                        <div />
-                    </TableHeaderRow>
-                    {filteredActions.map(action => (
-                        <TableRow key={action.id}>
-                            <RowName title={action.name}>
-                                <FiSliders size={14} />
-                                {action.name}
-                            </RowName>
-                            <OperationBadge>
-                                {t(`settings.obsActions.operations.${action.operation}`)}
-                            </OperationBadge>
-                            <RowDescription title={describeAction(action, t)}>
-                                {describeAction(action, t)}
-                            </RowDescription>
-                            <RowActions>
-                                <ActionIconButton
-                                    $color="#22c55e"
-                                    onClick={() => handleTest(action)}
-                                    disabled={!isConnected}
-                                    title={t('settings.obsActions.actions.test')}
-                                >
-                                    <FiPlay />
-                                </ActionIconButton>
-                                <ActionIconButton
-                                    $color="#3b82f6"
-                                    onClick={() => handleEdit(action)}
-                                    title={t('settings.obsActions.actions.edit')}
-                                >
-                                    <FiEdit2 />
-                                </ActionIconButton>
-                                <ActionIconButton
-                                    $color="#dc2626"
-                                    onClick={() => setDeleteTarget(action)}
-                                    title={t('settings.obsActions.actions.delete')}
-                                >
-                                    <FiTrash2 />
-                                </ActionIconButton>
-                            </RowActions>
-                        </TableRow>
-                    ))}
-                </ActionsTable>
-            )}
+                </CardContent>
+            </SettingsCard>
 
             {editorOpen && (
                 <ObsActionEditorPopup

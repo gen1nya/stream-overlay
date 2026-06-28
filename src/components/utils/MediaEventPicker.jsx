@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import { FiPlus, FiTrash2, FiImage, FiVideo, FiMusic, FiEdit2 } from 'react-icons/fi';
 import { getAllMediaEvents } from '../../services/api';
@@ -24,19 +25,19 @@ const SelectedItem = styled.div`
     gap: 10px;
     padding: 10px 12px;
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #444;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
 `;
 
 const MediaIcon = styled.div`
     width: 32px;
     height: 32px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: rgba(100, 108, 255, 0.1);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #646cff;
+    color: ${tokens.color.accent.primary};
     flex-shrink: 0;
 
     svg {
@@ -52,7 +53,7 @@ const MediaInfo = styled.div`
 
 const MediaName = styled.div`
     font-size: 0.9rem;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -60,7 +61,7 @@ const MediaName = styled.div`
 
 const MediaCaption = styled.div`
     font-size: 0.75rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -72,11 +73,11 @@ const IconButton = styled.button`
     justify-content: center;
     padding: 6px;
     border: none;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
     color: ${props => props.$danger ? '#dc2626' : '#888'};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => props.$danger ? 'rgba(220, 38, 38, 0.1)' : 'rgba(100, 108, 255, 0.1)'};
@@ -96,16 +97,16 @@ const AddButton = styled.button`
     gap: 6px;
     padding: 10px;
     border: 1px dashed #444;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: transparent;
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        border-color: #646cff;
-        color: #646cff;
+        border-color: ${tokens.color.accent.primary};
+        color: ${tokens.color.accent.primary};
     }
 
     &:disabled {
@@ -132,7 +133,7 @@ const SelectorContent = styled.div`
 const SelectorTitle = styled.h3`
     margin: 0;
     font-size: 1.1rem;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
 `;
 
 const EventsList = styled.div`
@@ -147,7 +148,7 @@ const EventsList = styled.div`
         width: 6px;
     }
     &::-webkit-scrollbar-track {
-        background: #1e1e1e;
+        background: ${tokens.color.bg.surface};
     }
     &::-webkit-scrollbar-thumb {
         background: #444;
@@ -162,14 +163,14 @@ const EventOption = styled.button`
     padding: 10px 12px;
     background: ${props => props.$selected ? 'rgba(100, 108, 255, 0.15)' : 'rgba(30, 30, 30, 0.5)'};
     border: 1px solid ${props => props.$selected ? '#646cff' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     text-align: left;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.1);
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 
     &:disabled {
@@ -185,12 +186,12 @@ const CreateNewButton = styled.button`
     gap: 8px;
     padding: 12px;
     background: rgba(100, 108, 255, 0.1);
-    border: 1px dashed #646cff;
-    border-radius: 8px;
-    color: #646cff;
+    border: 1px dashed ${tokens.color.accent.primary};
+    border-radius: ${tokens.radius.lg};
+    color: ${tokens.color.accent.primary};
     cursor: pointer;
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.2);
@@ -205,7 +206,7 @@ const CreateNewButton = styled.button`
 const EmptyMessage = styled.div`
     text-align: center;
     padding: 20px;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     font-size: 0.9rem;
 `;
 

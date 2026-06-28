@@ -1,5 +1,6 @@
 import React, {useMemo, useCallback} from 'react';
 import styled, {ThemeProvider} from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import {ImageUploadField, darkTheme as imageUploadDarkTheme} from "../../utils/BackgroundImageEditorComponent";
@@ -28,7 +29,7 @@ const SwitchRow = styled.div`
 `;
 
 const SwitchLabel = styled.span`
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     font-size: 14px;
     font-weight: 500;
 `;

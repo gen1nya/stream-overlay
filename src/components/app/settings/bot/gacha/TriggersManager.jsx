@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { FiPlus, FiTrash2, FiGift, FiRefreshCw } from 'react-icons/fi';
 import { AddButton, ErrorText, FormRow, NameInput } from '../SharedBotStyles';
 import { getTwitchRewards } from '../../../../../services/api';
@@ -13,17 +14,17 @@ const TriggersList = styled.div`
 
 const TriggerCard = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     padding: 16px;
     display: flex;
     align-items: center;
     gap: 16px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         background: rgba(40, 40, 40, 0.7);
-        border-color: #444;
+        border-color: ${tokens.color.border.default};
     }
 `;
 
@@ -31,7 +32,7 @@ const TriggerIcon = styled.div`
     width: 48px;
     height: 48px;
     border-radius: 10px;
-    background: linear-gradient(135deg, #646cff 0%, #8853f2 100%);
+    background: linear-gradient(135deg, ${tokens.color.accent.primary} 0%, #8853f2 100%);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -53,19 +54,19 @@ const TriggerContent = styled.div`
 
 const TriggerTitle = styled.h4`
     margin: 0;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     font-size: 1rem;
     font-weight: 600;
 `;
 
 const TriggerSubtitle = styled.span`
-    color: #888;
+    color: ${tokens.color.text.faint};
     font-size: 0.85rem;
 `;
 
 const PullsBadge = styled.span`
     padding: 6px 12px;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: rgba(136, 83, 242, 0.2);
     border: 1px solid rgba(136, 83, 242, 0.4);
     color: #c4b5fd;
@@ -76,19 +77,19 @@ const PullsBadge = styled.span`
 
 const DeleteButton = styled.button`
     padding: 8px;
-    border: 1px solid #555;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
     background: rgba(220, 38, 38, 0.1);
-    color: #dc2626;
+    color: ${tokens.color.danger.base};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     
     &:hover {
         background: rgba(220, 38, 38, 0.2);
-        border-color: #dc2626;
+        border-color: ${tokens.color.danger.base};
     }
     
     svg {
@@ -99,8 +100,8 @@ const DeleteButton = styled.button`
 
 const AddTriggerForm = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     padding: 20px;
     display: flex;
     flex-direction: column;
@@ -110,11 +111,11 @@ const AddTriggerForm = styled.div`
 const Select = styled.select`
     padding: 10px 12px;
     border: 1px solid ${props => props.$error ? '#dc2626' : '#555'};
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     cursor: pointer;
     
     &:focus {
@@ -124,8 +125,8 @@ const Select = styled.select`
     }
     
     option {
-        background: #1e1e1e;
-        color: #fff;
+        background: ${tokens.color.bg.surface};
+        color: ${tokens.color.text.primary};
     }
 `;
 
@@ -136,7 +137,7 @@ const NumberInput = styled(NameInput)`
 const InfoBox = styled.div`
     background: rgba(100, 108, 255, 0.1);
     border: 1px solid rgba(100, 108, 255, 0.3);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     padding: 12px 16px;
     color: #c4b5fd;
     font-size: 0.9rem;
@@ -149,7 +150,7 @@ const LoadingSpinner = styled.div`
     justify-content: center;
     gap: 8px;
     padding: 20px;
-    color: #888;
+    color: ${tokens.color.text.faint};
     
     svg {
         animation: spin 1s linear infinite;

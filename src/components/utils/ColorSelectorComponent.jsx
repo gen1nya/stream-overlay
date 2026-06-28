@@ -1,5 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import ColorPicker from 'react-pick-color';
 
 const Container = styled.label`
@@ -7,8 +8,8 @@ const Container = styled.label`
     width: 100%;
     flex-direction: column;
     padding: 2px 4px;
-    border-radius: 4px;
-    background: #1e1e1e;
+    border-radius: ${tokens.radius.sm};
+    background: ${tokens.color.bg.surface};
 `;
 
 const Seekbar = styled.input`

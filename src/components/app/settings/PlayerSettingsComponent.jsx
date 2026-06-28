@@ -1,24 +1,22 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import SeekbarComponent from "../../utils/SeekbarComponent";
 import NumericEditorComponent from "../../utils/NumericEditorComponent";
 import {
     CardContent,
-    CardHeader,
-    CardTitle,
+    CollapsibleCard,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
     ControlGroup
 } from "./SharedSettingsStyles";
 import {TbShadow} from "react-icons/tb";
-import {FiMusic, FiCornerUpLeft, FiType, FiChevronDown, FiChevronUp, FiDisc, FiSettings} from "react-icons/fi";
+import {FiMusic, FiCornerUpLeft, FiType, FiDisc} from "react-icons/fi";
 import RadioGroup from "../../utils/TextRadioGroup";
 import ColorSelectorButton from "./ColorSelectorButton";
 import {RiColorFilterLine} from "react-icons/ri";
 import {Row} from "../SettingsComponent";
-import {Spacer} from "../../utils/Separator";
 import { useTranslation } from "react-i18next";
 
 const ColorGrid = styled.div`
@@ -37,8 +35,8 @@ const RadiusGrid = styled.div`
 
 const RadiusSection = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 
@@ -46,14 +44,14 @@ const RadiusTitle = styled.h5`
     margin: 0 0 12px 0;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     text-align: center;
 `;
 
 const TextPropertyCard = styled.div`
     background: rgba(40, 40, 40, 0.3);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
 `;
 
@@ -61,58 +59,10 @@ const TextPropertyTitle = styled.h5`
     margin: 0 0 12px 0;
     font-size: 0.9rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     display: flex;
     align-items: center;
     gap: 8px;
-`;
-
-const CollapsibleHeader = styled.div`
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-`;
-
-const CollapsedPreview = styled.div`
-    padding: 16px 20px;
-    color: #999;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-    
-    .highlight {
-        color: #4a9eff;
-        font-weight: 500;
-    }
-`;
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #FFF;
-    font-size: 1rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
 `;
 
 const TEXT_ALIGN_OPTIONS = [
@@ -126,10 +76,7 @@ export default function PlayerSettingsComponent({
                                                     onChange,
                                                     openColorPopup,
                                                 }) {
-    const [isOpen, setIsOpen] = useState(false);
     const { t } = useTranslation();
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
 
     const updatePlayer = (path, value) => {
         onChange(prev => {
@@ -174,31 +121,8 @@ export default function PlayerSettingsComponent({
     );
 
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <Row gap="12px">
-                    <CardTitle>
-                        <FiDisc/>
-                        {t('settings.players.vinyl.title')}
-                    </CardTitle>
-
-                    <Spacer />
-
-                    <CollapseToggle>
-                        {isOpen ? t('settings.shared.collapse.close') : t('settings.shared.collapse.open')}
-                        {isOpen ? <FiChevronUp /> : <FiSettings />}
-                    </CollapseToggle>
-                </Row>
-            </CollapsibleHeader>
-
-            {/* Свернутое описание */}
-            {/*{!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                </CollapsedPreview>
-            )}*/}
-
-            {isOpen && (
-                <CardContent>
+        <CollapsibleCard icon={<FiDisc/>} title={t('settings.players.vinyl.title')}>
+            <CardContent>
                     {/* Цветовая схема */}
                     <Section>
                         <SectionHeader>
@@ -420,7 +344,6 @@ export default function PlayerSettingsComponent({
                         </ColorGrid>
                     </Section>
                 </CardContent>
-            )}
-        </SettingsCard>
+        </CollapsibleCard>
     );
 }

@@ -1,5 +1,6 @@
 import React, { useState, useMemo, useId } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { ColorPicker } from 'react-pick-color';
 import throttle from 'lodash.throttle';
 import { hexToRgba } from "../../utils";
@@ -21,8 +22,8 @@ const ColorButton = styled.button`
     width: 100%;
     height: 32px;
     padding: 0;
-    border: 1px solid #444;
-    border-radius: 6px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
     cursor: pointer;
     overflow: hidden;
     display: flex;
@@ -35,7 +36,7 @@ const ColorButton = styled.button`
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 `;
 
@@ -68,7 +69,7 @@ const SolidLayer = styled(Half)`
 
 const PickerContainer = styled.div`
     background: #2e2e2e;
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.4);
     padding: 16px;
     display: flex;
@@ -80,7 +81,7 @@ const PickerContainer = styled.div`
 const Title = styled.h3`
     font-size: 1.1rem;
     font-weight: 600;
-    color: #e0e0e0;
+    color: ${tokens.color.text.secondary};
     margin: 0;
 `;
 
@@ -89,15 +90,15 @@ const CloseButton = styled.button`
     padding: 6px 16px;
     background: #3a3a3a;
     color: #d6d6d6;
-    border-radius: 6px;
-    border: 1px solid #444;
+    border-radius: ${tokens.radius.md};
+    border: 1px solid ${tokens.color.border.default};
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #4a4a4a;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 `;
 

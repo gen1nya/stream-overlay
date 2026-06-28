@@ -1,4 +1,5 @@
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 
 export const Header = styled.div`
     display: flex;
@@ -10,9 +11,9 @@ export const Header = styled.div`
 export const Title = styled.h2`
     font-size: 1.8rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin: 0;
-    background: linear-gradient(135deg, #646cff, #7c3aed);
+    background: ${tokens.gradient.accent};
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -21,18 +22,18 @@ export const Title = styled.h2`
 export const CloseButton = styled.button`
     background: none;
     border: none;
-    color: #999;
+    color: ${tokens.color.text.muted};
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #444;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     svg {
@@ -46,9 +47,9 @@ export const SearchSection = styled.div`
     gap: 12px;
     align-items: center;
     padding: 0;
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
 `;
 
 export const SearchInputWrapper = styled.div`
@@ -60,20 +61,20 @@ export const SearchInput = styled.input`
     box-sizing: border-box;
     width: 100%;
     padding: 12px 44px 12px 44px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &::placeholder {
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 `;
@@ -83,7 +84,7 @@ export const SearchIcon = styled.div`
     left: 14px;
     top: 50%;
     transform: translateY(-50%);
-    color: #888;
+    color: ${tokens.color.text.faint};
     pointer-events: none;
 
     svg {
@@ -99,20 +100,20 @@ export const ClearButton = styled.button`
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     padding: 4px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     display: flex;
     align-items: center;
     justify-content: center;
     opacity: ${({ visible }) => (visible ? 1 : 0)};
     pointer-events: ${({ visible }) => (visible ? 'auto' : 'none')};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #444;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     svg {
@@ -134,9 +135,9 @@ export const PopupContent = styled.div`
 
 export const TableContainer = styled.div`
     flex: 1;
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
     overflow: hidden;
     display: flex;
     flex-direction: column;
@@ -152,12 +153,12 @@ export const TableScrollContainer = styled.div`
     }
 
     &::-webkit-scrollbar-track {
-        background: #2a2a2a;
+        background: ${tokens.color.bg.raised};
     }
 
     &::-webkit-scrollbar-thumb {
         background: #555;
-        border-radius: 4px;
+        border-radius: ${tokens.radius.sm};
     }
 
     &::-webkit-scrollbar-thumb:hover {
@@ -171,8 +172,8 @@ export const Table = styled.table`
 `;
 
 export const TableHeader = styled.thead`
-    background: #333;
-    border-bottom: 1px solid #444;
+    background: ${tokens.color.bg.raisedAlt};
+    border-bottom: 1px solid ${tokens.color.border.default};
     position: sticky;
     top: 0;
     z-index: 1;
@@ -192,11 +193,11 @@ export const TableHeaderCell = styled.th`
 export const TableBody = styled.tbody``;
 
 export const TableRow = styled.tr`
-    border-bottom: 1px solid #333;
-    transition: all 0.2s ease;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
+    transition: ${tokens.transition.base};
 
     &:hover {
-        background: #333;
+        background: ${tokens.color.bg.raisedAlt};
     }
 
     &:last-child {
@@ -216,11 +217,11 @@ export const ActionButton = styled.button`
     color: ${({ danger }) => (danger ? '#ff5555' : '#646cff')};
     cursor: pointer;
     padding: 8px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     margin-right: 4px;
 
     &:hover {
@@ -244,7 +245,7 @@ export const GuaranteedBadge = styled.div`
     align-items: center;
     gap: 6px;
     padding: 4px 10px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.85rem;
     font-weight: 600;
     background: ${({ active }) => (active ? '#3a960520' : '#55555520')};
@@ -262,7 +263,7 @@ export const LoadingContainer = styled.div`
     justify-content: center;
     align-items: center;
     padding: 40px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 1rem;
 `;
 
@@ -272,7 +273,7 @@ export const EmptyContainer = styled.div`
     justify-content: center;
     align-items: center;
     padding: 60px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     text-align: center;
 
     svg {
@@ -299,12 +300,12 @@ export const PaginationContainer = styled.div`
     justify-content: space-between;
     align-items: center;
     padding: 16px 20px;
-    border-top: 1px solid #444;
-    background: #333;
+    border-top: 1px solid ${tokens.color.border.default};
+    background: ${tokens.color.bg.raisedAlt};
 `;
 
 export const PaginationInfo = styled.span`
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 0.9rem;
 `;
 
@@ -323,13 +324,13 @@ export const PaginationButton = styled.div`
     background: ${({ disabled }) => (disabled ? '#2a2a2a' : '#444')};
     color: ${({ disabled }) => (disabled ? '#555' : '#d6d6d6')};
     border: none;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     cursor: ${({ disabled }) => (disabled ? 'not-allowed' : 'pointer')};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover:not(:disabled) {
         background: #555;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     svg {

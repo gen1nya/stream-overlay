@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import FontSelector from './FontSelector';
 
 const Container = styled.div`
@@ -7,7 +8,7 @@ const Container = styled.div`
     display: flex;
     flex-direction: column;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     background: #262626;
     padding: 4px;
     width: ${({ $width }) => $width || 'auto'};
@@ -35,10 +36,10 @@ const Input = styled.input`
     height: 28px;
     padding: 2px 6px;
     font-size: 14px;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
     color: white;
-    border: 1px solid #444;
-    border-radius: 4px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.sm};
 `;
 
 export default function FontAndSizeEditor({

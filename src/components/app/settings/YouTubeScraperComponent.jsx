@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import { FiYoutube, FiSettings, FiRefreshCw, FiList, FiExternalLink, FiClock } from 'react-icons/fi';
 import {
@@ -23,6 +24,7 @@ import {
     SuccessBadge
 } from './SharedSettingsStyles';
 import Switch from '../../utils/Switch';
+import Input from "../../../designSystem/components/Input";
 import {Row} from "../SettingsComponent";
 
 // Специфичные стили для YouTube компонента
@@ -41,7 +43,7 @@ const StatusIndicator = styled.div`
         if (props.status === 'error') return 'rgba(220, 38, 38, 0.3)';
         return 'rgba(107, 114, 128, 0.3)';
     }};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.85rem;
 
     .status-icon {
@@ -64,36 +66,8 @@ const StatusIndicator = styled.div`
     }
 `;
 
-const ChannelInput = styled.input`
+const ChannelInput = styled(Input)`
     flex: 1;
-    background: #1e1e1e;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #252525;
-        border-color: #555;
-    }
-
-    &:focus {
-        outline: none;
-        border-color: #646cff;
-        background: #252525;
-        box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
-    }
-
-    &::placeholder {
-        color: #666;
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
 `;
 
 const StreamsList = styled.div`
@@ -109,7 +83,7 @@ const StreamsList = styled.div`
     }
 
     &::-webkit-scrollbar-track {
-        background: #2a2a2a;
+        background: ${tokens.color.bg.raised};
         border-radius: 3px;
     }
 
@@ -129,13 +103,13 @@ const StreamItem = styled.div`
     justify-content: space-between;
     padding: 12px 16px;
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
-    transition: all 0.2s ease;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(40, 40, 40, 0.7);
-        border-color: #444;
+        border-color: ${tokens.color.border.default};
     }
 `;
 
@@ -149,13 +123,13 @@ const StreamInfo = styled.div`
 const StreamTitle = styled.div`
     font-size: 0.9rem;
     font-weight: 500;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     line-height: 1.3;
 `;
 
 const StreamMeta = styled.div`
     font-size: 0.75rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
     display: flex;
     align-items: center;
     gap: 8px;
@@ -165,7 +139,7 @@ const ViewerCount = styled.span`
     display: flex;
     align-items: center;
     gap: 4px;
-    color: #ff0000;
+    color: ${tokens.color.feature.youtube.base};
     font-weight: 500;
 `;
 
@@ -196,7 +170,7 @@ const UpdateTimer = styled.div`
     align-items: center;
     gap: 6px;
     font-size: 0.75rem;
-    color: #666;
+    color: ${tokens.color.text.disabled};
 `;
 
 export default function YouTubeScraperComponent() {

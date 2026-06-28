@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
+import Input from "../../../designSystem/components/Input";
 import { useTranslation } from 'react-i18next';
 import { FiShield, FiSettings, FiGlobe, FiLock, FiUnlock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import {
@@ -39,7 +41,7 @@ const StatusIndicator = styled.div`
         if (props.status === 'testing') return 'rgba(59, 130, 246, 0.3)';
         return 'rgba(107, 114, 128, 0.3)';
     }};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.85rem;
 
     .status-icon {
@@ -64,36 +66,8 @@ const StatusIndicator = styled.div`
     }
 `;
 
-const ProxyInput = styled.input`
+const ProxyInput = styled(Input)`
     flex: 1;
-    background: #1e1e1e;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.9rem;
-    transition: all 0.2s ease;
-
-    &:hover {
-        background: #252525;
-        border-color: #555;
-    }
-
-    &:focus {
-        outline: none;
-        border-color: #646cff;
-        background: #252525;
-        box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
-    }
-
-    &::placeholder {
-        color: #666;
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
 `;
 
 const ProxyField = styled.div`
@@ -106,7 +80,7 @@ const ProxyField = styled.div`
 const FieldLabel = styled.label`
     font-size: 0.8rem;
     font-weight: 500;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
 `;
 
 const ProxyGrid = styled.div`

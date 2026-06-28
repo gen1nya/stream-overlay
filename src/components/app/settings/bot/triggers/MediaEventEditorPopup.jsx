@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useId, useRef } from "react";
 import styled from "styled-components";
+import { tokens } from "../../../../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiImage, FiVideo, FiType, FiDroplet, FiLayers, FiGrid, FiMusic, FiFolder
@@ -14,9 +15,9 @@ import { saveMediaEvent, getAllMediaDisplayGroups } from "../../../../../service
 import { Portal } from "../../../../../context/PortalContext";
 
 const PopupContainer = styled.div`
-    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-    border: 1px solid #444;
-    border-radius: 16px;
+    background: ${tokens.gradient.surface};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.xxl};
     max-width: 700px;
     width: 100%;
     max-height: 90vh;
@@ -31,7 +32,7 @@ const PopupHeader = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 16px 24px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     background: linear-gradient(135deg, rgba(236, 72, 153, 0.1) 0%, rgba(236, 72, 153, 0.05) 100%);
     flex-shrink: 0;
 
@@ -39,7 +40,7 @@ const PopupHeader = styled.div`
         margin: 0;
         font-size: 1.1rem;
         font-weight: 600;
-        color: #fff;
+        color: ${tokens.color.text.primary};
         display: flex;
         align-items: center;
         gap: 10px;
@@ -61,12 +62,12 @@ const HeaderButton = styled.button`
     gap: 6px;
     padding: 8px 14px;
     border: 1px solid ${props => props.$primary ? '#ec4899' : '#444'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${props => props.$primary ? '#ec4899' : 'rgba(107, 114, 128, 0.1)'};
     color: ${props => props.$primary ? '#fff' : '#888'};
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => props.$primary ? '#db2777' : 'rgba(107, 114, 128, 0.2)'};
@@ -99,12 +100,12 @@ const PopupContent = styled.div`
     }
 
     &::-webkit-scrollbar-track {
-        background: #1e1e1e;
+        background: ${tokens.color.bg.surface};
     }
 
     &::-webkit-scrollbar-thumb {
         background: #444;
-        border-radius: 4px;
+        border-radius: ${tokens.radius.sm};
     }
 
     &::-webkit-scrollbar-thumb:hover {
@@ -114,8 +115,8 @@ const PopupContent = styled.div`
 
 const Section = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     flex-shrink: 0;
 `;
 
@@ -125,7 +126,7 @@ const SectionHeader = styled.div`
     gap: 10px;
     padding: 12px 16px;
     background: rgba(30, 30, 30, 0.5);
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
 
     svg {
         width: 16px;
@@ -137,7 +138,7 @@ const SectionHeader = styled.div`
         margin: 0;
         font-size: 0.9rem;
         font-weight: 600;
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
     }
 `;
 
@@ -170,16 +171,16 @@ const Label = styled.label`
 const Input = styled.input`
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
     &::placeholder {
-        color: #666;
+        color: ${tokens.color.text.disabled};
     }
 
     &:focus {
@@ -192,12 +193,12 @@ const Input = styled.input`
 const Select = styled.select`
     width: 100%;
     padding: 10px 12px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
     cursor: pointer;
 
@@ -208,7 +209,7 @@ const Select = styled.select`
     }
 
     option {
-        background: #1e1e1e;
+        background: ${tokens.color.bg.surface};
     }
 `;
 
@@ -223,17 +224,17 @@ const MediaTypeButton = styled.button`
     gap: 6px;
     padding: 8px 14px;
     border: 1px solid ${props => props.$selected ? '#ec4899' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${props => props.$selected ? 'rgba(236, 72, 153, 0.15)' : 'rgba(30, 30, 30, 0.5)'};
     color: ${props => props.$selected ? '#fff' : '#888'};
     cursor: pointer;
     font-size: 0.85rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         border-color: #ec4899;
         background: rgba(236, 72, 153, 0.1);
-        color: #ccc;
+        color: ${tokens.color.text.tertiary};
     }
 
     svg {
@@ -258,12 +259,12 @@ const LibraryButton = styled.button`
     align-items: center;
     justify-content: center;
     padding: 10px 14px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #2a2a2a;
-    color: #888;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.raised};
+    color: ${tokens.color.text.faint};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     flex-shrink: 0;
 
     &:hover {
@@ -280,10 +281,10 @@ const LibraryButton = styled.button`
 
 const MediaPreview = styled.div`
     margin-top: 10px;
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     overflow: hidden;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
     max-height: 150px;
     display: flex;
     align-items: center;
@@ -300,9 +301,9 @@ const VariablesHint = styled.div`
     padding: 10px 12px;
     background: rgba(236, 72, 153, 0.05);
     border: 1px solid rgba(236, 72, 153, 0.2);
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.75rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
 
     .title {
         color: #aaa;
@@ -321,9 +322,9 @@ const VariableItem = styled.button`
     font-size: 0.8rem;
     background: rgba(236, 72, 153, 0.1);
     border: 1px solid rgba(236, 72, 153, 0.3);
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
 
     &:hover {
         background: rgba(236, 72, 153, 0.2);

@@ -1,10 +1,11 @@
 import React, { useId } from 'react';
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import { Portal } from "../../context/PortalContext";
 
 const PopupContainer = styled.div`
     background: #2e2e2e;
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     min-width: 300px;
     box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
 `;

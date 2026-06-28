@@ -1805,6 +1805,7 @@ const en = {
             obsActions: {
                 searchPlaceholder: 'Search by name...',
                 addAction: 'Add action',
+                listTitle: 'Actions',
                 connection: {
                     title: 'OBS connection',
                     host: 'Host',
@@ -1888,6 +1889,7 @@ const en = {
             httpActions: {
                 searchPlaceholder: 'Search by name…',
                 addAction: 'Add request',
+                listTitle: 'Requests',
                 methods: {
                     GET: 'GET',
                     POST: 'POST',

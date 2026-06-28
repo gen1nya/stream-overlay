@@ -1,6 +1,7 @@
 // components/ui/PhotoshopStyleColorButton.js
 import React from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import {hexToRgba} from "../../../utils";
 import { useTranslation } from "react-i18next";
 
@@ -34,7 +35,7 @@ const Button = styled.button`
     height: 32px;
     padding: 0;
     border: 1px solid #666;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     cursor: pointer;
     overflow: hidden;
     display: flex;

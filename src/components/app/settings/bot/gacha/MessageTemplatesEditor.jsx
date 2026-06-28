@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import { FiInfo } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { VariablesList, VariableItem } from '../SharedBotStyles';
@@ -12,8 +13,8 @@ const SettingsGrid = styled.div`
 
 const SettingRow = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -22,7 +23,7 @@ const SettingRow = styled.div`
 
 const Label = styled.label`
     font-size: 0.9rem;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-weight: 500;
     display: flex;
     align-items: center;
@@ -32,7 +33,7 @@ const Label = styled.label`
 const InfoText = styled.p`
     margin: 0;
     font-size: 0.85rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     font-style: italic;
 `;
 
@@ -49,12 +50,12 @@ const VariableTag = styled.span`
     padding: 4px 8px;
     background: rgba(100, 108, 255, 0.15);
     border: 1px solid rgba(100, 108, 255, 0.3);
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     font-size: 0.75rem;
     font-family: 'Consolas', 'Monaco', monospace;
     color: #a0a8ff;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.25);
@@ -64,8 +65,8 @@ const VariableTag = styled.span`
 
 const PreviewBox = styled.div`
     background: rgba(30, 30, 30, 0.8);
-    border: 1px solid #444;
-    border-radius: 6px;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
     padding: 10px 12px;
     font-size: 0.9rem;
     color: #ddd;
@@ -75,7 +76,7 @@ const PreviewBox = styled.div`
 
 const PreviewLabel = styled.span`
     font-size: 0.75rem;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     text-transform: uppercase;
     letter-spacing: 0.5px;
     margin-bottom: 4px;
@@ -85,7 +86,7 @@ const PreviewLabel = styled.span`
 const InfoBox = styled.div`
     background: rgba(100, 108, 255, 0.1);
     border: 1px solid rgba(100, 108, 255, 0.3);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     padding: 12px 16px;
     display: flex;
     align-items: flex-start;
@@ -96,7 +97,7 @@ const InfoBox = styled.div`
         flex-shrink: 0;
         width: 20px;
         height: 20px;
-        color: #646cff;
+        color: ${tokens.color.accent.primary};
         margin-top: 2px;
     }
 `;

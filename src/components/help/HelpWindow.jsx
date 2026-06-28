@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import { FiSearch, FiBook, FiX, FiChevronLeft } from 'react-icons/fi';
 import DocTree from './DocTree';
@@ -9,8 +10,8 @@ import { getDocsTree, getDocContent, searchDocs } from '../../services/api';
 const Container = styled.div`
     display: flex;
     height: 100vh;
-    background: #1a1a1a;
-    color: #e0e0e0;
+    background: ${tokens.color.bg.base};
+    color: ${tokens.color.text.secondary};
     font-family: 'Segoe UI', system-ui, sans-serif;
 `;
 
@@ -18,7 +19,7 @@ const Sidebar = styled.div`
     width: 280px;
     min-width: 280px;
     background: #242424;
-    border-right: 1px solid #333;
+    border-right: 1px solid ${tokens.color.border.subtle};
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -26,7 +27,7 @@ const Sidebar = styled.div`
 
 const SidebarHeader = styled.div`
     padding: 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, transparent 100%);
 
     h2 {
@@ -36,10 +37,10 @@ const SidebarHeader = styled.div`
         display: flex;
         align-items: center;
         gap: 8px;
-        color: #fff;
+        color: ${tokens.color.text.primary};
 
         svg {
-            color: #646cff;
+            color: ${tokens.color.accent.primary};
             width: 18px;
             height: 18px;
         }
@@ -52,21 +53,21 @@ const SearchBox = styled.div`
     input {
         width: 100%;
         padding: 10px 12px 10px 36px;
-        background: #1a1a1a;
-        border: 1px solid #333;
-        border-radius: 6px;
-        color: #e0e0e0;
+        background: ${tokens.color.bg.base};
+        border: 1px solid ${tokens.color.border.subtle};
+        border-radius: ${tokens.radius.md};
+        color: ${tokens.color.text.secondary};
         font-size: 0.9rem;
         outline: none;
         transition: border-color 0.2s ease;
         box-sizing: border-box;
 
         &:focus {
-            border-color: #646cff;
+            border-color: ${tokens.color.accent.primary};
         }
 
         &::placeholder {
-            color: #666;
+            color: ${tokens.color.text.disabled};
         }
     }
 
@@ -75,7 +76,7 @@ const SearchBox = styled.div`
         left: 12px;
         top: 50%;
         transform: translateY(-50%);
-        color: #666;
+        color: ${tokens.color.text.disabled};
         width: 16px;
         height: 16px;
     }
@@ -88,16 +89,16 @@ const ClearButton = styled.button`
     transform: translateY(-50%);
     background: none;
     border: none;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     cursor: pointer;
     padding: 4px;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
 
     &:hover {
-        color: #999;
+        color: ${tokens.color.text.muted};
         background: rgba(255, 255, 255, 0.1);
     }
 
@@ -128,13 +129,13 @@ const ContentArea = styled.div`
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
     min-width: 0;
 `;
 
 const ContentHeader = styled.div`
     padding: 12px 20px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     background: #242424;
     display: flex;
     align-items: center;
@@ -147,10 +148,10 @@ const Breadcrumb = styled.div`
     align-items: center;
     gap: 8px;
     font-size: 0.9rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
 
     .current {
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
         font-weight: 500;
     }
 `;
@@ -161,16 +162,16 @@ const BackButton = styled.button`
     justify-content: center;
     padding: 6px;
     background: transparent;
-    border: 1px solid #444;
-    border-radius: 6px;
-    color: #888;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.md};
+    color: ${tokens.color.text.faint};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.1);
-        border-color: #646cff;
-        color: #646cff;
+        border-color: ${tokens.color.accent.primary};
+        color: ${tokens.color.accent.primary};
     }
 
     svg {
@@ -190,7 +191,7 @@ const ContentBody = styled.div`
 
     &::-webkit-scrollbar-thumb {
         background: #444;
-        border-radius: 4px;
+        border-radius: ${tokens.radius.sm};
     }
 `;
 
@@ -201,7 +202,7 @@ const WelcomeScreen = styled.div`
     justify-content: center;
     height: 100%;
     text-align: center;
-    color: #666;
+    color: ${tokens.color.text.disabled};
 
     svg {
         width: 64px;
@@ -212,7 +213,7 @@ const WelcomeScreen = styled.div`
 
     h3 {
         margin: 0 0 8px 0;
-        color: #888;
+        color: ${tokens.color.text.faint};
         font-weight: 500;
     }
 
@@ -234,31 +235,31 @@ const SearchResultItem = styled.button`
     gap: 4px;
     padding: 12px;
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
     text-align: left;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(100, 108, 255, 0.1);
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 
     .title {
         font-size: 0.95rem;
         font-weight: 500;
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
     }
 
     .match {
         font-size: 0.8rem;
-        color: #888;
+        color: ${tokens.color.text.faint};
         line-height: 1.4;
 
         mark {
             background: rgba(100, 108, 255, 0.3);
-            color: #fff;
+            color: ${tokens.color.text.primary};
             padding: 0 2px;
             border-radius: 2px;
         }
@@ -268,7 +269,7 @@ const SearchResultItem = styled.button`
 const NoResults = styled.div`
     padding: 24px;
     text-align: center;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     font-size: 0.9rem;
 `;
 
@@ -277,7 +278,7 @@ const LoadingIndicator = styled.div`
     align-items: center;
     justify-content: center;
     padding: 24px;
-    color: #666;
+    color: ${tokens.color.text.disabled};
 `;
 
 // Walk the tree recursively looking for a node with the given path.

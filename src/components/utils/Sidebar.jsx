@@ -1,19 +1,18 @@
 import React, { useState } from "react";
 import { useTranslation } from "react-i18next";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import { FiChevronDown, FiChevronRight } from "react-icons/fi";
 
 const Wrapper = styled.div`
     width: ${(props) => (props.open ? "240px" : "70px")};
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
-    border: 1px solid #333;
+    border: 1px solid ${tokens.color.border.subtle};
     display: flex;
     flex-direction: column;
-    padding: 8px;
-    box-shadow:
-            0 4px 20px rgba(0, 0, 0, 0.3),
-            0 0 0 1px rgba(255, 255, 255, 0.05);
+    padding: ${tokens.space.sm};
+    box-shadow: ${tokens.shadow.md};
     overflow-x: hidden;
     overflow-y: auto;
 
@@ -26,12 +25,12 @@ const Wrapper = styled.div`
     }
 
     &::-webkit-scrollbar-thumb {
-        background: #444;
+        background: ${tokens.color.border.default};
         border-radius: 2px;
     }
 
     &::-webkit-scrollbar-thumb:hover {
-        background: #555;
+        background: ${tokens.color.border.strong};
     }
 `;
 
@@ -40,7 +39,7 @@ const Item = styled.div`
     align-items: center;
     padding: ${(props) => (props.open ? "14px 16px" : "14px")};
     margin: 2px 0;
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     cursor: pointer;
     position: relative;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -49,7 +48,11 @@ const Item = styled.div`
 
     background: ${(props) => {
     if (props.active) {
-        return "linear-gradient(135deg, rgba(100, 108, 255, 0.15) 0%, rgba(124, 58, 237, 0.15) 100%)";
+        // Стекло: вертикальный белый блик поверх акцентного градиента (как у карточек).
+        return `
+            linear-gradient(180deg, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 60%),
+            linear-gradient(135deg, rgba(100, 108, 255, 0.18) 0%, rgba(124, 58, 237, 0.18) 100%)
+        `;
     }
     return "transparent";
 }};
@@ -61,14 +64,25 @@ const Item = styled.div`
     return "transparent";
 }};
 
+    /* Верхний хайлайт + мягкое акцентное свечение активного селектора. */
+    box-shadow: ${(props) => (props.active
+        ? "inset 0 1px 0 rgba(255, 255, 255, 0.14), 0 0 16px rgba(100, 108, 255, 0.22)"
+        : "none")};
+
     &:hover {
         background: ${(props) => {
     if (props.active) {
-        return "linear-gradient(135deg, rgba(100, 108, 255, 0.2) 0%, rgba(124, 58, 237, 0.2) 100%)";
+        return `
+            linear-gradient(180deg, rgba(255, 255, 255, 0.13) 0%, rgba(255, 255, 255, 0) 60%),
+            linear-gradient(135deg, rgba(100, 108, 255, 0.24) 0%, rgba(124, 58, 237, 0.24) 100%)
+        `;
     }
-    return "rgba(255, 255, 255, 0.05)";
+    return tokens.color.highlight.faint;
 }};
-        border-color: ${(props) => (props.active ? "rgba(100, 108, 255, 0.4)" : "rgba(255, 255, 255, 0.1)")};
+        border-color: ${(props) => (props.active ? "rgba(100, 108, 255, 0.45)" : tokens.color.highlight.soft)};
+        box-shadow: ${(props) => (props.active
+            ? "inset 0 1px 0 rgba(255, 255, 255, 0.18), 0 0 22px rgba(100, 108, 255, 0.30)"
+            : "none")};
         transform: translateX(2px);
     }
 
@@ -79,14 +93,14 @@ const Item = styled.div`
     svg {
         width: 20px;
         height: 20px;
-        color: ${(props) => (props.active ? "#646cff" : "#999")};
-        transition: all 0.2s ease;
+        color: ${(props) => (props.active ? tokens.color.accent.primary : tokens.color.text.muted)};
+        transition: ${tokens.transition.base};
         margin-right: ${(props) => (props.open ? "12px" : "0")};
         flex-shrink: 0;
     }
 
     &:hover svg {
-        color: ${(props) => (props.active ? "#7c7cff" : "#ccc")};
+        color: ${(props) => (props.active ? "#7c7cff" : tokens.color.text.tertiary)};
         transform: scale(1.05);
     }
 `;
@@ -112,8 +126,8 @@ const ChildItem = styled(Item)`
 
 const Label = styled.span`
     font-size: 0.95rem;
-    font-weight: 500;
-    color: ${(props) => (props.active ? "#fff" : "#ccc")};
+    font-weight: ${tokens.font.weight.medium};
+    color: ${(props) => (props.active ? tokens.color.text.primary : tokens.color.text.tertiary)};
     opacity: ${(props) => (props.open ? 1 : 0)};
     transform: translateX(${(props) => (props.open ? "0" : "-10px")});
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -122,7 +136,7 @@ const Label = styled.span`
     flex: 1;
 
     ${Item}:hover &, ${ParentItem}:hover &, ${ChildItem}:hover & {
-        color: ${(props) => (props.active ? "#fff" : "#e0e0e0")};
+        color: ${(props) => (props.active ? tokens.color.text.primary : tokens.color.text.secondary)};
     }
 `;
 
@@ -133,7 +147,7 @@ const ActiveIndicator = styled.div`
     transform: translateY(-50%);
     width: 3px;
     height: ${(props) => (props.active ? "60%" : "0")};
-    background: linear-gradient(135deg, #646cff 0%, #7c3aed 100%);
+    background: ${tokens.gradient.accent};
     border-radius: 0 2px 2px 0;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     opacity: ${(props) => (props.active ? 1 : 0)};
@@ -144,12 +158,12 @@ const Tooltip = styled.div`
     left: 80px;
     top: 50%;
     transform: translateY(-50%);
-    background: #333;
+    background: ${tokens.color.bg.raisedAlt};
     color: white;
-    padding: 8px 12px;
-    border-radius: 8px;
-    font-size: 0.85rem;
-    font-weight: 500;
+    padding: ${tokens.space.sm} ${tokens.space.md};
+    border-radius: ${tokens.radius.lg};
+    font-size: ${tokens.font.size.sm};
+    font-weight: ${tokens.font.weight.medium};
     white-space: nowrap;
     pointer-events: none;
     opacity: 0;
@@ -157,7 +171,7 @@ const Tooltip = styled.div`
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
 
     &::before {
         content: '';
@@ -169,7 +183,7 @@ const Tooltip = styled.div`
         height: 0;
         border-top: 5px solid transparent;
         border-bottom: 5px solid transparent;
-        border-right: 5px solid #333;
+        border-right: 5px solid ${tokens.color.bg.raisedAlt};
     }
 
     ${Item}:hover &, ${ParentItem}:hover &, ${ChildItem}:hover & {
@@ -180,24 +194,24 @@ const Tooltip = styled.div`
 
 const Divider = styled.div`
     height: 1px;
-    background: linear-gradient(90deg, transparent, #333, transparent);
-    margin: 8px 12px;
+    background: ${tokens.gradient.divider};
+    margin: ${tokens.space.sm} ${tokens.space.md};
     opacity: 0.6;
 `;
 
 const SidebarHeader = styled.div`
-    padding: 16px 16px 8px;
+    padding: ${tokens.space.lg} ${tokens.space.lg} ${tokens.space.sm};
     display: flex;
     align-items: center;
     justify-content: ${(props) => (props.open ? "flex-start" : "center")};
-    margin-bottom: 8px;
+    margin-bottom: ${tokens.space.sm};
 `;
 
 const HeaderTitle = styled.h3`
     margin: 0;
-    font-size: 0.9rem;
-    font-weight: 600;
-    color: #888;
+    font-size: ${tokens.font.size.md};
+    font-weight: ${tokens.font.weight.semibold};
+    color: ${tokens.color.text.faint};
     text-transform: uppercase;
     letter-spacing: 0.5px;
     opacity: ${(props) => (props.open ? 1 : 0)};
@@ -209,13 +223,13 @@ const ExpandIcon = styled.div`
     align-items: center;
     margin-left: auto;
     opacity: ${(props) => (props.open ? 1 : 0)};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     svg {
         width: 16px;
         height: 16px;
         margin-right: 0;
-        color: #666;
+        color: ${tokens.color.text.disabled};
         transition: transform 0.2s ease;
         transform: ${(props) => (props.expanded ? "rotate(0deg)" : "rotate(0deg)")};
     }
@@ -239,7 +253,7 @@ const ChildrenInner = styled.div`
 const EnabledDot = styled.div`
     width: 6px;
     height: 6px;
-    border-radius: 50%;
+    border-radius: ${tokens.radius.circle};
     background: ${(props) => props.$color || '#44ff44'};
     box-shadow: 0 0 4px ${(props) => props.$color || '#44ff44'};
     border: 1px solid ${(props) => props.$borderColor || '#33cc33'};

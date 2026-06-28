@@ -17,6 +17,7 @@ import {
 } from '../../services/api';
 import { useNavigate } from 'react-router-dom';
 import styled, { keyframes } from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import RadioGroup from "../utils/TextRadioGroup";
 import { useTranslation } from 'react-i18next';
 
@@ -27,18 +28,18 @@ const Container = styled.div`
     align-items: center;
     min-height: calc(100vh - 100px);
     text-align: center;
-    padding: 20px;
+    padding: ${tokens.space.xl};
     position: relative;
     width: 100%;
     box-sizing: border-box;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
 `;
 
 const Title = styled.h2`
-    font-size: 1.5rem;
-    font-weight: 600;
+    font-size: ${tokens.font.size.xxl};
+    font-weight: ${tokens.font.weight.semibold};
     color: #d6d6d6;
-    margin-bottom: 32px;
+    margin-bottom: ${tokens.space.xxxl};
 `;
 
 const LanguageSelectorWrapper = styled.div`
@@ -51,49 +52,46 @@ const LanguageSelectorWrapper = styled.div`
 `;
 
 const AuthCard = styled.div`
-    width: calc(100% - 24px);
+    width: calc(100% - ${tokens.space.xxl});
     max-width: 520px;
-    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-    border: 1px solid #333;
-    border-radius: 16px;
+    background: ${tokens.gradient.surface};
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xxl};
     padding: 0;
     display: flex;
     flex-direction: column;
-    box-shadow: 
-        0 4px 20px rgba(0, 0, 0, 0.3),
-        0 0 10px rgba(92, 56, 169, 0.6),
-        0 0 0 1px rgba(255, 255, 255, 0.05);
-    transition: all 0.3s ease;
+    box-shadow: ${tokens.shadow.md}, ${tokens.shadow.glow};
+    transition: ${tokens.transition.slow};
     overflow: hidden;
 `;
 
 const CardHeader = styled.div`
-    padding: 20px 24px 16px;
-    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
-    border-bottom: 1px solid #444;
+    padding: ${tokens.space.xl} ${tokens.space.xxl} ${tokens.space.lg};
+    background: ${tokens.gradient.raised};
+    border-bottom: 1px solid ${tokens.color.border.default};
 `;
 
 const CardContent = styled.div`
-    padding: 24px;
+    padding: ${tokens.space.xxl};
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: ${tokens.space.xl};
 `;
 
 const AuthButton = styled.button`
-    padding: 12px 32px;
-    font-size: 14px;
-    font-weight: 500;
-    background: #646cff;
-    border: 1px solid #646cff;
+    padding: ${tokens.space.md} ${tokens.space.xxxl};
+    font-size: ${tokens.font.size.base};
+    font-weight: ${tokens.font.weight.medium};
+    background: ${tokens.color.accent.primary};
+    border: 1px solid ${tokens.color.accent.primary};
     color: white;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        background: #5a5acf;
-        border-color: #5a5acf;
+        background: ${tokens.color.accent.primaryHover};
+        border-color: ${tokens.color.accent.primaryHover};
         transform: translateY(-1px);
     }
 
@@ -102,8 +100,8 @@ const AuthButton = styled.button`
     }
 
     &:disabled {
-        background: #333;
-        border-color: #444;
+        background: ${tokens.color.bg.raisedAlt};
+        border-color: ${tokens.color.border.default};
         cursor: not-allowed;
         transform: none;
         opacity: 0.5;
@@ -111,18 +109,18 @@ const AuthButton = styled.button`
 `;
 
 const CancelButton = styled(AuthButton)`
-    background: #2a2a2a;
-    border-color: #444;
+    background: ${tokens.color.bg.raised};
+    border-color: ${tokens.color.border.default};
 
     &:hover {
-        background: #333;
-        border-color: #555;
+        background: ${tokens.color.bg.raisedAlt};
+        border-color: ${tokens.color.border.strong};
     }
 `;
 
 const StatusText = styled.p`
-    font-size: 14px;
-    color: #888;
+    font-size: ${tokens.font.size.base};
+    color: ${tokens.color.text.faint};
     margin: 0;
     line-height: 1.6;
 `;
@@ -130,49 +128,49 @@ const StatusText = styled.p`
 const CodeSection = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: ${tokens.space.lg};
 `;
 
 const SectionLabel = styled.div`
-    font-size: 0.85rem;
-    color: #888;
+    font-size: ${tokens.font.size.sm};
+    color: ${tokens.color.text.faint};
     text-transform: uppercase;
     letter-spacing: 1px;
-    font-weight: 500;
+    font-weight: ${tokens.font.weight.medium};
     text-align: left;
 `;
 
 const CodeBox = styled.div`
-    background: #0f0f0f;
-    border: 2px solid #646cff;
-    border-radius: 8px;
-    padding: 20px;
+    background: ${tokens.color.bg.app};
+    border: 2px solid ${tokens.color.accent.primary};
+    border-radius: ${tokens.radius.lg};
+    padding: ${tokens.space.xl};
 `;
 
 const Code = styled.div`
     font-size: 36px;
     font-weight: bold;
-    color: #646cff;
+    color: ${tokens.color.accent.primary};
     letter-spacing: 8px;
     font-family: 'Courier New', monospace;
     user-select: all;
 `;
 
 const Link = styled.a`
-    color: #646cff;
+    color: ${tokens.color.accent.primary};
     text-decoration: none;
-    font-size: 14px;
+    font-size: ${tokens.font.size.base};
     word-break: break-all;
-    padding: 12px 16px;
-    background: #0f0f0f;
-    border-radius: 8px;
-    border: 1px solid #333;
-    transition: all 0.2s ease;
+    padding: ${tokens.space.md} ${tokens.space.lg};
+    background: ${tokens.color.bg.app};
+    border-radius: ${tokens.radius.lg};
+    border: 1px solid ${tokens.color.border.subtle};
+    transition: ${tokens.transition.base};
     display: block;
 
     &:hover {
-        background: #1a1a1a;
-        border-color: #646cff;
+        background: ${tokens.color.bg.base};
+        border-color: ${tokens.color.accent.primary};
         text-decoration: underline;
     }
 `;
@@ -181,22 +179,22 @@ const QRSection = styled.div`
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 16px;
+    gap: ${tokens.space.lg};
 `;
 
 const QRContainer = styled.div`
     background: white;
-    padding: 16px;
-    border-radius: 12px;
+    padding: ${tokens.space.lg};
+    border-radius: ${tokens.radius.xl};
     display: inline-block;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 `;
 
 const QRHint = styled.div`
     font-size: 12px;
-    color: #888;
+    color: ${tokens.color.text.faint};
     text-align: center;
-    line-height: 1.4;
+    line-height: ${tokens.font.lineHeight.base};
     max-width: 320px;
 `;
 
@@ -208,12 +206,12 @@ const spin = keyframes`
 const Spinner = styled.div`
     width: 20px;
     height: 20px;
-    border: 3px solid #333;
-    border-top-color: #646cff;
-    border-radius: 50%;
+    border: 3px solid ${tokens.color.border.subtle};
+    border-top-color: ${tokens.color.accent.primary};
+    border-radius: ${tokens.radius.circle};
     animation: ${spin} 0.8s linear infinite;
     display: inline-block;
-    margin-right: 8px;
+    margin-right: ${tokens.space.sm};
     vertical-align: middle;
 `;
 
@@ -221,26 +219,26 @@ const PollingInfo = styled.div`
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 12px 16px;
-    background: rgba(30, 30, 30, 0.5);
-    border: 1px solid #333;
-    border-radius: 8px;
-    color: #888;
-    font-size: 14px;
+    padding: ${tokens.space.md} ${tokens.space.lg};
+    background: ${tokens.color.scrim.panel};
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.lg};
+    color: ${tokens.color.text.faint};
+    font-size: ${tokens.font.size.base};
 `;
 
 const ErrorBox = styled.div`
     background: rgba(220, 38, 38, 0.1);
     border: 1px solid rgba(220, 38, 38, 0.3);
-    border-radius: 8px;
-    padding: 16px;
-    color: #dc2626;
+    border-radius: ${tokens.radius.lg};
+    padding: ${tokens.space.lg};
+    color: ${tokens.color.danger.base};
     text-align: left;
 
     strong {
         display: block;
-        margin-bottom: 8px;
-        font-size: 14px;
+        margin-bottom: ${tokens.space.sm};
+        font-size: ${tokens.font.size.base};
     }
 
     div {
@@ -252,11 +250,11 @@ const ErrorBox = styled.div`
 const SuccessBox = styled.div`
     background: rgba(34, 197, 94, 0.1);
     border: 1px solid rgba(34, 197, 94, 0.3);
-    border-radius: 8px;
-    padding: 16px;
-    color: #22c55e;
+    border-radius: ${tokens.radius.lg};
+    padding: ${tokens.space.lg};
+    color: ${tokens.color.success.base};
     font-size: 16px;
-    font-weight: 500;
+    font-weight: ${tokens.font.weight.medium};
 `;
 
 const Footer = styled.footer`
@@ -267,35 +265,35 @@ const Footer = styled.footer`
     padding: 10px 0;
     display: flex;
     justify-content: center;
-    gap: 16px;
-    border-top: 1px solid #333;
+    gap: ${tokens.space.lg};
+    border-top: 1px solid ${tokens.color.border.subtle};
 `;
 
 const FooterButton = styled.button`
     box-sizing: border-box;
     height: 40px;
-    padding: 0 16px;
-    font-size: 14px;
-    color: #fff;
-    background: #1f1f1f;
+    padding: 0 ${tokens.space.lg};
+    font-size: ${tokens.font.size.base};
+    color: ${tokens.color.text.primary};
+    background: ${tokens.color.bg.surface};
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     cursor: pointer;
     white-space: nowrap;
     width: fit-content;
     flex: 0 0 auto;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #232323;
-        border: 1px solid #646cff;
+        border: 1px solid ${tokens.color.accent.primary};
     }
 `;
 
 const ViewModeSection = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: ${tokens.space.md};
     align-items: stretch;
 `;
 

@@ -1,5 +1,6 @@
 import React from "react";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import FontSelector from "./FontSelector";
 import {Spacer} from "./Separator";
 
@@ -40,14 +41,14 @@ const Input = styled.textarea`
   font-size: 1rem;
   padding: 0.5rem;
   border: 1px solid #ccc;
-  border-radius: 6px;
+  border-radius: ${tokens.radius.md};
   resize: vertical;
   min-height: 60px;
 `;
 
 const Hint = styled.div`
   font-size: 0.85rem;
-  color: #888;
+  color: ${tokens.color.text.faint};
   margin-top: 4px;
 `;
 

@@ -1,27 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import styled from 'styled-components';
+import { tokens } from '../../designSystem/tokens';
 import * as AiIcons from "react-icons/ai";
 
 const Wrapper = styled.div`
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: ${tokens.space.sm};
 `;
 
 const Title = styled.div`
-    color: #e0e0e0;
-    font-size: 14px;
-    font-weight: 500;
+    color: ${tokens.color.text.secondary};
+    font-size: ${tokens.font.size.base};
+    font-weight: ${tokens.font.weight.medium};
 `;
 
 const Container = styled.div`
     display: flex;
     flex-direction: ${({ direction }) => direction === 'vertical' ? 'column' : 'row'};
     position: relative;
-    background: #2a2a2a;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border: 1px solid ${tokens.color.border.default};
     border-radius: 9px;
-    padding: 4px;
+    padding: ${tokens.space.xs};
     overflow: hidden;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
 `;
@@ -29,7 +30,7 @@ const Container = styled.div`
 const Option = styled.div`
     position: relative;
     z-index: 1;
-    padding: 8px 12px;
+    padding: ${tokens.space.sm} ${tokens.space.md};
     cursor: pointer;
     user-select: none;
     text-align: center;
@@ -40,11 +41,11 @@ const Option = styled.div`
     align-items: center;
     justify-content: center;
     gap: 6px;
-    transition: all 0.2s ease;
-    border-radius: 6px;
+    transition: ${tokens.transition.base};
+    border-radius: ${tokens.radius.md};
 
     &:hover {
-        background: rgba(100, 108, 255, 0.1);
+        background: ${tokens.color.accent.soft};
     }
 `;
 
@@ -56,8 +57,8 @@ const Highlight = styled.div`
     height: ${({height}) => height}px;
     box-sizing: border-box;
     background: linear-gradient(135deg, rgba(100, 108, 255, 0.3), rgba(124, 58, 237, 0.3));
-    border: 1px solid #646cff;
-    border-radius: 6px;
+    border: 1px solid ${tokens.color.accent.primary};
+    border-radius: ${tokens.radius.md};
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 0;
     box-shadow:
@@ -66,10 +67,10 @@ const Highlight = styled.div`
 `;
 
 const Text = styled.div`
-    color: ${({ active }) => (active ? '#fff' : '#aaa')};
-    font-weight: ${({ active }) => (active ? '600' : '500')};
-    font-size: 14px;
-    transition: all 0.2s ease;
+    color: ${({ active }) => (active ? tokens.color.text.primary : '#aaa')};
+    font-weight: ${({ active }) => (active ? tokens.font.weight.semibold : tokens.font.weight.medium)};
+    font-size: ${tokens.font.size.base};
+    transition: ${tokens.transition.base};
     white-space: nowrap;
 `;
 

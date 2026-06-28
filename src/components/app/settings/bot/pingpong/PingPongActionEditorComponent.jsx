@@ -1,5 +1,6 @@
 import React, {Fragment, useCallback} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../../../designSystem/tokens";
 import {Row} from '../../../SettingsComponent';
 import {Accordion} from '../../../../utils/AccordionComponent';
 import Switch from '../../../../utils/Switch';
@@ -18,7 +19,7 @@ import { useTranslation } from 'react-i18next';
 export const TextInput = styled.input`
     flex: 1;
     padding: 4px 8px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     font-size: 16px;
     border: 1px solid ${({$error}) => ($error ? 'red' : '#ccc')};
 `;
@@ -45,7 +46,7 @@ export const Button = styled.button`
     margin-left: ${({$ml = 0}) => $ml}px;
     margin-top: ${({$mt = 0}) => $mt}px;
     padding: 4px 12px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     background: rgba(136, 83, 242, 0.29);
     border: rgba(136, 83, 242, 0.64) 2px solid
 `;

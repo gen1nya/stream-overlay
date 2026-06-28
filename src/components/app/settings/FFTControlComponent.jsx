@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
-import {FiVolume2, FiSettings, FiRefreshCw, FiMic, FiActivity, FiExternalLink, FiEye, FiChevronDown, FiChevronUp} from 'react-icons/fi';
+import { tokens } from "../../../designSystem/tokens";
+import {FiVolume2, FiSettings, FiRefreshCw, FiMic, FiActivity, FiExternalLink, FiEye} from 'react-icons/fi';
 import {
     getAudioDeviceList,
     setAudioDevice,
     setAudioDeviceAuto,
-    getAudioDevice,
     enableFFT,
     getFFTconfig, setFFTGain, setFFTdbFloor, setFFTTilt
 } from '../../../services/api';
@@ -14,6 +14,7 @@ import {
     CardHeader,
     CardTitle,
     CardContent,
+    CollapsibleCard,
     Section,
     SectionHeader,
     SectionTitle,
@@ -27,7 +28,6 @@ import SeekbarComponent from '../../utils/SeekbarComponent';
 import {openExternalLink} from "../../../services/api";
 import {Row} from "../SettingsComponent";
 import FFTBars from "../../player/FFTBars";
-import {Spacer} from "../../utils/Separator";
 import { Trans, useTranslation } from "react-i18next";
 
 // Специфичные стили для FFT компонента
@@ -46,7 +46,7 @@ const StatusIndicator = styled.div`
         if (props.status === 'error') return 'rgba(220, 38, 38, 0.3)';
         return 'rgba(107, 114, 128, 0.3)';
     }};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     font-size: 0.85rem;
 
     .status-icon {
@@ -71,23 +71,23 @@ const StatusIndicator = styled.div`
 
 const DeviceSelector = styled.select`
     flex: 1;
-    background: #1e1e1e;
-    color: #fff;
-    border: 1px solid #444;
-    border-radius: 8px;
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
     padding: 10px 12px;
     font-size: 0.9rem;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #252525;
-        border-color: #555;
+        border-color: ${tokens.color.border.strong};
     }
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
         box-shadow: 0 0 0 3px rgba(100, 108, 255, 0.1);
     }
@@ -98,8 +98,8 @@ const DeviceSelector = styled.select`
     }
 
     option {
-        background: #1e1e1e;
-        color: #fff;
+        background: ${tokens.color.bg.surface};
+        color: ${tokens.color.text.primary};
     }
 `;
 
@@ -128,12 +128,12 @@ const RefreshButton = styled(ActionButton)`
 `;
 
 const DemoButton = styled(ActionButton)`
-    background: rgba(30, 64, 175, 0.35);
-    border-color: #1e40af;
+    background: ${tokens.color.feature.players.softBorder};
+    border-color: ${tokens.color.feature.players.base};
 
     &:hover {
-        background: rgba(29, 78, 216, 0.62);
-        border-color: #1d4ed8;
+        background: ${tokens.color.feature.players.base};
+        border-color: ${tokens.color.feature.players.base};
     }
 `;
 
@@ -146,61 +146,12 @@ const FFTWrapper = styled.div`
     background: transparent;
 `;
 
-const CollapsibleHeader = styled.div`
-    padding: 16px 20px;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-`;
-
-const CollapsedPreview = styled.div`
-    padding: 16px 20px;
-    color: #999;
-    font-size: 0.9rem;
-    line-height: 1.5;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-    
-    &:hover {
-        background-color: rgba(255, 255, 255, 0.02);
-    }
-    
-    .highlight {
-        color: #4a9eff;
-        font-weight: 500;
-    }
-`;
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #FFF;
-    font-size: 1rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
-
 const LoadingHeader = styled(CardHeader)`
     /* Для состояния загрузки используем обычный заголовок */
 `;
 
 export default function FFTControlComponent() {
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
     const [fftConfig, setFftConfig] = useState({
         dbFloor: -60,
         masterGain: 1,
@@ -215,7 +166,6 @@ export default function FFTControlComponent() {
     const [error, setError] = useState('');
     const [isRefreshing, setIsRefreshing] = useState(false);
 
-    const toggleOpen = () => setIsOpen((prev) => !prev);
 
     const openDemoFFTColumns = () => {
         openExternalLink('http://localhost:5173/audio-fft-linear-demo');
@@ -373,22 +323,15 @@ export default function FFTControlComponent() {
     }
 
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <Row gap="12px">
-                    <CardTitle>
-                        <FiActivity />
-                        {t('settings.fft.title')}
-                    </CardTitle>
-
+        <CollapsibleCard
+            icon={<FiActivity />}
+            title={t('settings.fft.title')}
+            headerControl={
+                <>
                     <StatusIndicator status={getStatus()}>
                         <FiActivity className="status-icon" />
                         <span className="status-text">{getStatusText()}</span>
                     </StatusIndicator>
-
-                    <Spacer/>
-
-                    {/* FFT визуализация показывается всегда в заголовке */}
                     <FFTWrapper>
                         <FFTBars
                             bars={60}
@@ -398,30 +341,20 @@ export default function FFTControlComponent() {
                             backgroundColor="transparent"
                         />
                     </FFTWrapper>
-
-                    <CollapseToggle>
-                        {isOpen ? t('settings.fft.collapse') : t('settings.fft.expand')}
-                        {isOpen ? <FiChevronUp /> : <FiSettings />}
-                    </CollapseToggle>
-                </Row>
-            </CollapsibleHeader>
-
-            {/* Свернутое описание */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    <Trans
-                        i18nKey="settings.fft.preview.description"
-                        components={{
-                            br: <br />,
-                            highlight: <span className="highlight" />
-                        }}
-                        values={{ device: deviceName }}
-                    />
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <CardContent>
+                </>
+            }
+            preview={
+                <Trans
+                    i18nKey="settings.fft.preview.description"
+                    components={{
+                        br: <br />,
+                        highlight: <span className="highlight" />
+                    }}
+                    values={{ device: deviceName }}
+                />
+            }
+        >
+            <CardContent>
                     {/* Основные настройки */}
                     <Section>
                         <SectionHeader>
@@ -572,15 +505,13 @@ export default function FFTControlComponent() {
                             {t('settings.fft.demo.hint')}
                         </InfoBadge>
                     </Section>
+                    <style jsx>{`
+                        @keyframes spin {
+                            from { transform: rotate(0deg); }
+                            to { transform: rotate(360deg); }
+                        }
+                    `}</style>
                 </CardContent>
-            )}
-
-            <style jsx>{`
-                @keyframes spin {
-                    from { transform: rotate(0deg); }
-                    to { transform: rotate(360deg); }
-                }
-            `}</style>
-        </SettingsCard>
+        </CollapsibleCard>
     );
 }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ReactDOM from "react-dom";
 import styled from "styled-components";
+import { tokens } from "../../../../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
@@ -32,9 +33,9 @@ const PopupOverlay = styled.div`
 `;
 
 const PopupContainer = styled.div`
-    background: linear-gradient(135deg, #1e1e1e 0%, #2a2a2a 100%);
-    border: 1px solid #444;
-    border-radius: 16px;
+    background: ${tokens.gradient.surface};
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.xxl};
     max-width: 900px;
     width: 100%;
     max-height: 85vh;
@@ -49,20 +50,20 @@ const PopupHeader = styled.div`
     align-items: center;
     justify-content: space-between;
     padding: 20px 24px;
-    border-bottom: 1px solid #333;
-    background: linear-gradient(135deg, #2a2a2a 0%, #333 100%);
+    border-bottom: 1px solid ${tokens.color.border.subtle};
+    background: ${tokens.gradient.raised};
 
     h3 {
         margin: 0;
         font-size: 1.2rem;
         font-weight: 600;
-        color: #fff;
+        color: ${tokens.color.text.primary};
         display: flex;
         align-items: center;
         gap: 10px;
 
         svg {
-            color: #646cff;
+            color: ${tokens.color.accent.primary};
         }
     }
 `;
@@ -78,12 +79,12 @@ const HeaderButton = styled.button`
     gap: 8px;
     padding: 8px 16px;
     border: 1px solid ${props => props.$primary ? '#646cff' : '#444'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${props => props.$primary ? '#646cff' : 'rgba(107, 114, 128, 0.1)'};
     color: ${props => props.$primary ? '#fff' : '#888'};
     cursor: pointer;
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => props.$primary ? '#5a5acf' : 'rgba(107, 114, 128, 0.2)'};
@@ -119,7 +120,7 @@ const FlowConnector = styled.div`
         content: '';
         width: 2px;
         height: 16px;
-        background: linear-gradient(180deg, #646cff 0%, #00ffdd 100%);
+        background: linear-gradient(180deg, ${tokens.color.accent.primary} 0%, #00ffdd 100%);
     }
 
     svg {
@@ -132,19 +133,19 @@ const FlowConnector = styled.div`
         content: '';
         width: 2px;
         height: 16px;
-        background: linear-gradient(180deg, #00ffdd 0%, #646cff 100%);
+        background: linear-gradient(180deg, #00ffdd 0%, ${tokens.color.accent.primary} 100%);
     }
 `;
 
 const FlowStep = styled.div`
     background: rgba(40, 40, 40, 0.5);
-    border: 1px solid #333;
-    border-radius: 12px;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.xl};
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        border-color: #444;
+        border-color: ${tokens.color.border.default};
     }
 `;
 
@@ -154,7 +155,7 @@ const FlowStepHeader = styled.div`
     gap: 12px;
     padding: 14px 20px;
     background: ${props => props.$color || 'rgba(100, 108, 255, 0.1)'};
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
 
     svg {
         width: 20px;
@@ -166,13 +167,13 @@ const FlowStepHeader = styled.div`
         margin: 0;
         font-size: 1rem;
         font-weight: 600;
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
     }
 
     .step-badge {
         margin-left: auto;
         padding: 4px 10px;
-        border-radius: 6px;
+        border-radius: ${tokens.radius.md};
         font-size: 0.8rem;
         font-weight: 500;
         background: rgba(0, 0, 0, 0.3);
@@ -210,21 +211,21 @@ const Label = styled.label`
 const Input = styled.input`
     width: 100%;
     padding: 10px 14px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
     &::placeholder {
-        color: #666;
+        color: ${tokens.color.text.disabled};
     }
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 `;
@@ -233,22 +234,22 @@ const Select = styled.select`
     width: 100%;
     height: 40px;
     padding: 0 12px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 14px;
     cursor: pointer;
     box-sizing: border-box;
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
     }
 
     option {
-        background: #1e1e1e;
-        color: #fff;
+        background: ${tokens.color.bg.surface};
+        color: ${tokens.color.text.primary};
     }
 `;
 
@@ -264,17 +265,17 @@ const EventTypeButton = styled.button`
     gap: 8px;
     padding: 10px 14px;
     border: 1px solid ${props => props.$selected ? props.$borderColor || '#646cff' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${props => props.$selected ? props.$bgColor || 'rgba(100, 108, 255, 0.15)' : 'rgba(30, 30, 30, 0.5)'};
     color: ${props => props.$selected ? '#fff' : '#888'};
     cursor: pointer;
     font-size: 0.9rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         border-color: ${props => props.$borderColor || '#646cff'};
         background: ${props => props.$bgColor || 'rgba(100, 108, 255, 0.1)'};
-        color: #ccc;
+        color: ${tokens.color.text.tertiary};
     }
 
     svg {
@@ -293,7 +294,7 @@ const ActionsList = styled.div`
 
 const ActionCard = styled.div`
     background: rgba(30, 30, 30, 0.5);
-    border: 1px solid #333;
+    border: 1px solid ${tokens.color.border.subtle};
     border-radius: 10px;
     overflow: hidden;
 `;
@@ -308,7 +309,7 @@ const ActionHeader = styled.div`
     .action-icon {
         width: 28px;
         height: 28px;
-        border-radius: 6px;
+        border-radius: ${tokens.radius.md};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -325,7 +326,7 @@ const ActionHeader = styled.div`
         flex: 1;
         font-size: 0.9rem;
         font-weight: 500;
-        color: #e0e0e0;
+        color: ${tokens.color.text.secondary};
     }
 `;
 
@@ -334,25 +335,25 @@ const ActionContent = styled.div`
     display: flex;
     flex-direction: column;
     gap: 10px;
-    border-top: 1px solid #333;
+    border-top: 1px solid ${tokens.color.border.subtle};
 `;
 
 const DeleteButton = styled.button`
     padding: 6px;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
-    color: #666;
+    color: ${tokens.color.text.disabled};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: rgba(220, 38, 38, 0.1);
         border-color: rgba(220, 38, 38, 0.3);
-        color: #dc2626;
+        color: ${tokens.color.danger.base};
     }
 
     svg {
@@ -374,12 +375,12 @@ const AddActionButton = styled.button`
     gap: 6px;
     padding: 8px 12px;
     border: 1px dashed #444;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: transparent;
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     font-size: 0.8rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         border-color: ${props => props.$hoverColor || '#646cff'};
@@ -401,7 +402,7 @@ const DelayBadge = styled.div`
     padding: 6px 10px;
     background: rgba(251, 191, 36, 0.1);
     border: 1px solid rgba(251, 191, 36, 0.3);
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.8rem;
     color: #fbbf24;
 
@@ -415,9 +416,9 @@ const VariablesHint = styled.div`
     padding: 10px 12px;
     background: rgba(0, 255, 221, 0.05);
     border: 1px solid rgba(0, 255, 221, 0.2);
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     font-size: 0.8rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     display: flex;
     flex-direction: column;
     gap: 4px;
@@ -441,7 +442,7 @@ const VariableItem = styled.div`
     }
 
     .desc {
-        color: #666;
+        color: ${tokens.color.text.disabled};
         font-size: 0.75rem;
     }
 `;
@@ -452,7 +453,7 @@ const SettingsRow = styled.div`
     gap: 10px;
     padding: 10px 14px;
     background: rgba(30, 30, 30, 0.3);
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
 
     span {
         color: #aaa;

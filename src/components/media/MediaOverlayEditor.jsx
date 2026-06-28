@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
 import styled from "styled-components";
+import { tokens } from "../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import {
     FiPlus, FiTrash2, FiLayers, FiImage, FiPlay,
@@ -24,8 +25,8 @@ import Switch from "../utils/Switch";
 const Container = styled.div`
     display: flex;
     height: 100vh;
-    background: #1a1a1a;
-    color: #e0e0e0;
+    background: ${tokens.color.bg.base};
+    color: ${tokens.color.text.secondary};
     font-family: 'Segoe UI', system-ui, sans-serif;
 `;
 
@@ -33,16 +34,16 @@ const Sidebar = styled.div`
     width: ${props => props.$collapsed ? '0' : '280px'};
     min-width: ${props => props.$collapsed ? '0' : '280px'};
     background: #242424;
-    border-right: 1px solid #333;
+    border-right: 1px solid ${tokens.color.border.subtle};
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 `;
 
 const SidebarHeader = styled.div`
     padding: 14px 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     background: linear-gradient(135deg, rgba(100, 108, 255, 0.1) 0%, transparent 100%);
 
     h2 {
@@ -53,7 +54,7 @@ const SidebarHeader = styled.div`
         align-items: center;
         gap: 8px;
 
-        svg { color: #646cff; width: 18px; height: 18px; }
+        svg { color: ${tokens.color.accent.primary}; width: 18px; height: 18px; }
     }
 `;
 
@@ -70,13 +71,13 @@ const PreviewArea = styled.div`
     flex: 1;
     display: flex;
     flex-direction: column;
-    background: #1a1a1a;
+    background: ${tokens.color.bg.base};
     min-width: 400px;
 `;
 
 const PreviewHeader = styled.div`
     padding: 10px 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     display: flex;
     align-items: center;
     gap: 12px;
@@ -105,7 +106,7 @@ const CanvasViewport = styled.div`
     top: 20px;
     left: 20px;
     background: rgba(0, 0, 0, 0.3);
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
 `;
 
 const ResolutionGuide = styled.div`
@@ -153,7 +154,7 @@ const CoordinateOrigin = styled.div`
         left: 0;
         width: 12px;
         height: 2px;
-        background: #22c55e;
+        background: ${tokens.color.success.base};
     }
 `;
 
@@ -162,7 +163,7 @@ const OriginLabel = styled.div`
     top: -16px;
     left: 0;
     font-size: 9px;
-    color: #888;
+    color: ${tokens.color.text.faint};
     white-space: nowrap;
 `;
 
@@ -170,16 +171,16 @@ const EditorPanel = styled.div`
     width: ${props => props.$visible ? '320px' : '0'};
     min-width: ${props => props.$visible ? '320px' : '0'};
     background: #242424;
-    border-left: 1px solid #333;
+    border-left: 1px solid ${tokens.color.border.subtle};
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 `;
 
 const EditorHeader = styled.div`
     padding: 14px 16px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     display: flex;
     align-items: center;
     gap: 10px;
@@ -201,11 +202,11 @@ const EditorContent = styled.div`
 const GroupCard = styled.div`
     background: ${props => props.$dropTarget ? 'rgba(236, 72, 153, 0.15)' : props.$selected ? 'rgba(100, 108, 255, 0.15)' : 'rgba(40, 40, 40, 0.5)'};
     border: 1px solid ${props => props.$dropTarget ? '#ec4899' : props.$selected ? '#646cff' : '#333'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     margin-bottom: 8px;
     padding: 10px 12px;
     cursor: pointer;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
     display: flex;
     align-items: center;
     gap: 10px;
@@ -215,7 +216,7 @@ const GroupCard = styled.div`
 
     .group-icon {
         width: 28px; height: 28px;
-        border-radius: 6px;
+        border-radius: ${tokens.radius.md};
         display: flex; align-items: center; justify-content: center;
         background: ${props => props.$dropTarget ? 'rgba(236, 72, 153, 0.2)' : 'rgba(100, 108, 255, 0.2)'};
         color: ${props => props.$dropTarget ? '#ec4899' : '#646cff'};
@@ -225,7 +226,7 @@ const GroupCard = styled.div`
     .group-info {
         flex: 1; min-width: 0;
         h4 { margin: 0; font-size: 0.9rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .meta { font-size: 0.7rem; color: #888; margin-top: 2px; }
+        .meta { font-size: 0.7rem; color: ${tokens.color.text.faint}; margin-top: 2px; }
     }
 
     .drop-hint {
@@ -240,27 +241,27 @@ const GroupCard = styled.div`
 const IconButton = styled.button`
     padding: 6px;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
-    color: #888;
+    color: ${tokens.color.text.faint};
     cursor: pointer;
     display: flex; align-items: center; justify-content: center;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
 
-    &:hover { background: rgba(100, 108, 255, 0.1); border-color: rgba(100, 108, 255, 0.3); color: #646cff; }
-    &.delete:hover { background: rgba(220, 38, 38, 0.1); border-color: rgba(220, 38, 38, 0.3); color: #dc2626; }
+    &:hover { background: rgba(100, 108, 255, 0.1); border-color: rgba(100, 108, 255, 0.3); color: ${tokens.color.accent.primary}; }
+    &.delete:hover { background: rgba(220, 38, 38, 0.1); border-color: rgba(220, 38, 38, 0.3); color: ${tokens.color.danger.base}; }
     svg { width: 14px; height: 14px; }
 `;
 
 const AddButton = styled.button`
     display: flex; align-items: center; justify-content: center; gap: 6px;
     width: 100%; padding: 10px;
-    border: 2px dashed #444; border-radius: 8px;
-    background: transparent; color: #888;
+    border: 2px dashed #444; border-radius: ${tokens.radius.lg};
+    background: transparent; color: ${tokens.color.text.faint};
     cursor: pointer; font-size: 0.85rem;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
 
-    &:hover { border-color: #646cff; color: #646cff; background: rgba(100, 108, 255, 0.05); }
+    &:hover { border-color: ${tokens.color.accent.primary}; color: ${tokens.color.accent.primary}; background: rgba(100, 108, 255, 0.05); }
     svg { width: 16px; height: 16px; }
 `;
 
@@ -268,15 +269,15 @@ const Button = styled.button`
     display: flex; align-items: center; gap: 6px;
     padding: 7px 12px;
     border: 1px solid ${props => props.$primary ? '#646cff' : '#444'};
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: ${props => props.$primary ? '#646cff' : 'rgba(40, 40, 40, 0.5)'};
     color: ${props => props.$primary ? '#fff' : '#aaa'};
     cursor: pointer; font-size: 0.8rem;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
     opacity: ${props => props.disabled ? 0.5 : 1};
     pointer-events: ${props => props.disabled ? 'none' : 'auto'};
 
-    &:hover { background: ${props => props.$primary ? '#5a5acf' : 'rgba(60, 60, 60, 0.5)'}; color: #fff; }
+    &:hover { background: ${props => props.$primary ? '#5a5acf' : 'rgba(60, 60, 60, 0.5)'}; color: ${tokens.color.text.primary}; }
     svg { width: 14px; height: 14px; }
 `;
 
@@ -285,7 +286,7 @@ const PreviewGroup = styled.div`
     position: absolute;
     border: 2px dashed ${props => props.$selected ? '#646cff' : 'rgba(100, 108, 255, 0.3)'};
     background: ${props => props.$dragging ? 'rgba(100, 108, 255, 0.25)' : props.$selected ? 'rgba(100, 108, 255, 0.1)' : 'rgba(100, 108, 255, 0.05)'};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     display: flex; align-items: center; justify-content: center;
     color: ${props => props.$selected ? '#fff' : '#888'};
     font-size: 0.8rem; font-weight: 500;
@@ -293,7 +294,7 @@ const PreviewGroup = styled.div`
     transition: ${props => props.$dragging ? 'none' : 'all 0.15s ease'};
     user-select: none;
 
-    &:hover { border-color: #646cff; background: rgba(100, 108, 255, 0.15); }
+    &:hover { border-color: ${tokens.color.accent.primary}; background: rgba(100, 108, 255, 0.15); }
     &:active { cursor: grabbing; }
 `;
 
@@ -304,13 +305,13 @@ const Section = styled.div`
 
 const SectionTitle = styled.div`
     display: flex; align-items: center; gap: 8px;
-    font-size: 0.8rem; font-weight: 600; color: #888;
+    font-size: 0.8rem; font-weight: 600; color: ${tokens.color.text.faint};
     text-transform: uppercase; letter-spacing: 0.5px;
     margin-bottom: 12px;
     padding-bottom: 8px;
-    border-bottom: 1px solid #333;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
 
-    svg { width: 14px; height: 14px; color: #646cff; }
+    svg { width: 14px; height: 14px; color: ${tokens.color.accent.primary}; }
 `;
 
 const FormRow = styled.div`
@@ -325,36 +326,36 @@ const FormGroup = styled.div`
 
 const Label = styled.label`
     display: block;
-    font-size: 0.75rem; color: #888;
+    font-size: 0.75rem; color: ${tokens.color.text.faint};
     margin-bottom: 6px;
 `;
 
 const Input = styled.input`
     width: 100%; padding: 8px 10px;
-    border: 1px solid #444; border-radius: 6px;
-    background: #1e1e1e; color: #fff;
+    border: 1px solid ${tokens.color.border.default}; border-radius: ${tokens.radius.md};
+    background: ${tokens.color.bg.surface}; color: ${tokens.color.text.primary};
     font-size: 0.85rem;
     box-sizing: border-box;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
 
-    &:focus { outline: none; border-color: #646cff; background: #252525; }
+    &:focus { outline: none; border-color: ${tokens.color.accent.primary}; background: #252525; }
 `;
 
 const Select = styled.select`
     width: 100%; height: 34px; padding: 0 10px;
-    border: 1px solid #444; border-radius: 6px;
-    background: #1e1e1e; color: #fff;
+    border: 1px solid ${tokens.color.border.default}; border-radius: ${tokens.radius.md};
+    background: ${tokens.color.bg.surface}; color: ${tokens.color.text.primary};
     font-size: 0.85rem; cursor: pointer;
     box-sizing: border-box;
 
-    &:focus { outline: none; border-color: #646cff; }
-    option { background: #1e1e1e; }
+    &:focus { outline: none; border-color: ${tokens.color.accent.primary}; }
+    option { background: ${tokens.color.bg.surface}; }
 `;
 
 const EmptyState = styled.div`
-    text-align: center; padding: 40px 20px; color: #666;
+    text-align: center; padding: 40px 20px; color: ${tokens.color.text.disabled};
     svg { width: 48px; height: 48px; margin-bottom: 16px; opacity: 0.5; }
-    h4 { margin: 0 0 8px 0; color: #888; font-weight: 500; }
+    h4 { margin: 0 0 8px 0; color: ${tokens.color.text.faint}; font-weight: 500; }
     p { margin: 0; font-size: 0.85rem; }
 `;
 
@@ -366,15 +367,15 @@ const MediaItemChip = styled.div`
     padding: 3px 8px;
     background: ${props => props.$dragging ? 'rgba(236, 72, 153, 0.3)' : 'rgba(0, 0, 0, 0.6)'};
     border: 1px solid ${props => props.$dragging ? '#ec4899' : 'rgba(255, 255, 255, 0.2)'};
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     font-size: 0.65rem;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     cursor: grab;
     max-width: 90%;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
     user-select: none;
     -webkit-user-select: none;
 
@@ -404,7 +405,7 @@ const GroupMediaList = styled.div`
 const OrphanSection = styled.div`
     margin-top: 16px;
     padding-top: 16px;
-    border-top: 1px solid #444;
+    border-top: 1px solid ${tokens.color.border.default};
 `;
 
 const OrphanHeader = styled.div`
@@ -431,9 +432,9 @@ const OrphanMediaItem = styled.div`
     padding: 8px 10px;
     background: rgba(245, 158, 11, 0.1);
     border: 1px solid rgba(245, 158, 11, 0.3);
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     cursor: grab;
-    transition: all 0.15s ease;
+    transition: ${tokens.transition.fast};
     user-select: none;
     -webkit-user-select: none;
 
@@ -449,7 +450,7 @@ const OrphanMediaItem = styled.div`
     .media-icon {
         width: 24px;
         height: 24px;
-        border-radius: 4px;
+        border-radius: ${tokens.radius.sm};
         display: flex;
         align-items: center;
         justify-content: center;
@@ -463,8 +464,8 @@ const OrphanMediaItem = styled.div`
         flex: 1;
         min-width: 0;
         pointer-events: none;
-        h5 { margin: 0; font-size: 0.8rem; font-weight: 500; color: #e0e0e0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .hint { font-size: 0.7rem; color: #888; }
+        h5 { margin: 0; font-size: 0.8rem; font-weight: 500; color: ${tokens.color.text.secondary}; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .hint { font-size: 0.7rem; color: ${tokens.color.text.faint}; }
     }
 `;
 
@@ -473,7 +474,7 @@ const DropZone = styled.div`
     position: absolute;
     inset: 0;
     border: 2px dashed #ec4899;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: rgba(236, 72, 153, 0.15);
     display: flex;
     align-items: center;
@@ -497,8 +498,8 @@ const DragGhost = styled.div`
     padding: 8px 12px;
     background: rgba(236, 72, 153, 0.9);
     border: 1px solid #ec4899;
-    border-radius: 6px;
-    color: #fff;
+    border-radius: ${tokens.radius.md};
+    color: ${tokens.color.text.primary};
     font-size: 0.8rem;
     font-weight: 500;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);

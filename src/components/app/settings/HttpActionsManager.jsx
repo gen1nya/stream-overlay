@@ -1,22 +1,35 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
+import Button from '../../../designSystem/components/Button';
 import { FiPlus, FiEdit2, FiTrash2, FiSearch, FiPlay, FiGlobe } from 'react-icons/fi';
 import { useTranslation } from 'react-i18next';
 import { getAllHttpActions, deleteHttpAction, testHttpAction } from '../../../services/api';
 import HttpActionEditorPopup from './bot/triggers/HttpActionEditorPopup';
 import Popup from '../../utils/PopupComponent';
+import {
+    SettingsCard,
+    CardHeader,
+    CardTitle,
+    CardContent,
+} from './SharedSettingsStyles';
 
 const Container = styled.div`
     width: 100%;
 `;
 
-const Header = styled.div`
+const HeaderRight = styled.div`
+    margin-left: auto;
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    margin-bottom: 20px;
-    gap: 16px;
+    justify-content: flex-end;
+    gap: ${tokens.space.md};
     flex-wrap: wrap;
+
+    @media (max-width: 720px) {
+        width: 100%;
+        margin-left: 0;
+    }
 `;
 
 const SearchWrapper = styled.div`
@@ -29,19 +42,20 @@ const SearchWrapper = styled.div`
 const SearchInput = styled.input`
     width: 100%;
     padding: 10px 12px 10px 40px;
-    border: 1px solid #444;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
-    font-size: 14px;
-    transition: all 0.2s ease;
+    border: 1px solid ${tokens.color.border.default};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
+    font-size: ${tokens.font.size.base};
+    transition: ${tokens.transition.base};
     box-sizing: border-box;
 
-    &::placeholder { color: #666; }
+    &::placeholder { color: ${tokens.color.text.disabled}; }
+
     &:focus {
         outline: none;
-        border-color: #22c55e;
-        background: #252525;
+        border-color: ${tokens.color.feature.integrations.base};
+        background: ${tokens.color.bg.raised};
     }
 `;
 
@@ -50,63 +64,78 @@ const SearchIcon = styled(FiSearch)`
     left: 12px;
     top: 50%;
     transform: translateY(-50%);
-    color: #666;
+    color: ${tokens.color.text.disabled};
     width: 18px;
     height: 18px;
 `;
 
-const AddButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 18px;
-    border: 1px solid #22c55e;
-    border-radius: 8px;
-    background: rgba(34, 197, 94, 0.15);
-    color: #22c55e;
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    white-space: nowrap;
-
-    &:hover { background: rgba(34, 197, 94, 0.25); }
-    svg { width: 18px; height: 18px; }
-`;
-
-const ActionsTable = styled.div`
-    display: flex;
-    flex-direction: column;
-    border: 1px solid #2a2a2a;
-    border-radius: 10px;
-    overflow: hidden;
-    background: #161616;
-`;
-
-const TableHeaderRow = styled.div`
-    display: grid;
-    grid-template-columns: minmax(160px, 1.2fr) 90px minmax(200px, 2fr) auto;
-    gap: 14px;
+const TableHeadCell = styled.th`
     padding: 10px 14px;
-    background: rgba(255, 255, 255, 0.02);
-    border-bottom: 1px solid #2a2a2a;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
     font-size: 0.72rem;
+    font-weight: ${tokens.font.weight.semibold};
+    text-align: left;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #666;
+    color: ${tokens.color.text.disabled};
+    white-space: nowrap;
+
+    &:last-child {
+        text-align: right;
+    }
 `;
 
-const TableRow = styled.div`
-    display: grid;
-    grid-template-columns: minmax(160px, 1.2fr) 90px minmax(200px, 2fr) auto;
-    gap: 14px;
+const TableCell = styled.td`
     padding: 10px 14px;
-    align-items: center;
-    border-bottom: 1px solid #2a2a2a;
-    transition: background 0.15s;
+    border-bottom: 1px solid ${tokens.color.border.subtle};
+    vertical-align: middle;
+    min-width: 0;
 
-    &:last-child { border-bottom: none; }
-    &:hover { background: rgba(34, 197, 94, 0.05); }
+    &:last-child {
+        text-align: right;
+    }
+`;
+
+const ActionsTable = styled.table`
+    width: 100%;
+    table-layout: fixed;
+    border-collapse: separate;
+    border-spacing: 0;
+    border: 1px solid ${tokens.color.border.subtle};
+    border-radius: 10px;
+    overflow: hidden;
+    background: ${tokens.color.bg.base};
+
+    ${TableHeadCell}:nth-child(1),
+    ${TableCell}:nth-child(1) {
+        width: 30%;
+    }
+
+    ${TableHeadCell}:nth-child(2),
+    ${TableCell}:nth-child(2) {
+        width: 16%;
+    }
+
+    ${TableHeadCell}:nth-child(4),
+    ${TableCell}:nth-child(4) {
+        width: 108px;
+    }
+`;
+
+const TableHeaderRow = styled.tr`
+    background: ${tokens.color.scrim.panel};
+`;
+
+const TableRow = styled.tr`
+    transition: ${tokens.transition.fast};
+
+    &:last-child ${TableCell} {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: ${tokens.color.scrim.panel};
+    }
 `;
 
 const RowName = styled.div`
@@ -115,27 +144,28 @@ const RowName = styled.div`
     gap: 8px;
     font-weight: 600;
     font-size: 0.9rem;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    svg { color: #22c55e; flex-shrink: 0; }
+
+    svg { color: ${tokens.color.feature.integrations.base}; flex-shrink: 0; }
 `;
 
 const MethodBadge = styled.div`
-    justify-self: start;
     padding: 4px 10px;
-    border-radius: 999px;
+    border-radius: ${tokens.radius.pill};
     font-size: 0.7rem;
     font-weight: 600;
     background: ${p => methodColor(p.$method).bg};
     color: ${p => methodColor(p.$method).fg};
     white-space: nowrap;
+    display: inline-flex;
 `;
 
 const RowUrl = styled.div`
     font-size: 0.78rem;
-    color: #888;
+    color: ${tokens.color.text.faint};
     font-family: 'JetBrains Mono', 'Fira Code', monospace;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -145,7 +175,7 @@ const RowUrl = styled.div`
 const RowActions = styled.div`
     display: flex;
     gap: 4px;
-    justify-self: end;
+    justify-content: flex-end;
 `;
 
 const ActionIconButton = styled.button`
@@ -156,27 +186,29 @@ const ActionIconButton = styled.button`
     height: 30px;
     padding: 0;
     border: 1px solid transparent;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     background: transparent;
-    color: ${p => p.$color || '#888'};
+    color: ${p => p.$color || tokens.color.text.faint};
     cursor: pointer;
-    transition: all 0.15s;
+    transition: ${tokens.transition.fast};
 
     svg { width: 14px; height: 14px; }
 
     &:hover:not(:disabled) {
-        border-color: ${p => p.$color || '#555'};
-        background: ${p => p.$color ? `${p.$color}15` : 'rgba(255,255,255,0.04)'};
+        border-color: ${p => p.$borderColor || tokens.color.border.strong};
+        background: ${p => p.$hoverBackground || tokens.color.scrim.panel};
     }
+
     &:disabled { opacity: 0.35; cursor: not-allowed; }
 `;
 
 const EmptyState = styled.div`
     text-align: center;
     padding: 60px 20px;
-    color: #666;
-    svg { width: 48px; height: 48px; color: #333; margin-bottom: 12px; }
-    h3 { margin: 0 0 6px; color: #888; font-weight: 500; }
+    color: ${tokens.color.text.disabled};
+
+    svg { width: 48px; height: 48px; color: ${tokens.color.border.subtle}; margin-bottom: 12px; }
+    h3 { margin: 0 0 6px; color: ${tokens.color.text.faint}; font-weight: 500; }
     p { margin: 0; font-size: 0.85rem; }
 `;
 
@@ -191,18 +223,18 @@ const ConfirmPopupContent = styled.div`
 const ConfirmPopupTitle = styled.h2`
     font-size: 1.2rem;
     font-weight: 600;
-    color: #d6d6d6;
+    color: ${tokens.color.text.secondary};
     margin: 0;
 `;
 
 const ConfirmPopupText = styled.p`
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-size: 0.9rem;
     margin: 0;
     line-height: 1.5;
     .warning {
         display: block;
-        color: #888;
+        color: ${tokens.color.text.faint};
         font-size: 0.8rem;
         margin-top: 8px;
     }
@@ -214,21 +246,10 @@ const ConfirmPopupButtons = styled.div`
     justify-content: flex-end;
 `;
 
-const ConfirmPopupButton = styled.button`
-    padding: 9px 18px;
-    border: 1px solid ${p => p.$danger ? '#dc2626' : '#555'};
-    border-radius: 8px;
-    background: ${p => p.$danger ? 'rgba(220, 38, 38, 0.12)' : 'rgba(30, 30, 30, 0.8)'};
-    color: ${p => p.$danger ? '#dc2626' : '#d6d6d6'};
-    cursor: pointer;
-    font-size: 0.9rem;
-    font-weight: 500;
-    transition: all 0.2s ease;
-    &:hover {
-        background: ${p => p.$danger ? 'rgba(220, 38, 38, 0.22)' : 'rgba(40, 40, 40, 0.9)'};
-        border-color: ${p => p.$danger ? '#dc2626' : '#777'};
-    }
-`;
+const ConfirmPopupButton = styled(Button).attrs(p => ({
+    $variant: p.$danger ? 'danger' : 'neutral',
+    $size: 'md',
+}))``;
 
 function methodColor(method) {
     switch (method) {
@@ -327,79 +348,106 @@ export default function HttpActionsManager() {
 
     return (
         <Container>
-            <Header>
-                <SearchWrapper>
-                    <SearchIcon />
-                    <SearchInput
-                        type="text"
-                        placeholder={t('settings.httpActions.searchPlaceholder')}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </SearchWrapper>
-                <AddButton onClick={handleAdd}>
-                    <FiPlus />
-                    {t('settings.httpActions.addAction')}
-                </AddButton>
-            </Header>
-
-            {filteredActions.length === 0 ? (
-                <EmptyState>
-                    <FiGlobe />
-                    <h3>
-                        {actions.length === 0
-                            ? t('settings.httpActions.empty.title')
-                            : t('settings.httpActions.empty.noResults')}
-                    </h3>
-                    <p>
-                        {actions.length === 0
-                            ? t('settings.httpActions.empty.description')
-                            : t('settings.httpActions.empty.tryDifferent')}
-                    </p>
-                </EmptyState>
-            ) : (
-                <ActionsTable>
-                    <TableHeaderRow>
-                        <div>{t('settings.httpActions.editor.nameLabel')}</div>
-                        <div>{t('settings.httpActions.editor.methodLabel')}</div>
-                        <div>{t('settings.httpActions.editor.urlLabel')}</div>
-                        <div />
-                    </TableHeaderRow>
-                    {filteredActions.map(action => (
-                        <TableRow key={action.id}>
-                            <RowName title={action.name}>
-                                <FiGlobe size={14} />
-                                {action.name}
-                            </RowName>
-                            <MethodBadge $method={action.method}>{action.method}</MethodBadge>
-                            <RowUrl title={action.url}>{action.url}</RowUrl>
-                            <RowActions>
-                                <ActionIconButton
-                                    $color="#3b82f6"
-                                    onClick={() => handleTest(action)}
-                                    title={t('settings.httpActions.actions.test')}
-                                >
-                                    <FiPlay />
-                                </ActionIconButton>
-                                <ActionIconButton
-                                    $color="#22c55e"
-                                    onClick={() => handleEdit(action)}
-                                    title={t('settings.httpActions.actions.edit')}
-                                >
-                                    <FiEdit2 />
-                                </ActionIconButton>
-                                <ActionIconButton
-                                    $color="#dc2626"
-                                    onClick={() => setDeleteTarget(action)}
-                                    title={t('settings.httpActions.actions.delete')}
-                                >
-                                    <FiTrash2 />
-                                </ActionIconButton>
-                            </RowActions>
-                        </TableRow>
-                    ))}
-                </ActionsTable>
-            )}
+            <SettingsCard>
+                <CardHeader>
+                    <CardTitle>
+                        <FiGlobe />
+                        {t('settings.httpActions.listTitle')}
+                    </CardTitle>
+                    <HeaderRight>
+                        <SearchWrapper>
+                            <SearchIcon />
+                            <SearchInput
+                                type="text"
+                                placeholder={t('settings.httpActions.searchPlaceholder')}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                            />
+                        </SearchWrapper>
+                        <Button $variant="primary" $size="sm" type="button" onClick={handleAdd}>
+                            <FiPlus />
+                            {t('settings.httpActions.addAction')}
+                        </Button>
+                    </HeaderRight>
+                </CardHeader>
+                <CardContent>
+                    {filteredActions.length === 0 ? (
+                        <EmptyState>
+                            <FiGlobe />
+                            <h3>
+                                {actions.length === 0
+                                    ? t('settings.httpActions.empty.title')
+                                    : t('settings.httpActions.empty.noResults')}
+                            </h3>
+                            <p>
+                                {actions.length === 0
+                                    ? t('settings.httpActions.empty.description')
+                                    : t('settings.httpActions.empty.tryDifferent')}
+                            </p>
+                        </EmptyState>
+                    ) : (
+                        <ActionsTable>
+                            <thead>
+                                <TableHeaderRow>
+                                    <TableHeadCell>{t('settings.httpActions.editor.nameLabel')}</TableHeadCell>
+                                    <TableHeadCell>{t('settings.httpActions.editor.methodLabel')}</TableHeadCell>
+                                    <TableHeadCell>{t('settings.httpActions.editor.urlLabel')}</TableHeadCell>
+                                    <TableHeadCell />
+                                </TableHeaderRow>
+                            </thead>
+                            <tbody>
+                                {filteredActions.map(action => (
+                                    <TableRow key={action.id}>
+                                        <TableCell>
+                                            <RowName title={action.name}>
+                                                <FiGlobe size={14} />
+                                                {action.name}
+                                            </RowName>
+                                        </TableCell>
+                                        <TableCell>
+                                            <MethodBadge $method={action.method}>{action.method}</MethodBadge>
+                                        </TableCell>
+                                        <TableCell>
+                                            <RowUrl title={action.url}>{action.url}</RowUrl>
+                                        </TableCell>
+                                        <TableCell>
+                                            <RowActions>
+                                                <ActionIconButton
+                                                    $color={tokens.color.accent.primary}
+                                                    $borderColor={tokens.color.accent.softBorder}
+                                                    $hoverBackground={tokens.color.accent.soft}
+                                                    onClick={() => handleTest(action)}
+                                                    title={t('settings.httpActions.actions.test')}
+                                                >
+                                                    <FiPlay />
+                                                </ActionIconButton>
+                                                <ActionIconButton
+                                                    $color={tokens.color.accent.primary}
+                                                    $borderColor={tokens.color.accent.softBorder}
+                                                    $hoverBackground={tokens.color.accent.soft}
+                                                    onClick={() => handleEdit(action)}
+                                                    title={t('settings.httpActions.actions.edit')}
+                                                >
+                                                    <FiEdit2 />
+                                                </ActionIconButton>
+                                                <ActionIconButton
+                                                    $color={tokens.color.danger.text}
+                                                    $borderColor={tokens.color.danger.softBorder}
+                                                    $hoverBackground={tokens.color.danger.soft}
+                                                    onClick={() => setDeleteTarget(action)}
+                                                    title={t('settings.httpActions.actions.delete')}
+                                                >
+                                                    <FiTrash2 />
+                                                </ActionIconButton>
+                                            </RowActions>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </tbody>
+                        </ActionsTable>
+                    )}
+                </CardContent>
+            </SettingsCard>
 
             {editorOpen && (
                 <HttpActionEditorPopup

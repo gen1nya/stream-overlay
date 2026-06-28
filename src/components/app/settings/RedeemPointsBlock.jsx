@@ -1,5 +1,6 @@
-import React, {useState, useCallback, useMemo} from 'react';
+import React, {useCallback, useMemo} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import {TemplateEditor} from '../../utils/TemplateEditor';
 import ColorSelectorButton from './ColorSelectorButton';
@@ -8,81 +9,36 @@ import BackgroundColorEditorComponent from '../../utils/BackgroundColorEditorCom
 import PaddingEditorComponent from '../../utils/PaddingEditorComponent';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
-import {FiAward, FiType, FiImage, FiLayout, FiTrash2, FiChevronDown, FiChevronUp} from 'react-icons/fi';
+import {FiAward, FiType, FiImage, FiLayout, FiTrash2} from 'react-icons/fi';
 import { useTranslation } from "react-i18next";
 import {
     CardContent,
-    CardHeader,
-    CardTitle,
+    CollapsibleCard,
     ControlGroup,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
     ActionButton
 } from "./SharedSettingsStyles";
 import {Row} from "../SettingsComponent";
 import {Spacer} from "../../utils/Separator";
 
 // Специфичные стили для этого компонента
-const CollapsibleHeader = styled(CardHeader)`
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
-    &:hover {
-        background: linear-gradient(135deg, #333 0%, #3a3a3a 100%);
-    }
-`;
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
-
-const CollapsedPreview = styled.div`
-    padding: 16px 24px;
-    color: #999;
-    font-style: italic;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: rgba(30, 30, 30, 0.3);
-    
-    &:hover {
-        background: rgba(30, 30, 30, 0.5);
-        color: #ccc;
-    }
-`;
-
 const DeleteSection = styled.div`
     padding: 16px 24px;
-    border-top: 1px solid #333;
+    border-top: 1px solid ${tokens.color.border.subtle};
     background: rgba(220, 38, 38, 0.05);
     display: flex;
     justify-content: flex-end;
 `;
 
 const DeleteButton = styled(ActionButton)`
-    background: #dc2626;
-    border-color: #dc2626;
+    background: ${tokens.color.danger.base};
+    border-color: ${tokens.color.danger.base};
     
     &:hover:not(:disabled) {
-        background: #b91c1c;
-        border-color: #b91c1c;
+        background: ${tokens.color.danger.hover};
+        border-color: ${tokens.color.danger.hover};
     }
     
     &:disabled {
@@ -107,7 +63,6 @@ export default function RedeemPointsBlock({
                                           disableRemove = false,
                                       }) {
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
     const message = current.redeemMessage?.[index] ?? {};
     const backgroundModeItems = useMemo(
         () =>
@@ -162,36 +117,15 @@ export default function RedeemPointsBlock({
         messageFont = {family: 'Roboto'},
         backgroundMode = 'color',
         borderRadius = 0,
-        shadowColor = '#3e837c',
-        shadowOpacity = 1,
-        shadowRadius = 0,
     } = message;
 
-    const toggleOpen = () => setIsOpen((prev) => !prev);
-
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <CardTitle>
-                    <FiAward />
-                    {t('settings.channelPoints.title', { index: index + 1 })}
-                </CardTitle>
-                <CollapseToggle>
-                    {isOpen ? t('settings.channelPoints.collapse') : t('settings.channelPoints.expand')}
-                    {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                </CollapseToggle>
-            </CollapsibleHeader>
-
-            {/* Свернутый вариант */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    {template}
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <>
-                    <CardContent>
+        <CollapsibleCard
+            icon={<FiAward />}
+            title={t('settings.channelPoints.title', { index: index + 1 })}
+            preview={template}
+        >
+            <CardContent>
                         {/* Секция шаблона */}
                         <Section>
                             <SectionHeader>
@@ -375,21 +309,19 @@ export default function RedeemPointsBlock({
                                 onImagePaddingLeftChange={(v) => updateField('imagePaddingLeft', v)}
                             />
                         </Section>
-                    </CardContent>
+            </CardContent>
 
-                    {/* Секция удаления */}
-                    <DeleteSection>
-                        <DeleteButton
-                            onClick={() => onRemove?.(index)}
-                            disabled={disableRemove}
-                            title={disableRemove ? t('settings.channelPoints.delete.disabledTooltip') : t('settings.channelPoints.delete.tooltip')}
-                        >
-                            <FiTrash2 />
-                            {t('settings.channelPoints.delete.action')}
-                        </DeleteButton>
-                    </DeleteSection>
-                </>
-            )}
-        </SettingsCard>
+            {/* Секция удаления */}
+            <DeleteSection>
+                <DeleteButton
+                    onClick={() => onRemove?.(index)}
+                    disabled={disableRemove}
+                    title={disableRemove ? t('settings.channelPoints.delete.disabledTooltip') : t('settings.channelPoints.delete.tooltip')}
+                >
+                    <FiTrash2 />
+                    {t('settings.channelPoints.delete.action')}
+                </DeleteButton>
+            </DeleteSection>
+        </CollapsibleCard>
     );
 }

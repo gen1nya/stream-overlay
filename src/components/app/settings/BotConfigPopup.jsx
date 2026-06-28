@@ -1,5 +1,6 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import { useTranslation } from 'react-i18next';
 import Popup from '../../utils/PopupComponent';
 import { FiDownload, FiUpload, FiTrash2, FiPlus, FiX, FiCheck } from 'react-icons/fi';
@@ -24,9 +25,9 @@ const Header = styled.div`
 const BotsTitle = styled.h2`
     font-size: 1.8rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin: 0;
-    background: linear-gradient(135deg, #646cff, #7c3aed);
+    background: ${tokens.gradient.accent};
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -35,18 +36,18 @@ const BotsTitle = styled.h2`
 const CloseButton = styled.button`
     background: none;
     border: none;
-    color: #999;
+    color: ${tokens.color.text.muted};
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #444;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 
     svg {
@@ -69,7 +70,7 @@ const BotsList = styled.div`
     }
 
     &::-webkit-scrollbar-track {
-        background: #2a2a2a;
+        background: ${tokens.color.bg.raised};
         border-radius: 3px;
     }
 
@@ -88,10 +89,10 @@ const BotItem = styled.div`
     align-items: center;
     gap: 12px;
     padding: 12px 16px;
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     background: ${({ selected }) => (selected ? 'linear-gradient(135deg, #646cff20, #7c3aed20)' : '#2e2e2e')};
-    border: ${({ selected }) => (selected ? '1px solid #646cff' : '1px solid #444')};
-    transition: all 0.2s ease;
+    border: ${({ selected }) => (selected ? `1px solid ${tokens.color.accent.primary}` : `1px solid ${tokens.color.border.default}`)};
+    transition: ${tokens.transition.base};
     cursor: pointer;
     position: relative;
 
@@ -107,7 +108,7 @@ const BotIcon = styled.div`
     height: 12px;
     border-radius: 50%;
     background: ${({ selected }) => (selected ? '#646cff' : '#666')};
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -134,7 +135,7 @@ const BotActions = styled.div`
     gap: 6px;
     opacity: 0;
     transform: translateX(10px);
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     ${BotItem}:hover & {
         opacity: 1;
@@ -147,16 +148,16 @@ const ActionButton = styled.button`
     padding: 8px;
     background: #444;
     color: #d6d6d6;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: #555;
-        color: #fff;
+        color: ${tokens.color.text.primary};
         transform: translateY(-1px);
     }
 
@@ -165,7 +166,7 @@ const ActionButton = styled.button`
     }
 
     &.delete:hover {
-        background: #dc2626;
+        background: ${tokens.color.danger.base};
     }
 
     svg {
@@ -176,15 +177,15 @@ const ActionButton = styled.button`
 
 const CreateSection = styled.div`
     padding: 20px;
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
 `;
 
 const CreateHeader = styled.div`
     font-size: 1.1rem;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin-bottom: 12px;
 `;
 
@@ -197,31 +198,31 @@ const CreateForm = styled.div`
 const NewBotInput = styled.input`
     flex: 1;
     padding: 12px 16px;
-    border: 1px solid #555;
-    border-radius: 8px;
-    background: #1e1e1e;
-    color: #fff;
+    border: 1px solid ${tokens.color.border.strong};
+    border-radius: ${tokens.radius.lg};
+    background: ${tokens.color.bg.surface};
+    color: ${tokens.color.text.primary};
     font-size: 1rem;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &::placeholder {
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 
     &:focus {
         outline: none;
-        border-color: #646cff;
+        border-color: ${tokens.color.accent.primary};
         background: #252525;
     }
 `;
 
 const CreateButton = styled(ActionButton)`
-    background: #646cff;
+    background: ${tokens.color.accent.primary};
     color: white;
     padding: 12px 16px;
 
     &:hover {
-        background: #5a5acf;
+        background: ${tokens.color.accent.primaryHover};
         transform: translateY(-1px);
     }
 `;
@@ -231,7 +232,7 @@ const BottomActions = styled.div`
     justify-content: space-between;
     align-items: center;
     padding-top: 16px;
-    border-top: 1px solid #444;
+    border-top: 1px solid ${tokens.color.border.default};
 `;
 
 const ImportButton = styled(ActionButton)`

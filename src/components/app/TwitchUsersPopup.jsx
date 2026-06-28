@@ -1,6 +1,7 @@
 // components/popups/TwitchUsersPopup.jsx
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import Popup from '../utils/PopupComponent';
 import {
     FiX,
@@ -47,9 +48,9 @@ const FilterSection = styled.div`
     gap: 12px;
     align-items: center;
     padding: 12px 20px;
-    background: #2a2a2a;
-    border-radius: 12px;
-    border: 1px solid #444;
+    background: ${tokens.color.bg.raised};
+    border-radius: ${tokens.radius.xl};
+    border: 1px solid ${tokens.color.border.default};
     flex-wrap: wrap;
 `;
 
@@ -65,18 +66,18 @@ const FilterButton = styled.button`
     align-items: center;
     gap: 8px;
     padding: 8px 16px;
-    background: ${({ active }) => (active ? 'linear-gradient(135deg, #646cff, #7c3aed)' : '#444')};
+    background: ${({ active }) => (active ? tokens.gradient.accent : '#444')};
     color: ${({ active }) => (active ? '#fff' : '#d6d6d6')};
     border: none;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     cursor: pointer;
     font-size: 0.9rem;
     font-weight: 500;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        background: ${({ active }) => (active ? 'linear-gradient(135deg, #5a5acf, #6b2fb5)' : '#555')};
-        color: #fff;
+        background: ${({ active }) => (active ? `linear-gradient(135deg, ${tokens.color.accent.primaryHover}, #6b2fb5)` : '#555')};
+        color: ${tokens.color.text.primary};
         transform: translateY(-1px);
     }
 
@@ -94,7 +95,7 @@ const StatusIcon = styled.div`
     justify-content: center;
     width: 24px;
     height: 24px;
-    border-radius: 4px;
+    border-radius: ${tokens.radius.sm};
     background: ${({ active }) => (active ? '#3a9605' : '#555')};
     color: ${({ active }) => (active ? '#fff' : '#999')};
     margin-right: 8px;
@@ -119,7 +120,7 @@ const FollowerIcon = styled(StatusIcon)`
 
 const InteractiveIcon = styled(StatusIcon)`
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     position: relative;
     
     &:hover {
@@ -182,7 +183,7 @@ const LastSeenTime = styled.span`
     display: flex;
     align-items: center;
     gap: 8px;
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 0.9rem;
 
     svg {
@@ -209,7 +210,7 @@ const VipExpiryBadge = styled.div`
     svg {
         width: 6px;
         height: 6px;
-        color: #fff;
+        color: ${tokens.color.text.primary};
     }
 `;
 

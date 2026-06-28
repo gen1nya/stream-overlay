@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import { FiInfo, FiGithub, FiGlobe, FiHelpCircle } from 'react-icons/fi';
 import {
     CardContent,
@@ -37,7 +38,7 @@ const BackgroundImage = styled.div`
     background-position: center;
     z-index: 2;
 
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background-image: url(${props => props.$speak});
@@ -56,14 +57,14 @@ const AppIconSection = styled.div`
     margin-bottom: 24px;
     padding: 20px;
     background: rgba(30, 30, 30, 0.5);
-    border-radius: 8px;
-    border: 1px solid #333;
+    border-radius: ${tokens.radius.lg};
+    border: 1px solid ${tokens.color.border.subtle};
 `;
 
 const AppIcon = styled.div`
     width: 80px;
     height: 80px;
-    border-radius: 12px;
+    border-radius: ${tokens.radius.xl};
     display: flex;
     align-items: center;
     justify-content: center;
@@ -81,23 +82,23 @@ const AppName = styled.h2`
     margin: 0;
     font-size: 24px;
     font-weight: 600;
-    color: #fff;
+    color: ${tokens.color.text.primary};
 `;
 
 const AppVersion = styled.div`
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 14px;
     margin-bottom: 4px;
 `;
 
 const AppTagline = styled.div`
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     font-size: 13px;
     font-style: italic;
 `;
 
 const DescriptionText = styled.p`
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
     line-height: 1.6;
     margin: 0 0 16px 0;
     font-size: 14px;
@@ -115,12 +116,12 @@ const SocialLink = styled.a`
     gap: 8px;
     padding: 10px 16px;
     background: rgba(30, 30, 30, 0.5);
-    border: 0.5px solid #333;
-    border-radius: 6px;
-    color: #ccc;
+    border: 0.5px solid ${tokens.color.border.subtle};
+    border-radius: ${tokens.radius.md};
+    color: ${tokens.color.text.tertiary};
     text-decoration: none;
     font-size: 14px;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
     cursor: pointer;
 
     svg {
@@ -156,12 +157,12 @@ const InfoItem = styled.div`
     padding: 12px 16px;
     background: rgba(30, 30, 30, 0.3);
     width: 200px;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     border-left: 3px solid #543e83;
 `;
 
 const InfoLabel = styled.div`
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.5px;
@@ -169,7 +170,7 @@ const InfoLabel = styled.div`
 `;
 
 const InfoValue = styled.div`
-    color: #fff;
+    color: ${tokens.color.text.primary};
     font-size: 14px;
     font-weight: 500;
 `;

@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import styled from 'styled-components';
+import { tokens } from '../../designSystem/tokens';
 import { useWebSocket } from '../../context/WebSocketContext';
 import { FiTrash2, FiPause, FiPlay, FiDownload, FiFile, FiAlertTriangle } from 'react-icons/fi';
 import { getBackendLogsBuffer, clearBackendLogs, getBackendLogsConfig, updateBackendLogsConfig, testBackendCrash } from '../../services/api';
@@ -10,15 +11,15 @@ const Wrapper = styled.div`
     height: 100vh;
     display: flex;
     flex-direction: column;
-    background: #1a1a1a;
-    color: #fff;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: ${tokens.color.bg.base};
+    color: ${tokens.color.text.primary};
+    font-family: ${tokens.font.family.mono};
 `;
 
 const Header = styled.div`
-    padding: 12px 16px;
+    padding: ${tokens.space.md} ${tokens.space.lg};
     background: #252525;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid ${tokens.color.border.default};
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -27,20 +28,20 @@ const Header = styled.div`
 const Title = styled.h2`
     margin: 0;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: ${tokens.font.weight.semibold};
 `;
 
 const Controls = styled.div`
     display: flex;
-    gap: 8px;
+    gap: ${tokens.space.sm};
 `;
 
 const Button = styled.button`
     background: #444;
     border: none;
-    color: #fff;
-    padding: 6px 12px;
-    border-radius: 4px;
+    color: ${tokens.color.text.primary};
+    padding: 6px ${tokens.space.md};
+    border-radius: ${tokens.radius.sm};
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -67,11 +68,11 @@ const Button = styled.button`
 `;
 
 const FilterBar = styled.div`
-    padding: 8px 16px;
+    padding: ${tokens.space.sm} ${tokens.space.lg};
     background: #202020;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid ${tokens.color.border.default};
     display: flex;
-    gap: 8px;
+    gap: ${tokens.space.sm};
     align-items: center;
 `;
 
@@ -95,25 +96,25 @@ const FilterButton = styled.button`
 const LogsContainer = styled.div`
     flex: 1;
     overflow-y: auto;
-    padding: 8px 16px;
-    background: #1a1a1a;
+    padding: ${tokens.space.sm} ${tokens.space.lg};
+    background: ${tokens.color.bg.base};
 
     /* Custom scrollbar */
     &::-webkit-scrollbar {
-        width: 8px;
+        width: ${tokens.space.sm};
     }
 
     &::-webkit-scrollbar-track {
-        background: #1a1a1a;
+        background: ${tokens.color.bg.base};
     }
 
     &::-webkit-scrollbar-thumb {
-        background: #444;
-        border-radius: 4px;
+        background: ${tokens.color.border.default};
+        border-radius: ${tokens.radius.sm};
     }
 
     &::-webkit-scrollbar-thumb:hover {
-        background: #555;
+        background: ${tokens.color.border.strong};
     }
 `;
 
@@ -128,8 +129,8 @@ const LogEntry = styled.div`
             case 'error': return '#ff4444';
             case 'warn': return '#ffaa00';
             case 'info': return '#4a9eff';
-            case 'debug': return '#888';
-            default: return '#666';
+            case 'debug': return tokens.color.text.faint;
+            default: return tokens.color.text.disabled;
         }
     }};
     background: ${props => {
@@ -142,13 +143,13 @@ const LogEntry = styled.div`
     }};
 
     &:hover {
-        background: rgba(255, 255, 255, 0.05);
+        background: ${tokens.color.highlight.faint};
     }
 `;
 
 const Timestamp = styled.span`
-    color: #888;
-    margin-right: 8px;
+    color: ${tokens.color.text.faint};
+    margin-right: ${tokens.space.sm};
     font-size: 11px;
 `;
 
@@ -158,12 +159,12 @@ const Level = styled.span`
             case 'error': return '#ff4444';
             case 'warn': return '#ffaa00';
             case 'info': return '#4a9eff';
-            case 'debug': return '#888';
+            case 'debug': return tokens.color.text.faint;
             default: return '#aaa';
         }
     }};
-    margin-right: 8px;
-    font-weight: 600;
+    margin-right: ${tokens.space.sm};
+    font-weight: ${tokens.font.weight.semibold};
     text-transform: uppercase;
     font-size: 10px;
     min-width: 50px;
@@ -177,40 +178,40 @@ const Message = styled.span`
 `;
 
 const Stats = styled.div`
-    padding: 6px 16px;
+    padding: 6px ${tokens.space.lg};
     background: #252525;
-    border-top: 1px solid #444;
+    border-top: 1px solid ${tokens.color.border.default};
     font-size: 11px;
-    color: #888;
+    color: ${tokens.color.text.faint};
     display: flex;
     justify-content: space-between;
 `;
 
 const FileWriteSection = styled.div`
-    padding: 8px 16px;
+    padding: ${tokens.space.sm} ${tokens.space.lg};
     background: #202020;
-    border-bottom: 1px solid #444;
+    border-bottom: 1px solid ${tokens.color.border.default};
     display: flex;
     align-items: center;
-    gap: 12px;
+    gap: ${tokens.space.md};
 `;
 
 const FileWriteLabel = styled.div`
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: ${tokens.space.sm};
     font-size: 12px;
-    color: #ccc;
+    color: ${tokens.color.text.tertiary};
 
     svg {
-        color: #888;
+        color: ${tokens.color.text.faint};
     }
 `;
 
 const FilePath = styled.span`
     font-size: 11px;
-    color: #666;
-    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: ${tokens.color.text.disabled};
+    font-family: ${tokens.font.family.mono};
     margin-left: auto;
     max-width: 400px;
     overflow: hidden;

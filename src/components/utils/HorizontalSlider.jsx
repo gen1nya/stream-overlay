@@ -1,11 +1,12 @@
 import React, { useCallback, useRef } from 'react';
 import styled from 'styled-components';
+import { tokens } from '../../designSystem/tokens';
 
 const SliderContainer = styled.div`
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 4px 0;
+    gap: ${tokens.space.sm};
+    padding: ${tokens.space.xs} 0;
     user-select: none;
     min-width: 0;
     flex-shrink: 0;
@@ -13,7 +14,7 @@ const SliderContainer = styled.div`
 
 const SliderLabel = styled.span`
     font-size: 12px;
-    color: #ffffff;
+    color: ${tokens.color.text.primary};
     white-space: nowrap;
     min-width: fit-content;
 `;
@@ -54,7 +55,7 @@ const SliderThumb = styled.div`
     height: 16px;
     background-color: #652bff;
     border: 2px solid #fff;
-    border-radius: 50%;
+    border-radius: ${tokens.radius.circle};
     cursor: pointer;
     top: 50%;
     transform: translate(-50%, -50%);
@@ -74,7 +75,7 @@ const SliderThumb = styled.div`
 
 const SliderValue = styled.span`
     font-size: 11px;
-    color: #ffffff;
+    color: ${tokens.color.text.primary};
     min-width: 30px;
     text-align: right;
 `;

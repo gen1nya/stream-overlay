@@ -1,10 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
+import { tokens } from '../../designSystem/tokens';
 
 const SwitchLabel = styled.label`
     position: relative;
     display: inline-block;
-    margin-top: 4px;
+    margin-top: ${tokens.space.xs};
     width: 52px;
     height: 28px;
 `;
@@ -22,13 +23,13 @@ const SwitchSlider = styled.span`
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: ${({ checked }) => (checked ? '#646cff' : '#3A3A3A')};
-    transition: all 0.2s ease;
-    border-radius: 8px;
-    border: 1px solid ${({ checked }) => (checked ? '#646cff' : '#555')};
+    background-color: ${({ checked }) => (checked ? tokens.color.accent.primary : '#3A3A3A')};
+    transition: ${tokens.transition.base};
+    border-radius: ${tokens.radius.lg};
+    border: 1px solid ${({ checked }) => (checked ? tokens.color.accent.primary : tokens.color.border.strong)};
 
     &:hover {
-        background-color: ${({ checked }) => (checked ? '#646cff' : '#444')};
+        background-color: ${({ checked }) => (checked ? tokens.color.accent.primary : tokens.color.border.default)};
     }
 
     &::before {
@@ -39,8 +40,8 @@ const SwitchSlider = styled.span`
         left: 4px;
         bottom: 3px;
         background-color: ${({ checked }) => (checked ? '#E8F4FD' : '#CCCCCC')};
-        border-radius: 4px;
-        transition: all 0.2s ease;
+        border-radius: ${tokens.radius.sm};
+        transition: ${tokens.transition.base};
         transform: ${({ checked }) => (checked ? 'translateX(24px)' : 'translateX(0)')};
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }

@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import styled, { keyframes, ThemeProvider } from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import {
     AiOutlineCloudUpload,
     AiOutlineClose,
@@ -121,7 +122,7 @@ const SectionTitle = styled.h3`
 const AlignmentGroup = styled.div`
     display: flex;
     background: ${props => props.theme.bg.tertiary};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     padding: 4px;
     gap: 2px;
     transition: background-color 0.3s ease;
@@ -130,11 +131,11 @@ const AlignmentGroup = styled.div`
 const AlignmentButton = styled.button`
   padding: 8px;
   border: none;
-  border-radius: 6px;
+  border-radius: ${tokens.radius.md};
   background: ${props => props.active ? props.theme.bg.primary : 'transparent'};
   color: ${props => props.active ? props.theme.text.accent : props.theme.text.secondary};
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: ${tokens.transition.base};
   display: flex;
   align-items: center;
   justify-content: center;
@@ -157,13 +158,13 @@ const UploadArea = styled.div`
         props.hasValue ? props.theme.border.success :
             props.theme.border.primary
 };
-  border-radius: 12px;
+  border-radius: ${tokens.radius.xl};
   background: ${props =>
     props.dragActive ? props.theme.bg.dragActive :
         props.hasValue ? props.theme.bg.success :
             props.theme.bg.secondary
 };
-  transition: all 0.3s ease;
+  transition: ${tokens.transition.slow};
   cursor: ${props => props.hasValue ? 'default' : 'pointer'};
 
   &:hover {
@@ -200,12 +201,12 @@ const LoadedIcon = styled.div`
     width: 48px;
     height: 48px;
     background: ${props => props.theme.bg.success};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     display: flex;
     align-items: center;
     justify-content: center;
     color: ${props => props.theme.text.success};
-    transition: all 0.3s ease;
+    transition: ${tokens.transition.slow};
 
     svg {
         font-size: 20px;
@@ -243,11 +244,11 @@ const ActionButton = styled.button`
     background: transparent;
     color: ${props => props.variant === 'delete' ? props.theme.text.error : props.theme.text.secondary};
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
         background: ${props => props.variant === 'delete' ?
@@ -280,12 +281,12 @@ const UploadIcon = styled.div`
     width: 48px;
     height: 48px;
     background: ${props => props.theme.bg.tertiary};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     display: flex;
     align-items: center;
     justify-content: center;
     color: ${props => props.theme.text.tertiary};
-    transition: all 0.3s ease;
+    transition: ${tokens.transition.slow};
 
     svg {
         font-size: 20px;
@@ -340,11 +341,11 @@ const UrlInput = styled.input`
   width: calc(100% - 12px);
   padding: 12px 6px;
   border: 1px solid ${props => props.theme.border.primary};
-  border-radius: 8px;
+  border-radius: ${tokens.radius.lg};
   font-size: 14px;
   color: ${props => props.theme.text.primary};
   background: ${props => props.theme.bg.primary};
-  transition: all 0.2s ease;
+  transition: ${tokens.transition.base};
 
   &:focus {
     outline: none;
@@ -361,7 +362,7 @@ const PreviewContainer = styled.div`
     margin-top: 12px;
     padding: 12px;
     background: ${props => props.theme.bg.secondary};
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     animation: ${fadeIn} 0.3s ease;
     transition: background-color 0.3s ease;
 `;
@@ -372,7 +373,7 @@ const PreviewImage = styled.img`
   object-fit: contain;
   margin: 0 auto;
   display: block;
-  border-radius: 6px;
+  border-radius: ${tokens.radius.md};
 `;
 
 const PreviewError = styled.div`
@@ -387,9 +388,9 @@ const PreviewError = styled.div`
 const TipsPanel = styled.div`
   background: ${props => props.theme.bg.accent};
   border: 1px solid ${props => props.theme.border.info};
-  border-radius: 8px;
+  border-radius: ${tokens.radius.lg};
   padding: 16px;
-  transition: all 0.3s ease;
+  transition: ${tokens.transition.slow};
 `;
 
 const TipsTitle = styled.h4`
@@ -418,12 +419,12 @@ const ThemeToggle = styled.button`
   right: 24px;
   padding: 8px;
   border: 1px solid ${props => props.theme.border.primary};
-  border-radius: 6px;
+  border-radius: ${tokens.radius.md};
   background: ${props => props.theme.bg.secondary};
   color: ${props => props.theme.text.primary};
   cursor: pointer;
   font-size: 12px;
-  transition: all 0.2s ease;
+  transition: ${tokens.transition.base};
 
   &:hover {
     background: ${props => props.theme.bg.hover};

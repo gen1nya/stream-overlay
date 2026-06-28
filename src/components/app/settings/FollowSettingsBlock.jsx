@@ -1,5 +1,6 @@
-import React, {useState, useCallback} from 'react';
+import React, {useCallback} from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../../designSystem/tokens";
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import {TemplateEditor} from '../../utils/TemplateEditor';
 import ColorSelectorButton from './ColorSelectorButton';
@@ -8,16 +9,14 @@ import RadioGroup from '../../utils/TextRadioGroup';
 import BackgroundImageEditorComponent from "../../utils/BackgroundImageEditorComponent";
 import GradientEditor from "../../utils/GradientEditor";
 import BackgroundColorEditorComponent from "../../utils/BackgroundColorEditorComponent";
-import {FiHeart, FiType, FiImage, FiLayout, FiTrash2, FiChevronDown, FiChevronUp} from 'react-icons/fi';
+import {FiHeart, FiType, FiImage, FiLayout, FiTrash2} from 'react-icons/fi';
 import {
     CardContent,
-    CardHeader,
-    CardTitle,
+    CollapsibleCard,
     ControlGroup,
     Section,
     SectionHeader,
     SectionTitle,
-    SettingsCard,
     ActionButton
 } from "./SharedSettingsStyles";
 import {Spacer} from "../../utils/Separator";
@@ -25,64 +24,21 @@ import {Row} from "../SettingsComponent";
 import { useTranslation } from "react-i18next";
 
 // Специфичные стили для этого компонента
-const CollapsibleHeader = styled(CardHeader)`
-    cursor: pointer;
-    transition: all 0.2s ease;
-    
-    &:hover {
-        background: linear-gradient(135deg, #333 0%, #3a3a3a 100%);
-    }
-`;
-
-const CollapseToggle = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #999;
-    font-size: 0.9rem;
-    transition: color 0.2s ease;
-    
-    svg {
-        width: 18px;
-        height: 18px;
-        transition: transform 0.2s ease;
-    }
-    
-    ${CollapsibleHeader}:hover & {
-        color: #ccc;
-    }
-`;
-
-const CollapsedPreview = styled.div`
-    padding: 16px 24px;
-    color: #999;
-    font-style: italic;
-    border-bottom: 1px solid #333;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    background: rgba(30, 30, 30, 0.3);
-    
-    &:hover {
-        background: rgba(30, 30, 30, 0.5);
-        color: #ccc;
-    }
-`;
-
 const DeleteSection = styled.div`
     padding: 16px 24px;
-    border-top: 1px solid #333;
+    border-top: 1px solid ${tokens.color.border.subtle};
     background: rgba(220, 38, 38, 0.05);
     display: flex;
     justify-content: flex-end;
 `;
 
 const DeleteButton = styled(ActionButton)`
-    background: #dc2626;
-    border-color: #dc2626;
+    background: ${tokens.color.danger.base};
+    border-color: ${tokens.color.danger.base};
     
     &:hover:not(:disabled) {
-        background: #b91c1c;
-        border-color: #b91c1c;
+        background: ${tokens.color.danger.hover};
+        border-color: ${tokens.color.danger.hover};
     }
     
     &:disabled {
@@ -107,7 +63,6 @@ export default function FollowSettingsBlock({
                                                 disableRemove = false,
                                             }) {
     const { t } = useTranslation();
-    const [isOpen, setIsOpen] = useState(false);
     const message = current.followMessage?.[index] ?? {};
 
     const updateMessage = useCallback(
@@ -143,17 +98,8 @@ export default function FollowSettingsBlock({
         fontSize = 16,
         messageFont = {family: 'Roboto'},
         backgroundMode = 'color',
-        backgroundColor = '#3e837c',
-        backgroundOpacity = 1,
-        borderColor = '#3e837c',
-        borderOpacity = 1,
         borderRadius = 0,
-        shadowColor = '#3e837c',
-        shadowOpacity = 1,
-        shadowRadius = 0,
     } = message;
-
-    const toggleOpen = () => setIsOpen((prev) => !prev);
 
     const backgroundOptions = BACKGROUND_OPTIONS.map((option) => ({
         key: option.key,
@@ -161,28 +107,12 @@ export default function FollowSettingsBlock({
     }));
 
     return (
-        <SettingsCard>
-            <CollapsibleHeader onClick={toggleOpen}>
-                <CardTitle>
-                    <FiHeart />
-                    {t('settings.follow.title', { index: index + 1 })}
-                </CardTitle>
-                <CollapseToggle>
-                    {isOpen ? t('settings.follow.collapse') : t('settings.follow.expand')}
-                    {isOpen ? <FiChevronUp /> : <FiChevronDown />}
-                </CollapseToggle>
-            </CollapsibleHeader>
-
-            {/* Свернутый вариант */}
-            {!isOpen && (
-                <CollapsedPreview onClick={toggleOpen}>
-                    {template}
-                </CollapsedPreview>
-            )}
-
-            {isOpen && (
-                <>
-                    <CardContent>
+        <CollapsibleCard
+            icon={<FiHeart />}
+            title={t('settings.follow.title', { index: index + 1 })}
+            preview={template}
+        >
+            <CardContent>
                         {/* Секция шаблона */}
                         <Section>
                             <SectionHeader>
@@ -366,21 +296,19 @@ export default function FollowSettingsBlock({
                                 onImagePaddingLeftChange={(v) => updateField('imagePaddingLeft', v)}
                             />
                         </Section>
-                    </CardContent>
+            </CardContent>
 
-                    {/* Секция удаления */}
-                    <DeleteSection>
-                        <DeleteButton
-                            onClick={() => onRemove?.(index)}
-                            disabled={disableRemove}
-                            title={disableRemove ? t('settings.follow.delete.disabledTooltip') : t('settings.follow.delete.tooltip')}
-                        >
-                            <FiTrash2 />
-                            {t('settings.follow.delete.action')}
-                        </DeleteButton>
-                    </DeleteSection>
-                </>
-            )}
-        </SettingsCard>
+            {/* Секция удаления */}
+            <DeleteSection>
+                <DeleteButton
+                    onClick={() => onRemove?.(index)}
+                    disabled={disableRemove}
+                    title={disableRemove ? t('settings.follow.delete.disabledTooltip') : t('settings.follow.delete.tooltip')}
+                >
+                    <FiTrash2 />
+                    {t('settings.follow.delete.action')}
+                </DeleteButton>
+            </DeleteSection>
+        </CollapsibleCard>
     );
 }

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 import { FiX, FiMessageSquare, FiUsers, FiTrendingUp, FiClock, FiBarChart2 } from 'react-icons/fi';
 import Popup from '../utils/PopupComponent';
 import {
@@ -39,26 +40,26 @@ const TabContent = styled.div`
 const TabBar = styled.div`
     display: flex;
     gap: 4px;
-    background: #2a2a2a;
+    background: ${tokens.color.bg.raised};
     border-radius: 10px;
     padding: 4px;
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
 `;
 
 const Tab = styled.button`
     flex: 1;
     padding: 8px 16px;
     border: none;
-    border-radius: 8px;
+    border-radius: ${tokens.radius.lg};
     background: ${({ $active }) => ($active ? '#646cff' : 'transparent')};
     color: ${({ $active }) => ($active ? '#fff' : '#999')};
     font-size: 0.9rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        color: #fff;
+        color: ${tokens.color.text.primary};
         background: ${({ $active }) => ($active ? '#646cff' : '#333')};
     }
 `;
@@ -70,23 +71,23 @@ const StatsGrid = styled.div`
 `;
 
 const StatCard = styled.div`
-    background: #2a2a2a;
+    background: ${tokens.color.bg.raised};
     border-radius: 10px;
     padding: 16px;
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
     text-align: center;
 `;
 
 const StatValue = styled.div`
     font-size: 1.6rem;
     font-weight: 700;
-    color: #fff;
+    color: ${tokens.color.text.primary};
     margin-bottom: 4px;
 `;
 
 const StatLabel = styled.div`
     font-size: 0.8rem;
-    color: #999;
+    color: ${tokens.color.text.muted};
     text-transform: uppercase;
     letter-spacing: 0.5px;
 `;
@@ -117,19 +118,19 @@ const RankCell = styled(TableCell)`
 `;
 
 const SessionRow = styled.div`
-    background: #2a2a2a;
+    background: ${tokens.color.bg.raised};
     border-radius: 10px;
     padding: 14px 18px;
-    border: 1px solid #444;
+    border: 1px solid ${tokens.color.border.default};
     display: flex;
     align-items: center;
     justify-content: space-between;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: ${tokens.transition.base};
 
     &:hover {
-        border-color: #646cff;
-        background: #333;
+        border-color: ${tokens.color.accent.primary};
+        background: ${tokens.color.bg.raisedAlt};
     }
 `;
 
@@ -140,13 +141,13 @@ const SessionInfo = styled.div`
 `;
 
 const SessionDate = styled.div`
-    color: #fff;
+    color: ${tokens.color.text.primary};
     font-weight: 500;
     font-size: 0.95rem;
 `;
 
 const SessionMeta = styled.div`
-    color: #999;
+    color: ${tokens.color.text.muted};
     font-size: 0.85rem;
     display: flex;
     gap: 16px;
@@ -155,7 +156,7 @@ const SessionMeta = styled.div`
 const BackButton = styled.button`
     background: none;
     border: none;
-    color: #646cff;
+    color: ${tokens.color.accent.primary};
     cursor: pointer;
     font-size: 0.9rem;
     padding: 0;
@@ -163,7 +164,7 @@ const BackButton = styled.button`
     align-items: center;
     gap: 4px;
 
-    &:hover { color: #7c3aed; }
+    &:hover { color: ${tokens.color.accent.purple}; }
 `;
 
 function formatDuration(ms) {

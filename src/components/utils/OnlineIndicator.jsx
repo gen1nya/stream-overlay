@@ -1,4 +1,5 @@
 import styled, { keyframes } from 'styled-components';
+import { tokens } from "../../designSystem/tokens";
 
 const neonPulse = keyframes`
     0%, 100% {
@@ -42,9 +43,9 @@ export const OnlineIndicator = styled.div`
     ? '0 0 8px rgba(255, 0, 0, 0.6)'
     : '0 0 4px rgba(128, 128, 128, 0.3)'};
     border: 1px solid ${props => props.$isOnline ? '#ff0000' : '#808080'};
-    border-radius: 6px;
+    border-radius: ${tokens.radius.md};
     animation: ${props => props.$isOnline ? neonPulse : 'none'} 1s ease-in-out infinite;
-    transition: all 0.3s ease;
+    transition: ${tokens.transition.slow};
     
     .live-name {
         font-weight: 600;
