@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../../../designSystem/tokens";
+import { Button, ConfirmDialog } from "../../../../../designSystem";
+import { Portal } from "../../../../../context/PortalContext";
 import Popup from '../../../../utils/PopupComponent';
 import {
     FiX,
@@ -11,8 +13,7 @@ import {
     FiChevronRight,
     FiCheck,
     FiXCircle,
-    FiGift,
-    FiAlertTriangle
+    FiGift
 } from 'react-icons/fi';
 import {
     getLotteryMonths,
@@ -72,35 +73,6 @@ const MonthSelect = styled.select`
     }
 `;
 
-const ToolbarButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border: 1px solid ${({ danger }) => danger ? '#ff5555' : '#555'};
-    border-radius: ${tokens.radius.lg};
-    background: ${({ danger }) => danger ? '#ff555515' : '#1e1e1e'};
-    color: ${({ danger }) => danger ? '#ff5555' : '#d6d6d6'};
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: ${({ danger }) => danger ? '#ff555530' : '#2a2a2a'};
-        border-color: ${({ danger }) => danger ? '#ff5555' : '#646cff'};
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
-`;
-
 const StatusBadge = styled.div`
     display: inline-flex;
     align-items: center;
@@ -116,93 +88,6 @@ const StatusBadge = styled.div`
     svg {
         width: 12px;
         height: 12px;
-    }
-`;
-
-const ConfirmModal = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-`;
-
-const ConfirmContent = styled.div`
-    background: ${tokens.color.bg.raised};
-    border-radius: ${tokens.radius.xl};
-    border: 1px solid ${tokens.color.border.default};
-    padding: 24px;
-    max-width: 400px;
-    text-align: center;
-`;
-
-const ConfirmIcon = styled.div`
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #ff555520;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-
-    svg {
-        width: 32px;
-        height: 32px;
-        color: #ff5555;
-    }
-`;
-
-const ConfirmTitle = styled.h3`
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    margin: 0 0 12px;
-`;
-
-const ConfirmText = styled.p`
-    color: ${tokens.color.text.muted};
-    font-size: 0.95rem;
-    margin: 0 0 24px;
-    line-height: 1.5;
-`;
-
-const ConfirmButtons = styled.div`
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-`;
-
-const ConfirmButton = styled.button`
-    padding: 12px 24px;
-    border: none;
-    border-radius: ${tokens.radius.lg};
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &.cancel {
-        background: #444;
-        color: #d6d6d6;
-
-        &:hover {
-            background: #555;
-        }
-    }
-
-    &.danger {
-        background: #ff5555;
-        color: ${tokens.color.text.primary};
-
-        &:hover {
-            background: #ff3333;
-        }
     }
 `;
 
@@ -388,22 +273,22 @@ export default function LotteryHistoryPopup({ onClose }) {
                         ))}
                     </MonthSelect>
 
-                    <ToolbarButton onClick={handleExport} disabled={months.length === 0}>
+                    <Button $variant="neutral" $size="md" onClick={handleExport} disabled={months.length === 0}>
                         <FiDownload />
                         {t('settings.bot.lottery.history.export.button')}
-                    </ToolbarButton>
+                    </Button>
 
                     {selectedMonth && (
-                        <ToolbarButton danger onClick={() => setConfirmAction('clearMonth')}>
+                        <Button $variant="danger" $size="md" onClick={() => setConfirmAction('clearMonth')}>
                             <FiTrash2 />
                             {t('settings.bot.lottery.history.clearMonth.button')}
-                        </ToolbarButton>
+                        </Button>
                     )}
 
-                    <ToolbarButton danger onClick={() => setConfirmAction('clearAll')} disabled={months.length === 0}>
+                    <Button $variant="danger" $size="md" onClick={() => setConfirmAction('clearAll')} disabled={months.length === 0}>
                         <FiTrash2 />
                         {t('settings.bot.lottery.history.clear.button')}
-                    </ToolbarButton>
+                    </Button>
                 </ToolbarSection>
 
                 <TableContainer>
@@ -504,43 +389,31 @@ export default function LotteryHistoryPopup({ onClose }) {
                     )}
                 </TableContainer>
 
-                {/* Confirm Modal */}
-                {confirmAction && (
-                    <ConfirmModal onClick={() => setConfirmAction(null)}>
-                        <ConfirmContent onClick={(e) => e.stopPropagation()}>
-                            <ConfirmIcon>
-                                <FiAlertTriangle />
-                            </ConfirmIcon>
-                            <ConfirmTitle>
-                                {confirmAction === 'clearAll'
-                                    ? t('settings.bot.lottery.history.clear.confirmTitle')
-                                    : t('settings.bot.lottery.history.clearMonth.confirmTitle')
-                                }
-                            </ConfirmTitle>
-                            <ConfirmText>
-                                {confirmAction === 'clearAll'
-                                    ? t('settings.bot.lottery.history.clear.confirmText')
-                                    : t('settings.bot.lottery.history.clearMonth.confirmText', {
-                                        month: monthNames[selectedMonth?.month],
-                                        year: selectedMonth?.year
-                                    })
-                                }
-                            </ConfirmText>
-                            <ConfirmButtons>
-                                <ConfirmButton className="cancel" onClick={() => setConfirmAction(null)}>
-                                    {t('common.cancel')}
-                                </ConfirmButton>
-                                <ConfirmButton
-                                    className="danger"
-                                    onClick={confirmAction === 'clearAll' ? handleClearAll : handleClearMonth}
-                                >
-                                    {t('common.delete')}
-                                </ConfirmButton>
-                            </ConfirmButtons>
-                        </ConfirmContent>
-                    </ConfirmModal>
-                )}
             </PopupContent>
+
+            {/* Confirm dialog */}
+            {confirmAction && (
+                <Portal id="lottery-history-confirm" onClose={() => setConfirmAction(null)}>
+                    <ConfirmDialog
+                        variant="danger"
+                        title={confirmAction === 'clearAll'
+                            ? t('settings.bot.lottery.history.clear.confirmTitle')
+                            : t('settings.bot.lottery.history.clearMonth.confirmTitle')
+                        }
+                        text={confirmAction === 'clearAll'
+                            ? t('settings.bot.lottery.history.clear.confirmText')
+                            : t('settings.bot.lottery.history.clearMonth.confirmText', {
+                                month: monthNames[selectedMonth?.month],
+                                year: selectedMonth?.year
+                            })
+                        }
+                        confirmLabel={t('common.delete')}
+                        cancelLabel={t('common.cancel')}
+                        onCancel={() => setConfirmAction(null)}
+                        onConfirm={confirmAction === 'clearAll' ? handleClearAll : handleClearMonth}
+                    />
+                </Portal>
+            )}
         </Popup>
     );
 }

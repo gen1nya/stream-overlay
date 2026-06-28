@@ -1,9 +1,29 @@
 import styled, { css } from 'styled-components';
 import { tokens } from '../tokens';
 
+/**
+ * Стеклянный блик поверх сплошной заливки. Для кнопок-расширителей
+ * (`styled(Button)`/`styled(ActionButton)`), которые задают СВОЙ цвет, но
+ * должны сохранить «стекло» примитива и в покое, и на ховере — иначе сплошной
+ * `background:` перекрывает градиент-блик примитива (плоско в покое).
+ * Border задаёт сам расширитель.
+ */
+// eslint-disable-next-line react-refresh/only-export-components
+export const glassFill = (fill, hover = fill) => css`
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 64%),
+        ${fill};
+
+    &:hover:not(:disabled) {
+        background:
+            linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 64%),
+            ${hover};
+    }
+`;
+
 const raisedButton = ({ fill, hover, border, glow, hoverGlow, activeGlow, drop = '0 8px 18px rgba(0, 0, 0, 0.3)' }) => css`
     background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0) 64%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0) 64%),
         ${fill};
     border-color: ${border};
     box-shadow:
@@ -13,7 +33,7 @@ const raisedButton = ({ fill, hover, border, glow, hoverGlow, activeGlow, drop =
 
     &:hover:not(:disabled) {
         background:
-            linear-gradient(180deg, rgba(255, 255, 255, 0.11) 0%, rgba(255, 255, 255, 0) 64%),
+            linear-gradient(180deg, rgba(255, 255, 255, 0.15) 0%, rgba(255, 255, 255, 0) 64%),
             ${hover};
         border-color: ${border};
         box-shadow:

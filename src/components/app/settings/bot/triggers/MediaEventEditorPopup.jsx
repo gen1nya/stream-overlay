@@ -13,19 +13,7 @@ import MediaLibraryPopup from "../../../../utils/MediaLibraryPopup";
 import { v4 as uuidv4 } from 'uuid';
 import { saveMediaEvent, getAllMediaDisplayGroups } from "../../../../../services/api";
 import { Portal } from "../../../../../context/PortalContext";
-
-const PopupContainer = styled.div`
-    background: ${tokens.gradient.surface};
-    border: 1px solid ${tokens.color.border.default};
-    border-radius: ${tokens.radius.xxl};
-    max-width: 700px;
-    width: 100%;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-`;
+import { Modal } from "../../../../../designSystem";
 
 const PopupHeader = styled.div`
     display: flex;
@@ -499,7 +487,7 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
             overlayBackground="rgba(0, 0, 0, 0.8)"
             padding="20px"
         >
-            <PopupContainer>
+            <Modal $maxWidth="700px" $maxHeight="90vh">
                 <PopupHeader>
                     <h3>
                         <FiImage />
@@ -762,7 +750,7 @@ export default function MediaEventEditorPopup({ mediaEvent, onSave, onClose, ava
                         </SectionContent>
                     </Section>
                 </PopupContent>
-            </PopupContainer>
+            </Modal>
 
             {showLibrary && (
                 <MediaLibraryPopup

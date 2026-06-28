@@ -1,60 +1,11 @@
 import React, { useRef, useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../designSystem/tokens";
+import { Button, ModalHeader, ModalTitle, ModalBody, ModalClose } from "../../../designSystem";
 import { useTranslation } from 'react-i18next';
 import Popup from '../../utils/PopupComponent';
-import { FiDownload, FiUpload, FiTrash2, FiPlus, FiX, FiCheck } from 'react-icons/fi';
+import { FiDownload, FiUpload, FiTrash2, FiPlus, FiCheck } from 'react-icons/fi';
 import { getBots, updateBot, getCurrentBot, setCurrentBot, deleteBot, selectBot, getByName } from '../../../services/botsApi';
-
-const PopupContent = styled.div`
-    display: flex;
-    padding: 24px;
-    flex-direction: column;
-    gap: 20px;
-    min-width: 480px;
-    max-width: 600px;
-`;
-
-const Header = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
-`;
-
-const BotsTitle = styled.h2`
-    font-size: 1.8rem;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    margin: 0;
-    background: ${tokens.gradient.accent};
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-`;
-
-const CloseButton = styled.button`
-    background: none;
-    border: none;
-    color: ${tokens.color.text.muted};
-    cursor: pointer;
-    padding: 8px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: #444;
-        color: ${tokens.color.text.primary};
-    }
-
-    svg {
-        width: 20px;
-        height: 20px;
-    }
-`;
 
 const BotsList = styled.div`
     display: flex;
@@ -146,7 +97,7 @@ const BotActions = styled.div`
 const ActionButton = styled.button`
     border: none;
     padding: 8px;
-    background: #444;
+    background: ${tokens.color.border.default};
     color: #d6d6d6;
     border-radius: ${tokens.radius.lg};
     cursor: pointer;
@@ -156,7 +107,7 @@ const ActionButton = styled.button`
     transition: ${tokens.transition.base};
 
     &:hover {
-        background: #555;
+        background: ${tokens.color.border.strong};
         color: ${tokens.color.text.primary};
         transform: translateY(-1px);
     }
@@ -216,34 +167,12 @@ const NewBotInput = styled.input`
     }
 `;
 
-const CreateButton = styled(ActionButton)`
-    background: ${tokens.color.accent.primary};
-    color: white;
-    padding: 12px 16px;
-
-    &:hover {
-        background: ${tokens.color.accent.primaryHover};
-        transform: translateY(-1px);
-    }
-`;
-
 const BottomActions = styled.div`
     display: flex;
     justify-content: space-between;
     align-items: center;
     padding-top: 16px;
     border-top: 1px solid ${tokens.color.border.default};
-`;
-
-const ImportButton = styled(ActionButton)`
-    background: #059669;
-    color: white;
-    padding: 10px 16px;
-    gap: 8px;
-
-    &:hover {
-        background: #047857;
-    }
 `;
 
 const HiddenFileInput = styled.input`
@@ -414,26 +343,23 @@ export default function BotConfigPopup({
 
     if (loading) {
         return (
-            <Popup onClose={onClose}>
-                <PopupContent>
+            <Popup onClose={onClose} minWidth="480px" maxWidth="600px">
+                <ModalBody>
                     <div style={{ textAlign: 'center', color: '#fff', padding: '40px' }}>
                         {t('common.loading')}
                     </div>
-                </PopupContent>
+                </ModalBody>
             </Popup>
         );
     }
 
     return (
-        <Popup onClose={onClose}>
-            <PopupContent>
-                <Header>
-                    <BotsTitle>{t('settings.botPopup.title')}</BotsTitle>
-                    <CloseButton onClick={onClose}>
-                        <FiX />
-                    </CloseButton>
-                </Header>
-
+        <Popup onClose={onClose} minWidth="480px" maxWidth="600px">
+            <ModalHeader $feature="bot">
+                <ModalTitle $feature="bot">{t('settings.botPopup.title')}</ModalTitle>
+                <ModalClose onClick={onClose} />
+            </ModalHeader>
+            <ModalBody>
                 <BotsList>
                     {Object.keys(bots).map((key) => (
                         <BotItem
@@ -483,18 +409,18 @@ export default function BotConfigPopup({
                             placeholder={t('settings.botPopup.create.placeholder')}
                             onKeyPress={handleKeyPress}
                         />
-                        <CreateButton onClick={handleCreateBot}>
+                        <Button $variant="primary" onClick={handleCreateBot}>
                             <FiPlus />
                             {t('settings.botPopup.create.button')}
-                        </CreateButton>
+                        </Button>
                     </CreateForm>
                 </CreateSection>
 
                 <BottomActions>
-                    <ImportButton onClick={triggerImport}>
+                    <Button $variant="secondary" onClick={triggerImport}>
                         <FiUpload />
                         {t('settings.botPopup.import')}
-                    </ImportButton>
+                    </Button>
                     <HiddenFileInput
                         ref={fileInputRef}
                         type="file"
@@ -502,7 +428,7 @@ export default function BotConfigPopup({
                         onChange={handleFileChange}
                     />
                 </BottomActions>
-            </PopupContent>
+            </ModalBody>
         </Popup>
     );
 }

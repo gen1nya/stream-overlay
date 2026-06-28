@@ -1,40 +1,11 @@
 // components/popups/ColorPickerPopup.js
 import React, { useEffect, useMemo, useState } from 'react';
-import styled from 'styled-components';
-import { tokens } from "../../../designSystem/tokens";
 import Popup from '../../utils/PopupComponent';
+import { Button, ModalHeader, ModalTitle, ModalBody, ModalFooter, ModalClose } from "../../../designSystem";
 import { ColorPicker } from 'react-pick-color';
 import throttle from 'lodash.throttle';
 import {hexToRgba} from "../../../utils";
 import { useTranslation } from "react-i18next";
-
-const PopupContent = styled.div`
-    display: flex;
-    padding: 16px 12px 12px 12px;
-    flex-direction: column;
-    gap: 16px;
-`;
-
-const Title = styled.h2`
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: #d6d6d6;
-    margin: 0;
-`;
-
-const CloseButton = styled.button`
-    align-self: flex-end;
-    padding: 4px 8px;
-    background: #3a3a3a;
-    color: #d6d6d6;
-    border-radius: ${tokens.radius.sm};
-    border: 1px solid transparent;
-    cursor: pointer;
-    &:hover {
-        background: #4a4a4a;
-        border-color: ${tokens.color.accent.primary};
-    }
-`;
 
 export default function ColorPickerPopup({
                                              title,
@@ -63,9 +34,12 @@ export default function ColorPickerPopup({
     }, [color, alpha, throttledCallback]);
 
     return (
-        <Popup onClose={onClose}>
-            <PopupContent>
-                <Title>{resolvedTitle}</Title>
+        <Popup onClose={onClose} maxWidth="360px">
+            <ModalHeader $feature="general">
+                <ModalTitle $feature="general">{resolvedTitle}</ModalTitle>
+                <ModalClose onClick={onClose} />
+            </ModalHeader>
+            <ModalBody>
                 <ColorPicker
                     color={hexToRgba(color, alpha)}
                     onChange={ (colorObj) => {
@@ -83,8 +57,10 @@ export default function ColorPickerPopup({
                     }
                     hideInput={false}
                 />
-                <CloseButton onClick={onClose}>{t('common.close')}</CloseButton>
-            </PopupContent>
+            </ModalBody>
+            <ModalFooter>
+                <Button $variant="ghost" onClick={onClose}>{t('common.close')}</Button>
+            </ModalFooter>
         </Popup>
     );
 }

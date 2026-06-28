@@ -3,40 +3,9 @@ import {getUserById, getUserByLogin, muteUser, unbanUser, updateRoles} from "../
 import Popup from "../utils/PopupComponent";
 import styled from "styled-components";
 import { tokens } from "../../designSystem/tokens";
+import { Button, ModalHeader, ModalTitle, ModalBody, ModalClose } from "../../designSystem";
 import {TbDiamond, TbDiamondOff, TbShield, TbShieldPlus, TbShieldX, TbClock, TbCalendar, TbUserCheck} from "react-icons/tb";
 import { useTranslation } from 'react-i18next';
-
-const PopupContent = styled.div`
-    display: flex;
-    flex-direction: column;
-    padding: 24px;
-    min-width: 420px;
-    gap: 16px;
-    background: ${tokens.gradient.surface};
-    border-radius: ${tokens.radius.xl};
-    box-shadow:
-            0 8px 32px rgba(0, 0, 0, 0.4),
-            0 0 0 1px rgba(255, 255, 255, 0.05);
-`;
-
-const Header = styled.div`
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid ${tokens.color.border.default};
-`;
-
-const Title = styled.h2`
-    font-size: 1.6rem;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    margin: 0;
-    background: ${tokens.gradient.accent};
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-`;
 
 const UserSection = styled.div`
     display: flex;
@@ -155,63 +124,17 @@ const ActionButtons = styled.div`
     gap: 8px;
 `;
 
-const ActionButton = styled.button`
-    background: ${tokens.color.bg.raised};
-    border: 1px solid ${tokens.color.border.default};
-    color: ${tokens.color.text.primary};
-    padding: 10px 16px;
-    border-radius: ${tokens.radius.lg};
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    font-size: 14px;
-    font-weight: 500;
-    transition: ${tokens.transition.base};
+// Делегирует на примитив Button; className-API (primary/success/danger) маппится
+// в $variant, flex-раскладка кнопочной сетки сохранена.
+const ActionButton = styled(Button).attrs(({ className }) => ({
+    $variant:
+        className === 'success' ? 'secondary'
+        : className === 'danger' ? 'danger'
+        : className === 'primary' ? 'primary'
+        : 'neutral',
+}))`
     flex: 1;
     min-width: 120px;
-
-    &:hover {
-        background: ${tokens.color.bg.raisedAlt};
-        border-color: ${tokens.color.border.strong};
-        transform: translateY(-1px);
-    }
-
-    &.primary {
-        background: ${tokens.color.accent.primary};
-        border-color: ${tokens.color.accent.primary};
-
-        &:hover {
-            background: ${tokens.color.accent.primaryHover};
-            border-color: ${tokens.color.accent.primaryHover};
-        }
-    }
-
-    &.success {
-        background: #059669;
-        border-color: #059669;
-
-        &:hover {
-            background: #047857;
-            border-color: #047857;
-        }
-    }
-
-    &.danger {
-        background: ${tokens.color.danger.base};
-        border-color: ${tokens.color.danger.base};
-
-        &:hover {
-            background: ${tokens.color.danger.hover};
-            border-color: ${tokens.color.danger.hover};
-        }
-    }
-
-    svg {
-        width: 18px;
-        height: 18px;
-    }
 `;
 
 const LoadingContainer = styled.div`
@@ -358,12 +281,12 @@ export default function UserInfoPopup({userId, userName, onClose}) {
     }, [uiModel]);
 
     return (
-        <Popup onClose={onClose}>
-            <PopupContent>
-                <Header>
-                    <Title>{t('userInfo.title')}</Title>
-                </Header>
-
+        <Popup onClose={onClose} minWidth="420px" maxWidth="520px">
+            <ModalHeader $feature="chat">
+                <ModalTitle $feature="chat">{t('userInfo.title')}</ModalTitle>
+                <ModalClose onClick={onClose} />
+            </ModalHeader>
+            <ModalBody>
                 {uiModel.type === "loading" && (
                     <LoadingContainer>{t('userInfo.loading')}</LoadingContainer>
                 )}
@@ -468,7 +391,7 @@ export default function UserInfoPopup({userId, userName, onClose}) {
                         <p>{t('userInfo.error')}</p>
                     </ErrorContainer>
                 )}
-            </PopupContent>
+            </ModalBody>
         </Popup>
     );
 }

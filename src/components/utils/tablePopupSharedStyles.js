@@ -32,7 +32,7 @@ export const CloseButton = styled.button`
     transition: ${tokens.transition.base};
 
     &:hover {
-        background: #444;
+        background: ${tokens.color.border.default};
         color: ${tokens.color.text.primary};
     }
 
@@ -112,7 +112,7 @@ export const ClearButton = styled.button`
     transition: ${tokens.transition.base};
 
     &:hover {
-        background: #444;
+        background: ${tokens.color.border.default};
         color: ${tokens.color.text.primary};
     }
 

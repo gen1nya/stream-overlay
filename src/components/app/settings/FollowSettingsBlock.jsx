@@ -1,6 +1,7 @@
 import React, {useCallback} from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../designSystem/tokens";
+import { glassFill } from "../../../designSystem/components/Button";
 import SeekbarComponent from '../../utils/SeekbarComponent';
 import {TemplateEditor} from '../../utils/TemplateEditor';
 import ColorSelectorButton from './ColorSelectorButton';
@@ -33,11 +34,10 @@ const DeleteSection = styled.div`
 `;
 
 const DeleteButton = styled(ActionButton)`
-    background: ${tokens.color.danger.base};
+    ${glassFill(tokens.color.danger.base, tokens.color.danger.hover)}
     border-color: ${tokens.color.danger.base};
-    
+
     &:hover:not(:disabled) {
-        background: ${tokens.color.danger.hover};
         border-color: ${tokens.color.danger.hover};
     }
     

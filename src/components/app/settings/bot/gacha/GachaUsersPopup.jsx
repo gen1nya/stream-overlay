@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../../../designSystem/tokens";
+import { Button, Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter, ModalClose } from "../../../../../designSystem";
+import { Portal } from "../../../../../context/PortalContext";
 import Popup from '../../../../utils/PopupComponent';
 import {
     FiX,
@@ -40,40 +42,9 @@ import {
 import { useTranslation } from 'react-i18next';
 
 // Edit Modal Styles
-const EditModalOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-`;
-
-const EditModalContent = styled.div`
-    background: ${tokens.color.bg.raised};
-    border-radius: ${tokens.radius.xl};
-    border: 1px solid ${tokens.color.border.default};
-    padding: 24px;
-    min-width: 500px;
-    max-width: 600px;
-`;
-
-const EditModalHeader = styled.div`
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 24px;
-`;
-
-const EditModalTitle = styled.h3`
-    font-size: 1.4rem;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    margin: 0;
+// Тело формы редактирования поверх ModalBody: отступы задают FormGroup-ы.
+const EditBody = styled(ModalBody)`
+    gap: 0;
 `;
 
 const FormGroup = styled.div`
@@ -138,55 +109,6 @@ const CheckboxLabel = styled.span`
     color: #d6d6d6;
     font-size: 0.95rem;
     cursor: pointer;
-`;
-
-const EditModalButtons = styled.div`
-    display: flex;
-    gap: 12px;
-    justify-content: flex-end;
-    margin-top: 24px;
-`;
-
-const Button = styled.button`
-    padding: 12px 24px;
-    border: none;
-    border-radius: ${tokens.radius.lg};
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    transition: ${tokens.transition.base};
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
-`;
-
-const CancelButton = styled(Button)`
-    background: #444;
-    color: #d6d6d6;
-
-    &:hover {
-        background: #555;
-    }
-`;
-
-const SaveButton = styled(Button)`
-    background: ${tokens.gradient.accent};
-    color: ${tokens.color.text.primary};
-
-    &:hover {
-        background: linear-gradient(135deg, ${tokens.color.accent.primaryHover}, #6b2fb5);
-        transform: translateY(-1px);
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
 `;
 
 const ITEMS_PER_PAGE = 50;
@@ -565,17 +487,17 @@ export default function GachaUsersPopup({ onClose, banners = [] }) {
                     </PaginationContainer>
                 </TableContainer>
 
-                {/* Edit Modal */}
-                {editingUser && editForm && (
-                    <EditModalOverlay onClick={handleCloseEdit}>
-                        <EditModalContent onClick={(e) => e.stopPropagation()}>
-                            <EditModalHeader>
-                                <EditModalTitle>{t('settings.bot.gacha.users.edit.title')}</EditModalTitle>
-                                <CloseButton onClick={handleCloseEdit}>
-                                    <FiX />
-                                </CloseButton>
-                            </EditModalHeader>
+            </PopupContent>
 
+            {/* Edit Modal */}
+            {editingUser && editForm && (
+                <Portal id="gacha-user-edit" onClose={handleCloseEdit}>
+                    <Modal $minWidth="500px" $maxWidth="600px">
+                        <ModalHeader $feature="bot">
+                            <ModalTitle $feature="bot">{t('settings.bot.gacha.users.edit.title')}</ModalTitle>
+                            <ModalClose onClick={handleCloseEdit} />
+                        </ModalHeader>
+                        <EditBody>
                             <FormGroup>
                                 <Label>{t('settings.bot.gacha.users.edit.fields.userName')}</Label>
                                 <Input
@@ -626,20 +548,20 @@ export default function GachaUsersPopup({ onClose, banners = [] }) {
                                 </CheckboxWrapper>
                             </FormGroup>
 
-                            <EditModalButtons>
-                                <CancelButton onClick={handleCloseEdit}>
-                                    <FiX />
-                                    {t('settings.bot.gacha.users.actions.cancel')}
-                                </CancelButton>
-                                <SaveButton onClick={handleSaveEdit} disabled={saving}>
-                                    <FiSave />
-                                    {saving ? t('settings.bot.gacha.users.actions.saving') : t('settings.bot.gacha.users.actions.save')}
-                                </SaveButton>
-                            </EditModalButtons>
-                        </EditModalContent>
-                    </EditModalOverlay>
-                )}
-            </PopupContent>
+                        </EditBody>
+                        <ModalFooter>
+                            <Button $variant="ghost" onClick={handleCloseEdit}>
+                                <FiX />
+                                {t('settings.bot.gacha.users.actions.cancel')}
+                            </Button>
+                            <Button $variant="primary" onClick={handleSaveEdit} disabled={saving}>
+                                <FiSave />
+                                {saving ? t('settings.bot.gacha.users.actions.saving') : t('settings.bot.gacha.users.actions.save')}
+                            </Button>
+                        </ModalFooter>
+                    </Modal>
+                </Portal>
+            )}
         </Popup>
     );
 }

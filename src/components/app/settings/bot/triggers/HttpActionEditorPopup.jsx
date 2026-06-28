@@ -5,20 +5,8 @@ import { useTranslation } from "react-i18next";
 import { FiX, FiSave, FiPlay, FiPlus, FiTrash2, FiGlobe, FiLock, FiUnlock } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 import { Portal } from "../../../../../context/PortalContext";
+import { Modal } from "../../../../../designSystem";
 import { saveHttpAction, testHttpAction, setHttpSecret, hasHttpSecret } from "../../../../../services/api";
-
-const PopupContainer = styled.div`
-    background: ${tokens.gradient.surface};
-    border: 1px solid ${tokens.color.border.default};
-    border-radius: ${tokens.radius.xxl};
-    max-width: 720px;
-    width: 100%;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-`;
 
 const PopupHeader = styled.div`
     display: flex;
@@ -446,7 +434,7 @@ export default function HttpActionEditorPopup({ action: initialAction, onSave, o
             overlayBackground="rgba(0, 0, 0, 0.8)"
             padding="20px"
         >
-            <PopupContainer>
+            <Modal $maxWidth="720px" $maxHeight="90vh">
                 <PopupHeader>
                     <h3>
                         <FiGlobe />
@@ -612,7 +600,7 @@ export default function HttpActionEditorPopup({ action: initialAction, onSave, o
                         </Row>
                     </Section>
                 </PopupContent>
-            </PopupContainer>
+            </Modal>
         </Portal>
     );
 }

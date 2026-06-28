@@ -1,10 +1,12 @@
 import styled from "styled-components";
 import React from "react";
-import ReactDOM from "react-dom";
 import {ActionButton, InfoBadge} from "../SharedSettingsStyles";
 import { tokens } from "../../../../designSystem/tokens";
 import Input from "../../../../designSystem/components/Input";
-import { FiHelpCircle, FiX } from "react-icons/fi";
+import { glassFill } from "../../../../designSystem/components/Button";
+import { Portal } from "../../../../context/PortalContext";
+import { Modal, ModalHeader, ModalTitle, ModalClose, ModalBody } from "../../../../designSystem/components/Modal";
+import { FiHelpCircle } from "react-icons/fi";
 
 // Help button for opening info popup
 const HelpButtonStyled = styled.button`
@@ -32,85 +34,9 @@ const HelpButtonStyled = styled.button`
     }
 `;
 
-// Popup overlay
-const PopupOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: ${tokens.color.scrim.strong};
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: ${tokens.z.modal};
-    padding: ${tokens.space.xl};
-`;
-
-// Popup container
-const PopupContainer = styled.div`
-    background: ${tokens.gradient.surface};
-    border: 1px solid ${tokens.color.border.default};
-    border-radius: ${tokens.radius.xxl};
-    max-width: 600px;
-    width: 100%;
-    max-height: 80vh;
-    overflow-y: auto;
-    box-shadow: ${tokens.shadow.xl};
-`;
-
-const PopupHeader = styled.div`
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: ${tokens.space.xl} ${tokens.space.xxl};
-    border-bottom: 1px solid ${tokens.color.border.subtle};
-    background: ${tokens.gradient.raised};
-    border-radius: ${tokens.radius.xxl} ${tokens.radius.xxl} 0 0;
-
-    h3 {
-        margin: 0;
-        font-size: ${tokens.font.size.xl};
-        font-weight: ${tokens.font.weight.semibold};
-        color: ${tokens.color.text.primary};
-        display: flex;
-        align-items: center;
-        gap: 10px;
-
-        svg {
-            color: ${tokens.color.accent.primary};
-        }
-    }
-`;
-
-const CloseButton = styled.button`
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    padding: 0;
-    border: 1px solid ${tokens.color.border.default};
-    border-radius: ${tokens.radius.lg};
-    background: rgba(107, 114, 128, 0.1);
-    color: ${tokens.color.text.faint};
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: rgba(220, 38, 38, 0.1);
-        border-color: ${tokens.color.danger.base};
-        color: ${tokens.color.danger.base};
-    }
-
-    svg {
-        width: 18px;
-        height: 18px;
-    }
-`;
-
-const PopupContent = styled.div`
-    padding: ${tokens.space.xxl};
+// Help-проза внутри модалки: сохраняем типографику и спец-классы help-контента.
+const HelpBody = styled(ModalBody)`
+    display: block;
     color: ${tokens.color.text.tertiary};
     line-height: 1.7;
     font-size: 0.95rem;
@@ -139,30 +65,26 @@ const PopupContent = styled.div`
     }
 `;
 
-// Help Info Popup Component - uses Portal to render at popup-root level
+// Help Info Popup Component — Portal + DS Modal-примитивы (единый chrome).
 export const HelpInfoPopup = ({ isOpen, onClose, title, icon, children }) => {
+    const id = React.useId();
     if (!isOpen) return null;
 
-    const portalRoot = document.getElementById('popup-root') || document.body;
-
-    return ReactDOM.createPortal(
-        <PopupOverlay onClick={onClose}>
-            <PopupContainer onClick={(e) => e.stopPropagation()}>
-                <PopupHeader>
-                    <h3>
+    return (
+        <Portal id={`help-${id}`} onClose={onClose}>
+            <Modal $maxWidth="600px" $maxHeight="80vh">
+                <ModalHeader>
+                    <ModalTitle>
                         {icon}
                         {title}
-                    </h3>
-                    <CloseButton onClick={onClose}>
-                        <FiX />
-                    </CloseButton>
-                </PopupHeader>
-                <PopupContent>
+                    </ModalTitle>
+                    <ModalClose onClick={onClose} />
+                </ModalHeader>
+                <HelpBody>
                     {children}
-                </PopupContent>
-            </PopupContainer>
-        </PopupOverlay>,
-        portalRoot
+                </HelpBody>
+            </Modal>
+        </Portal>
     );
 };
 
@@ -215,11 +137,10 @@ export const NameInput = styled(Input)`
 `;
 
 export const AddButton = styled(ActionButton)`
-    background: ${tokens.color.accent.primary};
+    ${glassFill(tokens.color.accent.primary, tokens.color.accent.primaryHover)}
     border-color: ${tokens.color.accent.primary};
 
     &:hover {
-        background: ${tokens.color.accent.primaryHover};
         border-color: ${tokens.color.accent.primaryHover};
     }
 `;

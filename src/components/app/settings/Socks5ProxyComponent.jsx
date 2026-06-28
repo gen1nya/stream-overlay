@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../designSystem/tokens";
 import Input from "../../../designSystem/components/Input";
+import { glassFill } from "../../../designSystem/components/Button";
 import { useTranslation } from 'react-i18next';
 import { FiShield, FiSettings, FiGlobe, FiLock, FiUnlock, FiCheckCircle, FiAlertCircle } from 'react-icons/fi';
 import {
@@ -96,11 +97,10 @@ const ProxyGrid = styled.div`
 `;
 
 const TestButton = styled(ActionButton)`
-    background: #3b82f6;
+    ${glassFill('#3b82f6', '#2563eb')}
     border-color: #3b82f6;
 
     &:hover:not(:disabled) {
-        background: #2563eb;
         border-color: #2563eb;
     }
 

@@ -25,6 +25,7 @@ import {
 } from './SharedSettingsStyles';
 import Switch from '../../utils/Switch';
 import Input from "../../../designSystem/components/Input";
+import { glassFill } from "../../../designSystem/components/Button";
 import {Row} from "../SettingsComponent";
 
 // Специфичные стили для YouTube компонента
@@ -144,13 +145,12 @@ const ViewerCount = styled.span`
 `;
 
 const RefreshButton = styled(ActionButton)`
-    background: #374151;
+    ${glassFill('#374151', '#4b5563')}
     border-color: #4b5563;
     min-width: auto;
     padding: 8px;
 
     &:hover {
-        background: #4b5563;
         border-color: #6b7280;
     }
 

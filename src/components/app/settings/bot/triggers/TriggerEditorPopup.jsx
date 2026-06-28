@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
-import ReactDOM from "react-dom";
+import React, { useState, useEffect, useId } from "react";
 import styled from "styled-components";
 import { tokens } from "../../../../../designSystem/tokens";
+import { Portal } from "../../../../../context/PortalContext";
+import { Modal } from "../../../../../designSystem";
 import { useTranslation } from 'react-i18next';
 import {
     FiX, FiSave, FiZap, FiMessageSquare, FiGift, FiUserPlus, FiCommand,
@@ -17,33 +18,6 @@ import MediaEventEditorPopup from "./MediaEventEditorPopup";
 import ObsActionEditorPopup from "./ObsActionEditorPopup";
 import HttpActionEditorPopup from "./HttpActionEditorPopup";
 import {Spacer} from "../../../../utils/Separator";
-
-const PopupOverlay = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999;
-    padding: 20px;
-`;
-
-const PopupContainer = styled.div`
-    background: ${tokens.gradient.surface};
-    border: 1px solid ${tokens.color.border.default};
-    border-radius: ${tokens.radius.xxl};
-    max-width: 900px;
-    width: 100%;
-    max-height: 85vh;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-`;
 
 const PopupHeader = styled.div`
     display: flex;
@@ -487,6 +461,7 @@ const DELAY_UNITS = ['seconds', 'minutes', 'hours', 'days'];
 
 export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     const { t } = useTranslation();
+    const portalId = useId();
     const [editedRule, setEditedRule] = useState(rule);
     const [rewards, setRewards] = useState([]);
     const [loadingRewards, setLoadingRewards] = useState(false);
@@ -799,13 +774,16 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
     };
 
     const eventConfig = EVENT_TYPE_CONFIG[editedRule.condition.eventType] || EVENT_TYPE_CONFIG.command;
-    const portalRoot = document.getElementById('popup-root') || document.body;
 
     return (
         <>
-            {ReactDOM.createPortal(
-                <PopupOverlay onClick={onClose}>
-                    <PopupContainer onClick={(e) => e.stopPropagation()}>
+            <Portal
+                id={`trigger-editor-${portalId}`}
+                onClose={onClose}
+                overlayBackground="rgba(0, 0, 0, 0.8)"
+                padding="20px"
+            >
+                <Modal $maxWidth="900px" $maxHeight="85vh">
                         <PopupHeader>
                     <h3>
                         <FiZap />
@@ -1306,10 +1284,8 @@ export default function TriggerEditorPopup({ rule, onSave, onClose }) {
                         </FlowStepContent>
                         </FlowStep>
                     </PopupContent>
-                </PopupContainer>
-            </PopupOverlay>,
-            portalRoot
-        )}
+                </Modal>
+            </Portal>
 
             {mediaEventEditorOpen && (
                 <MediaEventEditorPopup

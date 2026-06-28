@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../designSystem/tokens";
+import { glassFill } from "../../../designSystem/components/Button";
 import {FiVolume2, FiSettings, FiRefreshCw, FiMic, FiActivity, FiExternalLink, FiEye} from 'react-icons/fi';
 import {
     getAudioDeviceList,
@@ -111,13 +112,12 @@ const ParameterGrid = styled.div`
 `;
 
 const RefreshButton = styled(ActionButton)`
-    background: #374151;
+    ${glassFill('#374151', '#4b5563')}
     border-color: #4b5563;
     min-width: auto;
     padding: 10px;
 
     &:hover {
-        background: #4b5563;
         border-color: #6b7280;
     }
 
@@ -128,13 +128,8 @@ const RefreshButton = styled(ActionButton)`
 `;
 
 const DemoButton = styled(ActionButton)`
-    background: ${tokens.color.feature.players.softBorder};
+    ${glassFill(tokens.color.feature.players.softBorder, tokens.color.feature.players.base)}
     border-color: ${tokens.color.feature.players.base};
-
-    &:hover {
-        background: ${tokens.color.feature.players.base};
-        border-color: ${tokens.color.feature.players.base};
-    }
 `;
 
 const FFTWrapper = styled.div`

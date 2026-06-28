@@ -19,21 +19,9 @@ import {
     testObsAction,
 } from "../../../../../services/api";
 import { useObsStatus } from "../../../../../hooks/useObsStatus";
+import { Modal } from "../../../../../designSystem";
 
 // ─── Styles (trimmed clone of MediaEventEditorPopup) ────────────
-
-const PopupContainer = styled.div`
-    background: ${tokens.gradient.surface};
-    border: 1px solid ${tokens.color.border.default};
-    border-radius: ${tokens.radius.xxl};
-    max-width: 640px;
-    width: 100%;
-    max-height: 90vh;
-    overflow: hidden;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    display: flex;
-    flex-direction: column;
-`;
 
 const PopupHeader = styled.div`
     display: flex;
@@ -418,7 +406,7 @@ export default function ObsActionEditorPopup({ action: initialAction, onSave, on
             overlayBackground="rgba(0, 0, 0, 0.8)"
             padding="20px"
         >
-            <PopupContainer>
+            <Modal $maxWidth="640px" $maxHeight="90vh">
                 <PopupHeader>
                     <h3>
                         <FiSliders />
@@ -495,7 +483,7 @@ export default function ObsActionEditorPopup({ action: initialAction, onSave, on
                         })}
                     </Section>
                 </PopupContent>
-            </PopupContainer>
+            </Modal>
         </Portal>
     );
 }

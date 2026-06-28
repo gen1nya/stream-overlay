@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../../../designSystem/tokens";
+import { Button, ConfirmDialog } from "../../../../../designSystem";
+import { Portal } from "../../../../../context/PortalContext";
 import Popup from '../../../../utils/PopupComponent';
 import {
     FiX,
@@ -12,7 +14,6 @@ import {
     FiCheck,
     FiXCircle,
     FiZap,
-    FiAlertTriangle,
     FiStar,
     FiShield,
     FiMessageSquare,
@@ -85,35 +86,6 @@ const Tab = styled.button`
     }
 `;
 
-const ToolbarButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border: 1px solid ${({ $danger }) => $danger ? '#ff5555' : '#555'};
-    border-radius: ${tokens.radius.lg};
-    background: ${({ $danger }) => $danger ? '#ff555515' : '#1e1e1e'};
-    color: ${({ $danger }) => $danger ? '#ff5555' : '#d6d6d6'};
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: ${({ $danger }) => $danger ? '#ff555530' : '#2a2a2a'};
-        border-color: ${({ $danger }) => $danger ? '#ff5555' : '#646cff'};
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    svg {
-        width: 16px;
-        height: 16px;
-    }
-`;
-
 const StatusBadge = styled.div`
     display: inline-flex;
     align-items: center;
@@ -180,93 +152,6 @@ const ActionTypeBadge = styled.div`
     svg {
         width: 12px;
         height: 12px;
-    }
-`;
-
-const ConfirmModal = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-`;
-
-const ConfirmContent = styled.div`
-    background: ${tokens.color.bg.raised};
-    border-radius: ${tokens.radius.xl};
-    border: 1px solid ${tokens.color.border.default};
-    padding: 24px;
-    max-width: 400px;
-    text-align: center;
-`;
-
-const ConfirmIcon = styled.div`
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #ff555520;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-
-    svg {
-        width: 32px;
-        height: 32px;
-        color: #ff5555;
-    }
-`;
-
-const ConfirmTitle = styled.h3`
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    margin: 0 0 12px;
-`;
-
-const ConfirmText = styled.p`
-    color: ${tokens.color.text.muted};
-    font-size: 0.95rem;
-    margin: 0 0 24px;
-    line-height: 1.5;
-`;
-
-const ConfirmButtons = styled.div`
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-`;
-
-const ConfirmButton = styled.button`
-    padding: 12px 24px;
-    border: none;
-    border-radius: ${tokens.radius.lg};
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &.cancel {
-        background: #444;
-        color: #d6d6d6;
-
-        &:hover {
-            background: #555;
-        }
-    }
-
-    &.danger {
-        background: #ff5555;
-        color: ${tokens.color.text.primary};
-
-        &:hover {
-            background: #ff3333;
-        }
     }
 `;
 
@@ -421,10 +306,10 @@ export default function TriggerHistoryPopup({ onClose }) {
                         <span className="count">{pendingCount}</span>
                     </Tab>
                     <div style={{ flex: 1 }} />
-                    <ToolbarButton onClick={loadData}>
+                    <Button $variant="neutral" $size="md" onClick={loadData}>
                         <FiRefreshCw />
                         {t('settings.bot.triggers.history.refresh')}
-                    </ToolbarButton>
+                    </Button>
                 </TabsContainer>
 
                 <TableContainer>
@@ -581,34 +466,25 @@ export default function TriggerHistoryPopup({ onClose }) {
                     )}
                 </TableContainer>
 
-                {/* Confirm Cancel Modal */}
-                {confirmCancel && (
-                    <ConfirmModal onClick={() => setConfirmCancel(null)}>
-                        <ConfirmContent onClick={(e) => e.stopPropagation()}>
-                            <ConfirmIcon>
-                                <FiAlertTriangle />
-                            </ConfirmIcon>
-                            <ConfirmTitle>
-                                {t('settings.bot.triggers.history.cancelConfirmTitle')}
-                            </ConfirmTitle>
-                            <ConfirmText>
-                                {t('settings.bot.triggers.history.cancelConfirmText', {
-                                    action: t(`settings.bot.triggers.actionTypes.${confirmCancel.actionType}`),
-                                    user: confirmCancel.targetUserName
-                                })}
-                            </ConfirmText>
-                            <ConfirmButtons>
-                                <ConfirmButton className="cancel" onClick={() => setConfirmCancel(null)}>
-                                    {t('settings.bot.triggers.history.cancelNo')}
-                                </ConfirmButton>
-                                <ConfirmButton className="danger" onClick={handleCancelAction}>
-                                    {t('settings.bot.triggers.history.cancelYes')}
-                                </ConfirmButton>
-                            </ConfirmButtons>
-                        </ConfirmContent>
-                    </ConfirmModal>
-                )}
             </PopupContent>
+
+            {/* Confirm cancel dialog */}
+            {confirmCancel && (
+                <Portal id="trigger-history-confirm" onClose={() => setConfirmCancel(null)}>
+                    <ConfirmDialog
+                        variant="danger"
+                        title={t('settings.bot.triggers.history.cancelConfirmTitle')}
+                        text={t('settings.bot.triggers.history.cancelConfirmText', {
+                            action: t(`settings.bot.triggers.actionTypes.${confirmCancel.actionType}`),
+                            user: confirmCancel.targetUserName
+                        })}
+                        confirmLabel={t('settings.bot.triggers.history.cancelYes')}
+                        cancelLabel={t('settings.bot.triggers.history.cancelNo')}
+                        onCancel={() => setConfirmCancel(null)}
+                        onConfirm={handleCancelAction}
+                    />
+                </Portal>
+            )}
         </Popup>
     );
 }

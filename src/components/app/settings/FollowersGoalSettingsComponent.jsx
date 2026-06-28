@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../designSystem/tokens";
+import { glassFill } from "../../../designSystem/components/Button";
 import {
     CardContent,
     CollapsibleCard,
@@ -82,13 +83,8 @@ const Label = styled.label`
 `;
 
 const LinkButton = styled(ActionButton)`
-    background: ${tokens.color.feature.goals.softBorder};
+    ${glassFill(tokens.color.feature.goals.softBorder, tokens.color.feature.goals.base)}
     border-color: ${tokens.color.feature.goals.base};
-
-    &:hover {
-        background: ${tokens.color.feature.goals.base};
-        border-color: ${tokens.color.feature.goals.base};
-    }
 `;
 
 export default function FollowersGoalSettingsComponent({ current, onChange, openColorPopup }) {

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import styled from 'styled-components';
 import { tokens } from "../../../../../designSystem/tokens";
+import { Button, ConfirmDialog } from "../../../../../designSystem";
+import { Portal } from "../../../../../context/PortalContext";
 import Popup from '../../../../utils/PopupComponent';
 import {
     FiX,
@@ -14,8 +16,7 @@ import {
     FiAward,
     FiTrendingUp,
     FiUsers,
-    FiRefreshCw,
-    FiAlertTriangle
+    FiRefreshCw
 } from 'react-icons/fi';
 import {
     getRoulettePlays,
@@ -82,35 +83,6 @@ const Tab = styled.button`
         background: ${({ $active }) => $active ? '#646cff' : '#444'};
         color: ${tokens.color.text.primary};
         font-size: 0.8rem;
-    }
-`;
-
-const ToolbarButton = styled.button`
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px 16px;
-    border: 1px solid ${({ $danger }) => $danger ? '#ff5555' : '#555'};
-    border-radius: ${tokens.radius.lg};
-    background: ${({ $danger }) => $danger ? '#ff555515' : '#1e1e1e'};
-    color: ${({ $danger }) => $danger ? '#ff5555' : '#d6d6d6'};
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &:hover {
-        background: ${({ $danger }) => $danger ? '#ff555530' : '#2a2a2a'};
-        border-color: ${({ $danger }) => $danger ? '#ff5555' : '#646cff'};
-    }
-
-    &:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    svg {
-        width: 16px;
-        height: 16px;
     }
 `;
 
@@ -199,93 +171,6 @@ const RankBadge = styled.span`
         return '#444';
     }};
     color: ${({ $rank }) => $rank <= 3 ? '#000' : '#fff'};
-`;
-
-const ConfirmModal = styled.div`
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-`;
-
-const ConfirmContent = styled.div`
-    background: ${tokens.color.bg.raised};
-    border-radius: ${tokens.radius.xl};
-    border: 1px solid ${tokens.color.border.default};
-    padding: 24px;
-    max-width: 400px;
-    text-align: center;
-`;
-
-const ConfirmIcon = styled.div`
-    width: 64px;
-    height: 64px;
-    border-radius: 50%;
-    background: #ff555520;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
-
-    svg {
-        width: 32px;
-        height: 32px;
-        color: #ff5555;
-    }
-`;
-
-const ConfirmTitle = styled.h3`
-    font-size: 1.3rem;
-    font-weight: 600;
-    color: ${tokens.color.text.primary};
-    margin: 0 0 12px;
-`;
-
-const ConfirmText = styled.p`
-    color: ${tokens.color.text.muted};
-    font-size: 0.95rem;
-    margin: 0 0 24px;
-    line-height: 1.5;
-`;
-
-const ConfirmButtons = styled.div`
-    display: flex;
-    gap: 12px;
-    justify-content: center;
-`;
-
-const ConfirmButton = styled.button`
-    padding: 12px 24px;
-    border: none;
-    border-radius: ${tokens.radius.lg};
-    font-size: 0.95rem;
-    font-weight: 600;
-    cursor: pointer;
-    transition: ${tokens.transition.base};
-
-    &.cancel {
-        background: #444;
-        color: #d6d6d6;
-
-        &:hover {
-            background: #555;
-        }
-    }
-
-    &.danger {
-        background: #ff5555;
-        color: ${tokens.color.text.primary};
-
-        &:hover {
-            background: #ff3333;
-        }
-    }
 `;
 
 export default function RouletteHistoryPopup({ onClose }) {
@@ -441,14 +326,14 @@ export default function RouletteHistoryPopup({ onClose }) {
                         <span className="count">{leaderboard.length}</span>
                     </Tab>
                     <div style={{ flex: 1 }} />
-                    <ToolbarButton onClick={loadAllData}>
+                    <Button $variant="neutral" $size="md" onClick={loadAllData}>
                         <FiRefreshCw />
                         {t('settings.bot.roulette.history.refresh')}
-                    </ToolbarButton>
-                    <ToolbarButton $danger onClick={() => setConfirmClear(true)}>
+                    </Button>
+                    <Button $variant="danger" $size="md" onClick={() => setConfirmClear(true)}>
                         <FiTrash2 />
                         {t('settings.bot.roulette.history.clearAll')}
-                    </ToolbarButton>
+                    </Button>
                 </TabsContainer>
 
                 <TableContainer>
@@ -587,31 +472,22 @@ export default function RouletteHistoryPopup({ onClose }) {
                     )}
                 </TableContainer>
 
-                {/* Confirm Clear Modal */}
-                {confirmClear && (
-                    <ConfirmModal onClick={() => setConfirmClear(false)}>
-                        <ConfirmContent onClick={(e) => e.stopPropagation()}>
-                            <ConfirmIcon>
-                                <FiAlertTriangle />
-                            </ConfirmIcon>
-                            <ConfirmTitle>
-                                {t('settings.bot.roulette.history.clearConfirmTitle')}
-                            </ConfirmTitle>
-                            <ConfirmText>
-                                {t('settings.bot.roulette.history.clearConfirmText')}
-                            </ConfirmText>
-                            <ConfirmButtons>
-                                <ConfirmButton className="cancel" onClick={() => setConfirmClear(false)}>
-                                    {t('settings.bot.roulette.history.clearNo')}
-                                </ConfirmButton>
-                                <ConfirmButton className="danger" onClick={handleClearAll}>
-                                    {t('settings.bot.roulette.history.clearYes')}
-                                </ConfirmButton>
-                            </ConfirmButtons>
-                        </ConfirmContent>
-                    </ConfirmModal>
-                )}
             </PopupContent>
+
+            {/* Confirm clear dialog */}
+            {confirmClear && (
+                <Portal id="roulette-history-confirm" onClose={() => setConfirmClear(false)}>
+                    <ConfirmDialog
+                        variant="danger"
+                        title={t('settings.bot.roulette.history.clearConfirmTitle')}
+                        text={t('settings.bot.roulette.history.clearConfirmText')}
+                        confirmLabel={t('settings.bot.roulette.history.clearYes')}
+                        cancelLabel={t('settings.bot.roulette.history.clearNo')}
+                        onCancel={() => setConfirmClear(false)}
+                        onConfirm={handleClearAll}
+                    />
+                </Portal>
+            )}
         </Popup>
     );
 }

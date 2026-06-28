@@ -1,23 +1,39 @@
 import React, { useId } from 'react';
-import styled from "styled-components";
-import { tokens } from "../../designSystem/tokens";
 import { Portal } from "../../context/PortalContext";
+import { Modal } from "../../designSystem/components/Modal";
 
-const PopupContainer = styled.div`
-    background: #2e2e2e;
-    border-radius: ${tokens.radius.xl};
-    min-width: 300px;
-    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-`;
-
-export default function Popup({ children, onClose }) {
-    const id = useId();
+/**
+ * Тонкая обёртка «открыть модалку»: Portal (оверлей/стек/Escape/scroll-lock)
+ * + контейнер дизайн-системы Modal.
+ *
+ * API обратносовместим (`children`, `onClose`). По умолчанию контейнер
+ * самоподстраивается под контент (min-width 300px, без max-ограничений) —
+ * как старый PopupContainer, — чтобы не ломать существующих потребителей.
+ * Размер/поведение можно переопределить пропами.
+ */
+export default function Popup({
+    children,
+    onClose,
+    id,
+    width,
+    minWidth = '300px',
+    maxWidth = 'none',
+    maxHeight = 'none',
+    preventOverlayClose = false,
+    preventEscapeClose = false,
+}) {
+    const autoId = useId();
 
     return (
-        <Portal id={`popup-${id}`} onClose={onClose}>
-            <PopupContainer>
+        <Portal
+            id={id || `popup-${autoId}`}
+            onClose={onClose}
+            preventOverlayClose={preventOverlayClose}
+            preventEscapeClose={preventEscapeClose}
+        >
+            <Modal $width={width} $minWidth={minWidth} $maxWidth={maxWidth} $maxHeight={maxHeight}>
                 {children}
-            </PopupContainer>
+            </Modal>
         </Portal>
     );
 }
