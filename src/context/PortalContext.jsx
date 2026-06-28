@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import React, { createContext, useContext, useState, useRef, useCallback, useEffect, useReducer } from 'react';
 import ReactDOM from 'react-dom';
 import styled from 'styled-components';
 
@@ -26,23 +26,42 @@ const ModalContainer = styled.div`
 `;
 
 /**
- * PortalProvider - manages modal stack
+ * PortalProvider - manages the modal stack (overlay chrome, stacking order,
+ * escape/backdrop close, scroll lock).
+ *
+ * Each <Portal> registers an id + options here and renders its OWN children
+ * live into the matching container via ReactDOM.createPortal. Children are
+ * never snapshotted into provider state — that one-render-stale snapshot was
+ * what reset controlled-input carets to the end on every keystroke.
  *
  * Usage:
  * 1. Wrap your app with <PortalProvider>
- * 2. Use usePortal() hook to open/close modals
- * 3. Or use <Portal> component for declarative approach
+ * 2. Use the <Portal> component (declarative) to render modal content.
  */
 export function PortalProvider({ children }) {
-    const [modals, setModals] = useState([]);
+    const [modals, setModals] = useState([]); // [{ id, options }]
 
-    const openModal = useCallback((id, content, options = {}) => {
+    // Container DOM nodes live in a ref (stable identity across renders); a
+    // version bump re-renders consumers so a <Portal> can pick up its node.
+    const containersRef = useRef(new Map());
+    const refCallbacksRef = useRef(new Map());
+    const [, bumpVersion] = useReducer(x => x + 1, 0);
+
+    const openModal = useCallback((id, options = {}) => {
         setModals(prev => {
             // Don't add if already exists
             if (prev.some(m => m.id === id)) {
                 return prev;
             }
-            return [...prev, { id, content, options }];
+            return [...prev, { id, options }];
+        });
+    }, []);
+
+    const updateModalOptions = useCallback((id, options) => {
+        setModals(prev => {
+            const modal = prev.find(m => m.id === id);
+            if (!modal) return prev;
+            return prev.map(m => m.id === id ? { ...m, options } : m);
         });
     }, []);
 
@@ -79,6 +98,26 @@ export function PortalProvider({ children }) {
         });
     }, []);
 
+    // Stable per-id ref callback so React doesn't detach/attach (null→node) the
+    // container on every provider render, which would loop with bumpVersion.
+    const getContainerRef = useCallback((id) => {
+        let cb = refCallbacksRef.current.get(id);
+        if (!cb) {
+            cb = (node) => {
+                if (node) {
+                    containersRef.current.set(id, node);
+                } else {
+                    containersRef.current.delete(id);
+                }
+                bumpVersion();
+            };
+            refCallbacksRef.current.set(id, cb);
+        }
+        return cb;
+    }, []);
+
+    const getContainer = useCallback((id) => containersRef.current.get(id), []);
+
     // Handle Escape key to close top modal
     useEffect(() => {
         const handleKeyDown = (e) => {
@@ -106,10 +145,28 @@ export function PortalProvider({ children }) {
         };
     }, [modals.length]);
 
+    // Drop stale ref callbacks for modals that no longer exist
+    useEffect(() => {
+        const live = new Set(modals.map(m => m.id));
+        for (const id of refCallbacksRef.current.keys()) {
+            if (!live.has(id)) refCallbacksRef.current.delete(id);
+        }
+    }, [modals]);
+
     const portalRoot = document.getElementById('popup-root');
 
+    const value = {
+        openModal,
+        updateModalOptions,
+        closeModal,
+        closeAll,
+        closeTopModal,
+        getContainer,
+        modals,
+    };
+
     return (
-        <PortalContext.Provider value={{ openModal, closeModal, closeAll, closeTopModal, modals }}>
+        <PortalContext.Provider value={value}>
             {children}
             {portalRoot && ReactDOM.createPortal(
                 <>
@@ -126,12 +183,7 @@ export function PortalProvider({ children }) {
                                 }
                             }}
                         >
-                            <ModalContainer onClick={e => e.stopPropagation()}>
-                                {typeof modal.content === 'function'
-                                    ? modal.content({ close: () => closeModal(modal.id) })
-                                    : modal.content
-                                }
-                            </ModalContainer>
+                            <ModalContainer ref={getContainerRef(modal.id)} />
                         </ModalOverlay>
                     ))}
                 </>,
@@ -144,11 +196,7 @@ export function PortalProvider({ children }) {
 /**
  * Hook to access portal manager
  *
- * @returns {{ openModal, closeModal, closeAll, closeTopModal }}
- *
- * Example:
- * const { openModal, closeModal } = usePortal();
- * openModal('my-modal', <MyModalContent onClose={() => closeModal('my-modal')} />);
+ * @returns {{ openModal, updateModalOptions, closeModal, closeAll, closeTopModal, getContainer, modals }}
  */
 export function usePortal() {
     const context = useContext(PortalContext);
@@ -178,29 +226,42 @@ export function Portal({
     preventOverlayClose = false,
     preventEscapeClose = false
 }) {
-    const { openModal, closeModal } = usePortal();
+    const { openModal, updateModalOptions, closeModal, getContainer } = usePortal();
 
+    // Keep the latest onClose without re-registering the modal each render.
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
+
+    const buildOptions = () => ({
+        transparentOverlay,
+        overlayBackground,
+        padding,
+        preventOverlayClose,
+        preventEscapeClose,
+        onClose: () => onCloseRef.current && onCloseRef.current(),
+    });
+
+    // Register once on mount, unregister on unmount.
     useEffect(() => {
-        const handleClose = () => {
-            if (onClose) onClose();
-        };
-
-        openModal(id, children, {
-            transparentOverlay,
-            overlayBackground,
-            padding,
-            preventOverlayClose,
-            preventEscapeClose,
-            onClose: handleClose
-        });
-
+        openModal(id, buildOptions());
         return () => {
             // Skip onClose callback during unmount - parent already knows about the close
             closeModal(id, { skipOnClose: true });
         };
-    }, [id, children, openModal, closeModal, onClose, transparentOverlay, overlayBackground, padding, preventOverlayClose, preventEscapeClose]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id]);
 
-    return null;
+    // Keep overlay options in sync when they change (cheap; primitives only).
+    useEffect(() => {
+        updateModalOptions(id, buildOptions());
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [id, transparentOverlay, overlayBackground, padding, preventOverlayClose, preventEscapeClose]);
+
+    // Render children LIVE into the provider's container for this id. This keeps
+    // the modal in this component's render tree, so controlled inputs reconcile
+    // synchronously with their state updates and the caret stays put.
+    const container = getContainer(id);
+    return container ? ReactDOM.createPortal(children, container) : null;
 }
 
 export default PortalContext;
