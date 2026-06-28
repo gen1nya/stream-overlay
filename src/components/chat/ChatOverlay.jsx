@@ -74,7 +74,7 @@ const BackgroundContainer = styled.div`
             case 'color':
                 return theme.overlay?.backgroundColor || 'transparent';
             case 'image':
-                return `url(${theme.overlay?.backgroundImage}) no-repeat center / cover`;
+                return `url("${theme.overlay?.backgroundImage}") no-repeat center / cover`;
             default:
                 return 'transparent';
         }

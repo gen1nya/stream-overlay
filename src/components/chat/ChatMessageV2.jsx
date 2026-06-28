@@ -107,7 +107,7 @@ const ImageBgLayer = styled(BgLayerBase)`
         if (!img.src) return '';
         return css`
             background-color: ${img.backgroundColor};
-            background-image: url(${img.src});
+            background-image: url("${img.src}");
             background-size: 100% 100%;
             background-repeat: no-repeat;
             border: ${img.borderWidth}px solid ${img.borderColor};

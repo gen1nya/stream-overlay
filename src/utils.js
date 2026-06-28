@@ -144,18 +144,18 @@ export function getLayeredBackgroundStyles(themeObject) {
     const sizes = [];
 
     if (backgroundImages.top) {
-        layers.push(`url(${backgroundImages.top})`);
+        layers.push(`url("${backgroundImages.top}")`);
         positions.push('top center');
         sizes.push('100% auto');
     }
     if (backgroundImages.bottom) {
-        layers.push(`url(${backgroundImages.bottom})`);
+        layers.push(`url("${backgroundImages.bottom}")`);
         positions.push('bottom center');
         sizes.push('100% auto');
     }
     if (backgroundImages.middle) {
         const middleAlign = backgroundImages.middleAlign || 'center';
-        layers.push(`url(${backgroundImages.middle})`);
+        layers.push(`url("${backgroundImages.middle}")`);
         positions.push(`${middleAlign} center`);
         sizes.push('100% auto');
     }

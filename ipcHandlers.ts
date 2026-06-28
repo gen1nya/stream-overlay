@@ -1,5 +1,6 @@
 import path from "path";
 import fs from "fs";
+import { pathToFileURL } from 'url';
 import { ipcMain, shell, app } from 'electron';
 import * as authService from './services/twitch/authService';
 import * as messageParser from './services/twitch/messageParser';
@@ -178,7 +179,9 @@ export function registerIpcHandlers(
     await fs.promises.mkdir(saveDir, { recursive: true });
     const fullPath = path.join(saveDir, fileName);
     await fs.promises.writeFile(fullPath, Buffer.from(buffer));
-    return `file://${fullPath}`;
+    // pathToFileURL percent-encodes spaces/Cyrillic/etc. — a raw `file://${fullPath}`
+    // would force the browser to encode it later, desyncing from the on-disk name.
+    return pathToFileURL(fullPath).href;
   });
   ipcMain.handle('utils:get_image_url', (_e, fileName) => `/images/${encodeURIComponent(fileName)}`);
 

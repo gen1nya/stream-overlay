@@ -46,17 +46,17 @@ function threePartBgStyles(imgCfg) {
     const sizes = [];
 
     if (imgCfg.top) {
-        images.push(`url(${imgCfg.top})`);
+        images.push(`url("${imgCfg.top}")`);
         positions.push('top center');
         sizes.push('100% auto');
     }
     if (imgCfg.bottom) {
-        images.push(`url(${imgCfg.bottom})`);
+        images.push(`url("${imgCfg.bottom}")`);
         positions.push('bottom center');
         sizes.push('100% auto');
     }
     if (imgCfg.middle) {
-        images.push(`url(${imgCfg.middle})`);
+        images.push(`url("${imgCfg.middle}")`);
         positions.push(`${imgCfg.middleAlign || 'center'} center`);
         sizes.push('100% auto');
     }
@@ -157,7 +157,7 @@ const BgLayer = styled.div`
                 if (img.src) {
                     return css`
                         background-color: ${img.backgroundColor};
-                        background-image: url(${img.src});
+                        background-image: url("${img.src}");
                         background-size: 100% 100%;
                         background-repeat: no-repeat;
                         ${common}
