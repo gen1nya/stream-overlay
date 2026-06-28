@@ -48,6 +48,8 @@ export default function RoundFFTDemo() {
             sectorGap: getParam('sectorGap', 0.01, parseFloat),
             startAngle: getParam('startAngle', -Math.PI / 2, parseFloat),
             inactiveSector: getParam('inactiveSector', 0, parseFloat),
+            // render cap
+            targetFps: getParam('targetFps', 60, parseFloat),
         };
     }, []);
 
@@ -67,6 +69,7 @@ export default function RoundFFTDemo() {
                 sectorGap={params.sectorGap}
                 startAngle={params.startAngle}
                 inactiveSector={params.inactiveSector}
+                targetFps={params.targetFps}
             />
         </FFTWrapper>
     );

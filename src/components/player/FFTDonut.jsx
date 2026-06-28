@@ -52,6 +52,9 @@ const FFTDonut = ({
                       startAngleUnit    = "rad",  // "rad" | "deg"
                       inactiveSector    = 0,       // размер неактивного сегмента, где спектр не рисуется
                       inactiveSectorUnit= "rad",  // "rad" | "deg"
+
+                      /* ---- render cap ---- */
+                      targetFps         = 60,      // draws every N-th vsync (N=floor(refresh/targetFps))
                   }) => {
     const BAR_COUNT = bars;
 
@@ -80,6 +83,13 @@ const FFTDonut = ({
     const lastDraw   = useRef(animStart.current);
     const frameRef   = useRef();
     const runningRef = useRef(true);  // pause on visibility change (tab hidden)
+
+    /* ========= fps cap + idle-skip ========= */
+    const prevNow    = useRef(performance.now());
+    const emaRaf     = useRef(0);
+    const tickRef    = useRef(0);
+    const dirtyRef   = useRef(true);
+
     const optsRef = useRef({
         barColor,
         barGradient,
@@ -88,6 +98,7 @@ const FFTDonut = ({
         peakHold,
         peakFall,
         peakThickness,
+        targetFps,
     });
 
     useEffect(() => {
@@ -99,10 +110,12 @@ const FFTDonut = ({
             peakHold,
             peakFall,
             peakThickness,
+            targetFps,
         };
+        dirtyRef.current = true;
         const ctx = canvasRef.current?.getContext("2d");
         if (ctx) buildGradient(ctx, innerRRef.current, outerRRef.current);
-    }, [barColor, barGradient, backgroundColor, peakColor, peakHold, peakFall, peakThickness]);
+    }, [barColor, barGradient, backgroundColor, peakColor, peakHold, peakFall, peakThickness, targetFps]);
 
     /* ---------- helpers ---------- */
     const buildGradient = (ctx, r0, rMax) => {
@@ -146,6 +159,7 @@ const FFTDonut = ({
 
         precomputeAngles();
         buildGradient(ctx, innerRRef.current, outerRRef.current);
+        dirtyRef.current = true; // canvas cleared by resize → repaint
     };
 
     useEffect(() => {
@@ -157,22 +171,45 @@ const FFTDonut = ({
         const resizeHandler = () => handleResize(ctx);
         window.addEventListener("resize", resizeHandler);
 
+        /* Per-effect liveness flag — see FFTBars: lets the old rAF loop self-terminate
+           on an effect re-run instead of becoming an unkillable orphan. */
+        let alive = true;
+
         /* visibility pause/resume */
         const onVis = () => {
             runningRef.current = !document.hidden;
-            if (runningRef.current) frameRef.current = requestAnimationFrame(draw);
+            if (alive && runningRef.current) {
+                cancelAnimationFrame(frameRef.current);
+                frameRef.current = requestAnimationFrame(draw);
+            }
         };
         document.addEventListener("visibilitychange", onVis);
 
         /* ---- rAF loop ---- */
         const draw = () => {
-            if (!runningRef.current) return;
+            if (!alive || !runningRef.current) return;
 
             const now = performance.now();
+            const dt = now - prevNow.current;
+            prevNow.current = now;
+
+            /* fps cap: draw every N-th vsync (N = floor(refresh/targetFps)) */
+            if (dt > 0 && dt < 100) {
+                emaRaf.current = emaRaf.current ? emaRaf.current * 0.9 + dt * 0.1 : dt;
+            }
+            const targetInterval = 1000 / (optsRef.current.targetFps || 60);
+            const ema = emaRaf.current || dt || 16.7;
+            const step = Math.max(1, Math.floor(targetInterval / ema + 0.1));
+            if (++tickRef.current < step) {
+                frameRef.current = requestAnimationFrame(draw);
+                return;
+            }
+            tickRef.current = 0;
             lastDraw.current = now;
 
-            /* smooth impl */
+            /* smooth impl (time-based lerp) */
             const lerpT = Math.min(1, (now - animStart.current) / smoothDuration);
+            const lerpActive = now - animStart.current < smoothDuration;
             for (let i = 0; i < BAR_COUNT; i++) {
                 current.current[i] =
                     start.current[i] + (target.current[i] - start.current[i]) * lerpT;
@@ -180,6 +217,10 @@ const FFTDonut = ({
 
             /* peakhold */
             const { peakHold: pHold, peakFall: pFall } = optsRef.current;
+            const r0   = innerRRef.current;
+            const rMax = outerRRef.current;
+            const eps  = 0.5 / Math.max(1, rMax - r0); // sub-pixel "settled" threshold
+            let peakFalling = false;
             for (let i = 0; i < BAR_COUNT; i++) {
                 const v = current.current[i];
                 if (v >= peak.current[i]) {
@@ -189,8 +230,16 @@ const FFTDonut = ({
                     const r = Math.min(1, (now - peakTime.current[i] - pHold) / pFall);
                     const eased = easeQuad(r);
                     peak.current[i] -= (peak.current[i] - v) * eased;
+                    if (peak.current[i] - v > eps) peakFalling = true;
                 }
             }
+
+            /* idle-skip: nothing animating and no pending change → keep last frame */
+            if (!dirtyRef.current && !lerpActive && !peakFalling) {
+                frameRef.current = requestAnimationFrame(draw);
+                return;
+            }
+            dirtyRef.current = false;
 
             /* ---- render ---- */
             const { width: W, height: H } = canvas;
@@ -203,40 +252,39 @@ const FFTDonut = ({
                 ctx.fillRect(-W * 0.5, -H * 0.5, W, H);
             }
 
-            const r0   = innerRRef.current;
-            const rMax = outerRRef.current;
             const grad = gradientRef.current;
             const aS   = angleStartRef.current;
             const aE   = angleEndRef.current;
 
+            /* sectors: one path, one fill (shared radial gradient) */
+            ctx.beginPath();
             for (let i = 0; i < BAR_COUNT; i++) {
                 const val = current.current[i];
                 const rOut = r0 + val * (rMax - r0);
                 if (rOut <= r0) continue; // пропуск нулевых
-
-                // Сектор (кольцевой сегмент)
-                ctx.beginPath();
                 ctx.moveTo(r0 * Math.cos(aS[i]), r0 * Math.sin(aS[i]));
                 ctx.lineTo(rOut * Math.cos(aS[i]), rOut * Math.sin(aS[i]));
                 ctx.arc(0, 0, rOut, aS[i], aE[i]);
                 ctx.lineTo(r0 * Math.cos(aE[i]), r0 * Math.sin(aE[i]));
                 ctx.arc(0, 0, r0, aE[i], aS[i], true);
                 ctx.closePath();
-
-                ctx.fillStyle = gradientEnabled ? grad : bc;
-                ctx.fill();
-
-                /* peak arc */
-                const pVal = peak.current[i];
-                if (pVal > 0) {
-                    const rPeak = r0 + pVal * (rMax - r0);
-                    ctx.strokeStyle = pc;
-                    ctx.lineWidth   = pt;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, rPeak, aS[i], aE[i]);
-                    ctx.stroke();
-                }
             }
+            ctx.fillStyle = gradientEnabled ? grad : bc;
+            ctx.fill();
+
+            /* peak arcs: one path, one stroke (moveTo breaks the sub-arcs apart) */
+            ctx.beginPath();
+            for (let i = 0; i < BAR_COUNT; i++) {
+                const pVal = peak.current[i];
+                if (pVal <= 0) continue;
+                const rPeak = r0 + pVal * (rMax - r0);
+                ctx.moveTo(rPeak * Math.cos(aS[i]), rPeak * Math.sin(aS[i]));
+                ctx.arc(0, 0, rPeak, aS[i], aE[i]);
+            }
+            ctx.strokeStyle = pc;
+            ctx.lineWidth   = pt;
+            ctx.stroke();
+
             ctx.restore();
 
             frameRef.current = requestAnimationFrame(draw);
@@ -252,32 +300,23 @@ const FFTDonut = ({
             wsRef.current.binaryType = 'arraybuffer';
             wsRef.current.onmessage = (e) => {
                 try {
-                    if (e.data instanceof ArrayBuffer) {
-                        let normalizedData;
-                        const view = new DataView(e.data);
-                        const type = view.getUint16(0, true); // 2-byte header, little-endian
+                    if (!(e.data instanceof ArrayBuffer)) return;
 
-                        if (type === 1) { // FFT spectrum
-                            const uint8Data = new Uint8Array(e.data, 2);
-                            normalizedData = Array.from(uint8Data).map(x => x / 255.0);
-                        } else {
-                            return; // Not FFT data
-                        }
+                    const view = new DataView(e.data);
+                    const type = view.getUint16(0, true); // 2-byte header, little-endian
+                    if (type !== 1) return;                // not FFT spectrum
 
-                        let processed;
-                        if (normalizedData.length === bars) {
-                            processed = normalizedData;
-                        } else {
-                            processed = downscaleSpectrumWeighted(normalizedData, bars);
-                        }
+                    // Raw Uint8 (0-255) view, no copy; downscale is linear so /255 after is equivalent.
+                    const raw = new Uint8Array(e.data, 2);
+                    const processed =
+                        raw.length === bars ? raw : downscaleSpectrumWeighted(raw, bars);
 
-                        start.current.set(current.current);
-                        for (let i = 0; i < bars; i++) {
-                            target.current[i] = processed[i];
-                        }
-
-                        animStart.current = performance.now();
+                    start.current.set(current.current);
+                    for (let i = 0; i < bars; i++) {
+                        target.current[i] = processed[i] / 255.0;
                     }
+
+                    animStart.current = performance.now();
                 } catch (err) {
                     console.error("WS parse error", err);
                 }
@@ -297,6 +336,7 @@ const FFTDonut = ({
 
         /* ---- cleanup ---- */
         return () => {
+            alive = false; // stop this effect's rAF loop even if it reschedules
             manualCloseRef.current = true;
             cancelAnimationFrame(frameRef.current);
             clearTimeout(timerRef.current);

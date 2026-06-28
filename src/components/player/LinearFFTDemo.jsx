@@ -39,6 +39,7 @@ export default function LinearFFTDemo() {
             backgroundColor: getParam('backgroundColor', 'rgba(0,0,0,0.00)'),
             smoothDuration: getParam('smoothDuration', 16, parseFloat),
             amplitude: getParam('amplitude', 1, parseFloat),
+            targetFps: getParam('targetFps', 60, parseFloat),
             // peaks
             peakHold: getParam('peakHold', 10, parseFloat),
             peakFall: getParam('peakFall', 800, parseFloat),
@@ -56,6 +57,7 @@ export default function LinearFFTDemo() {
                 backgroundColor={params.backgroundColor}
                 smoothDuration={params.smoothDuration}
                 amplitude={params.amplitude}
+                targetFps={params.targetFps}
                 peakHold={params.peakHold}
                 peakFall={params.peakFall}
                 peakColor={params.peakColor}

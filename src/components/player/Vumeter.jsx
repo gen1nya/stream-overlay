@@ -25,6 +25,7 @@ const VUMeter = ({
                      peakFall          = 500,            // ms, peak fall duration
                      amplitude         = 1,            // scale factor for sensitivity
                      falloff           = 0.92,           // decay factor per frame
+                     targetFps         = 60,            // draws every N-th vsync (N=floor(refresh/targetFps))
                  }) => {
 
     /* ========= data ========= */
@@ -40,6 +41,12 @@ const VUMeter = ({
     const frameRef   = useRef();
     const runningRef = useRef(true);
 
+    /* ========= fps cap + idle-skip ========= */
+    const prevNow    = useRef(performance.now());
+    const emaRaf     = useRef(0);
+    const tickRef    = useRef(0);
+    const dirtyRef   = useRef(true);
+
     const optsRef = useRef({
         barColor,
         glowColor,
@@ -49,6 +56,7 @@ const VUMeter = ({
         peakFall,
         amplitude,
         falloff,
+        targetFps,
     });
 
     useEffect(() => {
@@ -61,14 +69,17 @@ const VUMeter = ({
             peakFall,
             amplitude,
             falloff,
+            targetFps,
         };
-    }, [barColor, glowColor, backgroundColor, labelColor, peakHold, peakFall, amplitude, falloff]);
+        dirtyRef.current = true;
+    }, [barColor, glowColor, backgroundColor, labelColor, peakHold, peakFall, amplitude, falloff, targetFps]);
 
     const handleResize = () => {
         const canvas = canvasRef.current;
         const rect = canvas.getBoundingClientRect();
         canvas.width = rect.width;
         canvas.height = rect.height;
+        dirtyRef.current = true; // canvas cleared by resize → repaint
     };
 
     /* ---------- drawing functions ---------- */
@@ -108,7 +119,7 @@ const VUMeter = ({
     };
 
     const drawChannel = (ctx, x, y, width, height, level, peakLevel, label) => {
-        const { barColor: bc, glowColor: gc, labelColor: lc } = optsRef.current;
+        const { barColor: bc, labelColor: lc } = optsRef.current;
 
         // Draw label (ЛЕВЫЙ/ПРАВЫЙ)
         ctx.font = "bold 11px monospace";
@@ -208,21 +219,44 @@ const VUMeter = ({
         const resizeHandler = () => handleResize();
         window.addEventListener("resize", resizeHandler);
 
+        /* Per-effect liveness flag — lets the old rAF loop self-terminate on an effect
+           re-run instead of becoming an unkillable orphan (see FFTBars). */
+        let alive = true;
+
         /* visibility pause/resume */
         const onVis = () => {
             runningRef.current = !document.hidden;
-            if (runningRef.current) frameRef.current = requestAnimationFrame(draw);
+            if (alive && runningRef.current) {
+                cancelAnimationFrame(frameRef.current);
+                frameRef.current = requestAnimationFrame(draw);
+            }
         };
         document.addEventListener("visibilitychange", onVis);
 
         /* ---- rAF loop ---- */
         const draw = () => {
-            if (!runningRef.current) return;
+            if (!alive || !runningRef.current) return;
 
             const now = performance.now();
+            const dt = now - prevNow.current;
+            prevNow.current = now;
 
-            /* smooth interpolation */
+            /* fps cap: draw every N-th vsync (N = floor(refresh/targetFps)) */
+            if (dt > 0 && dt < 100) {
+                emaRaf.current = emaRaf.current ? emaRaf.current * 0.9 + dt * 0.1 : dt;
+            }
+            const targetInterval = 1000 / (optsRef.current.targetFps || 60);
+            const ema = emaRaf.current || dt || 16.7;
+            const step = Math.max(1, Math.floor(targetInterval / ema + 0.1));
+            if (++tickRef.current < step) {
+                frameRef.current = requestAnimationFrame(draw);
+                return;
+            }
+            tickRef.current = 0;
+
+            /* smooth interpolation (time-based) */
             const lerpT = Math.min(1, (now - animStart.current) / smoothDuration);
+            const lerpActive = now - animStart.current < smoothDuration;
             for (let ch = 0; ch < 2; ch++) {
                 current.current[ch] =
                     start.current[ch] + (target.current[ch] - start.current[ch]) * lerpT;
@@ -242,6 +276,14 @@ const VUMeter = ({
                 }
             }
 
+            /* idle-skip: bars settled and no pending change → keep last frame
+               (peaks aren't rendered here, so lerp is the only animation source) */
+            if (!dirtyRef.current && !lerpActive) {
+                frameRef.current = requestAnimationFrame(draw);
+                return;
+            }
+            dirtyRef.current = false;
+
             /* ---- render ---- */
             const { width: W, height: H } = canvas;
             const { backgroundColor: bgColor } = optsRef.current;
@@ -259,10 +301,8 @@ const VUMeter = ({
             const spacing = 20; // Space for scale between channels
             const startX = padding + labelWidth;
 
-            // Center the entire meter assembly vertically with padding
-            const totalHeight = meterHeight * 2 + spacing;
-            const availableHeight = H - paddingVertical * 2;
-            const startY = paddingVertical //+ (availableHeight - totalHeight) / 2;
+            // Top-aligned with padding (vertical centering was disabled)
+            const startY = paddingVertical;
 
             // Draw first channel
             drawChannel(
@@ -365,6 +405,7 @@ const VUMeter = ({
 
         /* ---- cleanup ---- */
         return () => {
+            alive = false; // stop this effect's rAF loop even if it reschedules
             manualCloseRef.current = true;
             cancelAnimationFrame(frameRef.current);
             clearTimeout(timerRef.current);

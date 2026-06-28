@@ -28,6 +28,7 @@ const FFTBars = ({
                      peakThickness     = 2,       // px, thickness of peak line
                      amplitude         = 1,       // vertical scale factor (0-1)
                      bars              = 256,     // number of frequency bands
+                     targetFps         = 60,      // render cap; draws every N-th vsync (N=floor(refresh/targetFps))
                  }) => {
     const BAR_COUNT = bars;
 
@@ -54,6 +55,13 @@ const FFTBars = ({
     const lastDraw   = useRef(animStart.current);
     const frameRef   = useRef();
     const runningRef = useRef(true);
+
+    /* ========= fps cap + idle-skip ========= */
+    const prevNow    = useRef(performance.now()); // last rAF timestamp (for refresh estimate)
+    const emaRaf     = useRef(0);                 // smoothed vsync interval (ms)
+    const tickRef    = useRef(0);                 // vsync counter for the cap
+    const dirtyRef   = useRef(true);              // force a redraw (resize / opts change)
+
     const optsRef = useRef({
         barColor,
         barGradient,
@@ -63,6 +71,7 @@ const FFTBars = ({
         peakColor,
         peakThickness,
         amplitude,
+        targetFps,
     });
 
     useEffect(() => {
@@ -75,10 +84,12 @@ const FFTBars = ({
             peakColor,
             peakThickness,
             amplitude,
+            targetFps,
         };
+        dirtyRef.current = true; // visual config changed → repaint even while idle
         const ctx = canvasRef.current?.getContext("2d");
         if (ctx) buildGradient(ctx, canvasRef.current.height);
-    }, [barColor, barGradient, backgroundColor, peakHold, peakFall, peakColor, peakThickness]);
+    }, [barColor, barGradient, backgroundColor, peakHold, peakFall, peakColor, peakThickness, amplitude, targetFps]);
 
     /* ---------- helpers ---------- */
     const buildGradient = (ctx, h) => {
@@ -105,6 +116,7 @@ const FFTBars = ({
         for (let i = 0; i < BAR_COUNT; i++) barXRef.current[i] = i * barW;
 
         buildGradient(ctx, canvas.height);
+        dirtyRef.current = true; // canvas was cleared by resize → repaint
     };
 
 /*    useEffect(() => {
@@ -137,29 +149,59 @@ const FFTBars = ({
         const resizeHandler = () => handleResize(ctx);
         window.addEventListener("resize", resizeHandler);
 
+        /* Per-effect liveness flag. The rAF loop reschedules itself, so on an effect
+           re-run (HMR / deps change) the previous closure would keep looping forever —
+           cancelAnimationFrame only holds the last frame id and can't kill an orphan.
+           Checking `alive` lets the old loop self-terminate. */
+        let alive = true;
+
         /* visibility pause/resume */
         const onVis = () => {
             runningRef.current = !document.hidden;
-            if (runningRef.current) frameRef.current = requestAnimationFrame(draw);
+            if (alive && runningRef.current) {
+                cancelAnimationFrame(frameRef.current); // avoid double-scheduling a loop
+                frameRef.current = requestAnimationFrame(draw);
+            }
         };
         document.addEventListener("visibilitychange", onVis);
 
         /* ---- rAF loop ---- */
         const draw = () => {
-            if (!runningRef.current) return;
+            if (!alive || !runningRef.current) return;
 
             const now = performance.now();
+            const dt = now - prevNow.current;
+            prevNow.current = now;
+
+            /* fps cap: estimate the display interval, then draw every N-th vsync.
+               N = floor(targetInterval / refreshInterval) → effective fps stays >= target
+               (rounds fps UP when target doesn't divide the refresh, e.g. 144Hz→72). */
+            if (dt > 0 && dt < 100) {
+                emaRaf.current = emaRaf.current ? emaRaf.current * 0.9 + dt * 0.1 : dt;
+            }
+            const targetInterval = 1000 / (optsRef.current.targetFps || 60);
+            const ema = emaRaf.current || dt || 16.7;
+            const step = Math.max(1, Math.floor(targetInterval / ema + 0.1));
+            if (++tickRef.current < step) {
+                frameRef.current = requestAnimationFrame(draw);
+                return;
+            }
+            tickRef.current = 0;
             lastDraw.current = now;
 
-            /* smooth impl */
+            /* smooth impl (time-based lerp → independent of the render rate) */
             const lerpT = Math.min(1, (now - animStart.current) / smoothDuration);
+            const lerpActive = now - animStart.current < smoothDuration;
             for (let i = 0; i < BAR_COUNT; i++) {
                 current.current[i] =
                     start.current[i] + (target.current[i] - start.current[i]) * lerpT;
             }
 
             /* peakhold */
+            const { width: W, height: H } = canvas;
+            const eps = 0.5 / (H || 1); // sub-pixel: peaks moving less than this are "settled"
             const { peakHold: pHold, peakFall: pFall } = optsRef.current;
+            let peakFalling = false;
             for (let i = 0; i < BAR_COUNT; i++) {
                 const v = current.current[i];
                 if (v >= peak.current[i]) {
@@ -169,11 +211,19 @@ const FFTBars = ({
                     const r = Math.min(1, (now - peakTime.current[i] - pHold) / pFall);
                     const eased = easeQuad(r);
                     peak.current[i] -= (peak.current[i] - v) * eased;
+                    if (peak.current[i] - v > eps) peakFalling = true;
                 }
             }
 
+            /* idle-skip: nothing is animating and no pending change → keep the last frame
+               (skips clear + fills + the GPU raster/commit, the dominant cost). */
+            if (!dirtyRef.current && !lerpActive && !peakFalling) {
+                frameRef.current = requestAnimationFrame(draw);
+                return;
+            }
+            dirtyRef.current = false;
+
             /* ---- render ---- */
-            const { width: W, height: H } = canvas;
             ctx.clearRect(0, 0, W, H);
             const {
                 backgroundColor: bgColor,
@@ -187,26 +237,26 @@ const FFTBars = ({
                 ctx.fillRect(0, 0, W, H);
             }
 
-            const barW = barWRef.current;
-            const xs   = barXRef.current;
-            const grad = gradientRef.current;
+            const xs = barXRef.current;
+            const bw = barWRef.current * 0.88;
 
+            /* bars: one path, one fill (gradient is x-independent, so a single fill works) */
+            ctx.beginPath();
             for (let i = 0; i < BAR_COUNT; i++) {
                 const h = current.current[i] * H;
-                ctx.fillStyle = gradientEnabled ? grad : bc;
-                ctx.fillRect(xs[i], H - h, barW * 0.88, h);
-
-                const peakH = peak.current[i] * H;
-                if (peakH > 0) {
-                    ctx.fillStyle = pc;
-                    ctx.fillRect(
-                        xs[i],
-                        Math.max(0, H - peakH - pt),
-                        barW * 0.88,
-                        pt
-                    );
-                }
+                if (h > 0) ctx.rect(xs[i], H - h, bw, h);
             }
+            ctx.fillStyle = gradientEnabled ? gradientRef.current : bc;
+            ctx.fill();
+
+            /* peaks: one path, one fill */
+            ctx.beginPath();
+            for (let i = 0; i < BAR_COUNT; i++) {
+                const peakH = peak.current[i] * H;
+                if (peakH > 0) ctx.rect(xs[i], Math.max(0, H - peakH - pt), bw, pt);
+            }
+            ctx.fillStyle = pc;
+            ctx.fill();
 
             frameRef.current = requestAnimationFrame(draw);
         };
@@ -222,35 +272,26 @@ const FFTBars = ({
             wsRef.current.binaryType = 'arraybuffer';
             wsRef.current.onmessage = (e) => {
                 try {
-                    if (e.data instanceof ArrayBuffer) {
-                        let normalizedData;
-                        // Binary mode: check message type
-                        const view = new DataView(e.data);
-                        const type = view.getUint16(0, true); // 2-byte header, little-endian
+                    if (!(e.data instanceof ArrayBuffer)) return;
 
-                        if (type === 1) { // FFT spectrum
-                            const uint8Data = new Uint8Array(e.data, 2); // skip 2-byte header
-                            //console.log("Received FFT data (binary)", uint8Data);
-                            normalizedData = Array.from(uint8Data).map(x => x / 255.0);
-                        } else {
-                            return; // Not FFT data
-                        }
+                    const view = new DataView(e.data);
+                    const type = view.getUint16(0, true); // 2-byte header, little-endian
+                    if (type !== 1) return;                // not FFT spectrum
 
-                        let processed;
-                        if (normalizedData.length === bars) {
-                            processed = normalizedData;
-                        } else {
-                            processed = downscaleSpectrumWeighted(normalizedData, bars);
-                        }
+                    // Raw Uint8 (0-255) view over the payload, no copy. downscale is a
+                    // weighted average (linear), so dividing by 255 afterwards is equivalent
+                    // to normalizing first — lets us skip the per-message Array.from().map().
+                    const raw = new Uint8Array(e.data, 2);
+                    const processed =
+                        raw.length === bars ? raw : downscaleSpectrumWeighted(raw, bars);
 
-                        start.current.set(current.current);
-                        const amp = optsRef.current.amplitude || 1.0;
-                        for (let i = 0; i < bars; i++) {
-                            target.current[i] = processed[i] * amp;
-                        }
-
-                        animStart.current = performance.now();
+                    start.current.set(current.current);
+                    const k = (optsRef.current.amplitude || 1.0) / 255.0;
+                    for (let i = 0; i < bars; i++) {
+                        target.current[i] = processed[i] * k;
                     }
+
+                    animStart.current = performance.now();
                 } catch (err) {
                     console.error("WS parse error", err);
                 }
@@ -271,6 +312,7 @@ const FFTBars = ({
 
         /* ---- cleanup ---- */
         return () => {
+            alive = false; // stop this effect's rAF loop even if it reschedules
             manualCloseRef.current = true;
             cancelAnimationFrame(frameRef.current);
             clearTimeout(timerRef.current);
