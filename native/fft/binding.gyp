@@ -63,6 +63,31 @@
       ],
       "cflags!": ["-fno-exceptions"],
       "cflags_cc!": ["-fno-exceptions"]
+    },
+    {
+      "target_name": "fft_test",
+      "type": "executable",
+      "sources": [
+        "test/test_data_structures.cpp",
+        "src/fft_bands.cpp",
+        "third_party/kissfft/kiss_fft.c",
+        "third_party/kissfft/kiss_fftr.c"
+      ],
+      "include_dirs": [
+        "src",
+        "third_party/kissfft"
+      ],
+      "conditions": [
+        ["OS=='win'", {
+          "msvs_settings": {
+            "VCCLCompilerTool": {
+              "ExceptionHandling": 1
+            }
+          }
+        }]
+      ],
+      "cflags!": ["-fno-exceptions"],
+      "cflags_cc!": ["-fno-exceptions"]
     }
   ]
 }

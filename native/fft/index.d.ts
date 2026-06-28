@@ -1,15 +1,18 @@
 export interface Device { id: string; name: string; flow: 'render'|'capture' }
 export interface FftBridge {
-  listDevices(): Device[]
+  listDevices(): Promise<Device[]>
   setDevice(id: string): boolean
   getCurrentDevice(): Device
   setBufferSize(fftSize: number): void
   setHopSize(hopSize: number): void
   setColumns(columns: number): void
+  setLoopback(on: boolean): void
+  setFollowDefault(on: boolean): void
   enable(on: boolean): void
   //onFft(cb: (spectrum: Float32Array)=>void): void
   onFft(cb: (spectrum: Uint8Array) => void): void
   onWave(cb: (waveform: Int16Array )=>void): void
   onVu(cb: (vu: Uint8Array)=>void): void
+  onError(cb: (code: number, message: string)=>void): void
 }
 export const FftBridge: { new(): FftBridge }

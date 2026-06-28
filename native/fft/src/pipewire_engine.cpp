@@ -175,18 +175,24 @@ bool PipeWireEngine::setDevice(const std::string& deviceId) {
     stop();
   }
 
-  currentDeviceId_ = deviceId;
+  followDefault_ = false; // pinning an explicit device leaves follow mode
 
-  // Find device info in map to determine flow
   {
     std::lock_guard<std::mutex> lock(deviceListMutex_);
     auto it = deviceMap_.find(deviceId);
+    // Reject a non-empty id we know nothing about (matches WASAPI's eager check).
+    // If devices haven't been enumerated yet (empty map) defer to connect time.
+    if (!deviceId.empty() && !deviceMap_.empty() && it == deviceMap_.end()) {
+      std::cerr << "PipeWire setDevice: unknown device id: " << deviceId << std::endl;
+      return false;
+    }
     if (it != deviceMap_.end()) {
       currentFlow_ = it->second.flow;
       currentDeviceName_ = it->second.name;
     }
   }
 
+  currentDeviceId_ = deviceId;
   return true;
 }
 
@@ -210,6 +216,12 @@ void PipeWireEngine::setDbFloor(float db) { plan_.dbFloor = db; }
 void PipeWireEngine::setMasterGain(float g) { masterGain_ = g; }
 void PipeWireEngine::setTilt(float exp) { tiltExp_ = exp; }
 void PipeWireEngine::setLoopback(bool on) { loopback_ = on; }
+void PipeWireEngine::setFollowDefault(bool on) {
+  // Applied on the next start(); the caller restarts to switch modes. Once
+  // following, WirePlumber re-links our untargeted sink-capture stream when
+  // the default sink changes — no per-change work needed on our side.
+  followDefault_ = on;
+}
 void PipeWireEngine::setCallback(FftCallback cb) { cb_ = std::move(cb); }
 void PipeWireEngine::setWaveCallback(WaveCallback cb) { waveCb_ = std::move(cb); }
 void PipeWireEngine::setVuCallback(VuCallback cb) { vuCb_ = std::move(cb); }
@@ -302,7 +314,12 @@ void PipeWireEngine::start() {
 
   // For render devices (sinks), use stream.capture.sink property to capture output
   // For capture devices (sources), use normal target
-  if (!currentDeviceId_.empty()) {
+  if (followDefault_) {
+    // Follow the default sink's monitor: capture.sink + no target lets
+    // WirePlumber link us to the current default sink and re-link on change.
+    pw_properties_set(props, "stream.capture.sink", "true");
+    std::cerr << "Following default sink (auto)" << std::endl;
+  } else if (!currentDeviceId_.empty()) {
     if (currentFlow_ == DeviceInfo::Flow::Render) {
       // Capture from sink output (loopback)
       pw_properties_set(props, "stream.capture.sink", "true");

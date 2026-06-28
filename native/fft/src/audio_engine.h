@@ -19,6 +19,9 @@ public:
   using FftCallback = std::function<void(const std::vector<uint8_t>&)>;
   using WaveCallback = std::function<void(const std::vector<int16_t>&)>;
   using VuCallback = std::function<void(const std::vector<uint8_t>&)>;
+  // Fired when capture init/streaming fails (code = platform error code, e.g. an
+  // HRESULT on Windows; message includes a human-readable name).
+  using ErrorCallback = std::function<void(int code, const std::string& message)>;
 
   virtual ~AudioEngine() = default;
 
@@ -38,9 +41,14 @@ public:
   // Audio capture configuration
   virtual void setLoopback(bool on) = 0;
   virtual void enable(bool on) = 0;
+  // Follow the system default render endpoint and auto-switch capture when it
+  // changes. Optional — engines that don't support it keep the default no-op.
+  virtual void setFollowDefault(bool) {}
 
   // Callbacks
   virtual void setCallback(FftCallback cb) = 0;
   virtual void setWaveCallback(WaveCallback cb) = 0;
   virtual void setVuCallback(VuCallback cb) = 0;
+  // Optional — engines that don't report errors keep the default no-op.
+  virtual void setErrorCallback(ErrorCallback) {}
 };

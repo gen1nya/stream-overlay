@@ -93,14 +93,19 @@ private:
 class StopWorker : public Napi::AsyncWorker {
 public:
   StopWorker(Napi::Env env, PlatformEngine* engine,
-             Napi::ThreadSafeFunction* tsfn,
+             Napi::ThreadSafeFunction* fftTsfn,
+             Napi::ThreadSafeFunction* waveTsfn,
+             Napi::ThreadSafeFunction* vuTsfn,
+             Napi::ThreadSafeFunction* errTsfn,
              std::mutex* tsfnMutex,
              Napi::FunctionReference* cbRef,
              Napi::FunctionReference* waveRef,
-             Napi::FunctionReference* vuRef)
+             Napi::FunctionReference* vuRef,
+             Napi::FunctionReference* errRef)
     : Napi::AsyncWorker(env), deferred_(Napi::Promise::Deferred::New(env)),
-      engine_(engine), tsfn_(tsfn), tsfnMutex_(tsfnMutex),
-      cbRef_(cbRef), waveRef_(waveRef), vuRef_(vuRef) {}
+      engine_(engine), fftTsfn_(fftTsfn), waveTsfn_(waveTsfn), vuTsfn_(vuTsfn), errTsfn_(errTsfn),
+      tsfnMutex_(tsfnMutex),
+      cbRef_(cbRef), waveRef_(waveRef), vuRef_(vuRef), errRef_(errRef) {}
 
   void Execute() override {
     try {
@@ -136,12 +141,18 @@ public:
       vuRef_->Unref();
       vuRef_->Reset();
     }
-
-    if (*tsfn_) {
-      //tsfn_->Abort(); // Optionally abort pending calls
-      tsfn_->Release();
-      *tsfn_ = nullptr;
+    if(!errRef_->IsEmpty()) {
+      errRef_->Unref();
+      errRef_->Reset();
     }
+
+    auto releaseTsfn = [](Napi::ThreadSafeFunction* t) {
+      if (*t) { t->Release(); *t = nullptr; }
+    };
+    releaseTsfn(fftTsfn_);
+    releaseTsfn(waveTsfn_);
+    releaseTsfn(vuTsfn_);
+    releaseTsfn(errTsfn_);
 
     deferred_.Resolve(Env().Undefined());
   }
@@ -157,11 +168,61 @@ public:
 private:
   Napi::Promise::Deferred deferred_;
   PlatformEngine* engine_;
-  Napi::ThreadSafeFunction* tsfn_;
+  Napi::ThreadSafeFunction* fftTsfn_;
+  Napi::ThreadSafeFunction* waveTsfn_;
+  Napi::ThreadSafeFunction* vuTsfn_;
+  Napi::ThreadSafeFunction* errTsfn_;
   std::mutex* tsfnMutex_;
   Napi::FunctionReference* cbRef_;
   Napi::FunctionReference* waveRef_;
   Napi::FunctionReference* vuRef_;
+  Napi::FunctionReference* errRef_;
+};
+
+// AsyncWorker for listDevices() operation
+// Device enumeration blocks: WASAPI does COM endpoint queries, PipeWire/PulseAudio
+// lock their loops and wait for a registry/info roundtrip. Running it on a libuv
+// worker thread (like setDevice/enable/stop) keeps the Electron main process — and
+// thus the renderer awaiting the IPC — responsive while it runs.
+class ListDevicesWorker : public Napi::AsyncWorker {
+public:
+  ListDevicesWorker(Napi::Env env, PlatformEngine* engine)
+    : Napi::AsyncWorker(env), deferred_(Napi::Promise::Deferred::New(env)),
+      engine_(engine) {}
+
+  void Execute() override {
+    try {
+      result_ = engine_->listDevices();
+    } catch (const std::exception& e) {
+      SetError(e.what());
+    }
+  }
+
+  void OnOK() override {
+    Napi::Env env = Env();
+    Napi::Array arr = Napi::Array::New(env, result_.size());
+    for (size_t i = 0; i < result_.size(); ++i) {
+      Napi::Object o = Napi::Object::New(env);
+      o.Set("id", Napi::String::New(env, result_[i].id));
+      o.Set("name", Napi::String::New(env, result_[i].name));
+      o.Set("flow", result_[i].flow == DeviceInfo::Flow::Render ? "render" : "capture");
+      arr.Set(i, o);
+    }
+    deferred_.Resolve(arr);
+  }
+
+  void OnError(const Napi::Error& e) override {
+    deferred_.Reject(e.Value());
+  }
+
+  Napi::Promise GetPromise() {
+    return deferred_.Promise();
+  }
+
+private:
+  Napi::Promise::Deferred deferred_;
+  PlatformEngine* engine_;
+  std::vector<DeviceInfo> result_;
 };
 
 class Bridge : public Napi::ObjectWrap<Bridge> {
@@ -178,11 +239,13 @@ public:
       InstanceMethod("setMasterGain", &Bridge::SetMasterGain),
       InstanceMethod("setTilt", &Bridge::SetTilt),
       InstanceMethod("setLoopback", &Bridge::SetLoopback),
+      InstanceMethod("setFollowDefault", &Bridge::SetFollowDefault),
       InstanceMethod("enable", &Bridge::Enable),
       InstanceMethod("onFft", &Bridge::OnFft),
       InstanceMethod("stop", &Bridge::Stop),
       InstanceMethod("onWave", &Bridge::OnWave),
       InstanceMethod("onVu", &Bridge::OnVu),
+      InstanceMethod("onError", &Bridge::OnError),
     });
     exports.Set("FftBridge", ctor);
     return exports;
@@ -197,8 +260,11 @@ public:
     std::cout << "[FFT Bridge] Destructor called" << std::endl;
     eng_.enable(false);
 
-    // Do NOT release TSFN here – StopWorker handles cleanup
-    tsfn_ = nullptr;
+    // Do NOT release TSFNs here – StopWorker handles cleanup
+    fftTsfn_ = nullptr;
+    waveTsfn_ = nullptr;
+    vuTsfn_ = nullptr;
+    errTsfn_ = nullptr;
 
     std::cout << "[FFT Bridge] Destructor finished" << std::endl;
   }
@@ -209,7 +275,7 @@ private:
     std::cout.flush();
     try{
       // Run stop asynchronously to avoid blocking
-      auto* worker = new StopWorker(info.Env(), &eng_, &tsfn_, &tsfnMutex_, &cbRef_, &waveRef_, &vuRef_);
+      auto* worker = new StopWorker(info.Env(), &eng_, &fftTsfn_, &waveTsfn_, &vuTsfn_, &errTsfn_, &tsfnMutex_, &cbRef_, &waveRef_, &vuRef_, &errRef_);
       worker->Queue();
       return worker->GetPromise();
     } catch(const std::exception& e){
@@ -222,16 +288,10 @@ private:
 
   Napi::Value ListDevices(const Napi::CallbackInfo& info){
     try{
-      auto list = eng_.listDevices();
-      Napi::Array arr = Napi::Array::New(info.Env(), list.size());
-      for(size_t i=0;i<list.size();++i){
-        Napi::Object o = Napi::Object::New(info.Env());
-        o.Set("id", Napi::String::New(info.Env(), list[i].id));
-        o.Set("name", Napi::String::New(info.Env(), list[i].name));
-        o.Set("flow", list[i].flow==DeviceInfo::Flow::Render? "render":"capture");
-        arr.Set(i,o);
-      }
-      return arr;
+      // Run enumeration asynchronously to avoid blocking the main process.
+      auto* worker = new ListDevicesWorker(info.Env(), &eng_);
+      worker->Queue();
+      return worker->GetPromise();
     } catch(const std::exception& e){
       Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException();
       return info.Env().Undefined();
@@ -270,13 +330,13 @@ private:
       return info.Env().Undefined();
     }
 
-    // Create TSFN lazily on first callback registration
-    if(!tsfn_) {
-      tsfn_ = Napi::ThreadSafeFunction::New(
+    // Create wave TSFN lazily on first callback registration
+    if(!waveTsfn_) {
+      waveTsfn_ = Napi::ThreadSafeFunction::New(
         info.Env(),
         Napi::Function::New(info.Env(), [](const Napi::CallbackInfo&){ /* noop */ }),
-        "fft_cb",
-        0,  // queue_size = 0 (unbounded, like GSMTC)
+        "wave_cb",
+        0,  // queue_size = 0 (unbounded)
         1   // initial_thread_count = 1
       );
     }
@@ -287,9 +347,9 @@ private:
 
     eng_.setWaveCallback([this](const std::vector<int16_t>& v){
       std::lock_guard<std::mutex> lock(this->tsfnMutex_);
-      if(!this->tsfn_) return;  // TSFN was released, skip callback
+      if(!this->waveTsfn_) return;
       auto payload = std::make_shared<std::vector<int16_t>>(v);
-      this->tsfn_.BlockingCall(
+      this->waveTsfn_.NonBlockingCall(
         payload.get(),
         [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<int16_t>* data){
           Napi::HandleScope scope(env);
@@ -311,13 +371,13 @@ private:
       return info.Env().Undefined();
     }
 
-    // Create TSFN lazily on first callback registration
-    if(!tsfn_) {
-      tsfn_ = Napi::ThreadSafeFunction::New(
+    // Create VU TSFN lazily on first callback registration
+    if(!vuTsfn_) {
+      vuTsfn_ = Napi::ThreadSafeFunction::New(
         info.Env(),
         Napi::Function::New(info.Env(), [](const Napi::CallbackInfo&){ /* noop */ }),
-        "fft_cb",
-        0,  // queue_size = 0 (unbounded, like GSMTC)
+        "vu_cb",
+        0,  // queue_size = 0 (unbounded)
         1   // initial_thread_count = 1
       );
     }
@@ -328,9 +388,9 @@ private:
 
     eng_.setVuCallback([this](const std::vector<uint8_t>& v){
       std::lock_guard<std::mutex> lock(this->tsfnMutex_);
-      if(!this->tsfn_) return;  // TSFN was released, skip callback
+      if(!this->vuTsfn_) return;
       auto payload = std::make_shared<std::vector<uint8_t>>(v);
-      this->tsfn_.BlockingCall(
+      this->vuTsfn_.NonBlockingCall(
         payload.get(),
         [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<uint8_t>* data){
           Napi::HandleScope scope(env);
@@ -338,6 +398,46 @@ private:
             auto arr = Napi::Uint8Array::New(env, data->size());
             std::memcpy(arr.Data(), data->data(), data->size());
             this->vuRef_.Call({ arr });
+          }
+        }
+      );
+    });
+
+    return info.Env().Undefined();
+  }
+
+  Napi::Value OnError(const Napi::CallbackInfo& info){
+    if(!info[0].IsFunction()){
+      Napi::TypeError::New(info.Env(), "callback required").ThrowAsJavaScriptException();
+      return info.Env().Undefined();
+    }
+
+    // Create error TSFN lazily on first callback registration
+    if(!errTsfn_) {
+      errTsfn_ = Napi::ThreadSafeFunction::New(
+        info.Env(),
+        Napi::Function::New(info.Env(), [](const Napi::CallbackInfo&){ /* noop */ }),
+        "err_cb",
+        0,  // queue_size = 0 (unbounded)
+        1   // initial_thread_count = 1
+      );
+    }
+
+    if(!errRef_.IsEmpty()) errRef_.Unref();
+    errRef_ = Napi::Persistent(info[0].As<Napi::Function>());
+    errRef_.Ref();
+
+    eng_.setErrorCallback([this](int code, const std::string& message){
+      std::lock_guard<std::mutex> lock(this->tsfnMutex_);
+      if(!this->errTsfn_) return;
+      auto payload = std::make_shared<std::pair<int, std::string>>(code, message);
+      this->errTsfn_.NonBlockingCall(
+        payload.get(),
+        [this, payload](Napi::Env env, Napi::Function /*js*/, std::pair<int, std::string>* data){
+          Napi::HandleScope scope(env);
+          if(!this->errRef_.IsEmpty()){
+            this->errRef_.Call({ Napi::Number::New(env, data->first),
+                                 Napi::String::New(env, data->second) });
           }
         }
       );
@@ -409,6 +509,15 @@ private:
     return info.Env().Undefined();
   }
 
+  Napi::Value SetFollowDefault(const Napi::CallbackInfo& info){
+    try{
+      eng_.setFollowDefault(info[0].As<Napi::Boolean>().Value());
+    } catch(const std::exception& e){
+      Napi::Error::New(info.Env(), e.what()).ThrowAsJavaScriptException();
+    }
+    return info.Env().Undefined();
+  }
+
   Napi::Value Enable(const Napi::CallbackInfo& info){
     try{
       bool enable = info[0].As<Napi::Boolean>().Value();
@@ -428,13 +537,13 @@ private:
       return info.Env().Undefined();
     }
 
-    // Create TSFN lazily on first callback registration
-    if(!tsfn_) {
-      tsfn_ = Napi::ThreadSafeFunction::New(
+    // Create FFT TSFN lazily on first callback registration
+    if(!fftTsfn_) {
+      fftTsfn_ = Napi::ThreadSafeFunction::New(
         info.Env(),
         Napi::Function::New(info.Env(), [](const Napi::CallbackInfo&){ /* noop */ }),
         "fft_cb",
-        0,  // queue_size = 0 (unbounded, like GSMTC)
+        0,  // queue_size = 0 (unbounded)
         1   // initial_thread_count = 1
       );
     }
@@ -445,9 +554,9 @@ private:
 
     eng_.setCallback([this](const std::vector<uint8_t>& v){
       std::lock_guard<std::mutex> lock(this->tsfnMutex_);
-      if(!this->tsfn_) return;  // TSFN was released, skip callback
+      if(!this->fftTsfn_) return;
       auto payload = std::make_shared<std::vector<uint8_t>>(v);
-      this->tsfn_.BlockingCall(
+      this->fftTsfn_.NonBlockingCall(
         payload.get(),
         [this, payload](Napi::Env env, Napi::Function /*js*/, std::vector<uint8_t>* data){
           Napi::HandleScope scope(env);
@@ -464,10 +573,14 @@ private:
   }
 
   PlatformEngine eng_;
-  Napi::ThreadSafeFunction tsfn_;
+  Napi::ThreadSafeFunction fftTsfn_;
+  Napi::ThreadSafeFunction waveTsfn_;
+  Napi::ThreadSafeFunction vuTsfn_;
+  Napi::ThreadSafeFunction errTsfn_;
   Napi::FunctionReference cbRef_;
   Napi::FunctionReference waveRef_;
   Napi::FunctionReference vuRef_;
+  Napi::FunctionReference errRef_;
   std::mutex tsfnMutex_;  // Protect TSFN access
 };
 

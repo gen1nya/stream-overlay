@@ -10,8 +10,11 @@
 #include <algorithm>
 #include "ringbuffers.h"
 #include "fft_bands.h"
+#include "sample_convert.h"
 
 #pragma comment(lib, "avrt.lib")
+
+struct DefaultDeviceWatcher; // IMMNotificationClient impl, defined in the .cpp
 
 class WasapiEngine : public AudioEngine {
 public:
@@ -31,14 +34,22 @@ public:
   void setTilt(float exp) override;
   void setLoopback(bool on) override;
   void enable(bool on) override;
+  void setFollowDefault(bool on) override;
   void setCallback(FftCallback cb) override;
   void setWaveCallback(WaveCallback cb) override;
   void setVuCallback(VuCallback cb) override;
+  void setErrorCallback(ErrorCallback cb) override;
+
+  // Called by DefaultDeviceWatcher from a COM thread when the system default
+  // render endpoint changes; just signals the worker (no heavy work here).
+  void notifyDefaultChanged();
 
 private:
+  friend struct DefaultDeviceWatcher;
   void start();
   void stop();
-  void workerLoop();
+  bool initCapture();
+  void releaseCapture();
   void computeFftAndPublish(const float* frame);
   void computeAndPublishVu();
   void publishWaveform();
@@ -53,19 +64,28 @@ private:
   Microsoft::WRL::ComPtr<IAudioClient> audioClient_;
   Microsoft::WRL::ComPtr<IAudioCaptureClient> cap_;
 
+  std::string deviceId_;
   WAVEFORMATEX* wfx_ = nullptr;
   std::thread th_;
   std::atomic<bool> running_{false};
   HANDLE stopEvent_ = nullptr;
+  HANDLE captureEvent_ = nullptr;
+
+  // Follow-system-default mode
+  std::atomic<bool> followDefault_{false};
+  HANDLE switchEvent_ = nullptr;          // auto-reset; signalled on default change
+  DefaultDeviceWatcher* watcher_ = nullptr;
 
   BandPlan plan_{};
   BinMap binmap_{};
   int sampleRate_ = 0;
+  SampleFormat fmt_ = SampleFormat::F32;
   FloatRingBuffer sampleBuf_{4096*4};
   TripleBuffer<uint8_t> specBuf_{256};
   FftCallback cb_;
   VuCallback vuCb_;
   WaveCallback waveCb_;
+  ErrorCallback errCb_;
 
   // device props
   EDataFlow dataflow_ = eRender;
@@ -80,11 +100,15 @@ private:
   struct Kiss;
   Kiss* kiss_ = nullptr;
 
-  std::vector<float> waveformBuf_;
+  FloatRingBuffer waveformBuf_{2048};
   std::mutex waveformMutex_;
 
   // VU meter state
   int nChannels_ = 0;
-  std::vector<std::vector<float>> vuBufs_;
+  std::vector<FloatRingBuffer> vuBufs_;
   std::mutex vuMutex_;
+
+  // Device disconnect recovery
+  int consecutiveGetBufferFailures_ = 0;
+  static constexpr int kMaxConsecutiveFailures = 3;
 };

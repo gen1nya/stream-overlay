@@ -1719,6 +1719,7 @@ const ru = {
                 device: {
                     notSelected: 'Не выбрано',
                     placeholder: 'Выберите устройство',
+                    auto: 'Авто (системный по умолчанию)',
                     refresh: 'Обновить список устройств',
                     selected: 'Выбрано: {{name}}',
                 },

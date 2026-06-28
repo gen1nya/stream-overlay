@@ -24,13 +24,19 @@ export class AudiosessionManager {
     private fftbridge = new fft.FftBridge()
     private appStorage: ElectronStore<StoreSchema>;
     private config: AudioConfig;
+    private logService: LogService;
 
     // Кеш для текущего состояния медиасессии
     private currentMediaMetadata: MediaMetadata | null = null;
     private currentFFTSpectrum: number[] | null = null;
 
+    // Thumbnail cache: skip re-encoding when bytes are identical
+    private lastThumbnailBuffer: Buffer | null = null;
+    private lastThumbnailBase64: string | null = null;
+
     constructor(store: ElectronStore<StoreSchema>, logService: LogService) {
         this.appStorage = store;
+        this.logService = logService;
         this.config = this.appStorage.get("audio")
 
         this.fftbridge.setDbFloor(this.config.fft.dbFloor)
@@ -39,48 +45,18 @@ export class AudiosessionManager {
 
         const device = this.config.fft.device;
         if (device) {
-            const devices = this.fftbridge.listDevices()
-            const validDevice = devices.find(d => d.id === device.id);
-            if (validDevice) {
-                logService.logMessage(`Restoring saved audio device: ${device.name}`);
-            } else {
-                logService.logMessage(`Saved audio device not found: ${device.name}; Reset`);
-                this.appStorage.set("audio.fft.device", null);
-            }
-            if (validDevice) {
-                // setDevice might be sync or async depending on module version
-                const setDeviceResult = this.fftbridge.setDevice(device.id);
-                const handleSuccess = (success: boolean) => {
-                    if (success) {
-                        this.fftbridge.setLoopback(device.flow === 'render');
-                        console.log(`Audio device set to: ${device.name}`);
-                        logService.logMessage(`Audio device set to: ${device.name}`);
-                        if (this.config.fft.enabled) {
-                            const enableResult = this.fftbridge.enable(true);
-                            if (enableResult && typeof enableResult.then === 'function') {
-                                enableResult.then(() => {
-                                    console.log("FFT enabled");
-                                }).catch((err) => {
-                                    console.error("Failed to enable FFT:", err);
-                                });
-                            } else {
-                                console.log("FFT enabled");
-                            }
-                        }
-                    } else {
-                        logService.logMessage(`Failed to set audio device: ${device.name}`);
-                        console.error(`Failed to set audio device: ${device.name}`);
-                    }
-                };
-
-                if (setDeviceResult && typeof setDeviceResult.then === 'function') {
-                    setDeviceResult.then(handleSuccess).catch((err) => {
-                        logService.logMessage(`Error setting audio device: ${err.message}`);
-                        console.error(`Error setting audio device:`, err);
-                    });
-                } else {
-                    handleSuccess(setDeviceResult as boolean);
-                }
+            // Validating the saved device requires enumerating devices, which is now
+            // async (runs off the main process). Don't block the constructor on it.
+            void this.restoreSavedDevice(device);
+        } else {
+            // No pinned device → follow the system default endpoint and auto-switch with it.
+            logService.logMessage('Audio device: following system default (Auto)');
+            this.fftbridge.setFollowDefault(true);
+            this.fftbridge.setLoopback(true);
+            if (this.config.fft.enabled) {
+                Promise.resolve(this.fftbridge.enable(true))
+                    .then(() => console.log('FFT enabled (follow default)'))
+                    .catch((err) => console.error('Failed to enable FFT (follow default):', err));
             }
         }
 
@@ -129,102 +105,88 @@ export class AudiosessionManager {
     }
 
     private setupMediaBridges() {
-        const vuSource = new Promise((resolve) => {
-            this.fftbridge.onVu((vu: Uint8Array) => {
-                this.mediaWss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(this.createMessage(2, vu));
-                    }
-                });
-            })
-        });
-        const waveFormSource = new Promise((resolve) => {
-            this.fftbridge.onWave((waveform: Int16Array) => {
-                this.mediaWss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(this.createMessage(0, waveform));
-                    }
-                });
-            })
-        });
-        const fftSource = new Promise((resolve) => {
-            this.fftbridge.onFft((spectrum: Uint8Array) => {
-                const spectrumValues = Object.values(spectrum) as number[];
-                this.currentFFTSpectrum = spectrumValues;
-                this.broadcastMedia('fft', spectrumValues);
-                this.mediaWss.clients.forEach((client) => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(this.createMessage(1, spectrum));
-                    }
-                });
-            })
-        });
-
-        const mediaSessionSource = new Promise((resolve) => {
-            this.gsmtcBridge.start((s) => {
-                const status =
-                    s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
-
-                // Sticky state: ignore empty/invalid data from temporary tab switches
-                // Only update if we have valid data (non-empty title)
-                const hasValidData = s.title && s.title.trim().length > 0;
-
-                if (!hasValidData) {
-                    // Invalid/empty data (e.g., tab switch in browser) - keep current state
-                    // This includes "Stopped" with empty appId/title which is just noise
-                    return;
+        this.fftbridge.onVu((vu: Uint8Array) => {
+            this.mediaWss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(this.createMessage(2, vu));
                 }
-
-                let albumArt: string | undefined = undefined;
-
-                if (s.imageUrl) {
-                    // если Linux дал URL — используем его
-                    albumArt = s.imageUrl;
-                } else if (s.thumbnail && (s.thumbnail as Buffer).length) {
-                    // иначе — Windows thumbnail → base64
-                    const mime = this.detectMime(s.thumbnail as Buffer);
-                    const b64 = (s.thumbnail as Buffer).toString("base64");
-                    albumArt = `data:${mime};base64,${b64}`;
-                }
-
-                const metadata: MediaMetadata = {
-                    title: s.title,
-                    artist: s.artist,
-                    albumTitle: s.album,
-                    appId: s.appId,
-                    duration: s.durationMs / 1000,
-                    position: s.positionMs / 1000,
-                    status,
-                    albumArtBase64: albumArt,
-                };
-
-                this.currentMediaMetadata = metadata;
-                this.broadcastMedia("metadata", metadata);
             });
         });
 
-        mediaSessionSource.then(() => {
-            console.log("GSMTCBridge finished successfully");
-        }).catch((err) => {
-            console.error("Error starting GSMTCBridge:", err);
+        this.fftbridge.onWave((waveform: Int16Array) => {
+            this.mediaWss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(this.createMessage(0, waveform));
+                }
+            });
         });
 
-        fftSource.then(() => {
-            console.log("FftBridge finished successfully");
-        }).catch((err) => {
-            console.error("Error starting FftBridge:", err);
+        this.fftbridge.onFft((spectrum: Uint8Array) => {
+            const spectrumValues = Array.from(spectrum) as number[];
+            this.currentFFTSpectrum = spectrumValues;
+            this.broadcastMedia('fft', spectrumValues);
+            this.mediaWss.clients.forEach((client) => {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(this.createMessage(1, spectrum));
+                }
+            });
         });
 
-        waveFormSource.then(() => {
-            console.log("Waveform source finished successfully");
-        }).catch((err) => {
-            console.error("Error in waveform source:", err);
+        // Capture init/streaming errors (e.g. AUDCLNT_E_DEVICE_IN_USE when the
+        // device is held in exclusive mode). The engine keeps retrying, but we
+        // surface it so the user isn't left with a silently-dead visualizer.
+        this.fftbridge.onError((code: number, message: string) => {
+            const hex = '0x' + (code >>> 0).toString(16).toUpperCase().padStart(8, '0');
+            const text = `FFT capture error ${hex}: ${message}`;
+            console.error('[AudiosessionManager]', text);
+            this.logService.logMessage(text);
+            this.broadcastMedia('fft-error', {code, hex, message});
         });
 
-        vuSource.then(() => {
-            console.log("VU source finished successfully");
-        }).catch((err) => {
-            console.error("Error in VU source:", err);
+        this.gsmtcBridge.start((s) => {
+            const status =
+                s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
+
+            // Sticky state: ignore empty/invalid data from temporary tab switches
+            // Only update if we have valid data (non-empty title)
+            const hasValidData = s.title && s.title.trim().length > 0;
+
+            if (!hasValidData) {
+                // Invalid/empty data (e.g., tab switch in browser) - keep current state
+                return;
+            }
+
+            let albumArt: string | undefined = undefined;
+
+            if (s.imageUrl) {
+                albumArt = s.imageUrl;
+            } else if (s.thumbnail && (s.thumbnail as Buffer).length) {
+                const thumbBuf = s.thumbnail as Buffer;
+                // Use cached base64 if thumbnail bytes are identical
+                if (this.lastThumbnailBuffer && this.lastThumbnailBuffer.equals(thumbBuf)) {
+                    albumArt = this.lastThumbnailBase64!;
+                } else {
+                    const mime = this.detectMime(thumbBuf);
+                    const b64 = thumbBuf.toString("base64");
+                    albumArt = `data:${mime};base64,${b64}`;
+                    this.lastThumbnailBuffer = thumbBuf;
+                    this.lastThumbnailBase64 = albumArt;
+                }
+            }
+
+            const metadata: MediaMetadata = {
+                title: s.title,
+                artist: s.artist,
+                albumTitle: s.album,
+                appId: s.appId,
+                duration: s.durationMs / 1000,
+                position: s.positionMs / 1000,
+                status,
+                albumArtBase64: albumArt,
+            };
+
+            this.currentMediaMetadata = metadata;
+            this.broadcastMedia("metadata", metadata);
         });
     }
 
@@ -286,12 +248,62 @@ export class AudiosessionManager {
 
         this.currentMediaMetadata = null;
         this.currentFFTSpectrum = null;
+        this.lastThumbnailBuffer = null;
+        this.lastThumbnailBase64 = null;
 
         console.log("✅ [AudiosessionManager] AudiosessionManager closed");
     }
 
-    getDevices(): AudioDevice[] {
-        return this.fftbridge.listDevices();
+    async getDevices(): Promise<AudioDevice[]> {
+        return this.listDevices();
+    }
+
+    // Single-flight device enumeration. listDevices() is now async (runs off the main
+    // process), so concurrent callers — e.g. startup restore racing a settings open —
+    // could otherwise drive two native enumerations at once and race the engine's
+    // registry state. Coalesce overlapping calls into one in-flight enumeration.
+    private listDevicesInFlight: Promise<AudioDevice[]> | null = null;
+
+    private listDevices(): Promise<AudioDevice[]> {
+        if (!this.listDevicesInFlight) {
+            this.listDevicesInFlight = Promise.resolve(this.fftbridge.listDevices())
+                .finally(() => { this.listDevicesInFlight = null; });
+        }
+        return this.listDevicesInFlight;
+    }
+
+    // Restore a previously pinned device on startup: enumerate (async), validate it
+    // still exists, then set + (optionally) enable. Resets the stored device if gone.
+    private async restoreSavedDevice(device: AudioDevice): Promise<void> {
+        try {
+            const devices = await this.listDevices();
+            const validDevice = devices.find(d => d.id === device.id);
+            if (!validDevice) {
+                this.logService.logMessage(`Saved audio device not found: ${device.name}; Reset`);
+                this.appStorage.set("audio.fft.device", null);
+                return;
+            }
+
+            this.logService.logMessage(`Restoring saved audio device: ${device.name}`);
+            const success = await this.fftbridge.setDevice(device.id);
+            if (!success) {
+                this.logService.logMessage(`Failed to set audio device: ${device.name}`);
+                console.error(`Failed to set audio device: ${device.name}`);
+                return;
+            }
+
+            this.fftbridge.setLoopback(device.flow === 'render');
+            console.log(`Audio device set to: ${device.name}`);
+            this.logService.logMessage(`Audio device set to: ${device.name}`);
+
+            if (this.config.fft.enabled) {
+                await this.fftbridge.enable(true);
+                console.log("FFT enabled");
+            }
+        } catch (err: any) {
+            this.logService.logMessage(`Error setting audio device: ${err?.message}`);
+            console.error(`Error setting audio device:`, err);
+        }
     }
 
     async setDevice(device: AudioDevice): Promise<boolean> {
@@ -339,6 +351,19 @@ export class AudiosessionManager {
 
         ipcMain.handle('audio:setDevice', async (event, args) => {
             console.log("Setting audio device:", args);
+
+            // Auto / follow system default — no concrete device id was given.
+            if (!args || !args.id) {
+                this.fftbridge.setFollowDefault(true);
+                this.fftbridge.setLoopback(true);
+                this.appStorage.set("audio.fft.device", null);
+                this.config.fft.device = null;
+                await this.fftbridge.enable(false);
+                await this.fftbridge.enable(true);
+                console.log("Audio device set to: Auto (system default)");
+                return true;
+            }
+
             const device: AudioDevice = args;
             try {
                 const success = await this.setDevice(device);

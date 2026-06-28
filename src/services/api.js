@@ -181,6 +181,11 @@ export async function setAudioDevice(id, name, flow) {
     return ipcRenderer?.invoke('audio:setDevice', {id, name, flow});
 }
 
+// Auto: follow the system default render endpoint (null = no pinned device).
+export async function setAudioDeviceAuto() {
+    return ipcRenderer?.invoke('audio:setDevice', null);
+}
+
 export async function getAudioDevice() {
     return ipcRenderer?.invoke('audio:getCurrentDevice');
 }

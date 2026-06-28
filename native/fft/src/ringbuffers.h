@@ -21,6 +21,17 @@ public:
     size_t start = (wpos_ + buf_.size() - n)%buf_.size();
     for(size_t i=0;i<n;++i) dst[i] = buf_[(start+i)%buf_.size()];
   }
+  void writeSingle(float v){
+    buf_[wpos_] = v;
+    wpos_ = (wpos_ + 1) % buf_.size();
+    if(count_ < buf_.size()) ++count_;
+  }
+  template<typename Func>
+  void iterLatest(size_t n, Func fn) const {
+    if(n > count_) n = count_;
+    size_t start = (wpos_ + buf_.size() - n) % buf_.size();
+    for(size_t i = 0; i < n; ++i) fn(buf_[(start + i) % buf_.size()]);
+  }
 private:
   std::vector<float> buf_;
   size_t wpos_ = 0;

@@ -11,7 +11,7 @@ export interface GsmtcState {
 
 export interface Device { id: string; name: string; flow: 'render'|'capture' }
 export interface FftBridge {
-    listDevices(): Device[]
+    listDevices(): Promise<Device[]>
     setDevice(id: string): Promise<boolean>
     getCurrentDevice(): Device
     setBufferSize(fftSize: number): void

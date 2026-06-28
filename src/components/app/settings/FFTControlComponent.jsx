@@ -4,6 +4,7 @@ import {FiVolume2, FiSettings, FiRefreshCw, FiMic, FiActivity, FiExternalLink, F
 import {
     getAudioDeviceList,
     setAudioDevice,
+    setAudioDeviceAuto,
     getAudioDevice,
     enableFFT,
     getFFTconfig, setFFTGain, setFFTdbFloor, setFFTTilt
@@ -280,11 +281,20 @@ export default function FFTControlComponent() {
     // Выбор устройства
     const handleDeviceChange = async (event) => {
         const deviceId = event.target.value;
-        const device = devices.find(d => d.id === deviceId);
-
-        if (!device) return;
 
         try {
+            if (deviceId === '') {
+                // "Auto" — follow the system default device.
+                await setAudioDeviceAuto();
+                setSelectedDevice(null);
+                setError('');
+                if (fftConfig.enabled) await loadFFTConfig();
+                return;
+            }
+
+            const device = devices.find(d => d.id === deviceId);
+            if (!device) return;
+
             await setAudioDevice(device.id, device.name, device.flow);
             setSelectedDevice(device);
             setError('');
@@ -460,7 +470,7 @@ export default function FFTControlComponent() {
                                 onChange={handleDeviceChange}
                                 disabled={devices.length === 0}
                             >
-                                <option value="">{t('settings.fft.device.placeholder')}</option>
+                                <option value="">{t('settings.fft.device.auto')}</option>
                                 {devices.map((device) => (
                                     <option key={device.id} value={device.id}>
                                         {device.name} ({device.flow})

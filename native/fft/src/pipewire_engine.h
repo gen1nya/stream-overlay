@@ -29,6 +29,7 @@ public:
   void setMasterGain(float g) override;
   void setTilt(float exp) override;
   void setLoopback(bool on) override;
+  void setFollowDefault(bool on) override;
 
   void setCallback(FftCallback cb) override;
   void setWaveCallback(WaveCallback cb) override;
@@ -78,6 +79,7 @@ private:
   std::string currentDeviceName_;
   DeviceInfo::Flow currentFlow_ = DeviceInfo::Flow::Capture;
   bool loopback_ = false;
+  std::atomic<bool> followDefault_{false};
 
   // Audio parameters
   int sampleRate_ = 48000;

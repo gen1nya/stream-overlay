@@ -1725,6 +1725,7 @@ const en = {
                 device: {
                     notSelected: 'Not selected',
                     placeholder: 'Choose a device',
+                    auto: 'Auto (system default)',
                     refresh: 'Refresh device list',
                     selected: 'Selected: {{name}}',
                 },
