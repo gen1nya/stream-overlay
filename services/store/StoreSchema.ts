@@ -301,6 +301,7 @@ export interface PingPongCommandConfig {
 export interface RouletteBotConfig {
     enabled: boolean;
     allowToBanEditors: boolean;
+    allowCollabChatters: boolean;
     commands: string[];
     survivalMessages: string[];
     deathMessages: string[];

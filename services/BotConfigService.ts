@@ -10,6 +10,7 @@ export class BotConfigService {
         roulette: {
             enabled: false,
             allowToBanEditors: false,
+            allowCollabChatters: false,
             commands: [
                 "!roulette", "!рулетка"
             ],

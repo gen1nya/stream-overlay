@@ -815,6 +815,7 @@ const ru = {
                         cooldown: 'Перезарядка (сек)',
                         chance: 'Вероятность (%)',
                         allowEditors: 'Мьютить Редакторов',
+                        allowCollabChatters: 'Разрешать запуск из коллабов',
                     },
                     commands: {
                         placeholder: 'Введите команды через запятую (например: !rr, !roulette, !русскаярулетка)',

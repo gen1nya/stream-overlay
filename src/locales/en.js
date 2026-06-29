@@ -815,6 +815,7 @@ const en = {
                         cooldown: 'Cooldown (sec)',
                         chance: 'Chance (%)',
                         allowEditors: 'Mute Editors',
+                        allowCollabChatters: 'Allow collab chatters',
                     },
                     commands: {
                         placeholder: 'Enter commands separated by commas (e.g. !rr, !roulette, !russianroulette)',

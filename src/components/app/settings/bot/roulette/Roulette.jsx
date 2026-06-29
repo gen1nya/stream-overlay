@@ -28,6 +28,7 @@ export default function Roulette({ botConfig, apply, showHelp, setShowHelp }) {
     const { t } = useTranslation();
     const [config, setConfig] = useState(botConfig);
     const [allowToBanEditors, setAllowToBanEditors] = useState(config.roulette.allowToBanEditors);
+    const [allowCollabChatters, setAllowCollabChatters] = useState(config.roulette.allowCollabChatters);
 
     useEffect(() => {
         if (botConfig) {setConfig(botConfig);}
@@ -35,6 +36,7 @@ export default function Roulette({ botConfig, apply, showHelp, setShowHelp }) {
 
     useEffect(() => {
         setAllowToBanEditors(config.roulette.allowToBanEditors);
+        setAllowCollabChatters(config.roulette.allowCollabChatters);
     }, [config]);
 
     const updateRouletteConfig = (updater) => {
@@ -147,6 +149,20 @@ export default function Roulette({ botConfig, apply, showHelp, setShowHelp }) {
                                     const newState = e.target.checked;
                                     setAllowToBanEditors(newState);
                                     updateRouletteConfig(() => ({ allowToBanEditors: newState }));
+                                }}
+                            />
+                        </EnabledToggle>
+                    </ControlGroup>
+
+                    <ControlGroup>
+                        <EnabledToggle enabled={allowCollabChatters}>
+                            <span>{t('settings.bot.roulette.parameters.allowCollabChatters')}</span>
+                            <Switch
+                                checked={allowCollabChatters}
+                                onChange={(e) => {
+                                    const newState = e.target.checked;
+                                    setAllowCollabChatters(newState);
+                                    updateRouletteConfig(() => ({ allowCollabChatters: newState }));
                                 }}
                             />
                         </EnabledToggle>

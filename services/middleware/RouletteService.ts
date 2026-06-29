@@ -18,6 +18,7 @@ export default class RouletteService extends Middleware {
   private muteDuration: number;
   private enabled: boolean;
   private allowToBanEditors: boolean = false;
+  private allowCollabChatters: boolean = false;
   private cooldowns: Map<string, number> = new Map();
   private roleManager: RoleRestoreManager;
   private chance: number;
@@ -80,6 +81,7 @@ export default class RouletteService extends Middleware {
       this.enabled = config.roulette.enabled;
       this.chance = config.roulette.chance || 18;
       this.allowToBanEditors = config.roulette.allowToBanEditors || false;
+      this.allowCollabChatters = config.roulette.allowCollabChatters || false;
       this.protectedUsersMessages = config.roulette.protectedUsersMessages;
       this.statsCommands = config.roulette.statsCommands || ['!roulette-stats', '!рулетка-стат'];
       this.statsMessages = config.roulette.statsMessages || [];
@@ -105,7 +107,7 @@ export default class RouletteService extends Middleware {
       console.warn('❌ Message is missing userId or userName, skipping RouletteService processing');
       return { accepted: false, message: { ...message }, actions: [] };
     }
-    if (this.userId !== null && message.sourceRoomId !== null && message.sourceRoomId !== this.userId) {
+    if (!this.allowCollabChatters && this.userId !== null && message.sourceRoomId !== null && message.sourceRoomId !== this.userId) {
       return { message, actions: [], accepted: false };
     }
 
