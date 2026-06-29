@@ -19,7 +19,11 @@ permissions:
 
 jobs:
   build:
-    runs-on: windows-latest
+    # Pinned to windows-2022 (VS 2022 / MSVC v17). The windows-latest image
+    # moved to Server 2025 shipping Visual Studio 18 (2026), which the bundled
+    # node-gyp / @electron/node-gyp don't recognize (version map stops at 17),
+    # breaking the native-module rebuild step. Revisit once node-gyp learns VS 18.
+    runs-on: windows-2022
 
     strategy:
       matrix:
