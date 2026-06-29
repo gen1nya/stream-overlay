@@ -143,6 +143,12 @@ export class AudiosessionManager {
             this.broadcastMedia('fft-error', {code, hex, message});
         });
 
+        // Linux MPRIS bridge logs through the in-app log so failures are visible
+        // in a GUI-launched build (no terminal). Native bridges lack setLogger.
+        if (typeof (this.gsmtcBridge as any).setLogger === 'function') {
+            (this.gsmtcBridge as any).setLogger((m: string) => this.logService.logMessage(m));
+        }
+
         this.gsmtcBridge.start((s) => {
             const status =
                 s.playbackStatus === 4 ? "Playing" : s.playbackStatus;
