@@ -276,6 +276,7 @@ const WaveForm = ({
                             target.current[i] = int16Data[i] / 32768.0;
                         }
                         animStart.current = performance.now();
+                        dirtyRef.current = true; // fresh data → must render (lerp window can be < 1 vsync)
                         return;
                     } else {
                         // JSON mode: parse and normalize
@@ -298,6 +299,7 @@ const WaveForm = ({
                     target.current.set(normalizedData);
 
                     animStart.current = performance.now();
+                    dirtyRef.current = true; // fresh data → must render (lerp window can be < 1 vsync)
                 } catch (err) {
                     console.error("WS parse error", err);
                 }

@@ -26,6 +26,7 @@ const VUMeter = ({
                      amplitude         = 1,            // scale factor for sensitivity
                      falloff           = 0.92,           // decay factor per frame
                      targetFps         = 60,            // draws every N-th vsync (N=floor(refresh/targetFps))
+                     debug             = false,          // on-canvas HUD; also enabled by ?vudebug=1
                  }) => {
 
     /* ========= data ========= */
@@ -47,6 +48,14 @@ const VUMeter = ({
     const tickRef    = useRef(0);
     const dirtyRef   = useRef(true);
 
+    /* ========= debug HUD counters (per 1s window) ========= */
+    const dbgDraw  = useRef(0);   // frames actually rendered
+    const dbgIdle  = useRef(0);   // frames dropped by idle-skip
+    const dbgCap   = useRef(0);   // frames dropped by fps-cap
+    const dbgMsg   = useRef(0);   // WS data frames received
+    const dbgWin   = useRef(performance.now());
+    const dbgRates = useRef({ draw: 0, idle: 0, cap: 0, msg: 0 });
+
     const optsRef = useRef({
         barColor,
         glowColor,
@@ -57,6 +66,7 @@ const VUMeter = ({
         amplitude,
         falloff,
         targetFps,
+        debug,
     });
 
     useEffect(() => {
@@ -70,9 +80,10 @@ const VUMeter = ({
             amplitude,
             falloff,
             targetFps,
+            debug,
         };
         dirtyRef.current = true;
-    }, [barColor, glowColor, backgroundColor, labelColor, peakHold, peakFall, amplitude, falloff, targetFps]);
+    }, [barColor, glowColor, backgroundColor, labelColor, peakHold, peakFall, amplitude, falloff, targetFps, debug]);
 
     const handleResize = () => {
         const canvas = canvasRef.current;
@@ -214,6 +225,31 @@ const VUMeter = ({
         const canvas = canvasRef.current;
         const ctx = canvas.getContext("2d");
 
+        /* debug HUD: prop OR ?vudebug=1 in the window URL */
+        const debugQuery =
+            new URLSearchParams(window.location.search).get("vudebug") === "1";
+        const isDebug = () => debugQuery || optsRef.current.debug;
+
+        const drawHud = () => {
+            const r = dbgRates.current;
+            const text =
+                `DRAW ${r.draw}fps · MSG ${r.msg}/s · SKIP ${r.idle}/s · CAP ${r.cap}/s`;
+            ctx.save();
+            ctx.font = "10px monospace";
+            ctx.textAlign = "left";
+            ctx.textBaseline = "top";
+            const w = ctx.measureText(text).width + 8;
+            ctx.fillStyle = "rgba(0,0,0,0.8)";
+            ctx.fillRect(2, 2, w, 14);
+            // red = the bug: MANY skips while data flows (fresh frames dropped).
+            // 1–2 skips/s is benign — a vsync in a data-gap where the frame is
+            // identical anyway, so the threshold scales with the message rate.
+            const bad = r.msg > 10 && r.idle > Math.max(6, r.msg * 0.15);
+            ctx.fillStyle = bad ? "#ff5555" : "#00ff88";
+            ctx.fillText(text, 6, 4);
+            ctx.restore();
+        };
+
         /* init */
         handleResize();
         const resizeHandler = () => handleResize();
@@ -241,6 +277,16 @@ const VUMeter = ({
             const dt = now - prevNow.current;
             prevNow.current = now;
 
+            /* debug HUD: roll the 1-second counter window */
+            if (isDebug() && now - dbgWin.current >= 1000) {
+                dbgRates.current = {
+                    draw: dbgDraw.current, idle: dbgIdle.current,
+                    cap: dbgCap.current,  msg: dbgMsg.current,
+                };
+                dbgDraw.current = dbgIdle.current = dbgCap.current = dbgMsg.current = 0;
+                dbgWin.current = now;
+            }
+
             /* fps cap: draw every N-th vsync (N = floor(refresh/targetFps)) */
             if (dt > 0 && dt < 100) {
                 emaRaf.current = emaRaf.current ? emaRaf.current * 0.9 + dt * 0.1 : dt;
@@ -249,6 +295,7 @@ const VUMeter = ({
             const ema = emaRaf.current || dt || 16.7;
             const step = Math.max(1, Math.floor(targetInterval / ema + 0.1));
             if (++tickRef.current < step) {
+                if (isDebug()) { dbgCap.current++; drawHud(); }
                 frameRef.current = requestAnimationFrame(draw);
                 return;
             }
@@ -279,6 +326,7 @@ const VUMeter = ({
             /* idle-skip: bars settled and no pending change → keep last frame
                (peaks aren't rendered here, so lerp is the only animation source) */
             if (!dirtyRef.current && !lerpActive) {
+                if (isDebug()) { dbgIdle.current++; drawHud(); }
                 frameRef.current = requestAnimationFrame(draw);
                 return;
             }
@@ -333,6 +381,8 @@ const VUMeter = ({
                 "ПРАВЫЙ"
             );
 
+            if (isDebug()) { dbgDraw.current++; drawHud(); }
+
             frameRef.current = requestAnimationFrame(draw);
         };
 
@@ -384,6 +434,8 @@ const VUMeter = ({
                         target.current = [levelL, levelR];
 
                         animStart.current = performance.now();
+                        dirtyRef.current = true; // fresh data → must render (lerp window can be < 1 vsync)
+                        dbgMsg.current++;        // debug HUD: count incoming data frames
                     }
                 } catch (err) {
                     console.error("WS parse error", err);

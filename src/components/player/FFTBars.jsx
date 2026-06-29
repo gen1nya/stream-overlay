@@ -292,6 +292,7 @@ const FFTBars = ({
                     }
 
                     animStart.current = performance.now();
+                    dirtyRef.current = true; // fresh data → must render (lerp window can be < 1 vsync)
                 } catch (err) {
                     console.error("WS parse error", err);
                 }
