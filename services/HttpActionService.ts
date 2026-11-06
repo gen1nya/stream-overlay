@@ -1,13 +1,15 @@
 import { ipcMain } from 'electron';
 import ElectronStore from 'electron-store';
 import keytar from 'keytar';
+import { randomUUID } from 'crypto';
 import { HttpActionConfig, HttpHeader, StoreSchema } from './store/StoreSchema';
 import { LogService } from './logService';
 import { InterpolationContext, interpolateTemplate } from './middleware/interpolate';
 
 const KEYTAR_SERVICE = 'TwitchWatcherHttpSecrets';
 const DEFAULT_TIMEOUT_MS = 8000;
-const MAX_BODY_BYTES = 1_048_576;
+const MAX_LOG_BODY_BYTES = 1_048_576;
+const SENSITIVE_HEADERS = /^(authorization|proxy-authorization|cookie|set-cookie|x-api-key)$/i;
 
 export interface HttpExecuteResult {
     ok: boolean;
@@ -143,7 +145,7 @@ export class HttpActionService {
         const action = this.get(id);
         if (!action) {
             const error = `HTTP action not found: ${id}`;
-            this.logError(error);
+            this.logError(error, { requestId: randomUUID(), actionId: id, durationMs: 0 });
             return { ok: false, error, durationMs: 0 };
         }
         return this.executeConfig(action, ctx);
@@ -151,6 +153,7 @@ export class HttpActionService {
 
     async executeConfig(action: HttpActionConfig, ctx?: InterpolationContext): Promise<HttpExecuteResult> {
         const start = Date.now();
+        const trace = { requestId: randomUUID(), actionId: action.id, actionName: action.name };
         const safeCtx = ctx ?? {};
         const timeoutMs = action.timeoutMs && action.timeoutMs > 0 ? action.timeoutMs : DEFAULT_TIMEOUT_MS;
 
@@ -167,20 +170,39 @@ export class HttpActionService {
             }
         } catch (err: any) {
             const error = `Invalid URL: ${err?.message || String(err)}`;
-            this.logError(`[HttpAction:${action.name}] ${error}`);
+            this.logError(`[HttpAction:${action.name}] ${error}`, { ...trace, durationMs: Date.now() - start });
             return { ok: false, error, durationMs: Date.now() - start };
         }
 
         const headers: Record<string, string> = {};
+        const secretValues: string[] = [];
+        const secretHeaderNames = new Set<string>();
         for (const header of action.headers || []) {
             if (!header.name) continue;
+            if (header.value.type === 'secret' || SENSITIVE_HEADERS.test(header.name)) {
+                secretHeaderNames.add(header.name.toLowerCase());
+            }
             const value = await this.resolveHeaderValue(header, safeCtx);
             if (value === null) {
-                this.logError(`[HttpAction:${action.name}] missing secret for header "${header.name}", skipping`);
+                this.logError(`[HttpAction:${action.name}] missing secret for header "${header.name}", skipping`, trace);
                 continue;
             }
             headers[header.name] = value;
+            if (value && secretHeaderNames.has(header.name.toLowerCase())) {
+                secretValues.push(value);
+            }
         }
+
+        // Also redact known header secrets if the server echoes them in its response.
+        const redact = (text: string): string => secretValues.reduce(
+            (result, secret) => result.split(secret).join('[REDACTED]'), text
+        );
+        const logHeaders = (values: Record<string, string>): Record<string, string> => Object.fromEntries(
+            Object.entries(values).map(([name, value]) => [name,
+                secretHeaderNames.has(name.toLowerCase()) || SENSITIVE_HEADERS.test(name)
+                    ? '[REDACTED]' : redact(value)
+            ])
+        );
 
         let body: string | undefined;
         if (action.method !== 'GET' && action.body && action.body.type !== 'none') {
@@ -197,6 +219,14 @@ export class HttpActionService {
         const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
         try {
+            console.log('[HttpAction] request', {
+                ...trace,
+                method: action.method,
+                url: redact(url),
+                headers: logHeaders(headers),
+                body: body === undefined ? null : bodyForLog(redact(body)),
+                timeoutMs,
+            });
             const response = await fetch(url, {
                 method: action.method,
                 headers,
@@ -204,23 +234,47 @@ export class HttpActionService {
                 signal: controller.signal,
             });
 
+            let responseBody = '';
+            let bodyReadError: string | undefined;
+            try {
+                responseBody = await response.text();
+            } catch (err: any) {
+                // Preserve the existing HTTP-status-based result, but expose read failures.
+                bodyReadError = redact(err?.message || String(err));
+            }
+            const safeResponseBody = redact(responseBody);
+            const durationMs = Date.now() - start;
+            console.log('[HttpAction] response', {
+                ...trace,
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok,
+                url: redact(response.url || url),
+                redirected: response.redirected,
+                headers: logHeaders(Object.fromEntries(response.headers.entries())),
+                body: bodyForLog(safeResponseBody),
+                bodyReadError,
+                durationMs,
+            });
+
             if (!response.ok) {
-                const snippet = await readBodySnippet(response);
+                const snippet = bodySnippet(safeResponseBody);
                 const error = `HTTP ${response.status}${snippet ? `: ${snippet}` : ''}`;
-                this.logError(`[HttpAction:${action.name}] ${error}`);
-                return { ok: false, status: response.status, error, durationMs: Date.now() - start };
+                this.logError(`[HttpAction:${action.name}] ${error}`, { ...trace, durationMs });
+                return { ok: false, status: response.status, error, durationMs };
             }
 
-            // Drain the body so the connection can be released. We don't
-            // capture it because v1 is fire-and-forget.
-            try { await response.arrayBuffer(); } catch { /* ignore */ }
-
-            return { ok: true, status: response.status, durationMs: Date.now() - start };
+            return { ok: true, status: response.status, durationMs };
         } catch (err: any) {
             const error = err?.name === 'AbortError'
                 ? `Timeout after ${timeoutMs}ms`
-                : (err?.message || String(err));
-            this.logError(`[HttpAction:${action.name}] ${error}`);
+                : redact(err?.message || String(err));
+            this.logError(`[HttpAction:${action.name}] ${error}`, {
+                ...trace,
+                durationMs: Date.now() - start,
+                cause: err?.cause ? redact(String(err.cause)) : undefined,
+                code: err?.cause?.code || err?.code,
+            });
             return { ok: false, error, durationMs: Date.now() - start };
         } finally {
             clearTimeout(timeoutId);
@@ -238,7 +292,10 @@ export class HttpActionService {
         return secret;
     }
 
-    private logError(message: string): void {
+    private logError(message: string, details?: Record<string, unknown>): void {
+        // BackendLogService captures console output; the UI log alone isn't exported there.
+        if (details) console.warn(message, details);
+        else console.warn(message);
         if (this.logService) {
             this.logService.log({
                 timestamp: new Date().toISOString(),
@@ -246,8 +303,6 @@ export class HttpActionService {
                 userId: null,
                 userName: null,
             });
-        } else {
-            console.warn(message);
         }
     }
 
@@ -305,13 +360,13 @@ function collectSecretKeys(action: HttpActionConfig): string[] {
     return keys;
 }
 
-async function readBodySnippet(response: Response): Promise<string> {
-    try {
-        const text = await response.text();
-        if (!text) return '';
-        const trimmed = text.length > 200 ? `${text.slice(0, 200)}…` : text;
-        return trimmed.replace(/\s+/g, ' ').trim();
-    } catch {
-        return '';
-    }
+function bodySnippet(text: string): string {
+    const trimmed = text.length > 200 ? `${text.slice(0, 200)}…` : text;
+    return trimmed.replace(/\s+/g, ' ').trim();
+}
+
+function bodyForLog(text: string): string {
+    const bytes = Buffer.from(text, 'utf8');
+    if (bytes.length <= MAX_LOG_BODY_BYTES) return text;
+    return `${bytes.subarray(0, MAX_LOG_BODY_BYTES).toString('utf8')}\n[TRUNCATED: ${bytes.length} bytes total, first ${MAX_LOG_BODY_BYTES} bytes shown]`;
 }
